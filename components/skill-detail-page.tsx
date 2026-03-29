@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { CopyButton } from "@/components/copy-button";
 import { ExpandableContent } from "@/components/expandable-content";
 import { FlowIcon, PlayIcon } from "@/components/frontier-icons";
+import { ShareButton } from "@/components/share-button";
 import { SiteHeader } from "@/components/site-header";
 import { SkillDetailSidebar } from "@/components/skill-detail-sidebar";
 import { SkillSetupForm } from "@/components/skill-setup-form";
@@ -122,9 +123,12 @@ export function SkillDetailPage({
             <Badge muted>{skill.versionLabel}</Badge>
           </div>
 
-          <h1 className="m-0 text-2xl font-semibold tracking-tight text-ink wrap-break-word">
-            {skill.title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="m-0 text-2xl font-semibold tracking-tight text-ink wrap-break-word">
+              {skill.title}
+            </h1>
+            <ShareButton href={skill.href} />
+          </div>
           <p className="m-0 text-sm text-ink-soft wrap-break-word">{skill.description}</p>
           <p className="m-0 text-xs text-ink-muted">
             {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt)}
@@ -135,7 +139,7 @@ export function SkillDetailPage({
               href={`/sandbox?skill=${skill.slug}`}
               size="sm"
             >
-              <PlayIcon className="h-3 w-3" />
+              <PlayIcon className="h-3.5 w-3.5" />
               Run in sandbox
             </LinkButton>
             {skill.origin !== "user" ? (
@@ -146,7 +150,7 @@ export function SkillDetailPage({
               />
             ) : null}
             <CopyButton
-              iconOnly
+              label="Copy prompt"
               usageEvent={{
                 kind: "copy_prompt",
                 label: "Copied prompt",
@@ -157,7 +161,7 @@ export function SkillDetailPage({
               value={primaryAgentPrompt}
             />
             <CopyButton
-              iconOnly
+              label="Copy link"
               usageEvent={{
                 kind: "copy_url",
                 label: "Copied skill link",

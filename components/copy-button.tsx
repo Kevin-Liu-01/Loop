@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import type { ButtonSize, ButtonVariant } from "@/components/ui/button";
 import { postUsageEvent } from "@/components/usage-beacon";
 import type { CategorySlug, UsageEventKind } from "@/lib/types";
 
@@ -10,6 +11,8 @@ type CopyButtonProps = {
   value: string;
   label?: string;
   iconOnly?: boolean;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   usageEvent?: {
     kind: Exclude<UsageEventKind, "api_call">;
     label: string;
@@ -33,7 +36,14 @@ const CheckIcon = () => (
   </svg>
 );
 
-export function CopyButton({ value, label = "Copy", iconOnly, usageEvent }: CopyButtonProps) {
+export function CopyButton({
+  value,
+  label = "Copy",
+  iconOnly,
+  variant,
+  size,
+  usageEvent,
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -49,10 +59,10 @@ export function CopyButton({ value, label = "Copy", iconOnly, usageEvent }: Copy
     return (
       <Button
         onClick={handleCopy}
-        size="icon-sm"
+        size={size ?? "icon-sm"}
         title={label}
         type="button"
-        variant="soft"
+        variant={variant ?? "soft"}
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
       </Button>
@@ -60,7 +70,13 @@ export function CopyButton({ value, label = "Copy", iconOnly, usageEvent }: Copy
   }
 
   return (
-    <Button onClick={handleCopy} type="button" variant="ghost">
+    <Button
+      onClick={handleCopy}
+      size={size ?? "sm"}
+      type="button"
+      variant={variant ?? "soft"}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
       <span>{copied ? "Copied" : label}</span>
     </Button>
   );

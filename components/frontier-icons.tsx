@@ -20,6 +20,7 @@ import {
   Search,
   Send,
   Settings,
+  Share2,
   ShieldCheck,
   Sparkles,
   Square,
@@ -72,3 +73,4 @@ export const StopIcon = wrapIcon(Square);
 export const SendIcon = wrapIcon(Send);
 export const ChevronDownIcon = wrapIcon(ChevronDown);
 export const ChevronRightIcon = wrapIcon(ChevronRight);
+export const ShareIcon = wrapIcon(Share2);
