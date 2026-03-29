@@ -1,5 +1,4 @@
-import { openai } from "@ai-sdk/openai";
-import { generateText, stepCountIs, tool } from "ai";
+import { generateText, stepCountIs, tool, type LanguageModel } from "ai";
 import { z } from "zod";
 
 import { diffMultilineText } from "@/lib/text-diff";
@@ -229,7 +228,8 @@ export async function runSkillEditorAgent(
   skill: UserSkillDocument,
   signals: DailySignal[],
   sourceLogs: LoopUpdateSourceLog[],
-  modelId: string,
+  model: LanguageModel,
+  modelLabel: string,
   onStep?: (step: AgentReasoningStep) => void
 ): Promise<EditorAgentResult> {
   const generatedAt = new Date().toISOString();
@@ -252,7 +252,7 @@ export async function runSkillEditorAgent(
   };
 
   const response = await generateText({
-    model: openai(modelId),
+    model,
     system: buildSystemPrompt(skill, sourceLogs),
     prompt: `You have ${sourceLogs.length} sources with ${signals.length} total signals. Analyze them, read the current skill, decide what to change, revise the skill, then finalize.`,
     tools,
@@ -281,13 +281,13 @@ export async function runSkillEditorAgent(
       items: topItems,
       bodyChanged,
       changedSections: revisionState.changedSections,
-      editorModel: modelId
+      editorModel: modelLabel
     },
     nextBody: revisionState.body,
     nextDescription: revisionState.description,
     bodyChanged,
     changedSections: revisionState.changedSections,
-    editorModel: modelId,
+    editorModel: modelLabel,
     reasoningSteps
   };
 }

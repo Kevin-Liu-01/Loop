@@ -182,6 +182,19 @@ export function buildAgentContext(snapshot: SkillwireSnapshot, input: AgentRunIn
   ].join("\n\n");
 }
 
+const GATEWAY_EDITOR_MODEL = process.env.SKILLWIRE_MODEL ?? "openai/gpt-5-mini";
+
+export function getGatewayEditorModel(): LanguageModel | null {
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return null;
+  const provider = createGateway({ apiKey });
+  return provider(GATEWAY_EDITOR_MODEL);
+}
+
+export function getGatewayEditorModelId(): string {
+  return GATEWAY_EDITOR_MODEL;
+}
+
 export async function listGatewayModels(): Promise<Array<{ id: string; name: string; provider: string }>> {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   if (!apiKey) {

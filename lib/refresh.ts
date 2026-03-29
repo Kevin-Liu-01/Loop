@@ -2,10 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
+import { getGatewayEditorModel, getGatewayEditorModelId } from "@/lib/agents";
 import { getLocalSnapshotBase, readLocalSnapshotFile, writeLocalSnapshotFile } from "@/lib/content";
 import { buildImportedSkillRecord, listImportedSkills, saveImportedSkills, syncImportedSkill } from "@/lib/imports";
 import { buildLoopUpdateSourceLog, buildLoopUpdateTarget } from "@/lib/loop-updates";
@@ -78,7 +78,6 @@ export type UserSkillRefreshCycle = {
   loopRun: LoopRunRecord;
 };
 
-const DEFAULT_SKILL_EDITOR_MODEL = process.env.SKILLWIRE_MODEL ?? "gpt-5-mini";
 const MAX_CONCURRENT_SKILL_REFRESHES = 3;
 
 async function runWithConcurrency<T>(
@@ -238,7 +237,8 @@ function buildFailedLoopRun(
 }
 
 async function synthesizeBrief(slug: CategorySlug, title: string, items: DailySignal[]): Promise<CategoryBrief> {
-  if (items.length === 0 || !process.env.OPENAI_API_KEY) {
+  const briefModel = getGatewayEditorModel();
+  if (items.length === 0 || !briefModel) {
     return fallbackBrief(slug, title, items);
   }
 
@@ -255,7 +255,7 @@ async function synthesizeBrief(slug: CategorySlug, title: string, items: DailySi
     ].join("\n");
 
     const result = await generateObject({
-      model: openai(process.env.SKILLWIRE_MODEL ?? "gpt-5-mini"),
+      model: briefModel,
       schema: SIGNAL_SCHEMA,
       prompt
     });
@@ -309,7 +309,8 @@ export async function synthesizeSkillUpdate(
     reasoningSteps: []
   };
 
-  if (items.length === 0 || !process.env.OPENAI_API_KEY) {
+  const editorModel = getGatewayEditorModel();
+  if (items.length === 0 || !editorModel) {
     return fallbackDraft;
   }
 
@@ -318,7 +319,8 @@ export async function synthesizeSkillUpdate(
       skill,
       items,
       sourceLogs,
-      DEFAULT_SKILL_EDITOR_MODEL,
+      editorModel,
+      getGatewayEditorModelId(),
       onReasoningStep
     );
     return result;
