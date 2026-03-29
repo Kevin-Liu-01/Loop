@@ -38,29 +38,10 @@ type SandboxConfig = {
   selectedSkillSlugs: string[];
 };
 
-function loadPersistedConfig(
+function defaultConfig(
   presets: AgentProviderPreset[],
   initialSkillSlug?: string
 ): SandboxConfig {
-  if (typeof window !== "undefined") {
-    try {
-      const raw = window.localStorage.getItem(CONFIG_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<SandboxConfig>;
-        return {
-          runtime: saved.runtime ?? "node24",
-          providerId: saved.providerId ?? presets[0]?.id ?? "gateway",
-          model: saved.model ?? presets[0]?.defaultModel ?? "openai/gpt-5.4-mini",
-          apiKeyEnvVar: saved.apiKeyEnvVar ?? presets[0]?.apiKeyEnvVar ?? "",
-          selectedSkillSlugs: initialSkillSlug
-            ? [initialSkillSlug]
-            : saved.selectedSkillSlugs ?? []
-        };
-      }
-    } catch {
-      /* ignore */
-    }
-  }
   const preset = presets[0];
   return {
     runtime: "node24",
@@ -137,55 +118,51 @@ export function SandboxShell({
   initialSkillSlug
 }: SandboxShellProps) {
   const [config, setConfig] = useState<SandboxConfig>(() =>
-    loadPersistedConfig(presets, initialSkillSlug)
+    defaultConfig(presets, initialSkillSlug)
   );
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [sandboxState, setSandboxState] = useState<SandboxState>("idle");
   const [sandboxError, setSandboxError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const sandboxIdRef = useRef<string | null>(null);
-  const bootedRuntimeRef = useRef<SandboxRuntime | null>(null);
+  const hydratedRef = useRef(false);
 
+  // Refs that are always current -- the transport body function reads these
+  // at request time, so there's never a stale sandboxId in the request.
+  const sandboxIdRef = useRef<string | null>(null);
+  const configRef = useRef(config);
+  configRef.current = config;
+
+  // Hydrate config from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
-    window.localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    try {
+      const raw = window.localStorage.getItem(CONFIG_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<SandboxConfig>;
+        setConfig((prev) => ({
+          ...prev,
+          runtime: saved.runtime ?? prev.runtime,
+          providerId: saved.providerId ?? prev.providerId,
+          model: saved.model ?? prev.model,
+          apiKeyEnvVar: saved.apiKeyEnvVar ?? prev.apiKeyEnvVar,
+          selectedSkillSlugs: initialSkillSlug
+            ? prev.selectedSkillSlugs
+            : saved.selectedSkillSlugs ?? prev.selectedSkillSlugs
+        }));
+      }
+    } catch {
+      /* ignore */
+    }
+    hydratedRef.current = true;
+  }, [initialSkillSlug]);
+
+  // Persist config to localStorage (skip the initial hydration write)
+  useEffect(() => {
+    if (hydratedRef.current) {
+      window.localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    }
   }, [config]);
 
-  // Auto-create sandbox on mount so the transport has sandboxId before
-  // the user ever sends a message. This avoids the race condition where
-  // useChat's sendMessage captures a stale transport with sandboxId="".
-  useEffect(() => {
-    let cancelled = false;
-
-    async function boot() {
-      setSandboxState("creating");
-      setSandboxError(null);
-      const result = await requestSandbox(config.runtime);
-
-      if (cancelled) return;
-
-      if ("error" in result) {
-        setSandboxError(result.error);
-        setSandboxState("error");
-        return;
-      }
-
-      sandboxIdRef.current = result.sandboxId;
-      bootedRuntimeRef.current = config.runtime;
-      setSandboxId(result.sandboxId);
-      setSandboxState("running");
-    }
-
-    boot();
-
-    return () => {
-      cancelled = true;
-    };
-    // Only boot once on mount — runtime changes are handled by restart
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Cleanup sandbox on page unload
   useEffect(() => {
     function handleUnload() {
       if (sandboxIdRef.current) {
@@ -199,20 +176,23 @@ export function SandboxShell({
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, []);
 
+  // Transport is created ONCE. Its body is a function that reads from refs
+  // at request time, so it always sends the current sandboxId + config.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/sandbox/run",
-        body: {
-          sandboxId: sandboxId ?? "",
-          runtime: config.runtime,
-          providerId: config.providerId,
-          model: config.model,
-          apiKeyEnvVar: config.apiKeyEnvVar,
-          selectedSkillSlugs: config.selectedSkillSlugs
-        }
+        body: () => ({
+          sandboxId: sandboxIdRef.current ?? "",
+          runtime: configRef.current.runtime,
+          providerId: configRef.current.providerId,
+          model: configRef.current.model,
+          apiKeyEnvVar: configRef.current.apiKeyEnvVar,
+          selectedSkillSlugs: configRef.current.selectedSkillSlugs
+        })
       }),
-    [sandboxId, config]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const { messages, sendMessage, status, error } = useChat({
@@ -224,20 +204,20 @@ export function SandboxShell({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const retrySandbox = useCallback(async () => {
+  const createSandbox = useCallback(async (): Promise<string | null> => {
     setSandboxState("creating");
     setSandboxError(null);
-    const result = await requestSandbox(config.runtime);
+    const result = await requestSandbox(configRef.current.runtime);
     if ("error" in result) {
       setSandboxError(result.error);
       setSandboxState("error");
-      return;
+      return null;
     }
     sandboxIdRef.current = result.sandboxId;
-    bootedRuntimeRef.current = config.runtime;
     setSandboxId(result.sandboxId);
     setSandboxState("running");
-  }, [config.runtime]);
+    return result.sandboxId;
+  }, []);
 
   const stopSandbox = useCallback(async () => {
     const id = sandboxIdRef.current;
@@ -250,39 +230,22 @@ export function SandboxShell({
       /* best effort */
     }
     sandboxIdRef.current = null;
-    bootedRuntimeRef.current = null;
     setSandboxId(null);
     setSandboxState("stopped");
   }, []);
 
-  // Restart sandbox when runtime changes (if one was already running)
-  const restartSandbox = useCallback(async () => {
-    if (sandboxIdRef.current) {
-      fetch(`/api/sandbox/session?sandboxId=${sandboxIdRef.current}`, {
-        method: "DELETE",
-        keepalive: true
-      });
-    }
-    sandboxIdRef.current = null;
-    setSandboxId(null);
-    setSandboxState("creating");
-    setSandboxError(null);
-    const result = await requestSandbox(config.runtime);
-    if ("error" in result) {
-      setSandboxError(result.error);
-      setSandboxState("error");
-      return;
-    }
-    sandboxIdRef.current = result.sandboxId;
-    bootedRuntimeRef.current = config.runtime;
-    setSandboxId(result.sandboxId);
-    setSandboxState("running");
-  }, [config.runtime]);
-
-  function handleSend() {
+  async function handleSend() {
     const text = input.trim();
-    if (!text || !sandboxId) return;
+    if (!text) return;
     setInput("");
+
+    if (!sandboxIdRef.current) {
+      const created = await createSandbox();
+      if (!created) return;
+    }
+
+    // At this point sandboxIdRef.current is set.
+    // The transport's body function will read it at request time.
     sendMessage({ text });
   }
 
@@ -311,11 +274,10 @@ export function SandboxShell({
 
   const selectedPreset = presets.find((p) => p.id === config.providerId);
   const isStreaming = status === "submitted" || status === "streaming";
-  const sandboxReady = sandboxState === "running" && !!sandboxId;
-  const canSend = sandboxReady && !isStreaming && input.trim().length > 0;
+  const isBusy = isStreaming || sandboxState === "creating";
 
   return (
-    <div className="grid h-[calc(100vh-120px)] grid-rows-[auto_1fr_auto_auto] gap-0">
+    <div className="grid h-[calc(100dvh-5rem)] grid-rows-[auto_1fr_auto_auto] gap-0">
       {/* ── Config bar ── */}
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
         <div className="flex items-center gap-2">
@@ -323,13 +285,9 @@ export function SandboxShell({
             Runtime
             <select
               className="rounded-lg border border-line bg-paper-2 px-2 py-1 text-xs text-ink outline-none"
-              onChange={(e) => {
-                const next = e.target.value as SandboxRuntime;
-                updateConfig("runtime", next);
-                if (bootedRuntimeRef.current && bootedRuntimeRef.current !== next) {
-                  restartSandbox();
-                }
-              }}
+              onChange={(e) =>
+                updateConfig("runtime", e.target.value as SandboxRuntime)
+              }
               value={config.runtime}
             >
               <option value="node24">Node.js 24</option>
@@ -379,7 +337,7 @@ export function SandboxShell({
           {skills.slice(0, 20).map((skill) => (
             <FilterChip
               active={config.selectedSkillSlugs.includes(skill.slug)}
-              className="text-[0.65rem]! px-2! py-0.5!"
+              className="max-w-48 truncate text-[0.65rem]! px-2! py-0.5!"
               key={skill.slug}
               onClick={() => toggleSkill(skill.slug)}
             >
@@ -397,45 +355,29 @@ export function SandboxShell({
               <TerminalIcon className="h-8 w-8 text-ink-faint" />
             </div>
             <div className="grid gap-1.5">
-              <h2 className="text-lg font-semibold text-ink">
-                Sandbox Agent
-              </h2>
+              <h2 className="text-lg font-semibold text-ink">Sandbox Agent</h2>
               <p className="max-w-md text-sm text-ink-soft">
-                {sandboxState === "creating"
-                  ? "Starting sandbox..."
-                  : sandboxState === "error"
-                    ? "Sandbox failed to start."
-                    : `Ask the agent to write code, run commands, or explore data. It has a live ${config.runtime === "node24" ? "Node.js 24" : "Python 3.13"} environment.`}
+                Ask the agent to write code, run commands, or explore data. A
+                sandbox starts automatically when you send your first message.
               </p>
-              {sandboxState === "error" && (
-                <Button
-                  className="mx-auto mt-2"
-                  onClick={retrySandbox}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Retry
-                </Button>
-              )}
             </div>
-            {sandboxReady && (
-              <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  "Fetch the top HN story and analyze it",
-                  "Create a simple HTTP server and test it",
-                  "Write a Python script to process CSV data"
-                ].map((suggestion) => (
-                  <button
-                    className="rounded-xl border border-line bg-paper-2/80 px-3 py-2 text-xs text-ink-soft transition-colors hover:border-accent hover:text-ink"
-                    key={suggestion}
-                    onClick={() => setInput(suggestion)}
-                    type="button"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap justify-center gap-2">
+              {[
+                "Fetch the top HN story and analyze it",
+                "Create a simple HTTP server and test it",
+                "Write a Python script to process CSV data"
+              ].map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  onClick={() => setInput(suggestion)}
+                  size="sm"
+                  type="button"
+                  variant="soft"
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -474,10 +416,12 @@ export function SandboxShell({
             </div>
           ))}
 
-          {isStreaming && (
+          {isBusy && (
             <div className="flex items-center gap-2 text-xs text-ink-soft">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
-              Agent is working...
+              {sandboxState === "creating"
+                ? "Starting sandbox..."
+                : "Agent is working..."}
             </div>
           )}
 
@@ -490,22 +434,16 @@ export function SandboxShell({
         <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
           <textarea
             className="flex-1 resize-none rounded-xl border border-line bg-paper-2 px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-line-strong"
-            disabled={isStreaming || !sandboxReady}
+            disabled={isBusy}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={
-              sandboxReady
-                ? "Ask the agent to do something in the sandbox..."
-                : sandboxState === "creating"
-                  ? "Starting sandbox..."
-                  : "Sandbox not available"
-            }
+            placeholder="Ask the agent to do something in the sandbox..."
             rows={2}
             value={input}
           />
           <Button
             className="shrink-0"
-            disabled={!canSend}
+            disabled={!input.trim() || isBusy}
             onClick={handleSend}
             size="sm"
           >

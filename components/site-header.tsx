@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { PlusIcon, SearchIcon, SettingsIcon, TerminalIcon } from "@/components/frontier-icons";
 import { LoopLogo } from "@/components/loop-logo";
+import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/ui/link-button";
 
 export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
   return (
@@ -16,45 +18,48 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
 
         <div className="flex-1" />
 
-        <button
-          className="inline-flex items-center gap-2 rounded-xl border border-line bg-paper-2/80 px-3 py-1.5 text-sm text-ink-soft transition-colors duration-150 hover:border-accent hover:text-ink"
+        <Button
           onClick={() =>
             window.dispatchEvent(new Event("skillwire:open-palette"))
           }
+          size="sm"
           type="button"
+          variant="soft"
         >
           <SearchIcon className="h-3.5 w-3.5" />
           <span className="max-sm:hidden">Search</span>
           <kbd className="ml-1 text-[0.7rem] text-ink-faint max-sm:hidden">
             ⌘K
           </kbd>
-        </button>
+        </Button>
 
         {onNewSkill ? (
-          <button
-            className="inline-flex items-center gap-1.5 rounded-xl border border-accent bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
+          <Button
             onClick={onNewSkill}
+            size="sm"
             type="button"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             <span className="max-sm:hidden">New</span>
-          </button>
+          </Button>
         ) : null}
 
-        <Link
-          className="inline-flex items-center justify-center rounded-xl p-2 text-ink-soft transition-colors duration-150 hover:bg-paper-2 hover:text-ink"
+        <LinkButton
           href="/sandbox"
+          size="icon"
           title="Sandbox"
+          variant="soft"
         >
           <TerminalIcon className="h-4 w-4" />
-        </Link>
+        </LinkButton>
 
-        <Link
-          className="inline-flex items-center justify-center rounded-xl p-2 text-ink-soft transition-colors duration-150 hover:bg-paper-2 hover:text-ink"
+        <LinkButton
           href="/settings"
+          size="icon"
+          variant="soft"
         >
           <SettingsIcon className="h-4 w-4" />
-        </Link>
+        </LinkButton>
       </div>
     </header>
   );

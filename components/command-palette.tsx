@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
+
 type PaletteItem = {
   label: string;
   href: string;
@@ -112,18 +114,19 @@ export function CommandPalette({ items }: CommandPaletteProps) {
               />
               <div className="grid gap-3">
                 {filteredItems.map((item) => (
-                  <button
-                    className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-line bg-paper-3 p-4 text-left text-ink transition-all duration-200 hover:border-accent hover:bg-accent hover:text-white"
+                  <Button
+                    className="min-h-14 w-full cursor-pointer justify-between p-4 text-left"
                     key={`${item.section}-${item.href}`}
                     onClick={() => openHref(item.href)}
                     type="button"
+                    variant="ghost"
                   >
-                    <span>
-                      <strong className="block font-semibold text-inherit">{item.label}</strong>
-                      <small className="block text-sm text-inherit opacity-60">{item.section}</small>
+                    <span className="min-w-0 truncate">
+                      <strong className="block truncate font-semibold text-inherit">{item.label}</strong>
+                      <small className="block truncate text-sm text-inherit opacity-60">{item.section}</small>
                     </span>
-                    <span>{item.hint ?? "Open"}</span>
-                  </button>
+                    <span className="shrink-0">{item.hint ?? "Open"}</span>
+                  </Button>
                 ))}
               </div>
             </div>

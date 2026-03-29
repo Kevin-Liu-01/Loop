@@ -54,7 +54,7 @@ export function SimpleListBody({ className, children }: { className?: string; ch
 
 export function SimpleListRow({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("flex flex-wrap items-start justify-between gap-3", className)}>
+    <div className={cn("flex min-w-0 flex-wrap items-start justify-between gap-3", className)}>
       {children}
     </div>
   );

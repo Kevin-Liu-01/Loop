@@ -1,6 +1,7 @@
 "use client";
 
 import { StopIcon, TerminalIcon } from "@/components/frontier-icons";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 type SandboxStatusBarProps = {
@@ -54,14 +55,15 @@ export function SandboxStatusBar({
       )}
       <div className="flex-1" />
       {status === "running" && onStop && (
-        <button
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-red-400 hover:text-red-400"
+        <Button
           onClick={onStop}
+          size="sm"
           type="button"
+          variant="danger"
         >
           <StopIcon className="h-3 w-3" />
           Stop
-        </button>
+        </Button>
       )}
       {!sandboxId && (
         <span className="flex items-center gap-1.5 text-ink-faint">
