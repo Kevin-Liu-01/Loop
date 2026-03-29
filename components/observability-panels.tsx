@@ -77,8 +77,8 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
                   </SimpleListIcon>
                   <SimpleListBody>
                     <SimpleListRow>
-                      <strong>{entry.route}</strong>
-                      <span>{entry.count} calls</span>
+                      <strong className="truncate">{entry.route}</strong>
+                      <span className="shrink-0">{entry.count} calls</span>
                     </SimpleListRow>
                     <SimpleListMeta>
                       <span>{entry.avgDurationMs} ms avg</span>
@@ -160,76 +160,79 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
 
 export function SkillObservabilityPanel({ usage }: SkillObservabilityPanelProps) {
   return (
-    <Panel compact className="gap-[18px]">
-      <PanelHead>
-        <div>
-          <span className={sectionKicker}>Observability</span>
-          <h2 className="m-0 text-lg font-semibold tracking-[-0.03em]">Usage for this skill</h2>
-        </div>
-      </PanelHead>
-
-      <div className="grid max-lg:grid-cols-1 grid-cols-6 gap-3">
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">views</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.pageViews}</strong>
-        </div>
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">copies</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.copies}</strong>
-        </div>
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">saves</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.saves}</strong>
-        </div>
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">refreshes</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.refreshes}</strong>
-        </div>
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">api calls</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.apiCalls}</strong>
-        </div>
-        <div className="grid gap-1 rounded-2xl border border-line p-4">
-          <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">last seen</small>
-          <strong className="text-base font-semibold tracking-[-0.03em] text-ink">
-            {usage.lastSeenAt ? formatDateTime(usage.lastSeenAt) : "none"}
-          </strong>
-        </div>
-      </div>
-
-      <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
-        <div className="flex items-end justify-between gap-3">
+    <Panel compact>
+      <details className="group grid gap-[18px]">
+        <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
           <div>
-            <span className={sectionKicker}>Recent</span>
-            <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">Latest usage</h3>
+            <span className={sectionKicker}>Observability</span>
+            <h2 className="m-0 text-lg font-semibold tracking-[-0.03em]">Usage stats</h2>
+          </div>
+          <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
+        </summary>
+
+        <div className="grid max-lg:grid-cols-2 grid-cols-6 gap-3">
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">views</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.pageViews}</strong>
+          </div>
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">copies</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.copies}</strong>
+          </div>
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">saves</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.saves}</strong>
+          </div>
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">refreshes</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.refreshes}</strong>
+          </div>
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">api calls</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">{usage.apiCalls}</strong>
+          </div>
+          <div className="grid gap-1 rounded-2xl border border-line p-4">
+            <small className="text-[0.72rem] font-medium uppercase tracking-[0.08em] text-ink-soft">last seen</small>
+            <strong className="text-base font-semibold tracking-[-0.03em] text-ink">
+              {usage.lastSeenAt ? formatDateTime(usage.lastSeenAt) : "none"}
+            </strong>
           </div>
         </div>
-        <SimpleList tight>
-          {usage.recentEvents.length > 0 ? (
-            usage.recentEvents.map((event) => (
-              <SimpleListItem key={event.id}>
-                <SimpleListIcon>
-                  <PulseIcon />
-                </SimpleListIcon>
-                <SimpleListBody>
-                  <SimpleListRow>
-                    <strong>{formatUsageEvent(event)}</strong>
-                    <span>{formatDateTime(event.at)}</span>
-                  </SimpleListRow>
-                  <SimpleListMeta>
-                    <span>{event.kind}</span>
-                    {event.status ? <span>{event.status}</span> : null}
-                    {typeof event.durationMs === "number" ? <span>{event.durationMs} ms</span> : null}
-                  </SimpleListMeta>
-                  {formatEventDetail(event.details) ? <p>{formatEventDetail(event.details)}</p> : null}
-                </SimpleListBody>
-              </SimpleListItem>
-            ))
-          ) : (
-            <EmptyCard>No usage yet.</EmptyCard>
-          )}
-        </SimpleList>
-      </article>
+
+        <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <span className={sectionKicker}>Recent</span>
+              <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">Latest usage</h3>
+            </div>
+          </div>
+          <SimpleList tight>
+            {usage.recentEvents.length > 0 ? (
+              usage.recentEvents.map((event) => (
+                <SimpleListItem key={event.id}>
+                  <SimpleListIcon>
+                    <PulseIcon />
+                  </SimpleListIcon>
+                  <SimpleListBody>
+                    <SimpleListRow>
+                      <strong>{formatUsageEvent(event)}</strong>
+                      <span>{formatDateTime(event.at)}</span>
+                    </SimpleListRow>
+                    <SimpleListMeta>
+                      <span>{event.kind}</span>
+                      {event.status ? <span>{event.status}</span> : null}
+                      {typeof event.durationMs === "number" ? <span>{event.durationMs} ms</span> : null}
+                    </SimpleListMeta>
+                    {formatEventDetail(event.details) ? <p>{formatEventDetail(event.details)}</p> : null}
+                  </SimpleListBody>
+                </SimpleListItem>
+              ))
+            ) : (
+              <EmptyCard>No usage yet.</EmptyCard>
+            )}
+          </SimpleList>
+        </article>
+      </details>
     </Panel>
   );
 }

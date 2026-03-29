@@ -221,36 +221,40 @@ export function SkillSetupForm(props: SkillSetupFormProps) {
 
   return (
     <Panel className="grid gap-5 content-start">
-      <form className="contents" onSubmit={handleSubmit}>
-        <PanelHead>
-          <div>
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Setup</span>
-            <h2>Edit sources and refresh rules</h2>
-          </div>
-        </PanelHead>
-
-        <p className="text-ink-soft">Edit the watchlist, prompt, or skill.</p>
-
-        <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-1 max-md:grid-cols-1">
-          <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">version</small>
-            <strong className="text-sm font-semibold text-ink">{props.versionLabel}</strong>
-          </div>
-          <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">sources</small>
-            <strong className="text-sm font-semibold text-ink">{sourceCount}</strong>
-          </div>
-          <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">refresh</small>
-            <strong className="text-sm font-semibold text-ink">{state.cadence === "manual" ? "manual" : state.cadence}</strong>
-          </div>
-          <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">status</small>
-            <strong className="text-sm font-semibold text-ink">{props.automation?.status ?? "paused"}</strong>
-          </div>
+      <PanelHead>
+        <div>
+          <span className="inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Setup</span>
+          <h2>Sources and refresh rules</h2>
         </div>
+      </PanelHead>
 
-        <div className="grid gap-6">
+      <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
+        <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
+          <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">version</small>
+          <strong className="text-sm font-semibold text-ink">{props.versionLabel}</strong>
+        </div>
+        <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
+          <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">sources</small>
+          <strong className="text-sm font-semibold text-ink">{sourceCount}</strong>
+        </div>
+        <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
+          <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">refresh</small>
+          <strong className="text-sm font-semibold text-ink">{state.cadence === "manual" ? "manual" : state.cadence}</strong>
+        </div>
+        <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
+          <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">status</small>
+          <strong className="text-sm font-semibold text-ink">{props.automation?.status ?? "paused"}</strong>
+        </div>
+      </div>
+
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-ink-soft transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+          <EditFileIcon />
+          Edit sources and refresh rules
+          <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
+        </summary>
+
+        <form className="mt-4 grid gap-6" onSubmit={handleSubmit}>
           <FieldGroup>
             <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Title</span>
             <input
@@ -323,32 +327,22 @@ export function SkillSetupForm(props: SkillSetupFormProps) {
               />
             </FieldGroup>
           </details>
-        </div>
 
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-2xl border border-line bg-paper-3 p-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-paper-3 text-ink-soft">
-            <EditFileIcon />
-          </span>
-          <div>
-            <strong>Fast path</strong>
-            <p>Save. Then refresh.</p>
+          {runMessage ? <p className="text-sm text-ink-soft">{runMessage}</p> : null}
+          {notice ? <p className="text-sm text-ink-soft">{notice}</p> : null}
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+
+          <div className="flex flex-wrap gap-3">
+            <Button disabled={isPending || !isDirty} type="submit" variant="ghost">
+              {isPending ? "Saving..." : "Save changes"}
+            </Button>
+            <Button disabled={isPending || sourceCount === 0} onClick={handleSaveAndRefresh} type="button">
+              <RefreshIcon />
+              {isPending ? "Working..." : "Save and refresh"}
+            </Button>
           </div>
-        </div>
-
-        {runMessage ? <p className="text-sm text-ink-soft">{runMessage}</p> : null}
-        {notice ? <p className="text-sm text-ink-soft">{notice}</p> : null}
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-
-        <div className="flex flex-wrap gap-3">
-          <Button disabled={isPending || !isDirty} type="submit" variant="ghost">
-            {isPending ? "Saving..." : "Save changes"}
-          </Button>
-          <Button disabled={isPending || sourceCount === 0} onClick={handleSaveAndRefresh} type="button">
-            <RefreshIcon />
-            {isPending ? "Working..." : "Save and refresh"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      </details>
     </Panel>
   );
 }
