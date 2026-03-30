@@ -93,7 +93,7 @@ export function AutomationManager({ automations, skills }: AutomationManagerProp
                   </p>
                 </div>
               </PanelHead>
-              <AutomationCalendar automations={automations} />
+              <AutomationCalendar automations={automations} onEditAutomation={setEditTarget} />
             </Panel>
           </div>
         ) : null}
@@ -141,6 +141,11 @@ export function AutomationManager({ automations, skills }: AutomationManagerProp
           automation={editTarget}
           onClose={() => setEditTarget(null)}
           open
+          skillName={
+            editTarget.matchedSkillSlugs[0]
+              ? skillMap.get(editTarget.matchedSkillSlugs[0])?.title
+              : undefined
+          }
         />
       )}
     </section>
@@ -286,8 +291,9 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
             Pick a skill, set a cadence, and add a short instruction for each run.
           </DialogDescription>
         </DialogHeader>
-        <form className="grid gap-0" onSubmit={handleSubmit}>
-          <div className="grid gap-5 px-6 py-5">
+        <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="grid gap-5">
           <FieldGroup>
             <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Skill</span>
             <select
@@ -357,6 +363,7 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
 
           {error && <p className="text-sm text-danger">{error}</p>}
           {message && <p className="text-sm text-success">{message}</p>}
+          </div>
         </div>
 
           <DialogFooter>

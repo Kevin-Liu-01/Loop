@@ -21,6 +21,7 @@ const ACCENT_COLORS = [
 type AutomationCalendarProps = {
   automations: AutomationSummary[];
   onDaySelect?: (date: Date) => void;
+  onEditAutomation?: (automation: AutomationSummary) => void;
   /** Sidebar uses slightly larger day type for scanability */
   variant?: "default" | "sidebar";
 };
@@ -60,6 +61,7 @@ function AutomationMonth({ className, children, calendarMonth: _cm, displayIndex
 export function AutomationCalendar({
   automations,
   onDaySelect,
+  onEditAutomation,
   variant = "default",
 }: AutomationCalendarProps) {
   const [month, setMonth] = useState(new Date());
@@ -217,6 +219,10 @@ export function AutomationCalendar({
         date={modalDate}
         entries={modalEntries}
         onClose={() => setModalDate(null)}
+        onEditAutomation={onEditAutomation ? (automation) => {
+          setModalDate(null);
+          onEditAutomation(automation);
+        } : undefined}
         open={modalDate !== null}
       />
 

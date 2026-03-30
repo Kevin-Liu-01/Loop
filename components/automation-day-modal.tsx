@@ -25,6 +25,7 @@ type AutomationDayModalProps = {
   onClose: () => void;
   date: Date | null;
   entries: DayAutomationEntry[];
+  onEditAutomation?: (automation: AutomationSummary) => void;
 };
 
 const dayTitleFormatter = new Intl.DateTimeFormat("en-US", {
@@ -34,8 +35,9 @@ const dayTitleFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-export function AutomationDayModal({ open, onClose, date, entries }: AutomationDayModalProps) {
+export function AutomationDayModal({ open, onClose, date, entries, onEditAutomation }: AutomationDayModalProps) {
   const title = date ? dayTitleFormatter.format(date) : "";
+  const isClickable = typeof onEditAutomation === "function";
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -52,11 +54,8 @@ export function AutomationDayModal({ open, onClose, date, entries }: AutomationD
             </p>
           ) : (
             <ul className="m-0 grid list-none gap-3 p-0">
-              {entries.map(({ automation, color }) => (
-                <li
-                  className="border border-line/80 bg-paper-2/35 p-4 dark:bg-black/25"
-                  key={automation.id}
-                >
+              {entries.map(({ automation, color }) => {
+                const inner = (
                   <div className="flex items-start gap-3">
                     <span
                       aria-hidden
@@ -88,8 +87,30 @@ export function AutomationDayModal({ open, onClose, date, entries }: AutomationD
                       ) : null}
                     </div>
                   </div>
-                </li>
-              ))}
+                );
+
+                return isClickable ? (
+                  <li key={automation.id}>
+                    <button
+                      className={cn(
+                        "w-full border border-line/80 bg-paper-2/35 p-4 text-left transition-colors dark:bg-black/25",
+                        "hover:border-accent/25 hover:bg-paper-2/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      )}
+                      onClick={() => onEditAutomation(automation)}
+                      type="button"
+                    >
+                      {inner}
+                    </button>
+                  </li>
+                ) : (
+                  <li
+                    className="border border-line/80 bg-paper-2/35 p-4 dark:bg-black/25"
+                    key={automation.id}
+                  >
+                    {inner}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

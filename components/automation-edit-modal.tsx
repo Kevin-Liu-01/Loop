@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -24,16 +24,28 @@ type AutomationEditModalProps = {
   automation: AutomationSummary;
   open: boolean;
   onClose: () => void;
+  skillName?: string;
 };
 
-export function AutomationEditModal({ automation, open, onClose }: AutomationEditModalProps) {
+export function AutomationEditModal({ automation, open, onClose, skillName }: AutomationEditModalProps) {
   const router = useRouter();
   const [name, setName] = useState(automation.name);
   const [cadence, setCadence] = useState(rruleToCadence(automation.schedule));
   const [status, setStatus] = useState<"ACTIVE" | "PAUSED">(automation.status as "ACTIVE" | "PAUSED");
+  const [prompt, setPrompt] = useState(automation.prompt);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  const linkedSkillLabel = skillName ?? automation.matchedSkillSlugs[0] ?? "";
+
+  useEffect(() => {
+    setName(automation.name);
+    setCadence(rruleToCadence(automation.schedule));
+    setStatus(automation.status as "ACTIVE" | "PAUSED");
+    setPrompt(automation.prompt);
+    setError(null);
+  }, [automation]);
 
   function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +55,7 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
       const response = await fetch(`/api/automations/${automation.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, cadence, status })
+        body: JSON.stringify({ name, cadence, status, prompt })
       });
 
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
@@ -58,7 +70,7 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
   }
 
   function handleDelete() {
-    if (!confirm(`Delete "${automation.name}"? This cannot be undone.`)) return;
+    if (!confirm(`Disable automation for "${linkedSkillLabel || automation.name}"?`)) return;
 
     startDeleteTransition(async () => {
       const response = await fetch(`/api/automations/${automation.id}`, {
@@ -67,7 +79,7 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(payload.error ?? "Unable to delete automation.");
+        setError(payload.error ?? "Unable to disable automation.");
         return;
       }
 
@@ -85,7 +97,8 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
         <DialogHeader>
           <DialogTitle>Edit automation</DialogTitle>
           <DialogDescription>
-            Update schedule, status, and display name. The prompt is read-only here.
+            Update schedule, status, and prompt for{" "}
+            {linkedSkillLabel ? <strong>{linkedSkillLabel}</strong> : "this skill"}.
           </DialogDescription>
         </DialogHeader>
         <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSave}>
@@ -111,17 +124,6 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
               </span>
             </div>
           </div>
-
-          <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Name</span>
-            <input
-              className={cn(textFieldBase)}
-              maxLength={80}
-              onChange={(e) => setName(e.target.value)}
-              required
-              value={name}
-            />
-          </FieldGroup>
 
           <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <FieldGroup>
@@ -155,9 +157,11 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
           <FieldGroup>
             <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Prompt</span>
             <textarea
-              className={cn(textFieldBase, textFieldArea, "cursor-not-allowed opacity-60")}
-              readOnly
-              value={automation.prompt}
+              className={cn(textFieldBase, textFieldArea)}
+              maxLength={2000}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={4}
+              value={prompt}
             />
           </FieldGroup>
 
@@ -173,14 +177,14 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
               variant="danger"
               size="sm"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? "Disabling..." : "Disable"}
             </Button>
 
             <div className="flex items-center gap-2">
               <Button onClick={onClose} type="button" variant="ghost" size="sm">
                 Cancel
               </Button>
-              <Button disabled={isPending || !name.trim()} size="sm" type="submit">
+              <Button disabled={isPending || !prompt.trim()} size="sm" type="submit">
                 {isPending ? "Saving..." : "Save changes"}
               </Button>
             </div>

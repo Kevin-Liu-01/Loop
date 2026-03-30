@@ -1,47 +1,26 @@
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
-import { automationCadenceSchema } from "@/lib/automations";
-import { cadenceToRRule } from "@/lib/automation-constants";
+import {
+  automationCadenceSchema,
+  cadenceValueToSkillCadence,
+  skillCadenceToRRule,
+  type CadenceValue
+} from "@/lib/automation-constants";
+import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { withApiUsage } from "@/lib/usage-server";
-
-const AUTOMATIONS_ROOT = path.join(os.homedir(), ".codex", "automations");
+import type { SkillAutomationState, UserSkillAutomationStatus } from "@/lib/types";
 
 const patchSchema = z.object({
   name: z.string().trim().min(3).max(80).optional(),
   cadence: automationCadenceSchema.optional(),
-  status: z.enum(["ACTIVE", "PAUSED"]).optional()
+  status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+  prompt: z.string().trim().max(2000).optional()
 });
 
-async function readTomlFields(filePath: string): Promise<Record<string, string>> {
-  const raw = await fs.readFile(filePath, "utf8");
-  const fields: Record<string, string> = {};
-
-  for (const line of raw.split("\n")) {
-    const match = /^(\w+)\s*=\s*(.+)$/.exec(line.trim());
-    if (!match) continue;
-    const [, key, rawValue] = match;
-    try {
-      fields[key] = JSON.parse(rawValue);
-    } catch {
-      fields[key] = rawValue;
-    }
-  }
-
-  return fields;
-}
-
-function quoteToml(value: string): string {
-  return JSON.stringify(value);
-}
-
-function renderTomlArray(values: string[]): string {
-  return `[${values.map((v) => quoteToml(v)).join(", ")}]`;
+function mapStatusToSkillStatus(status: string): UserSkillAutomationStatus {
+  return status === "PAUSED" ? "paused" : "active";
 }
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -52,37 +31,35 @@ export async function PATCH(request: Request, context: RouteContext) {
     async () => {
       try {
         await requireActiveSubscription();
-        const { id } = await context.params;
-        const automationPath = path.join(AUTOMATIONS_ROOT, id, "automation.toml");
+        const { id: skillSlug } = await context.params;
 
-        try {
-          await fs.access(automationPath);
-        } catch {
+        const skill = await getSkillBySlug(skillSlug);
+        if (!skill?.automation) {
           return Response.json({ error: "Automation not found." }, { status: 404 });
         }
 
         const patch = patchSchema.parse(await request.json());
-        const existing = await readTomlFields(automationPath);
+        const current = skill.automation as SkillAutomationState;
+        const updated: SkillAutomationState = { ...current };
 
-        if (patch.name) existing.name = patch.name;
-        if (patch.status) existing.status = patch.status;
-        if (patch.cadence) existing.rrule = cadenceToRRule(patch.cadence);
+        if (patch.cadence) {
+          updated.cadence = cadenceValueToSkillCadence(patch.cadence as CadenceValue);
+        }
+        if (patch.status) {
+          updated.status = mapStatusToSkillStatus(patch.status);
+          updated.enabled = patch.status !== "PAUSED";
+        }
+        if (patch.prompt !== undefined) {
+          updated.prompt = patch.prompt;
+        }
 
-        const cwds = existing.cwds ?? `["${process.cwd()}"]`;
+        await updateSkill(skillSlug, { automation: updated });
 
-        const toml = [
-          `id = ${quoteToml(existing.id ?? id)}`,
-          `name = ${quoteToml(existing.name ?? id)}`,
-          `prompt = ${quoteToml(existing.prompt ?? "")}`,
-          `rrule = ${quoteToml(existing.rrule ?? "")}`,
-          `status = ${quoteToml(existing.status ?? "ACTIVE")}`,
-          `cwds = ${typeof cwds === "string" && cwds.startsWith("[") ? cwds : renderTomlArray([process.cwd()])}`
-        ].join("\n");
-
-        await fs.writeFile(automationPath, toml);
         revalidatePath("/settings", "layout");
+        revalidatePath("/");
+        revalidatePath(`/skills/${skillSlug}`);
 
-        return Response.json({ ok: true, id });
+        return Response.json({ ok: true, id: skillSlug });
       } catch (error) {
         const authResp = authErrorResponse(error);
         if (authResp) return authResp;
@@ -103,19 +80,26 @@ export async function DELETE(_request: Request, context: RouteContext) {
     async () => {
       try {
         await requireActiveSubscription();
-        const { id } = await context.params;
-        const automationDir = path.join(AUTOMATIONS_ROOT, id);
+        const { id: skillSlug } = await context.params;
 
-        try {
-          await fs.access(automationDir);
-        } catch {
+        const skill = await getSkillBySlug(skillSlug);
+        if (!skill?.automation) {
           return Response.json({ error: "Automation not found." }, { status: 404 });
         }
 
-        await fs.rm(automationDir, { recursive: true, force: true });
-        revalidatePath("/settings", "layout");
+        const disabled: SkillAutomationState = {
+          ...(skill.automation as SkillAutomationState),
+          enabled: false,
+          status: "paused"
+        };
 
-        return Response.json({ ok: true, id });
+        await updateSkill(skillSlug, { automation: disabled });
+
+        revalidatePath("/settings", "layout");
+        revalidatePath("/");
+        revalidatePath(`/skills/${skillSlug}`);
+
+        return Response.json({ ok: true, id: skillSlug });
       } catch (error) {
         const authResp = authErrorResponse(error);
         if (authResp) return authResp;
