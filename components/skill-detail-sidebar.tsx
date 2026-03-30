@@ -1,15 +1,17 @@
 import { PulseIcon } from "@/components/frontier-icons";
 import { SkillObservabilityPanel } from "@/components/observability-panels";
-import { SkillUpdateRunner } from "@/components/skill-update-runner";
 import { VersionTimeline } from "@/components/version-timeline";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { SimpleList, SimpleListBody, SimpleListIcon, SimpleListItem, SimpleListRow } from "@/components/ui/simple-list";
+import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 import type { DiffLine, LoopRunRecord, SkillUpdateEntry, VersionReference } from "@/lib/types";
 import type { SkillUsageSummary } from "@/lib/usage";
 
 const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
+const metaLabel = "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
+const metaValue = "text-sm font-semibold tracking-[-0.03em]";
 
 type AttachedAutomation = {
   id: string;
@@ -21,9 +23,6 @@ type SkillDetailSidebarProps = {
   slug: string;
   currentVersion: number;
   versions: VersionReference[];
-  isUpdateable: boolean;
-  origin: "user" | "remote";
-  sourceCount: number;
   latestRun?: LoopRunRecord | null;
   latestUpdate?: SkillUpdateEntry;
   visibleChangedSections: string[];
@@ -34,13 +33,29 @@ type SkillDetailSidebarProps = {
   usage: SkillUsageSummary;
 };
 
+function formatTriggerLabel(trigger: LoopRunRecord["trigger"]): string {
+  switch (trigger) {
+    case "manual":
+      return "Manual";
+    case "automation":
+      return "Automation";
+    case "import-sync":
+      return "Import sync";
+    default:
+      return trigger;
+  }
+}
+
+function formatDuration(startedAt: string, finishedAt: string): string {
+  const ms = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
 export function SkillDetailSidebar({
   slug,
   currentVersion,
   versions,
-  isUpdateable,
-  origin,
-  sourceCount,
   latestRun,
   latestUpdate,
   visibleChangedSections,
@@ -58,33 +73,58 @@ export function SkillDetailSidebar({
         versions={versions}
       />
 
-      {isUpdateable ? (
-        <SkillUpdateRunner
-          latestRun={latestRun}
-          origin={origin}
-          slug={slug}
-          sourceCount={sourceCount}
-        />
-      ) : (
-        <p className="rounded-xl border border-line bg-paper-3 px-4 py-3 text-sm text-ink-soft">
-          Track this skill to enable updates and configure sources.
-        </p>
-      )}
-
-      {latestUpdate ? (
+      {latestUpdate || latestRun ? (
         <Panel compact>
           <PanelHead>
             <h3 className={sidebarTitle}>Latest refresh</h3>
-            <Badge>{formatRelativeDate(latestUpdate.generatedAt)}</Badge>
+            {latestUpdate ? (
+              <Badge>{formatRelativeDate(latestUpdate.generatedAt)}</Badge>
+            ) : null}
           </PanelHead>
-          <p className="m-0 text-sm text-ink-soft">{latestUpdate.summary}</p>
-          {latestUpdate.whatChanged ? (
-            <p className="m-0 text-sm text-ink-soft">{latestUpdate.whatChanged}</p>
+
+          {latestUpdate ? (
+            <>
+              <p className="m-0 text-sm text-ink-soft">{latestUpdate.summary}</p>
+              {latestUpdate.whatChanged ? (
+                <p className="m-0 text-sm text-ink-soft">{latestUpdate.whatChanged}</p>
+              ) : null}
+              {visibleChangedSections.length > 0 ? (
+                <p className="m-0 text-xs text-ink-muted">
+                  Sections changed: {visibleChangedSections.join(", ")}
+                </p>
+              ) : null}
+            </>
           ) : null}
-          {visibleChangedSections.length > 0 ? (
-            <p className="m-0 text-xs text-ink-muted">
-              Sections changed: {visibleChangedSections.join(", ")}
-            </p>
+
+          {latestRun ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+                <small className={metaLabel}>status</small>
+                <strong className={cn(metaValue, latestRun.status === "error" && "text-danger")}>
+                  {latestRun.status}
+                </strong>
+              </div>
+              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+                <small className={metaLabel}>trigger</small>
+                <strong className={metaValue}>{formatTriggerLabel(latestRun.trigger)}</strong>
+              </div>
+              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+                <small className={metaLabel}>editor</small>
+                <strong className={cn(metaValue, "truncate")}>{latestRun.editorModel ?? "—"}</strong>
+              </div>
+              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+                <small className={metaLabel}>duration</small>
+                <strong className={metaValue}>
+                  {formatDuration(latestRun.startedAt, latestRun.finishedAt)}
+                </strong>
+              </div>
+            </div>
+          ) : null}
+
+          {latestRun ? (
+            <a className="text-xs font-medium text-accent hover:underline" href="#run-log">
+              Jump to run log &darr;
+            </a>
           ) : null}
         </Panel>
       ) : null}

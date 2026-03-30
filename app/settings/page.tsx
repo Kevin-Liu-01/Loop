@@ -1,29 +1,29 @@
-import { cookies } from "next/headers";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
-import { AdminUpdateControls } from "@/components/admin-update-controls";
 import { AutomationManager } from "@/components/automation-manager";
+import { ConnectPanel } from "@/components/connect-panel";
+import { RefreshControls } from "@/components/refresh-controls";
+import { SubscriptionPanel } from "@/components/subscription-panel";
 import { SystemObservabilityPanel } from "@/components/observability-panels";
 import { SiteHeader } from "@/components/site-header";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { PageShell } from "@/components/ui/page-shell";
-import {
-  ADMIN_SESSION_COOKIE,
-  getAdminEmailFromSessionToken,
-  getPrimaryAdminEmail
-} from "@/lib/admin";
+import { getUserSubscription } from "@/lib/auth";
 import { getSystemSnapshot } from "@/lib/system-summary";
 import { buildUsageOverview } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const cookieStore = await cookies();
+  const { userId } = await auth();
+  const user = await currentUser();
   const { snapshot, systemState } = await getSystemSnapshot();
-  const currentAdminEmail = getAdminEmailFromSessionToken(
-    cookieStore.get(ADMIN_SESSION_COOKIE)?.value
-  );
-  const primaryAdminEmail = getPrimaryAdminEmail();
   const usageOverview = buildUsageOverview(systemState.usageEvents);
+
+  const email = user?.emailAddresses[0]?.emailAddress ?? "";
+  const subscription = userId ? await getUserSubscription(userId) : null;
+  const connectAccountId =
+    (user?.publicMetadata as Record<string, unknown>)?.stripeConnectAccountId as string | undefined;
 
   return (
     <>
@@ -41,18 +41,37 @@ export default async function SettingsPage() {
             Settings
           </h1>
           <p className="m-0 text-sm text-ink-soft">
-            Session, global refresh, automations, and system health.
+            Account, subscription, Stripe Connect, automations, and system health.
           </p>
         </header>
 
-        <section id="session" className="grid gap-5">
+        <section id="subscription" className="grid gap-5">
           <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
-            Session &amp; Refresh
+            Subscription
           </h2>
-          <AdminUpdateControls
-            currentAdminEmail={currentAdminEmail}
-            primaryAdminEmail={primaryAdminEmail}
+          <SubscriptionPanel
+            email={email}
+            hasSubscription={subscription !== null}
+            planSlug={subscription?.planSlug ?? null}
+            status={subscription?.status ?? null}
           />
+        </section>
+
+        <section id="connect" className="grid gap-5">
+          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+            Stripe Connect
+          </h2>
+          <ConnectPanel
+            hasSubscription={subscription !== null}
+            connectAccountId={connectAccountId ?? null}
+          />
+        </section>
+
+        <section id="refresh" className="grid gap-5">
+          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+            Refresh
+          </h2>
+          <RefreshControls />
         </section>
 
         <section id="automations" className="grid gap-5">

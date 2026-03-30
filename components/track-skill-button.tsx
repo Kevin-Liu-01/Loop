@@ -46,7 +46,7 @@ export function TrackSkillButton({
 
       window.localStorage.setItem(SELECTION_KEY, `user:${slug}`);
       setMessage("Tracked. Opened in setup.");
-      router.push(redirectTo === "updates" ? "/admin#updates" : payload.href);
+      router.push(redirectTo === "updates" ? "/settings#automations" : payload.href);
       router.refresh();
     });
   }

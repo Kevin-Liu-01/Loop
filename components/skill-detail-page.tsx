@@ -2,6 +2,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { BuySkillButton } from "@/components/buy-skill-button";
 import { CopyButton } from "@/components/copy-button";
 import { ExpandableContent } from "@/components/expandable-content";
 import { FlowIcon, PlayIcon } from "@/components/frontier-icons";
@@ -9,6 +10,7 @@ import { ShareButton } from "@/components/share-button";
 import { SiteHeader } from "@/components/site-header";
 import { SkillDetailSidebar } from "@/components/skill-detail-sidebar";
 import { SkillSetupForm } from "@/components/skill-setup-form";
+import { SkillUpdateRunner } from "@/components/skill-update-runner";
 import { TrackSkillButton } from "@/components/track-skill-button";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,7 @@ type SkillDetailPageProps = {
   previousSkill?: SkillRecord | null;
   latestRun?: LoopRunRecord | null;
   usage: SkillUsageSummary;
+  purchased?: boolean;
 };
 
 function buildAttachedAutomations(skill: SkillRecord) {
@@ -57,13 +60,20 @@ function buildAttachedAutomations(skill: SkillRecord) {
   }));
 }
 
+function formatPrice(amount: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount / 100);
+}
+
 export function SkillDetailPage({
   skill,
   brief,
   previousSkill,
   latestRun,
-  usage
+  usage,
+  purchased = false
 }: SkillDetailPageProps) {
+  const isPaid = skill.price && skill.price.amount > 0;
+  const priceLabel = isPaid ? formatPrice(skill.price!.amount, skill.price!.currency) : null;
   const primaryAgentPrompt =
     skill.agents[0]?.defaultPrompt ?? `Use $${skill.slug} for this task.`;
   const trackedSources =
@@ -121,6 +131,7 @@ export function SkillDetailPage({
             <Badge>{skill.category}</Badge>
             <Badge muted>{skill.origin}</Badge>
             <Badge muted>{skill.versionLabel}</Badge>
+            {priceLabel ? <Badge>{priceLabel}</Badge> : <Badge muted>Free</Badge>}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -135,6 +146,13 @@ export function SkillDetailPage({
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
+            {isPaid && priceLabel ? (
+              <BuySkillButton
+                priceLabel={priceLabel}
+                purchased={purchased}
+                slug={skill.slug}
+              />
+            ) : null}
             <LinkButton
               href={`/sandbox?skill=${skill.slug}`}
               size="sm"
@@ -301,6 +319,20 @@ export function SkillDetailPage({
                 </Panel>
               ) : null}
             </section>
+
+            {isUpdateable ? (
+              <>
+                <hr className="border-line" />
+                <section id="run-log">
+                  <SkillUpdateRunner
+                    latestRun={latestRun}
+                    origin={skill.origin === "user" ? "user" : "remote"}
+                    slug={skill.slug}
+                    sourceCount={sourceCount}
+                  />
+                </section>
+              </>
+            ) : null}
           </div>
 
           {/* ── Sidebar (sticky) ── */}
@@ -309,13 +341,10 @@ export function SkillDetailPage({
               automations={attachedAutomations}
               currentVersion={skill.version}
               diffLines={diffLines}
-              isUpdateable={isUpdateable}
               latestRun={latestRun}
               latestUpdate={latestUpdate}
-              origin={skill.origin === "user" ? "user" : "remote"}
               rawDiffLength={rawDiff.length}
               slug={skill.slug}
-              sourceCount={sourceCount}
               updates={skill.updates}
               usage={usage}
               versions={skill.availableVersions}

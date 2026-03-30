@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { textFieldBase } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { computeFreshness } from "@/lib/freshness";
-import { formatRelativeDate } from "@/lib/format";
+import { RelativeTime } from "@/components/relative-time";
 import type {
   CategoryDefinition,
   LoopRunRecord,
@@ -166,7 +166,7 @@ export function HomeShell({ categories, skills, loopRuns }: HomeShellProps) {
                       {summary}
                     </p>
                     <span className="pl-4 text-xs text-ink-faint">
-                      {formatRelativeDate(skill.updatedAt)} · {originLabel(skill)} ·{" "}
+                      <RelativeTime date={skill.updatedAt} /> · {originLabel(skill)} ·{" "}
                       {freshness.label}
                     </span>
                   </Link>

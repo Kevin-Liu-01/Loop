@@ -12,7 +12,7 @@ const toneStyles: Record<StatusDotTone, string> = {
   fresh: "bg-emerald-500",
   stale: "bg-amber-500",
   error: "bg-red-500",
-  idle: "bg-zinc-300"
+  idle: "bg-zinc-400"
 };
 
 export function StatusDot({ tone, pulse, className }: StatusDotProps) {

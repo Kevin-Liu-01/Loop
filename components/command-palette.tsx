@@ -16,7 +16,7 @@ type CommandPaletteProps = {
   items: PaletteItem[];
 };
 
-const STORAGE_KEY = "skillwire.palette.query";
+const STORAGE_KEY = "loop.palette.query";
 
 export function CommandPalette({ items }: CommandPaletteProps) {
   const router = useRouter();
@@ -56,8 +56,8 @@ export function CommandPalette({ items }: CommandPaletteProps) {
       setIsOpen(true);
     }
 
-    window.addEventListener("skillwire:open-palette", onOpenRequest);
-    return () => window.removeEventListener("skillwire:open-palette", onOpenRequest);
+    window.addEventListener("loop:open-palette", onOpenRequest);
+    return () => window.removeEventListener("loop:open-palette", onOpenRequest);
   }, []);
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function CommandPalette({ items }: CommandPaletteProps) {
                 <span className="font-mono text-[0.72rem] uppercase tracking-[0.18em] text-ink-soft">Esc</span>
               </div>
               <input
-                className="min-h-[52px] w-full rounded-[14px] border border-line bg-paper-3 px-4 py-4 text-ink outline-none transition-all duration-200 focus:border-line-strong focus:shadow-[0_0_0_4px_rgba(244,244,245,1)]"
+                className="min-h-[52px] w-full rounded-[14px] border border-line bg-paper-3 px-4 py-4 text-ink outline-none transition-all duration-200 focus:border-accent/30 focus:shadow-[0_0_0_4px_rgba(232,101,10,0.08)]"
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && filteredItems[0]) {

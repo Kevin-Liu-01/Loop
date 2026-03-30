@@ -22,9 +22,10 @@ type FormState = {
   cadence: "daily" | "weekly" | "manual";
   automationPrompt: string;
   body: string;
+  price: string;
 };
 
-const STORAGE_KEY = "skillwire.user-skill-draft";
+const STORAGE_KEY = "loop.user-skill-draft";
 
 function createInitialState(categories: CategoryDefinition[]): FormState {
   return {
@@ -35,6 +36,7 @@ function createInitialState(categories: CategoryDefinition[]): FormState {
     sourceUrls: "",
     cadence: "daily",
     automationPrompt: "",
+    price: "",
     body: [
       "# Goal",
       "",
@@ -132,7 +134,10 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
           autoUpdate: state.cadence !== "manual",
           automationCadence: state.cadence,
           automationPrompt: state.automationPrompt,
-          body: state.body
+          body: state.body,
+          price: state.price
+            ? { amount: Math.round(parseFloat(state.price) * 100), currency: "usd" }
+            : null
         })
       });
 
@@ -172,6 +177,12 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
           <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
             <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">refresh</small>
             <strong className="text-sm font-semibold text-ink">{state.cadence === "manual" ? "manual" : state.cadence}</strong>
+          </div>
+          <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
+            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">price</small>
+            <strong className="text-sm font-semibold text-ink">
+              {state.price && parseFloat(state.price) > 0 ? `$${parseFloat(state.price).toFixed(2)}` : "Free"}
+            </strong>
           </div>
         </div>
 
@@ -236,7 +247,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
           />
         </FieldGroup>
 
-        <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
+        <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-1">
           <FieldGroup>
             <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Refresh cadence</span>
             <select
@@ -248,6 +259,20 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
               <option value="weekly">Weekly</option>
               <option value="manual">Manual</option>
             </select>
+          </FieldGroup>
+
+          <FieldGroup>
+            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Price (USD)</span>
+            <input
+              className={cn(textFieldBase)}
+              min="0"
+              max="1000"
+              onChange={(event) => update("price", event.target.value)}
+              placeholder="0.00 (free)"
+              step="0.01"
+              type="number"
+              value={state.price}
+            />
           </FieldGroup>
 
           <FieldGroup>

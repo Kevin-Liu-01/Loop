@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
 
+import { ChatMessageBubble } from "@/components/chat-message-bubble";
+import { ConversationHistory } from "@/components/conversation-history";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FieldGroup, FieldLabel, textFieldArea, textFieldBase, textFieldSelect } from "@/components/ui/field";
+import { IconRefView } from "@/components/ui/icon-ref";
 import { Panel } from "@/components/ui/panel";
+import { messageToTextVerbose } from "@/lib/chat";
 import { cn } from "@/lib/cn";
+import { getMcpIcon } from "@/lib/skill-icons";
 import type { AgentProviderPreset, ImportedMcpDocument, SkillRecord } from "@/lib/types";
 
 type AgentStudioProps = {
@@ -37,14 +42,14 @@ type ModelPayload = {
   }>;
 };
 
-const CONFIG_KEY = "skillwire.agent-studio.config";
-const INPUT_KEY = "skillwire.agent-studio.input";
+const CONFIG_KEY = "loop.agent-studio.config";
+const INPUT_KEY = "loop.agent-studio.input";
 
 function createInitialConfig(presets: AgentProviderPreset[]): StudioConfig {
   const preset = presets[0];
 
   return {
-    agentName: "Skillwire operator",
+    agentName: "Loop operator",
     providerId: preset?.id ?? "gateway",
     model: preset?.defaultModel ?? "openai/gpt-5.4-mini",
     compatibleBaseUrl: preset?.baseURL ?? "",
@@ -54,27 +59,6 @@ function createInitialConfig(presets: AgentProviderPreset[]): StudioConfig {
     selectedSkillSlugs: [],
     selectedMcpIds: []
   };
-}
-
-function messageToText(message: { content?: unknown; parts?: Array<{ type?: string; text?: string }> }): string {
-  if (typeof message.content === "string") {
-    return message.content;
-  }
-
-  if (Array.isArray(message.parts)) {
-    return message.parts
-      .map((part) => {
-        if (part.type === "text") {
-          return part.text ?? "";
-        }
-
-        return JSON.stringify(part, null, 2);
-      })
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  return "";
 }
 
 function parseHeaders(value: string): Record<string, string> {
@@ -152,9 +136,71 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
   );
 
   const { messages, sendMessage, status, error, clearError } = useChat({
-    id: "skillwire-agent-studio",
+    id: "loop-agent-studio",
     transport
   });
+
+  const conversationIdRef = useRef<string | null>(null);
+  const prevMessageCountRef = useRef(0);
+  const timestampsRef = useRef<Map<string, string>>(new Map());
+
+  function getTimestamp(messageId: string): string {
+    let ts = timestampsRef.current.get(messageId);
+    if (!ts) {
+      ts = new Date().toISOString();
+      timestampsRef.current.set(messageId, ts);
+    }
+    return ts;
+  }
+
+  useEffect(() => {
+    conversationIdRef.current = window.localStorage.getItem("loop.agent-studio.conversationId");
+  }, []);
+
+  const saveConversation = useCallback(async () => {
+    if (messages.length === 0) return;
+
+    const serialized = messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: messageToTextVerbose(m),
+      createdAt: getTimestamp(m.id)
+    }));
+
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: conversationIdRef.current,
+          channel: "agent-studio",
+          title: serialized[0]?.content.slice(0, 80) || "Agent studio session",
+          messages: serialized,
+          model: config.model,
+          providerId: config.providerId
+        })
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { id: string };
+        conversationIdRef.current = data.id;
+        window.localStorage.setItem("loop.agent-studio.conversationId", data.id);
+      }
+    } catch {
+      // silent — persistence is best-effort
+    }
+  }, [messages, config.model, config.providerId]);
+
+  useEffect(() => {
+    if (
+      status === "ready" &&
+      messages.length > 0 &&
+      messages.length !== prevMessageCountRef.current
+    ) {
+      prevMessageCountRef.current = messages.length;
+      saveConversation();
+    }
+  }, [status, messages.length, saveConversation]);
 
   const gatewaySuggestions = modelPayload.gatewayModels.slice(0, 80);
 
@@ -236,11 +282,11 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
             <FieldLabel>Model</FieldLabel>
             <input
               className={textFieldBase}
-              list="skillwire-model-suggestions"
+              list="loop-model-suggestions"
               onChange={(event) => update("model", event.target.value)}
               value={config.model}
             />
-            <datalist id="skillwire-model-suggestions">
+            <datalist id="loop-model-suggestions">
               {gatewaySuggestions.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.name}
@@ -276,7 +322,7 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
             <input
               className={textFieldBase}
               onChange={(event) => update("headersJson", event.target.value)}
-              placeholder='{"HTTP-Referer":"https://skillwire.local"}'
+              placeholder='{"HTTP-Referer":"https://loop.local"}'
               value={config.headersJson}
             />
           </FieldGroup>
@@ -332,11 +378,14 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
                       onChange={() => toggleListValue("selectedMcpIds", mcp.id)}
                       type="checkbox"
                     />
-                    <span className="grid min-w-0 gap-1">
-                      {mcp.name}
-                      <small className="text-xs text-ink-soft">
-                        {mcp.transport} · {["stdio", "http"].includes(mcp.transport) ? "runtime ready" : "metadata only"}
-                      </small>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <IconRefView icon={getMcpIcon(mcp.name, mcp.homepageUrl)} size={24} />
+                      <span className="grid min-w-0 gap-1">
+                        {mcp.name}
+                        <small className="text-xs text-ink-soft">
+                          {mcp.transport} · {["stdio", "http"].includes(mcp.transport) ? "runtime ready" : "metadata only"}
+                        </small>
+                      </span>
                     </span>
                   </label>
                 ))
@@ -451,11 +500,14 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
             <strong className="text-base font-semibold text-ink">Imported MCPs</strong>
             <div className="grid gap-3">
               {mcps.slice(0, 8).map((mcp) => (
-                <div className="grid gap-2 rounded-2xl border border-line p-4" key={mcp.id}>
-                  <strong className="text-base font-semibold text-ink">{mcp.name}</strong>
-                  <span className="text-sm text-ink-soft">
-                    {mcp.versionLabel} · {mcp.transport} · {mcp.manifestUrl}
-                  </span>
+                <div className="flex items-start gap-3 rounded-2xl border border-line p-4" key={mcp.id}>
+                  <IconRefView icon={getMcpIcon(mcp.name, mcp.homepageUrl)} size={28} className="mt-0.5" />
+                  <div className="grid min-w-0 gap-1">
+                    <strong className="text-base font-semibold text-ink">{mcp.name}</strong>
+                    <span className="text-sm text-ink-soft">
+                      {mcp.versionLabel} · {mcp.transport} · {mcp.manifestUrl}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -469,7 +521,22 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
             <span className="font-mono text-[0.72rem] uppercase tracking-[0.18em] text-ink-soft">Run</span>
             <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">Live transcript</h2>
           </div>
-          <small className="text-sm text-ink-soft">{status === "submitted" ? "Thinking" : selectedPreset?.label ?? "Ready"}</small>
+          <div className="flex items-center gap-4">
+            <ConversationHistory
+              channel="agent-studio"
+              onSelect={async (id) => {
+                try {
+                  const res = await fetch(`/api/conversations/${id}`);
+                  if (!res.ok) return;
+                  const { conversation } = await res.json();
+                  conversationIdRef.current = conversation.id;
+                  window.localStorage.setItem("loop.agent-studio.conversationId", conversation.id);
+                  window.location.reload();
+                } catch { /* silent */ }
+              }}
+            />
+            <small className="text-sm text-ink-soft">{status === "submitted" ? "Thinking" : selectedPreset?.label ?? "Ready"}</small>
+          </div>
         </div>
 
         <div className="chat-transcript">
@@ -480,15 +547,12 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
           ) : null}
 
           {messages.map((message) => (
-            <div
-              className={cn(
-                "chat-message",
-                message.role === "user" ? "chat-message--user" : "chat-message--assistant"
-              )}
+            <ChatMessageBubble
               key={message.id}
-            >
-              {messageToText(message)}
-            </div>
+              role={message.role as "user" | "assistant"}
+              text={messageToTextVerbose(message)}
+              createdAt={getTimestamp(message.id)}
+            />
           ))}
         </div>
 
@@ -498,10 +562,7 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
           className="chat-form"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!input.trim()) {
-              return;
-            }
-
+            if (!input.trim()) return;
             sendMessage({ text: input });
             setInput("");
           }}
@@ -514,6 +575,19 @@ export function AgentStudio({ presets, skills, mcps }: AgentStudioProps) {
             value={input}
           />
           <div className="chat-actions">
+            <Button
+              onClick={() => {
+                conversationIdRef.current = null;
+                prevMessageCountRef.current = 0;
+                timestampsRef.current.clear();
+                window.localStorage.removeItem("loop.agent-studio.conversationId");
+                window.location.reload();
+              }}
+              type="button"
+              variant="ghost"
+            >
+              New chat
+            </Button>
             <Button onClick={() => setInput("Summarize the attached skills and tell me the next 3 actions.")} type="button" variant="ghost">
               Reset prompt
             </Button>

@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 
+import { auth } from "@clerk/nextjs/server";
+
 import { SkillDetailPage } from "@/components/skill-detail-page";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { getBrief, parseVersionSegment } from "@/lib/format";
-import { getSkillwireSnapshot } from "@/lib/refresh";
-import { readSystemStateStore } from "@/lib/system-state";
+import { hasUserPurchasedSkill } from "@/lib/purchases";
+import { getLoopSnapshot } from "@/lib/refresh";
+import { listLoopRuns, listUsageEvents } from "@/lib/system-state";
 import { buildSkillUsageSummary } from "@/lib/usage";
 
 type VersionedSkillPageProps = {
@@ -22,29 +25,35 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const [snapshot, skill, previousSkill, systemState] = await Promise.all([
-    getSkillwireSnapshot(),
+  const [{ userId }, snapshot, skill, previousSkill, loopRuns, usageEvents] = await Promise.all([
+    auth(),
+    getLoopSnapshot(),
     getSkillRecordBySlug(slug, versionNumber),
     versionNumber > 1 ? getSkillRecordBySlug(slug, versionNumber - 1) : Promise.resolve(null),
-    readSystemStateStore()
+    listLoopRuns(),
+    listUsageEvents()
   ]);
 
   if (!skill) {
     notFound();
   }
 
+  const purchased = userId ? await hasUserPurchasedSkill(userId, slug) : false;
+  const isCreator = userId !== null && skill.creatorClerkUserId === userId;
+
   const brief = getBrief(snapshot.dailyBriefs, skill.category);
   const latestRun =
-    systemState.loopRuns.find(
+    loopRuns.find(
       (run) => run.slug === skill.slug && run.origin === (skill.origin === "remote" ? "remote" : "user")
     ) ?? null;
-  const usage = buildSkillUsageSummary(skill.slug, systemState.usageEvents, systemState.loopRuns);
+  const usage = buildSkillUsageSummary(skill.slug, usageEvents, loopRuns);
 
   return (
     <SkillDetailPage
       brief={brief}
       latestRun={latestRun}
       previousSkill={previousSkill}
+      purchased={purchased || isCreator}
       skill={skill}
       usage={usage}
     />

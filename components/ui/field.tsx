@@ -23,7 +23,7 @@ export function FieldLabel({ className, children }: FieldLabelProps) {
 }
 
 export const textFieldBase =
-  "min-h-[52px] w-full rounded-[14px] border border-line bg-paper-3 px-4 py-4 text-ink outline-none transition-all duration-200 focus:border-line-strong focus:shadow-[0_0_0_4px_rgba(244,244,245,1)]";
+  "min-h-[52px] w-full rounded-[14px] border border-line bg-paper-3 px-4 py-4 text-ink outline-none transition-all duration-200 focus:border-accent/30 focus:shadow-[0_0_0_4px_rgba(232,101,10,0.08)]";
 
 export const textFieldArea = "min-h-32 resize-y";
 export const textFieldCode = "min-h-80 font-mono leading-[1.8] resize-y";

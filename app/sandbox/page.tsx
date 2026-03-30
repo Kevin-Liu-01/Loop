@@ -2,7 +2,7 @@ import { SandboxShell } from "@/components/sandbox-shell";
 import { SiteHeader } from "@/components/site-header";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { AGENT_PROVIDER_PRESETS } from "@/lib/agents";
-import { getSkillwireSnapshot } from "@/lib/refresh";
+import { getLoopSnapshot } from "@/lib/refresh";
 
 type SandboxPageProps = {
   searchParams: Promise<{ skill?: string }>;

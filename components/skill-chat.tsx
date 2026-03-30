@@ -1,48 +1,93 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 
+import { ChatMessageBubble } from "@/components/chat-message-bubble";
+import { ConversationHistory } from "@/components/conversation-history";
 import { Button } from "@/components/ui/button";
 import { textFieldArea, textFieldBase } from "@/components/ui/field";
+import { messageToText } from "@/lib/chat";
 import { cn } from "@/lib/cn";
 
-const DRAFT_KEY = "skillwire.chat.draft";
+const DRAFT_KEY = "loop.chat.draft";
+const CONVERSATION_KEY = "loop.chat.conversationId";
 
 type SkillChatProps = {
   starterPrompt: string;
   enabled: boolean;
 };
 
-function messageToText(message: { content?: unknown; parts?: Array<{ type?: string; text?: string }> }): string {
-  if (typeof message.content === "string") {
-    return message.content;
-  }
-
-  if (Array.isArray(message.parts)) {
-    return message.parts
-      .filter((part) => part.type === "text")
-      .map((part) => part.text ?? "")
-      .join("\n");
-  }
-
-  return "";
-}
-
 export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
   const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState(starterPrompt);
+  const conversationIdRef = useRef<string | null>(null);
+  const prevMessageCountRef = useRef(0);
+  const timestampsRef = useRef<Map<string, string>>(new Map());
+
+  function getTimestamp(messageId: string): string {
+    let ts = timestampsRef.current.get(messageId);
+    if (!ts) {
+      ts = new Date().toISOString();
+      timestampsRef.current.set(messageId, ts);
+    }
+    return ts;
+  }
 
   useEffect(() => {
     const saved = window.localStorage.getItem(DRAFT_KEY);
     if (saved) {
       setInput(saved);
     }
+    conversationIdRef.current = window.localStorage.getItem(CONVERSATION_KEY);
   }, [setInput]);
 
   useEffect(() => {
     window.localStorage.setItem(DRAFT_KEY, input);
   }, [input]);
+
+  const saveConversation = useCallback(async () => {
+    if (messages.length === 0) return;
+
+    const serialized = messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: messageToText(m),
+      createdAt: getTimestamp(m.id)
+    }));
+
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: conversationIdRef.current,
+          channel: "copilot",
+          title: serialized[0]?.content.slice(0, 80) || "Copilot chat",
+          messages: serialized
+        })
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { id: string };
+        conversationIdRef.current = data.id;
+        window.localStorage.setItem(CONVERSATION_KEY, data.id);
+      }
+    } catch {
+      // silent — persistence is best-effort
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (
+      status === "ready" &&
+      messages.length > 0 &&
+      messages.length !== prevMessageCountRef.current
+    ) {
+      prevMessageCountRef.current = messages.length;
+      saveConversation();
+    }
+  }, [status, messages.length, saveConversation]);
 
   return (
     <div className="grid gap-5 rounded-2xl border border-line bg-paper-3/92 p-7">
@@ -51,7 +96,22 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
           <span className="font-mono text-[0.72rem] uppercase tracking-[0.18em] text-ink-soft">In-house copilot</span>
           <h2>Interrogate the desk.</h2>
         </div>
-        <small className="text-ink-soft">{enabled ? "AI SDK online" : "Add OPENAI_API_KEY to enable answers"}</small>
+        <div className="flex items-center gap-4">
+          <ConversationHistory
+            channel="copilot"
+            onSelect={async (id) => {
+              try {
+                const res = await fetch(`/api/conversations/${id}`);
+                if (!res.ok) return;
+                const { conversation } = await res.json();
+                conversationIdRef.current = conversation.id;
+                window.localStorage.setItem(CONVERSATION_KEY, conversation.id);
+                window.location.reload();
+              } catch { /* silent */ }
+            }}
+          />
+          <small className="text-ink-soft">{enabled ? "AI SDK online" : "Add OPENAI_API_KEY to enable answers"}</small>
+        </div>
       </div>
 
       <div className="chat-transcript">
@@ -62,28 +122,20 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
         ) : null}
 
         {messages.map((message) => (
-          <div
-            className={`chat-message ${
-              message.role === "user" ? "chat-message--user" : "chat-message--assistant"
-            }`}
+          <ChatMessageBubble
             key={message.id}
-          >
-            {messageToText(message)}
-          </div>
+            role={message.role as "user" | "assistant"}
+            text={messageToText(message)}
+            createdAt={getTimestamp(message.id)}
+          />
         ))}
       </div>
 
       <form
         className="grid gap-4"
         onSubmit={(event) => {
-          if (!enabled) {
-            event.preventDefault();
-            return;
-          }
           event.preventDefault();
-          if (!input.trim()) {
-            return;
-          }
+          if (!enabled || !input.trim()) return;
           sendMessage({ text: input });
           setInput("");
         }}
@@ -97,6 +149,19 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
           value={input}
         />
         <div className="flex flex-wrap gap-3">
+          <Button
+            onClick={() => {
+              conversationIdRef.current = null;
+              prevMessageCountRef.current = 0;
+              timestampsRef.current.clear();
+              window.localStorage.removeItem(CONVERSATION_KEY);
+              window.location.reload();
+            }}
+            type="button"
+            variant="ghost"
+          >
+            New chat
+          </Button>
           <Button onClick={() => setInput(starterPrompt)} type="button" variant="ghost">
             Reset prompt
           </Button>
