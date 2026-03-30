@@ -12,14 +12,23 @@ type IconRefViewProps = {
 
 export function IconRefView({ icon, size = 20, className }: IconRefViewProps) {
   if (icon.kind === "url") {
+    const pad = Math.max(2, Math.round(size * 0.14));
     return (
-      <img
-        alt={icon.alt}
-        className={cn("shrink-0 rounded", className)}
-        height={size}
-        src={icon.url}
-        width={size}
-      />
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-black/10",
+          className,
+        )}
+        style={{ width: size, height: size }}
+      >
+        <img
+          alt={icon.alt}
+          className="shrink-0 object-contain"
+          height={size - pad * 2}
+          src={icon.url}
+          width={size - pad * 2}
+        />
+      </span>
     );
   }
 
