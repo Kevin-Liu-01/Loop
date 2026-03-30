@@ -338,15 +338,19 @@ export function SkillDetailPage({
           {/* ── Sidebar (sticky) ── */}
           <div className="sticky top-22 max-h-[calc(100dvh-5.5rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:overflow-visible">
             <SkillDetailSidebar
+              agentDocs={skill.agentDocs}
+              agentPrompt={primaryAgentPrompt}
               automations={attachedAutomations}
               currentVersion={skill.version}
               diffLines={diffLines}
               latestRun={latestRun}
               latestUpdate={latestUpdate}
               rawDiffLength={rawDiff.length}
+              skillHref={skill.href}
               slug={skill.slug}
               updates={skill.updates}
               usage={usage}
+              versionLabel={skill.versionLabel}
               versions={skill.availableVersions}
               visibleChangedSections={visibleChangedSections}
             />

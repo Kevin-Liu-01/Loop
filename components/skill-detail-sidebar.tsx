@@ -1,12 +1,14 @@
-import { PulseIcon } from "@/components/frontier-icons";
+import { DiffViewer } from "@/components/diff-viewer";
+import { PulseIcon, RefreshIcon, SearchIcon, SparkIcon } from "@/components/frontier-icons";
 import { SkillObservabilityPanel } from "@/components/observability-panels";
+import { UseSkillPanel } from "@/components/use-skill-panel";
 import { VersionTimeline } from "@/components/version-timeline";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { SimpleList, SimpleListBody, SimpleListIcon, SimpleListItem, SimpleListRow } from "@/components/ui/simple-list";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
-import type { DiffLine, LoopRunRecord, SkillUpdateEntry, VersionReference } from "@/lib/types";
+import type { AgentDocs, DiffLine, LoopRunRecord, SkillUpdateEntry, VersionReference } from "@/lib/types";
 import type { SkillUsageSummary } from "@/lib/usage";
 
 const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
@@ -22,6 +24,10 @@ type AttachedAutomation = {
 type SkillDetailSidebarProps = {
   slug: string;
   currentVersion: number;
+  versionLabel: string;
+  skillHref: string;
+  agentPrompt: string;
+  agentDocs?: AgentDocs;
   versions: VersionReference[];
   latestRun?: LoopRunRecord | null;
   latestUpdate?: SkillUpdateEntry;
@@ -55,6 +61,10 @@ function formatDuration(startedAt: string, finishedAt: string): string {
 export function SkillDetailSidebar({
   slug,
   currentVersion,
+  versionLabel,
+  skillHref,
+  agentPrompt,
+  agentDocs,
   versions,
   latestRun,
   latestUpdate,
@@ -67,6 +77,16 @@ export function SkillDetailSidebar({
 }: SkillDetailSidebarProps) {
   return (
     <aside className="grid content-start gap-5">
+      <UseSkillPanel
+        agentDocs={agentDocs}
+        agentPrompt={agentPrompt}
+        skillHref={skillHref}
+        slug={slug}
+        versionLabel={versionLabel}
+      />
+
+      <SkillObservabilityPanel usage={usage} />
+
       <VersionTimeline
         currentVersion={currentVersion}
         slug={slug}
@@ -74,59 +94,11 @@ export function SkillDetailSidebar({
       />
 
       {latestUpdate || latestRun ? (
-        <Panel compact>
-          <PanelHead>
-            <h3 className={sidebarTitle}>Latest refresh</h3>
-            {latestUpdate ? (
-              <Badge>{formatRelativeDate(latestUpdate.generatedAt)}</Badge>
-            ) : null}
-          </PanelHead>
-
-          {latestUpdate ? (
-            <>
-              <p className="m-0 text-sm text-ink-soft">{latestUpdate.summary}</p>
-              {latestUpdate.whatChanged ? (
-                <p className="m-0 text-sm text-ink-soft">{latestUpdate.whatChanged}</p>
-              ) : null}
-              {visibleChangedSections.length > 0 ? (
-                <p className="m-0 text-xs text-ink-muted">
-                  Sections changed: {visibleChangedSections.join(", ")}
-                </p>
-              ) : null}
-            </>
-          ) : null}
-
-          {latestRun ? (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
-                <small className={metaLabel}>status</small>
-                <strong className={cn(metaValue, latestRun.status === "error" && "text-danger")}>
-                  {latestRun.status}
-                </strong>
-              </div>
-              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
-                <small className={metaLabel}>trigger</small>
-                <strong className={metaValue}>{formatTriggerLabel(latestRun.trigger)}</strong>
-              </div>
-              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
-                <small className={metaLabel}>editor</small>
-                <strong className={cn(metaValue, "truncate")}>{latestRun.editorModel ?? "—"}</strong>
-              </div>
-              <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
-                <small className={metaLabel}>duration</small>
-                <strong className={metaValue}>
-                  {formatDuration(latestRun.startedAt, latestRun.finishedAt)}
-                </strong>
-              </div>
-            </div>
-          ) : null}
-
-          {latestRun ? (
-            <a className="text-xs font-medium text-accent hover:underline" href="#run-log">
-              Jump to run log &darr;
-            </a>
-          ) : null}
-        </Panel>
+        <LatestRefreshPanel
+          latestRun={latestRun}
+          latestUpdate={latestUpdate}
+          visibleChangedSections={visibleChangedSections}
+        />
       ) : null}
 
       {diffLines.length > 0 ? (
@@ -136,29 +108,13 @@ export function SkillDetailSidebar({
               <h3 className={sidebarTitle}>Diff</h3>
               <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
             </summary>
-            <div className="loop-diff-shell loop-diff-shell--compact mt-3">
-              {diffLines.map((line, index) => (
-                <div
-                  className={`loop-diff-line loop-diff-line--${line.type}`}
-                  key={`${line.type}-${index}`}
-                >
-                  <span>{line.leftNumber ?? ""}</span>
-                  <span>{line.rightNumber ?? ""}</span>
-                  <code>
-                    {line.type === "added"
-                      ? "+"
-                      : line.type === "removed"
-                        ? "-"
-                        : " "}
-                  </code>
-                  <code>{line.value || " "}</code>
-                </div>
-              ))}
-              {rawDiffLength > diffLines.length ? (
-                <p className="mt-3 text-sm text-ink-soft">
-                  Showing first {diffLines.length} of {rawDiffLength} lines.
-                </p>
-              ) : null}
+            <div className="mt-3">
+              <DiffViewer
+                compact
+                lines={diffLines}
+                maxHeight={360}
+                truncatedTotal={rawDiffLength > diffLines.length ? rawDiffLength : undefined}
+              />
             </div>
           </details>
         </Panel>
@@ -200,31 +156,150 @@ export function SkillDetailSidebar({
 
       {automations.length > 0 ? (
         <Panel compact>
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-              <h3 className={sidebarTitle}>Automations</h3>
-              <Badge>{automations.length}</Badge>
-              <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
-            </summary>
-            <SimpleList tight className="mt-3">
-              {automations.map((auto) => (
-                <SimpleListItem className="grid-cols-1" key={auto.id}>
-                  <SimpleListBody>
-                    <SimpleListRow>
-                      <strong className="text-ink text-sm">{auto.name}</strong>
-                      <span className="text-xs text-ink-soft">
-                        {auto.schedule}
-                      </span>
-                    </SimpleListRow>
-                  </SimpleListBody>
-                </SimpleListItem>
-              ))}
-            </SimpleList>
-          </details>
+          <div className="flex items-center gap-2">
+            <h3 className={sidebarTitle}>Automations</h3>
+            <Badge>{automations.length}</Badge>
+          </div>
+          <SimpleList tight>
+            {automations.map((auto) => (
+              <SimpleListItem className="grid-cols-1" key={auto.id}>
+                <SimpleListBody>
+                  <SimpleListRow>
+                    <strong className="text-ink text-sm">{auto.name}</strong>
+                    <span className="text-xs text-ink-soft">
+                      {auto.schedule}
+                    </span>
+                  </SimpleListRow>
+                </SimpleListBody>
+              </SimpleListItem>
+            ))}
+          </SimpleList>
         </Panel>
       ) : null}
-
-      <SkillObservabilityPanel usage={usage} />
     </aside>
+  );
+}
+
+type LatestRefreshPanelProps = {
+  latestRun?: LoopRunRecord | null;
+  latestUpdate?: SkillUpdateEntry;
+  visibleChangedSections: string[];
+};
+
+function LatestRefreshPanel({
+  latestRun,
+  latestUpdate,
+  visibleChangedSections
+}: LatestRefreshPanelProps) {
+  const hasHighlights =
+    latestUpdate?.whatChanged ||
+    visibleChangedSections.length > 0 ||
+    (latestRun && (latestRun.sourceCount > 0 || latestRun.signalCount > 0));
+
+  return (
+    <Panel compact className="overflow-hidden">
+      <div className="dither-gradient-orange -mx-5 -mt-5 px-5 pb-4 pt-5">
+        <PanelHead>
+          <div className="flex items-center gap-2">
+            <RefreshIcon className="h-3.5 w-3.5 text-accent" />
+            <h3 className={sidebarTitle}>Latest refresh</h3>
+          </div>
+          {latestUpdate ? (
+            <Badge>{formatRelativeDate(latestUpdate.generatedAt)}</Badge>
+          ) : null}
+        </PanelHead>
+
+        {latestUpdate ? (
+          <p className="m-0 mt-3 text-sm font-medium leading-relaxed text-ink">
+            {latestUpdate.summary}
+          </p>
+        ) : null}
+      </div>
+
+      {hasHighlights ? (
+        <div className="grid gap-3">
+          {latestUpdate?.whatChanged ? (
+            <div className="rounded-xl border border-line bg-paper-3 px-3.5 py-3">
+              <small className={metaLabel}>what changed</small>
+              <p className="m-0 mt-1 text-sm leading-relaxed text-ink-soft">
+                {latestUpdate.whatChanged}
+              </p>
+            </div>
+          ) : null}
+
+          {latestRun && (latestRun.sourceCount > 0 || latestRun.signalCount > 0) ? (
+            <div className="flex flex-wrap gap-2">
+              {latestRun.sourceCount > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/6 px-2.5 py-1 text-xs font-medium text-accent">
+                  <SearchIcon className="h-3 w-3" />
+                  {latestRun.sourceCount} sources scanned
+                </span>
+              ) : null}
+              {latestRun.signalCount > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/6 px-2.5 py-1 text-xs font-medium text-accent">
+                  <SparkIcon className="h-3 w-3" />
+                  {latestRun.signalCount} signals found
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {visibleChangedSections.length > 0 ? (
+            <div>
+              <small className={cn(metaLabel, "mb-1.5 block")}>sections updated</small>
+              <div className="flex flex-wrap gap-1.5">
+                {visibleChangedSections.map((section) => (
+                  <span
+                    className="rounded-md border border-line bg-paper-2 px-2 py-0.5 text-[0.7rem] font-medium text-ink-soft"
+                    key={section}
+                  >
+                    {section}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {latestRun ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+            <small className={metaLabel}>status</small>
+            <div className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  latestRun.status === "error" ? "bg-danger" : "bg-accent"
+                )}
+              />
+              <strong className={cn(metaValue, latestRun.status === "error" && "text-danger")}>
+                {latestRun.status}
+              </strong>
+            </div>
+          </div>
+          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+            <small className={metaLabel}>trigger</small>
+            <strong className={metaValue}>{formatTriggerLabel(latestRun.trigger)}</strong>
+          </div>
+          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+            <small className={metaLabel}>editor</small>
+            <strong className={cn(metaValue, "truncate")}>{latestRun.editorModel ?? "—"}</strong>
+          </div>
+          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+            <small className={metaLabel}>duration</small>
+            <strong className={metaValue}>
+              {formatDuration(latestRun.startedAt, latestRun.finishedAt)}
+            </strong>
+          </div>
+        </div>
+      ) : null}
+
+      {latestRun ? (
+        <a className="text-xs font-medium text-accent hover:underline" href="#run-log">
+          Jump to run log &darr;
+        </a>
+      ) : null}
+    </Panel>
   );
 }

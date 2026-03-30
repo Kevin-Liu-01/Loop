@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 
+import { ChevronDownIcon, ChevronUpIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 
 type ExpandableContentProps = {
@@ -42,11 +43,21 @@ export function ExpandableContent({
 
       {clamped && (
         <button
-          className="relative z-10 mt-2 text-sm font-medium text-accent hover:underline"
+          className="relative z-10 mt-2 flex items-center gap-1 text-sm font-medium text-accent hover:underline"
           onClick={() => setExpanded((prev) => !prev)}
           type="button"
         >
-          {expanded ? "Show less" : "Show all"}
+          {expanded ? (
+            <>
+              <ChevronUpIcon className="h-3.5 w-3.5" />
+              Show less
+            </>
+          ) : (
+            <>
+              <ChevronDownIcon className="h-3.5 w-3.5" />
+              Show all
+            </>
+          )}
         </button>
       )}
     </div>

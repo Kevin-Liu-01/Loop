@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 
+import { DiffViewer } from "@/components/diff-viewer";
 import { FlowIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
-import { ModalShell } from "@/components/ui/modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/shadcn/dialog";
+import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
 import { cn } from "@/lib/cn";
 import type {
   AgentReasoningStep,
@@ -148,27 +155,6 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
   );
 }
 
-function DiffView({ lines }: { lines: DiffLine[] }) {
-  if (lines.length === 0) return null;
-
-  return (
-    <div className="loop-diff-shell loop-diff-shell--compact">
-      {lines.map((line, index) => (
-        <div
-          className={`loop-diff-line loop-diff-line--${line.type}`}
-          key={`${line.type}-${index}`}
-        >
-          <span>{line.leftNumber ?? ""}</span>
-          <span>{line.rightNumber ?? ""}</span>
-          <code>
-            {line.type === "added" ? "+" : line.type === "removed" ? "-" : " "}
-          </code>
-          <code>{line.value || " "}</code>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function StepDetail({ step }: { step: AgentReasoningStep }) {
   return (
@@ -227,10 +213,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
       ) : null}
 
       {step.diffLines && step.diffLines.length > 0 ? (
-        <div>
-          <h4 className={cn(sectionLabel, "mb-2")}>Diff produced</h4>
-          <DiffView lines={step.diffLines} />
-        </div>
+        <DiffViewer compact label="Diff produced" lines={step.diffLines} maxHeight={320} />
       ) : null}
     </div>
   );
@@ -257,10 +240,7 @@ function LegacyStepView({ messages, diffLines }: { messages: string[]; diffLines
       </div>
 
       {diffLines.length > 0 ? (
-        <div>
-          <h4 className={cn(sectionLabel, "mb-2")}>Diff</h4>
-          <DiffView lines={diffLines} />
-        </div>
+        <DiffViewer label="Diff" lines={diffLines} />
       ) : null}
     </div>
   );
@@ -287,8 +267,13 @@ export function RunLogModal({
   const selectedStep = reasoningSteps[selectedStepIndex] ?? null;
 
   return (
-    <ModalShell maxWidth="6xl" onClose={onClose} open={open} title="Run log detail">
-      <div className="max-h-[75vh] overflow-y-auto p-5">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent maxWidth="6xl">
+        <DialogHeader>
+          <DialogTitle>Run log detail</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[75vh]">
+        <div className="p-5">
         <div className="grid gap-6">
           {/* Metadata bar */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -378,10 +363,7 @@ export function RunLogModal({
 
                 {/* Full diff (skill-level) */}
                 {diffLines.length > 0 ? (
-                  <div>
-                    <h4 className={cn(sectionLabel, "mb-2")}>Full skill diff</h4>
-                    <DiffView lines={diffLines} />
-                  </div>
+                  <DiffViewer label="Full skill diff" lines={diffLines} />
                 ) : null}
               </div>
             </div>
@@ -432,6 +414,8 @@ export function RunLogModal({
           ) : null}
         </div>
       </div>
-    </ModalShell>
+      </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }

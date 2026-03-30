@@ -4,23 +4,27 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth, SignInButton } from "@clerk/nextjs";
 
+import { DownloadIcon, PencilIcon } from "@/components/frontier-icons";
 import { ImportSkillForm } from "@/components/import-skill-form";
 import { UserSkillForm } from "@/components/user-skill-form";
 import { Button } from "@/components/ui/button";
-import { ModalShell } from "@/components/ui/modal";
-import { cn } from "@/lib/cn";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/shadcn/dialog";
+import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/shadcn/tabs";
 import type { CategoryDefinition } from "@/lib/types";
 
 type NewSkillModalProps = {
   categories: CategoryDefinition[];
 };
 
-type ModalTab = "import" | "create";
-
 export function NewSkillModal({ categories }: NewSkillModalProps) {
   const { isSignedIn } = useAuth();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<ModalTab>("import");
 
   const handleOpen = useCallback(() => setOpen(true), []);
   const handleClose = useCallback(() => setOpen(false), []);
@@ -31,52 +35,50 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
   }, [handleOpen]);
 
   return (
-    <ModalShell onClose={handleClose} open={open} title="New Skill">
-      {!isSignedIn ? (
-        <div className="grid gap-4 p-5 text-center">
-          <p className="text-sm text-ink-soft">
-            Sign in with an Operator subscription to create or import skills.
-          </p>
-          <SignInButton mode="modal">
-            <Button type="button">Sign in</Button>
-          </SignInButton>
-        </div>
-      ) : (
-        <>
-          <div className="flex gap-0 border-b border-line px-5">
-            <button
-              className={cn(
-                "relative px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink",
-                tab === "import" &&
-                  "text-ink after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent"
-              )}
-              onClick={() => setTab("import")}
-              type="button"
-            >
-              Import URL
-            </button>
-            <button
-              className={cn(
-                "relative px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink",
-                tab === "create" &&
-                  "text-ink after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent"
-              )}
-              onClick={() => setTab("create")}
-              type="button"
-            >
-              Create new
-            </button>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Skill</DialogTitle>
+        </DialogHeader>
+        {!isSignedIn ? (
+          <div className="grid gap-4 p-5 text-center">
+            <p className="text-sm text-ink-soft">
+              Sign in with an Operator subscription to create or import skills.
+            </p>
+            <SignInButton mode="modal">
+              <Button type="button">Sign in</Button>
+            </SignInButton>
           </div>
+        ) : (
+          <Tabs defaultValue="import" className="grid gap-0">
+            <TabsList className="mx-5 mt-1 w-fit">
+              <TabsTrigger value="import" className="gap-1.5">
+                <DownloadIcon className="h-3.5 w-3.5" />
+                Import URL
+              </TabsTrigger>
+              <TabsTrigger value="create" className="gap-1.5">
+                <PencilIcon className="h-3.5 w-3.5" />
+                Create new
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="max-h-[60vh] overflow-y-auto p-5">
-            {tab === "import" ? (
-              <ImportSkillForm />
-            ) : (
-              <UserSkillForm categories={categories} />
-            )}
-          </div>
-        </>
-      )}
-    </ModalShell>
+            <TabsContent value="import" className="mt-0">
+              <ScrollArea className="max-h-[60vh]">
+                <div className="p-5">
+                  <ImportSkillForm />
+                </div>
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="create" className="mt-0">
+              <ScrollArea className="max-h-[60vh]">
+                <div className="p-5">
+                  <UserSkillForm categories={categories} />
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

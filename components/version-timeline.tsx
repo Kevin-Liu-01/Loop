@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { TagIcon } from "@/components/frontier-icons";
 import { buildSkillVersionHref, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { VersionReference } from "@/lib/types";
@@ -13,7 +14,8 @@ type VersionTimelineProps = {
 export function VersionTimeline({ slug, currentVersion, versions }: VersionTimelineProps) {
   return (
     <nav className="grid gap-0">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+      <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+        <TagIcon className="h-3 w-3" />
         Versions
       </h3>
       <div className="grid gap-0">

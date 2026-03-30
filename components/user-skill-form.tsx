@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  ClockIcon,
+  GlobeIcon,
+  HashIcon,
+  PlusIcon,
+  ResetIcon,
+  WalletIcon,
+} from "@/components/frontier-icons";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { FieldGroup, textFieldArea, textFieldBase, textFieldCode, textFieldSelect } from "@/components/ui/field";
@@ -167,19 +175,31 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
 
         <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-1 max-md:grid-cols-1">
           <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">slug</small>
+            <small className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+              <HashIcon className="h-3 w-3" />
+              slug
+            </small>
             <strong className="text-sm font-semibold text-ink">/{slugPreview}</strong>
           </div>
           <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">sources</small>
+            <small className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+              <GlobeIcon className="h-3 w-3" />
+              sources
+            </small>
             <strong className="text-sm font-semibold text-ink">{sourceList.length}</strong>
           </div>
           <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">refresh</small>
+            <small className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+              <ClockIcon className="h-3 w-3" />
+              refresh
+            </small>
             <strong className="text-sm font-semibold text-ink">{state.cadence === "manual" ? "manual" : state.cadence}</strong>
           </div>
           <div className="grid gap-1 rounded-[14px] border border-line bg-paper-3 p-3">
-            <small className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">price</small>
+            <small className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+              <WalletIcon className="h-3 w-3" />
+              price
+            </small>
             <strong className="text-sm font-semibold text-ink">
               {state.price && parseFloat(state.price) > 0 ? `$${parseFloat(state.price).toFixed(2)}` : "Free"}
             </strong>
@@ -306,9 +326,11 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
 
         <div className="flex flex-wrap gap-3">
           <Button disabled={isPending} type="submit">
+            <PlusIcon className="h-3.5 w-3.5" />
             {isPending ? "Creating..." : "Create editable skill"}
           </Button>
           <Button onClick={resetDraft} type="button" variant="ghost">
+            <ResetIcon className="h-3.5 w-3.5" />
             Reset draft
           </Button>
         </div>
