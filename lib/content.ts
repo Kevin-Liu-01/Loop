@@ -3,10 +3,10 @@ import path from "node:path";
 import os from "node:os";
 
 import matter from "gray-matter";
-import { parse as parseToml } from "smol-toml";
 import YAML from "yaml";
 
 import { parseAgentDocs } from "@/lib/agent-docs";
+import { skillCadenceToRRule } from "@/lib/automation-constants";
 import {
   listSkills as dbListSkills,
   getSkillBySlug as dbGetSkillBySlug,
@@ -26,7 +26,6 @@ import {
 import type {
   AgentPrompt,
   AutomationSummary,
-  CategoryDefinition,
   CategorySlug,
   ReferenceDoc,
   SkillRecord,
@@ -36,7 +35,6 @@ import type {
 const WORKSPACE_ROOT = process.cwd();
 const CODEX_ROOT = path.join(os.homedir(), ".codex");
 const CODEX_SKILLS_ROOT = path.join(CODEX_ROOT, "skills");
-const AUTOMATIONS_ROOT = path.join(CODEX_ROOT, "automations");
 
 const IGNORE_DIRS = new Set([
   ".git",
@@ -256,97 +254,41 @@ export async function parseSkill(skillFile: string): Promise<SkillRecord> {
   };
 }
 
-async function parseAutomations(): Promise<AutomationSummary[]> {
-  if (!(await pathExists(AUTOMATIONS_ROOT))) {
-    return [];
-  }
-
-  const entries = await fs.readdir(AUTOMATIONS_ROOT);
-
-  const items: Array<AutomationSummary | null> = await Promise.all(
-    entries.map(async (entry) => {
-      const automationPath = path.join(AUTOMATIONS_ROOT, entry, "automation.toml");
-      if (!(await pathExists(automationPath))) {
-        return null;
-      }
-
-      const raw = await fs.readFile(automationPath, "utf8");
-      const parsed = parseToml(raw) as {
-        id?: string;
-        name?: string;
-        prompt?: string;
-        rrule?: string;
-        status?: string;
-        cwds?: string[];
-      };
-
-      return {
-        id: parsed.id ?? entry,
-        name: parsed.name ?? entry,
-        prompt: parsed.prompt ?? "",
-        schedule: parsed.rrule ?? "",
-        status: parsed.status ?? "ACTIVE",
-        path: automationPath,
-        cwd: parsed.cwds ?? [],
-        matchedSkillSlugs: [],
-        matchedCategorySlugs: []
-      } satisfies AutomationSummary;
-    })
-  );
-
-  return items.filter((item): item is AutomationSummary => item !== null);
-}
-
-function attachAutomations(
-  skills: SkillRecord[],
-  automations: AutomationSummary[],
-  categories: CategoryDefinition[]
+/**
+ * Derive AutomationSummary objects from skills that have automation config.
+ * Replaces the old TOML-based parseAutomations() + attachAutomations() pipeline.
+ */
+function deriveAutomationsFromSkills(
+  skills: SkillRecord[]
 ): { skills: SkillRecord[]; automations: AutomationSummary[] } {
-  const enrichedAutomations = automations.map((automation) => {
-    const promptHaystack = automation.prompt.toLowerCase();
-    const cwdHaystack = automation.cwd.join(" ").toLowerCase();
+  const allAutomations: AutomationSummary[] = [];
 
-    const matchedSkillSlugs = skills
-      .filter((skill) => {
-        return (
-          promptHaystack.includes(`$${skill.slug}`) ||
-          promptHaystack.includes(skill.slug) ||
-          cwdHaystack.includes(skill.slug) ||
-          automation.cwd.some((cwd) => skill.path.startsWith(cwd))
-        );
-      })
-      .map((skill) => skill.slug);
+  const enrichedSkills = skills.map((skill) => {
+    const auto = skill.automation;
+    if (!auto) return skill;
 
-    const matchedCategorySlugs = categories
-      .filter((category) => {
-        if (promptHaystack.includes(category.slug) || cwdHaystack.includes(category.slug)) {
-          return true;
-        }
+    const schedule = skillCadenceToRRule(auto.cadence);
 
-        return category.keywords.some((keyword) => promptHaystack.includes(keyword));
-      })
-      .map((category) => category.slug);
-
-    return {
-      ...automation,
-      matchedSkillSlugs,
-      matchedCategorySlugs
+    const summary: AutomationSummary = {
+      id: skill.slug,
+      name: `${skill.title} refresh`,
+      prompt: auto.prompt || `Refresh ${skill.title} from tracked sources.`,
+      schedule,
+      status: auto.enabled ? "ACTIVE" : "PAUSED",
+      path: "",
+      cwd: [],
+      matchedSkillSlugs: [skill.slug],
+      matchedCategorySlugs: [skill.category]
     };
+
+    allAutomations.push(summary);
+
+    return { ...skill, automations: [summary] };
   });
 
-  const skillMap = new Map<string, SkillRecord>(
-    skills.map((skill) => {
-      const skillAutomations = enrichedAutomations.filter((automation) =>
-        automation.matchedSkillSlugs.includes(skill.slug)
-      );
-
-      return [skill.slug, { ...skill, automations: skillAutomations }];
-    })
-  );
-
   return {
-    skills: Array.from(skillMap.values()).sort((left, right) => left.title.localeCompare(right.title)),
-    automations: enrichedAutomations.sort((left, right) => left.name.localeCompare(right.name))
+    skills: enrichedSkills.sort((a, b) => a.title.localeCompare(b.title)),
+    automations: allAutomations.sort((a, b) => a.name.localeCompare(b.name))
   };
 }
 
@@ -363,14 +305,13 @@ export async function getSkillCatalogue(): Promise<
     dbListMcps()
   ]);
 
-  const automations = await parseAutomations();
-  const attached = attachAutomations(skills, automations, categories.length > 0 ? categories : CATEGORY_REGISTRY);
+  const derived = deriveAutomationsFromSkills(skills);
 
   return {
     categories: categories.length > 0 ? categories : CATEGORY_REGISTRY,
-    skills: attached.skills,
+    skills: derived.skills,
     mcps,
-    automations: attached.automations,
+    automations: derived.automations,
     plans: MEMBERSHIP_PLANS
   };
 }

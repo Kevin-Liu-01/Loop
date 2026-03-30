@@ -6,8 +6,13 @@ import { getSkillCatalogue } from "@/lib/content";
 import { refreshLoopSnapshot } from "@/lib/refresh";
 import { withApiUsage } from "@/lib/usage-server";
 
+export const maxDuration = 300;
+
 async function isAuthorized(request: Request): Promise<boolean> {
   const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.warn("[refresh] CRON_SECRET is not set — cron requests will fail auth");
+  }
   const authorization = request.headers.get("authorization");
   if (secret && authorization === `Bearer ${secret}`) {
     return true;
@@ -17,12 +22,28 @@ async function isAuthorized(request: Request): Promise<boolean> {
   return userId !== null;
 }
 
+function parseRefreshScope(url: string): {
+  refreshCategorySignals: boolean;
+  refreshUserSkills: boolean;
+  refreshImportedSkills: boolean;
+} {
+  try {
+    const { searchParams } = new URL(url);
+    const scope = searchParams.get("scope");
+    if (scope === "skills-only") {
+      return { refreshCategorySignals: false, refreshUserSkills: true, refreshImportedSkills: true };
+    }
+  } catch { /* fall through to defaults */ }
+  return { refreshCategorySignals: true, refreshUserSkills: true, refreshImportedSkills: true };
+}
+
 async function handleRefresh(request: Request) {
   if (!(await isAuthorized(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await refreshLoopSnapshot();
+  const scope = parseRefreshScope(request.url);
+  await refreshLoopSnapshot(scope);
 
   const catalogue = await getSkillCatalogue();
 

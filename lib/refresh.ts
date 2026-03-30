@@ -63,6 +63,7 @@ type RefreshOptions = {
   refreshImportedSkills?: boolean;
   focusSkillSlugs?: string[];
   focusImportedSkillSlugs?: string[];
+  maxDurationMs?: number;
 };
 
 type SkillRevisionDraft = {
@@ -477,7 +478,18 @@ export async function runTrackedUserSkillUpdate(
   };
 }
 
+function sortByMostOverdue(skills: UserSkillDocument[]): UserSkillDocument[] {
+  return [...skills].sort((a, b) => {
+    const aTime = a.automation.lastRunAt ? new Date(a.automation.lastRunAt).valueOf() : 0;
+    const bTime = b.automation.lastRunAt ? new Date(b.automation.lastRunAt).valueOf() : 0;
+    return aTime - bTime;
+  });
+}
+
 async function refreshTrackedUserSkills(options: RefreshOptions): Promise<void> {
+  const editorModel = getGatewayEditorModel();
+  console.info(`[refresh] Starting user skill refresh — model: ${editorModel ? getGatewayEditorModelId() : "heuristic-fallback"}`);
+
   const skills = await listUserSkillDocuments();
   const focusSet = options.focusSkillSlugs ? new Set(options.focusSkillSlugs) : null;
   const now = new Date();
@@ -491,31 +503,49 @@ async function refreshTrackedUserSkills(options: RefreshOptions): Promise<void> 
     return true;
   });
 
-  const eligibleSlugs = new Set(eligibleSkills.map((skill) => skill.slug));
-  const refreshedEligible = await runWithConcurrency(
-    eligibleSkills,
-    MAX_CONCURRENT_SKILL_REFRESHES,
-    async (skill) => {
-      try {
-        const cycle = await runTrackedUserSkillUpdate(skill, "automation");
-        didChange = true;
-        loopRuns.push(cycle.loopRun);
-        return cycle.nextSkill;
-      } catch (error) {
-        loopRuns.push(
-          buildFailedLoopRun(
-            skill,
-            "automation",
-            new Date().toISOString(),
-            error instanceof Error ? error.message : "Agent automation failed before a new revision could be saved."
-          )
-        );
-        return skill;
-      }
-    }
-  );
+  const sorted = sortByMostOverdue(eligibleSkills);
+  const budgetMs = options.maxDurationMs ?? 240_000;
+  const deadline = Date.now() + budgetMs;
+  const HEADROOM_MS = 30_000;
 
-  const refreshedMap = new Map(refreshedEligible.map((skill) => [skill.slug, skill]));
+  const refreshedMap = new Map<string, UserSkillDocument>();
+
+  for (const skill of sorted) {
+    if (Date.now() > deadline - HEADROOM_MS) {
+      const remaining = sorted.length - refreshedMap.size;
+      console.warn(`[refresh] Time budget exhausted with ~${remaining} skills deferred to next run`);
+      break;
+    }
+
+    try {
+      const cycle = await runTrackedUserSkillUpdate(skill, "automation");
+      didChange = true;
+      loopRuns.push(cycle.loopRun);
+      const successSkill = {
+        ...cycle.nextSkill,
+        automation: { ...cycle.nextSkill.automation, consecutiveFailures: 0 }
+      };
+      refreshedMap.set(skill.slug, successSkill);
+    } catch (error) {
+      const failedAt = new Date().toISOString();
+      loopRuns.push(
+        buildFailedLoopRun(
+          skill,
+          "automation",
+          failedAt,
+          error instanceof Error ? error.message : "Agent automation failed before a new revision could be saved."
+        )
+      );
+      didChange = true;
+      const failures = (skill.automation.consecutiveFailures ?? 0) + 1;
+      refreshedMap.set(skill.slug, {
+        ...skill,
+        automation: { ...skill.automation, lastRunAt: failedAt, consecutiveFailures: failures }
+      });
+    }
+  }
+
+  const eligibleSlugs = new Set(sorted.map((skill) => skill.slug));
   const refreshedSkills = skills.map((skill) =>
     eligibleSlugs.has(skill.slug) ? (refreshedMap.get(skill.slug) ?? skill) : skill
   );
