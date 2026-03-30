@@ -9,7 +9,7 @@ It does four jobs:
 3. exposes the update run itself with logs, source scans, summaries, and diffs
 4. lets you run agents against those skills, attached prompts, and imported MCP servers
 
-Internally the package name is still `skillwire`. The product name and UI are `Loop`.
+The package name and product name are both `loop`.
 
 ## Product model
 
@@ -190,10 +190,10 @@ Loop is file-backed by default and Blob-backed when configured.
 
 These are runtime stores, not source-of-truth docs:
 
-- `content/generated/skillwire-snapshot.local.json`
-- `content/generated/skillwire-search.local.json`
-- `content/generated/skillwire-system.local.json`
-- `content/generated/skillwire-user-skills.local.json`
+- `content/generated/loop-snapshot.local.json`
+- `content/generated/loop-search.local.json`
+- `content/generated/loop-system.local.json`
+- `content/generated/loop-user-skills.local.json`
 
 ### What each store contains
 
@@ -294,7 +294,7 @@ ADMIN_SESSION_SECRET=replace-me
 
 ```bash
 OPENAI_API_KEY=
-SKILLWIRE_MODEL=gpt-5-mini
+LOOP_MODEL=gpt-5-mini
 AI_GATEWAY_API_KEY=
 OPENROUTER_API_KEY=
 GROQ_API_KEY=

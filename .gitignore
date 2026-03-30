@@ -2,17 +2,21 @@
 .next
 node_modules
 .pnpm-store
+.bun
 .playwright-cli
 output
 *.tsbuildinfo
 .cursor/.DS_Store
-content/generated/skillwire-snapshot.local.json
-content/generated/skillwire-snapshot.stdout.json
-content/generated/skillwire-search.local.json
-content/generated/skillwire-system.local.json
-content/generated/skillwire-user-skills.local.json
+content/generated/loop-snapshot.local.json
+content/generated/loop-snapshot.stdout.json
+content/generated/loop-search.local.json
+content/generated/loop-system.local.json
+content/generated/loop-user-skills.local.json
 *.log
 .env
 .env.local
 .env.production
 .env.development.local
+
+# clerk configuration (can include secrets)
+/.clerk/
