@@ -13,7 +13,11 @@ import {
   getSkillAtVersion as dbGetSkillAtVersion
 } from "@/lib/db/skills";
 import { listCategories as dbListCategories } from "@/lib/db/categories";
-import { listMcps as dbListMcps } from "@/lib/db/mcps";
+import {
+  listMcps as dbListMcps,
+  getMcpByName as dbGetMcpByName,
+  getMcpAtVersion as dbGetMcpAtVersion
+} from "@/lib/db/mcps";
 import { listBriefs as dbListBriefs } from "@/lib/db/briefs";
 import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
 import { createExcerpt, extractHeadings, slugify } from "@/lib/markdown";
@@ -27,6 +31,7 @@ import type {
   AgentPrompt,
   AutomationSummary,
   CategorySlug,
+  ImportedMcpDocument,
   ReferenceDoc,
   SkillRecord,
   LoopSnapshot
@@ -341,6 +346,16 @@ export async function getLoopSnapshot(): Promise<LoopSnapshot> {
     generatedAt: new Date().toISOString(),
     generatedFrom: "remote-refresh"
   };
+}
+
+export async function getMcpRecordByName(
+  name: string,
+  requestedVersion?: number
+): Promise<ImportedMcpDocument | null> {
+  if (requestedVersion) {
+    return dbGetMcpAtVersion(name, requestedVersion);
+  }
+  return dbGetMcpByName(name);
 }
 
 // ---------------------------------------------------------------------------

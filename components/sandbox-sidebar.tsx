@@ -59,13 +59,13 @@ export function SandboxSidebar({
       {/* Header */}
       <div
         className={cn(
-          "flex shrink-0 items-center justify-between border-b border-line/80 bg-linear-to-b from-paper-2/45 to-transparent py-4 dark:from-paper-2/25",
+          "flex shrink-0 items-center justify-between border-b border-line/60 bg-linear-to-b from-paper-2/40 to-transparent py-4 dark:from-paper-2/20",
           pageInsetPadX
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <ClockIcon className="h-3.5 w-3.5 text-ink-faint" />
-          <span className="font-serif text-sm font-medium tracking-[-0.02em] text-ink">
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-ink-soft">
             Sessions
           </span>
         </div>
@@ -80,7 +80,7 @@ export function SandboxSidebar({
       </div>
 
       {/* Conversation list */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3 pt-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-3 pt-2.5">
         {isLoading ? (
           <div className="grid gap-2 p-2">
             {[0, 1, 2].map((i) => (
@@ -102,12 +102,12 @@ export function SandboxSidebar({
             </p>
           </div>
         ) : (
-          <div className="grid gap-0.5">
+          <div className="grid gap-1">
             {conversations.map((c) => (
               <button
                 key={c.id}
                 className={cn(
-                  "group grid gap-0.5 px-3 py-2.5 text-left transition-all duration-150",
+                  "group grid gap-1 rounded-lg px-3 py-3 text-left transition-all duration-150",
                   c.id === currentId
                     ? "bg-accent/8 ring-1 ring-accent/20"
                     : "hover:bg-paper-2/80"

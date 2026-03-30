@@ -6,7 +6,7 @@ import type { MonthProps } from "react-day-picker";
 
 import { AutomationDayModal, type DayAutomationEntry } from "@/components/automation-day-modal";
 import { cn } from "@/lib/cn";
-import { getRunDatesForMonth, isRRuleScheduledOnDate } from "@/lib/schedule";
+import { formatNextRun, getRunDatesForMonth, isRRuleScheduledOnDate } from "@/lib/schedule";
 import type { AutomationSummary } from "@/lib/types";
 
 const ACCENT_COLORS = [
@@ -227,18 +227,20 @@ export function AutomationCalendar({
       />
 
       {activeAutomations.length > 0 && (
-        <div className="flex flex-wrap gap-x-4 gap-y-2.5 border-t border-line pt-4">
+        <div className="grid gap-2.5 border-t border-line pt-4">
           {activeAutomations.map((automation, index) => {
             const color = ACCENT_COLORS[index % ACCENT_COLORS.length];
             const year = month.getFullYear();
             const m = month.getMonth();
             const count = getRunDatesForMonth(automation.schedule, year, m).length;
+            const nextRun = formatNextRun(automation.schedule);
 
             return (
               <div className="flex min-w-0 items-center gap-2 text-xs text-ink-soft" key={automation.id}>
                 <span className={cn("h-2 w-2 shrink-0 rounded-none shadow-sm ring-1 ring-line/40", color)} />
-                <span className="max-w-[160px] truncate font-medium">{automation.name}</span>
-                <span className="tabular-nums text-ink-faint">{count} runs</span>
+                <span className="min-w-0 truncate font-medium">{automation.name}</span>
+                <span className="shrink-0 tabular-nums text-ink-faint">{count} runs</span>
+                <span className="ml-auto shrink-0 tabular-nums text-ink-faint/70">{nextRun}</span>
               </div>
             );
           })}

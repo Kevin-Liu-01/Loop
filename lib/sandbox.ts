@@ -10,28 +10,56 @@ export type SandboxSessionInfo = {
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+export type SandboxAuthError = {
+  code: "SANDBOX_AUTH_FAILED";
+  message: string;
+  steps: string[];
+};
+
+function isSandboxAuthError(msg: string): boolean {
+  return (
+    msg.includes("403") ||
+    msg.includes("forbidden") ||
+    msg.includes("Not authorized") ||
+    msg.includes("VERCEL_TOKEN") ||
+    msg.includes("not linked")
+  );
+}
+
+export function buildSandboxAuthError(): SandboxAuthError {
+  return {
+    code: "SANDBOX_AUTH_FAILED",
+    message: "Sandbox requires Vercel project authentication",
+    steps: [
+      "Run `vercel link` to connect this repo to your Vercel project",
+      "Run `vercel env pull` to sync environment variables",
+      "Restart the dev server (`pnpm dev`)",
+      "If on a team, check that your role has Sandbox permissions",
+    ],
+  };
+}
+
 export async function createSandboxSession(
   runtime: SandboxRuntime,
-  env?: Record<string, string>
+  env?: Record<string, string>,
 ): Promise<SandboxSessionInfo> {
   try {
     const sandbox = await Sandbox.create({
       runtime,
       timeout: DEFAULT_TIMEOUT_MS,
-      env
+      env,
     });
 
     return {
       sandboxId: sandbox.sandboxId,
       runtime,
-      status: sandbox.status
+      status: sandbox.status,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("403") || msg.includes("forbidden") || msg.includes("Not authorized")) {
-      throw new Error(
-        "Sandbox auth failed (403). Run `vercel link && vercel env pull` locally, or check your Vercel team permissions."
-      );
+    if (isSandboxAuthError(msg)) {
+      const authErr = buildSandboxAuthError();
+      throw new Error(JSON.stringify(authErr));
     }
     throw err;
   }

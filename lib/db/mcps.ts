@@ -68,6 +68,41 @@ function mcpToRow(mcp: ImportedMcpDocument): Record<string, unknown> {
   };
 }
 
+type McpVersionRow = {
+  mcp_id: string;
+  version: number;
+  description: string;
+  manifest_url: string;
+  homepage_url: string | null;
+  transport: string;
+  url: string | null;
+  command: string | null;
+  args: string[];
+  env_keys: string[];
+  headers: unknown;
+  tags: string[];
+  raw: string;
+  created_at: string;
+};
+
+function parseVersionRows(rows: McpVersionRow[]): ImportedMcpVersion[] {
+  return rows.map((v) => ({
+    version: v.version,
+    updatedAt: v.created_at,
+    description: v.description,
+    manifestUrl: v.manifest_url,
+    homepageUrl: v.homepage_url ?? undefined,
+    transport: v.transport as ImportedMcpVersion["transport"],
+    url: v.url ?? undefined,
+    command: v.command ?? undefined,
+    args: v.args,
+    envKeys: v.env_keys,
+    headers: (v.headers ?? undefined) as Record<string, string> | undefined,
+    tags: v.tags,
+    raw: v.raw
+  }));
+}
+
 export async function listMcps(): Promise<ImportedMcpDocument[]> {
   const db = getServerSupabase();
   const { data, error } = await db
@@ -88,44 +123,91 @@ export async function listMcps(): Promise<ImportedMcpDocument[]> {
     : { data: [] };
 
   const versionsByMcp = new Map<string, ImportedMcpVersion[]>();
-  for (const v of (allVersions ?? []) as Array<{
-    mcp_id: string;
-    version: number;
-    description: string;
-    manifest_url: string;
-    homepage_url: string | null;
-    transport: string;
-    url: string | null;
-    command: string | null;
-    args: string[];
-    env_keys: string[];
-    headers: unknown;
-    tags: string[];
-    raw: string;
-    created_at: string;
-  }>) {
+  for (const v of (allVersions ?? []) as McpVersionRow[]) {
     const list = versionsByMcp.get(v.mcp_id) ?? [];
-    list.push({
-      version: v.version,
-      updatedAt: v.created_at,
-      description: v.description,
-      manifestUrl: v.manifest_url,
-      homepageUrl: v.homepage_url ?? undefined,
-      transport: v.transport as ImportedMcpVersion["transport"],
-      url: v.url ?? undefined,
-      command: v.command ?? undefined,
-      args: v.args,
-      envKeys: v.env_keys,
-      headers: (v.headers ?? undefined) as Record<string, string> | undefined,
-      tags: v.tags,
-      raw: v.raw
-    });
+    list.push(...parseVersionRows([v]));
     versionsByMcp.set(v.mcp_id, list);
   }
 
   return (data as McpRow[]).map((row) =>
     rowToMcpDocument(row, versionsByMcp.get(row.id))
   );
+}
+
+export async function getMcpByName(name: string): Promise<ImportedMcpDocument | null> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("imported_mcps")
+    .select("*")
+    .eq("name", name)
+    .maybeSingle();
+
+  if (error) throw new Error(`getMcpByName failed: ${error.message}`);
+  if (!data) return null;
+
+  const row = data as McpRow;
+
+  const { data: versionData } = await db
+    .from("imported_mcp_versions")
+    .select("*")
+    .eq("mcp_id", row.id)
+    .order("version", { ascending: false });
+
+  const versionRows = (versionData ?? []) as McpVersionRow[];
+
+  return rowToMcpDocument(row, parseVersionRows(versionRows));
+}
+
+export async function getMcpAtVersion(
+  name: string,
+  version: number
+): Promise<ImportedMcpDocument | null> {
+  const db = getServerSupabase();
+
+  const { data: mcpData, error: lookupError } = await db
+    .from("imported_mcps")
+    .select("*")
+    .eq("name", name)
+    .maybeSingle();
+
+  if (lookupError) throw new Error(`getMcpAtVersion lookup failed: ${lookupError.message}`);
+  if (!mcpData) return null;
+  const currentRow = mcpData as McpRow;
+
+  if (currentRow.version === version) {
+    return getMcpByName(name);
+  }
+
+  const { data: versionData, error } = await db
+    .from("imported_mcp_versions")
+    .select("*")
+    .eq("mcp_id", currentRow.id)
+    .eq("version", version)
+    .maybeSingle();
+
+  if (error || !versionData) return null;
+
+  const v = versionData as McpVersionRow;
+
+  const versionRow: McpRow = {
+    ...currentRow,
+    version: v.version,
+    version_label: buildVersionLabel(v.version),
+    description: v.description,
+    manifest_url: v.manifest_url,
+    homepage_url: v.homepage_url,
+    transport: v.transport,
+    url: v.url,
+    command: v.command,
+    args: v.args,
+    env_keys: v.env_keys,
+    headers: v.headers,
+    tags: v.tags,
+    raw: v.raw,
+    updated_at: v.created_at
+  };
+
+  return rowToMcpDocument(versionRow);
 }
 
 export async function upsertMcp(mcp: ImportedMcpDocument): Promise<void> {

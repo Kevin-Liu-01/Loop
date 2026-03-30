@@ -18,6 +18,10 @@ export function buildSkillVersionHref(slug: string, version: number): string {
   return `/skills/${slug}/${buildVersionLabel(version)}`;
 }
 
+export function buildMcpVersionHref(name: string, version: number): string {
+  return `/mcps/${name}/${buildVersionLabel(version)}`;
+}
+
 export function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",

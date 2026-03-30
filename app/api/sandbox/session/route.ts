@@ -35,6 +35,16 @@ export async function POST(request: Request) {
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to create sandbox";
+
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed.code === "SANDBOX_AUTH_FAILED") {
+            return Response.json(parsed, { status: 403 });
+          }
+        } catch {
+          /* not a structured error */
+        }
+
         return Response.json({ error: message }, { status: 400 });
       }
     }

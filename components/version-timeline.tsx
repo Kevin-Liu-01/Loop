@@ -9,9 +9,15 @@ type VersionTimelineProps = {
   slug: string;
   currentVersion: number;
   versions: VersionReference[];
+  hrefBuilder?: (slug: string, version: number) => string;
 };
 
-export function VersionTimeline({ slug, currentVersion, versions }: VersionTimelineProps) {
+export function VersionTimeline({
+  slug,
+  currentVersion,
+  versions,
+  hrefBuilder = buildSkillVersionHref
+}: VersionTimelineProps) {
   return (
     <nav className="grid gap-0">
       <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
@@ -29,7 +35,7 @@ export function VersionTimeline({ slug, currentVersion, versions }: VersionTimel
                   ? "border-accent font-semibold text-ink"
                   : "border-line text-ink-soft hover:border-ink-muted hover:text-ink"
               )}
-              href={buildSkillVersionHref(slug, v.version)}
+              href={hrefBuilder(slug, v.version)}
               key={v.version}
             >
               <span className="truncate">{v.label}</span>

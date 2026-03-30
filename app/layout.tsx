@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { NewSkillModal } from "@/components/new-skill-modal";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
 import "@/app/globals.css";
+import { buildMcpVersionHref } from "@/lib/format";
 import { getLoopSnapshot } from "@/lib/refresh";
 
 export const metadata: Metadata = {
@@ -53,7 +54,13 @@ export default async function RootLayout({
         href: "/settings",
         section: "Action",
         hint: "Ops"
-      }
+      },
+      ...snapshot.mcps.slice(0, 20).map((mcp) => ({
+        label: mcp.name,
+        href: buildMcpVersionHref(mcp.name, mcp.version),
+        section: "MCP",
+        hint: mcp.transport
+      }))
     ];
   } catch {
     // Gracefully degrade when env vars are unavailable (e.g. landing pages)

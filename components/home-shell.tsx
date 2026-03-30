@@ -30,6 +30,8 @@ import { Button } from "@/components/ui/button";
 import { textFieldSearch } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { computeFreshness } from "@/lib/freshness";
+import { buildMcpVersionHref } from "@/lib/format";
+import { formatNextRun } from "@/lib/schedule";
 import { pageHeaderSub, pageInsetPadX, pageInsetPadY } from "@/lib/ui-layout";
 import { RelativeTime } from "@/components/relative-time";
 import type {
@@ -76,6 +78,26 @@ function originLabel(skill: SkillRecord): string {
     return skill.automation?.enabled ? "auto" : "tracked";
   }
   return skill.origin === "remote" ? "imported" : "catalog";
+}
+
+function skillMetaSegments(
+  skill: SkillRecord,
+  freshness: { label: string }
+): string[] {
+  const segments = [originLabel(skill), freshness.label];
+
+  const schedule = skill.automations?.[0]?.schedule;
+  if (skill.automation?.enabled && schedule) {
+    const next = formatNextRun(schedule);
+    if (next !== "—") segments.push(`Next ${next}`);
+  }
+
+  const srcCount = skill.sources?.length ?? 0;
+  if (srcCount > 0) {
+    segments.push(`${srcCount} source${srcCount === 1 ? "" : "s"}`);
+  }
+
+  return segments;
 }
 
 const MCP_TAG_GROUPS = [
@@ -194,7 +216,7 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
                     </div>
                     <p className="m-0 line-clamp-1 text-sm text-ink-soft">{summary}</p>
                     <span className="text-xs text-ink-faint">
-                      <RelativeTime date={skill.updatedAt} /> · {originLabel(skill)} · {freshness.label}
+                      <RelativeTime date={skill.updatedAt} /> · {skillMetaSegments(skill, freshness).join(" · ")}
                     </span>
                   </div>
                 </div>
@@ -241,51 +263,48 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
       {filteredMcps.length > 0 ? (
         filteredMcps.map((mcp) => {
           const isRunnable = mcp.transport === "stdio" || mcp.transport === "http";
+          const mcpHref = buildMcpVersionHref(mcp.name, mcp.version);
           return (
             <article
               className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0 max-sm:grid-cols-1"
               key={mcp.id}
             >
-              <div className="flex items-start gap-2.5">
-                <McpIcon className="mt-0.5" homepageUrl={mcp.homepageUrl} iconUrl={mcp.iconUrl} name={mcp.name} size={28} />
-                <div className="min-w-0 grid flex-1 gap-1">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "inline-block h-2 w-2 shrink-0 rounded-full",
-                        isRunnable ? "bg-emerald-500" : "bg-ink-faint/40"
+              <Link className="group min-w-0" href={mcpHref}>
+                <div className="flex items-start gap-2.5">
+                  <McpIcon className="mt-0.5" homepageUrl={mcp.homepageUrl} iconUrl={mcp.iconUrl} name={mcp.name} size={28} />
+                  <div className="min-w-0 grid flex-1 gap-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-block h-2 w-2 shrink-0 rounded-full",
+                          isRunnable ? "bg-emerald-500" : "bg-ink-faint/40"
+                        )}
+                      />
+                      <span className="truncate font-serif text-[0.94rem] font-medium text-ink group-hover:text-ink-soft">
+                        {mcp.name}
+                      </span>
+                      <Badge>{mcp.transport}</Badge>
+                      <Badge muted>{mcp.versionLabel}</Badge>
+                    </div>
+                    <p className="m-0 line-clamp-1 text-sm text-ink-soft">{mcp.description}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
+                      {mcp.envKeys.length > 0 && (
+                        <span>{mcp.envKeys.length} env key{mcp.envKeys.length !== 1 ? "s" : ""}</span>
                       )}
-                    />
-                    <span className="truncate font-serif text-[0.94rem] font-medium text-ink">
-                      {mcp.name}
-                    </span>
-                    <Badge>{mcp.transport}</Badge>
-                    <Badge muted>{mcp.versionLabel}</Badge>
-                  </div>
-                  <p className="m-0 line-clamp-1 text-sm text-ink-soft">{mcp.description}</p>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
-                    {mcp.envKeys.length > 0 && (
-                      <span>{mcp.envKeys.length} env key{mcp.envKeys.length !== 1 ? "s" : ""}</span>
-                    )}
-                    {mcp.envKeys.length > 0 && mcp.tags.length > 0 && <span>·</span>}
-                    {mcp.tags.slice(0, 3).map((t) => (
-                      <span className="rounded bg-paper-3 px-1.5 py-0.5 text-[0.625rem] font-medium" key={t}>{t}</span>
-                    ))}
+                      {mcp.envKeys.length > 0 && mcp.tags.length > 0 && <span>·</span>}
+                      {mcp.tags.slice(0, 3).map((t) => (
+                        <span className="rounded bg-paper-3 px-1.5 py-0.5 text-[0.625rem] font-medium" key={t}>{t}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
 
               <div className="flex items-center gap-1.5 max-sm:pl-4">
-                {mcp.homepageUrl && (
-                  <Button
-                    onClick={() => window.open(mcp.homepageUrl, "_blank")}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Docs
-                    <ExternalLinkIcon className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+                <Button onClick={() => router.push(mcpHref)} size="sm" variant="ghost">
+                  Open
+                  <ArrowRightIcon className="h-3.5 w-3.5" />
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon-sm" variant="ghost" type="button">

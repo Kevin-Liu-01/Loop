@@ -2,6 +2,7 @@ import { searchSkills as dbSearchSkills } from "@/lib/db/search";
 import { listBriefs } from "@/lib/db/briefs";
 import { listCategories } from "@/lib/db/categories";
 import { listMcps } from "@/lib/db/mcps";
+import { buildMcpVersionHref } from "@/lib/format";
 import type { SearchHit, SkillOrigin } from "@/lib/types";
 
 export type SearchOptions = {
@@ -70,7 +71,7 @@ export async function search(
         kind: "mcp" as const,
         title: m.name,
         description: m.description,
-        href: "/agents",
+        href: buildMcpVersionHref(m.name, m.version),
         tags: m.tags,
         updatedAt: m.updatedAt,
         origin: "system" as SkillOrigin | "system",
