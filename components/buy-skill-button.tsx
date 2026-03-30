@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { useAuth, SignInButton } from "@clerk/nextjs";
 
+import { CheckIcon, CreditCardIcon, KeyIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 
 type BuySkillButtonProps = {
@@ -20,6 +21,7 @@ export function BuySkillButton({ slug, priceLabel, purchased }: BuySkillButtonPr
   if (purchased) {
     return (
       <Button disabled type="button" variant="ghost">
+        <CheckIcon className="h-3.5 w-3.5" />
         Purchased
       </Button>
     );
@@ -29,6 +31,7 @@ export function BuySkillButton({ slug, priceLabel, purchased }: BuySkillButtonPr
     return (
       <SignInButton mode="modal">
         <Button type="button">
+          <KeyIcon className="h-3.5 w-3.5" />
           {priceLabel} &middot; Sign in to buy
         </Button>
       </SignInButton>
@@ -56,6 +59,7 @@ export function BuySkillButton({ slug, priceLabel, purchased }: BuySkillButtonPr
   return (
     <div className="grid gap-1">
       <Button disabled={isPending} onClick={handleBuy} type="button">
+        <CreditCardIcon className="h-3.5 w-3.5" />
         {isPending ? "Redirecting..." : `Buy for ${priceLabel}`}
       </Button>
       {error ? <p className="text-xs text-danger">{error}</p> : null}

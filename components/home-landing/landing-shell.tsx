@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { EyeIcon, ScanIcon, TriangleAlertIcon } from "@/components/frontier-icons";
 import { LoopLogo } from "@/components/loop-logo";
 import { DiffLoopCanvas } from "@/components/home-landing/diff-loop-canvas";
 import { FeatureCard } from "@/components/home-landing/feature-card";
@@ -16,24 +17,24 @@ const HeroShader = dynamic(
 
 const FEATURES = [
   {
-    icon: "◉",
+    icon: <EyeIcon className="h-5 w-5" />,
     title: "Continuous monitoring",
     description:
       "Loop watches your source repos, docs, and APIs. When something changes upstream, it flags the skills that need attention.",
   },
   {
-    icon: "⟐",
+    icon: <ScanIcon className="h-5 w-5" />,
     title: "Automated diffs",
     description:
       "An agent proposes targeted updates to your skill files — model swaps, parameter tuning, new tool integrations — as reviewable diffs.",
   },
   {
-    icon: "△",
+    icon: <TriangleAlertIcon className="h-5 w-5" />,
     title: "Eval-gated deploys",
     description:
       "Every proposed change runs through benchmarks before it lands. Skills only update when they measurably improve.",
   },
-] as const;
+];
 
 export function LandingShell() {
   return (

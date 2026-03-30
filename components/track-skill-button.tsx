@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { PlayIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 
 const SELECTION_KEY = "loop.admin.selected-loop";
@@ -54,6 +55,7 @@ export function TrackSkillButton({
   return (
     <div className="grid content-start justify-items-end gap-2">
       <Button disabled={isPending} onClick={handleClick} type="button" variant="ghost">
+        <PlayIcon className="h-3.5 w-3.5" />
         {isPending ? "Setting up..." : label}
       </Button>
       {showFeedback && message ? <p className="text-sm text-ink-soft">{message}</p> : null}

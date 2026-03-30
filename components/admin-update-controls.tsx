@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { KeyIcon, LogOutIcon, RefreshIcon } from "@/components/frontier-icons";
 import { Badge, EyebrowPill } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FieldGroup, textFieldBase } from "@/components/ui/field";
@@ -120,6 +121,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
               onClick={handleRefresh}
               type="button"
             >
+              <RefreshIcon className="h-3.5 w-3.5" />
               {isRefreshPending ? "Running..." : "Run refresh"}
             </Button>
             <Button
@@ -128,6 +130,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
               type="button"
               variant="ghost"
             >
+              <LogOutIcon className="h-3.5 w-3.5" />
               {isSignOutPending ? "Clearing..." : "Sign out"}
             </Button>
           </div>
@@ -150,6 +153,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
           </FieldGroup>
           <div className="flex flex-wrap gap-3">
             <Button disabled={isClaimPending || isRefreshPending || isSignOutPending} type="submit">
+              <KeyIcon className="h-3.5 w-3.5" />
               {isClaimPending ? "Claiming..." : "Claim access"}
             </Button>
           </div>

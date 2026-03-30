@@ -4,12 +4,21 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "rea
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { SearchIcon } from "@/components/frontier-icons";
+import { CopyIcon, ExternalLinkIcon, MoreHorizontalIcon, TerminalIcon } from "lucide-react";
+
+import { ActivityDashboard } from "@/components/activity-dashboard";
+import { ArrowRightIcon, SearchIcon, SparkIcon } from "@/components/frontier-icons";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { PageShell } from "@/components/ui/page-shell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/shadcn/dropdown-menu";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Button } from "@/components/ui/button";
 import { textFieldBase } from "@/components/ui/field";
@@ -17,15 +26,19 @@ import { cn } from "@/lib/cn";
 import { computeFreshness } from "@/lib/freshness";
 import { RelativeTime } from "@/components/relative-time";
 import type {
+  AutomationSummary,
   CategoryDefinition,
   LoopRunRecord,
   SkillRecord
 } from "@/lib/types";
+import type { UsageOverview } from "@/lib/usage";
 
 type HomeShellProps = {
+  automations: AutomationSummary[];
   categories: CategoryDefinition[];
   skills: SkillRecord[];
   loopRuns: LoopRunRecord[];
+  usageOverview: UsageOverview;
 };
 
 function filterSkills(
@@ -54,7 +67,7 @@ function originLabel(skill: SkillRecord): string {
   return skill.origin === "remote" ? "imported" : "catalog";
 }
 
-export function HomeShell({ categories, skills, loopRuns }: HomeShellProps) {
+export function HomeShell({ automations, categories, skills, loopRuns, usageOverview }: HomeShellProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -101,6 +114,8 @@ export function HomeShell({ categories, skills, loopRuns }: HomeShellProps) {
             {skills.length} total · {trackedCount} tracked
           </p>
         </div>
+
+        <ActivityDashboard automations={automations} overview={usageOverview} />
 
         <label className="relative">
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
@@ -171,20 +186,42 @@ export function HomeShell({ categories, skills, loopRuns }: HomeShellProps) {
                     </span>
                   </Link>
 
-                  <div className="flex items-center gap-2 max-sm:pl-4">
+                  <div className="flex items-center gap-1.5 max-sm:pl-4">
                     <Button
                       onClick={() => router.push(skill.href)}
                       size="sm"
                       variant="ghost"
                     >
                       Open
+                      <ArrowRightIcon className="h-3.5 w-3.5" />
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon-sm" variant="ghost" type="button">
+                          <MoreHorizontalIcon className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => navigator.clipboard.writeText(skill.href)}>
+                          <CopyIcon />
+                          Copy link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => router.push(`/sandbox?skill=${skill.slug}`)}>
+                          <TerminalIcon />
+                          Open in sandbox
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => window.open(skill.href, "_blank")}>
+                          <ExternalLinkIcon />
+                          Open in new tab
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </article>
               );
             })
           ) : (
-            <EmptyCard>No skills match your search.</EmptyCard>
+            <EmptyCard icon={<SearchIcon className="h-6 w-6" />}>No skills match your search.</EmptyCard>
           )}
         </div>
       </PageShell>

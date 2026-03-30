@@ -1,5 +1,6 @@
 "use client";
 
+import { ZapIcon } from "@/components/frontier-icons";
 import { Badge, EyebrowPill } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { Panel } from "@/components/ui/panel";
@@ -45,6 +46,7 @@ export function SubscriptionPanel({
             Upgrade to Operator ($19/mo) to create skills, set prices, and run automations.
           </p>
           <LinkButton href="/api/billing/checkout?plan=operator" size="sm">
+            <ZapIcon className="h-3.5 w-3.5" />
             Upgrade to Operator
           </LinkButton>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 
+import { CheckIcon, LinkIcon } from "@/components/frontier-icons";
 import { EyebrowPill } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
@@ -45,8 +46,13 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
     <Panel className="gap-4">
       <div>
         <EyebrowPill>Connect</EyebrowPill>
-        <h2 className="m-0 text-[1.15rem] font-semibold tracking-[-0.03em]">
-          {connectAccountId ? "Connected" : "Not connected"}
+          <h2 className="m-0 flex items-center gap-2 text-[1.15rem] font-semibold tracking-[-0.03em]">
+          {connectAccountId ? (
+            <>
+              <CheckIcon className="h-4 w-4 text-green-500" />
+              Connected
+            </>
+          ) : "Not connected"}
         </h2>
       </div>
 
@@ -63,6 +69,7 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
             Connect your Stripe account to receive payments when buyers purchase your skills.
           </p>
           <Button disabled={isPending} onClick={handleConnect} type="button">
+            <LinkIcon className="h-3.5 w-3.5" />
             {isPending ? "Redirecting..." : "Connect Stripe account"}
           </Button>
           {error ? <p className="text-sm text-danger">{error}</p> : null}

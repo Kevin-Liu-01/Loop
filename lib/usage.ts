@@ -1,4 +1,10 @@
 import type { LoopRunRecord, UsageEventRecord } from "@/lib/types";
+import {
+  bucketEventsByHour,
+  bucketLatencyByHour,
+  type LatencyBucket,
+  type TimeSeriesBucket,
+} from "@/lib/usage-charts";
 
 export type RouteUsageSummary = {
   route: string;
@@ -16,6 +22,8 @@ export type UsageOverview = {
     errorCalls: number;
     avgApiDurationMs: number;
   };
+  timeSeries: TimeSeriesBucket[];
+  latencySeries: LatencyBucket[];
   routeUsage: RouteUsageSummary[];
   recentEvents: UsageEventRecord[];
   activityCounts: Array<{
@@ -117,6 +125,8 @@ export function buildUsageOverview(events: UsageEventRecord[]): UsageOverview {
       errorCalls: apiEvents.filter((event) => event.ok === false || (event.status ?? 200) >= 400).length,
       avgApiDurationMs: average(apiEvents.map((event) => event.durationMs ?? 0).filter((value) => value > 0))
     },
+    timeSeries: bucketEventsByHour(events),
+    latencySeries: bucketLatencyByHour(events),
     routeUsage,
     recentEvents: events.slice().sort((left, right) => right.at.localeCompare(left.at)).slice(0, 12),
     activityCounts

@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { RefreshIcon } from "@/components/frontier-icons";
 import { EyebrowPill } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
+import { cn } from "@/lib/cn";
 
 type RefreshResponse = {
   error?: string;
@@ -54,6 +56,7 @@ export function RefreshControls() {
 
       <div className="flex flex-wrap gap-3">
         <Button disabled={isPending} onClick={handleRefresh} type="button">
+          <RefreshIcon className={cn("h-3.5 w-3.5", isPending && "animate-spin")} />
           {isPending ? "Running..." : "Run full refresh"}
         </Button>
       </div>

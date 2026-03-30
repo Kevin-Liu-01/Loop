@@ -1,9 +1,11 @@
 import { HomeShell } from "@/components/home-shell";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { getSystemSnapshot } from "@/lib/system-summary";
+import { buildUsageOverview } from "@/lib/usage";
 
 export default async function HomePage() {
   const { snapshot, systemState } = await getSystemSnapshot();
+  const usageOverview = buildUsageOverview(systemState.usageEvents);
 
   return (
     <>
@@ -14,9 +16,11 @@ export default async function HomePage() {
         path="/"
       />
       <HomeShell
+        automations={snapshot.automations}
         categories={snapshot.categories}
         loopRuns={systemState.loopRuns}
         skills={snapshot.skills}
+        usageOverview={usageOverview}
       />
     </>
   );

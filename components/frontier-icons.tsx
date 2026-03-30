@@ -3,20 +3,36 @@ import type { ComponentProps } from "react";
 import {
   Activity,
   ArrowRight,
+  Bot,
   Boxes,
+  Check,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
+  CircleDot,
+  Clipboard,
+  Clock,
   Code,
+  CreditCard,
   Download,
+  Eye,
   FileCode,
   FilePenLine,
+  Globe,
+  Hash,
+  KeyRound,
   Link2,
   ListTree,
+  LogOut,
+  MessageSquare,
+  PanelLeft,
   PencilLine,
   Play,
   Plus,
   Radar,
   RefreshCw,
+  RotateCcw,
+  Scan,
   Search,
   Send,
   Settings,
@@ -24,9 +40,13 @@ import {
   ShieldCheck,
   Sparkles,
   Square,
+  Tag,
   Terminal,
+  TriangleAlert,
+  User,
   Wallet,
   Workflow,
+  Zap,
   type LucideIcon
 } from "lucide-react";
 
@@ -74,3 +94,23 @@ export const SendIcon = wrapIcon(Send);
 export const ChevronDownIcon = wrapIcon(ChevronDown);
 export const ChevronRightIcon = wrapIcon(ChevronRight);
 export const ShareIcon = wrapIcon(Share2);
+export const ClockIcon = wrapIcon(Clock);
+export const MessageIcon = wrapIcon(MessageSquare);
+export const UserIcon = wrapIcon(User);
+export const BotIcon = wrapIcon(Bot);
+export const CreditCardIcon = wrapIcon(CreditCard);
+export const ZapIcon = wrapIcon(Zap);
+export const LogOutIcon = wrapIcon(LogOut);
+export const PanelLeftIcon = wrapIcon(PanelLeft);
+export const KeyIcon = wrapIcon(KeyRound);
+export const GlobeIcon = wrapIcon(Globe);
+export const ClipboardIcon = wrapIcon(Clipboard);
+export const CheckIcon = wrapIcon(Check);
+export const ChevronUpIcon = wrapIcon(ChevronUp);
+export const ResetIcon = wrapIcon(RotateCcw);
+export const TagIcon = wrapIcon(Tag);
+export const HashIcon = wrapIcon(Hash);
+export const EyeIcon = wrapIcon(Eye);
+export const ScanIcon = wrapIcon(Scan);
+export const CircleDotIcon = wrapIcon(CircleDot);
+export const TriangleAlertIcon = wrapIcon(TriangleAlert);

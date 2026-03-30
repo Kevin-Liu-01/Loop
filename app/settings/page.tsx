@@ -2,6 +2,14 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { AutomationManager } from "@/components/automation-manager";
 import { ConnectPanel } from "@/components/connect-panel";
+import {
+  CreditCardIcon,
+  FlowIcon,
+  LinkIcon,
+  PulseIcon,
+  RefreshIcon,
+  SettingsIcon,
+} from "@/components/frontier-icons";
 import { RefreshControls } from "@/components/refresh-controls";
 import { SubscriptionPanel } from "@/components/subscription-panel";
 import { SystemObservabilityPanel } from "@/components/observability-panels";
@@ -37,7 +45,8 @@ export default async function SettingsPage() {
 
       <PageShell narrow className="grid gap-8 pt-8 pb-16">
         <header className="grid gap-1">
-          <h1 className="m-0 text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="m-0 flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
+            <SettingsIcon className="h-6 w-6 text-ink-soft" />
             Settings
           </h1>
           <p className="m-0 text-sm text-ink-soft">
@@ -46,7 +55,8 @@ export default async function SettingsPage() {
         </header>
 
         <section id="subscription" className="grid gap-5">
-          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+          <h2 className="m-0 flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+            <CreditCardIcon className="h-4.5 w-4.5 text-ink-soft" />
             Subscription
           </h2>
           <SubscriptionPanel
@@ -58,7 +68,8 @@ export default async function SettingsPage() {
         </section>
 
         <section id="connect" className="grid gap-5">
-          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+          <h2 className="m-0 flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+            <LinkIcon className="h-4.5 w-4.5 text-ink-soft" />
             Stripe Connect
           </h2>
           <ConnectPanel
@@ -68,14 +79,16 @@ export default async function SettingsPage() {
         </section>
 
         <section id="refresh" className="grid gap-5">
-          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+          <h2 className="m-0 flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+            <RefreshIcon className="h-4.5 w-4.5 text-ink-soft" />
             Refresh
           </h2>
           <RefreshControls />
         </section>
 
         <section id="automations" className="grid gap-5">
-          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+          <h2 className="m-0 flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+            <FlowIcon className="h-4.5 w-4.5 text-ink-soft" />
             Automations
           </h2>
           <AutomationManager
@@ -85,7 +98,8 @@ export default async function SettingsPage() {
         </section>
 
         <section id="health" className="grid gap-5">
-          <h2 className="m-0 text-lg font-semibold tracking-tight text-ink">
+          <h2 className="m-0 flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+            <PulseIcon className="h-4.5 w-4.5 text-ink-soft" />
             System Health
           </h2>
           <SystemObservabilityPanel overview={usageOverview} />
