@@ -1,10 +1,21 @@
 import { getServerSupabase } from "@/lib/db/client";
-import type { SearchHit, SkillOrigin } from "@/lib/types";
+import type { CategorySlug, SearchHit, SkillOrigin } from "@/lib/types";
 
 type SearchOptions = {
   category?: string;
   origin?: SkillOrigin;
   limit?: number;
+};
+
+type SkillSearchRow = {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  updated_at: string;
+  origin: string;
+  version: number;
 };
 
 export async function searchSkills(
@@ -28,13 +39,13 @@ export async function searchSkills(
     const { data, error } = await q;
     if (error) throw new Error(`searchSkills failed: ${error.message}`);
 
-    return (data ?? []).map((row, index) => ({
+    return ((data ?? []) as SkillSearchRow[]).map((row, index) => ({
       id: `skill:${row.slug}:${row.version}`,
       kind: "skill" as const,
       title: row.title,
       description: row.description,
       href: `/skills/${row.slug}/v${row.version}`,
-      category: row.category,
+      category: row.category as CategorySlug,
       tags: row.tags,
       updatedAt: row.updated_at,
       origin: row.origin as SkillOrigin,
@@ -49,10 +60,10 @@ export async function searchSkills(
     .map((word) => `${word}:*`)
     .join(" & ");
 
-  let rpcQuery = db.rpc("search_skills_fts", {
+  let rpcQuery = db.rpc("search_skills_fts" as never, {
     search_query: tsQuery,
     result_limit: limit
-  });
+  } as never);
 
   const { data, error } = await rpcQuery;
 
@@ -70,13 +81,13 @@ export async function searchSkills(
     const { data: fallbackData, error: fallbackError } = await fallback;
     if (fallbackError) throw new Error(`searchSkills fallback failed: ${fallbackError.message}`);
 
-    return (fallbackData ?? []).map((row, index) => ({
+    return ((fallbackData ?? []) as SkillSearchRow[]).map((row, index) => ({
       id: `skill:${row.slug}:${row.version}`,
       kind: "skill" as const,
       title: row.title,
       description: row.description,
       href: `/skills/${row.slug}/v${row.version}`,
-      category: row.category,
+      category: row.category as CategorySlug,
       tags: row.tags,
       updatedAt: row.updated_at,
       origin: row.origin as SkillOrigin,
@@ -85,23 +96,14 @@ export async function searchSkills(
     }));
   }
 
-  return (data ?? []).map((row: {
-    slug: string;
-    title: string;
-    description: string;
-    category: string;
-    tags: string[];
-    updated_at: string;
-    origin: string;
-    version: number;
-    rank: number;
-  }) => ({
+  type RpcRow = SkillSearchRow & { rank: number };
+  return (((data ?? []) as unknown) as RpcRow[]).map((row) => ({
     id: `skill:${row.slug}:${row.version}`,
     kind: "skill" as const,
     title: row.title,
     description: row.description,
     href: `/skills/${row.slug}/v${row.version}`,
-    category: row.category,
+    category: row.category as CategorySlug,
     tags: row.tags,
     updatedAt: row.updated_at,
     origin: row.origin as SkillOrigin,

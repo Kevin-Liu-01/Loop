@@ -58,7 +58,7 @@ export async function upsertConversation(input: UpsertConversationInput): Promis
           messages: messagesJson,
           model: input.model ?? null,
           provider_id: input.providerId ?? null
-        } as Record<string, unknown>)
+        } as never)
         .eq("id", input.id)
         .select("*")
         .single();
@@ -77,7 +77,7 @@ export async function upsertConversation(input: UpsertConversationInput): Promis
       messages: messagesJson,
       model: input.model ?? null,
       provider_id: input.providerId ?? null
-    } as Record<string, unknown>)
+    } as never)
     .select("*")
     .single();
 

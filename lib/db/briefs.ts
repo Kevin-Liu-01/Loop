@@ -68,7 +68,7 @@ export async function upsertBrief(brief: CategoryBrief): Promise<void> {
     experiments: brief.experiments,
     items: brief.items,
     generated_at: brief.generatedAt
-  });
+  } as never);
 
   if (error) throw new Error(`upsertBrief failed: ${error.message}`);
 }

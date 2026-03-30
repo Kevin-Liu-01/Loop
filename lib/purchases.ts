@@ -12,7 +12,7 @@ export async function recordPurchase(record: SkillPurchaseRecord): Promise<void>
       amount: record.amount,
       currency: record.currency,
       purchased_at: record.purchasedAt
-    },
+    } as never,
     { onConflict: "id" }
   );
 

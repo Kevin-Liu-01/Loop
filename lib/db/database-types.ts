@@ -37,6 +37,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -78,6 +79,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       skills: {
         Row: {
@@ -171,6 +173,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       skill_versions: {
         Row: {
@@ -224,6 +227,7 @@ export type Database = {
           agent_docs?: Json;
           created_at?: string;
         };
+        Relationships: [];
       };
       imported_mcps: {
         Row: {
@@ -283,6 +287,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       imported_mcp_versions: {
         Row: {
@@ -336,6 +341,7 @@ export type Database = {
           raw?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       daily_briefs: {
         Row: {
@@ -368,6 +374,7 @@ export type Database = {
           items?: Json;
           generated_at?: string;
         };
+        Relationships: [];
       };
       loop_runs: {
         Row: {
@@ -445,6 +452,7 @@ export type Database = {
           reasoning_steps?: Json | null;
           error_message?: string | null;
         };
+        Relationships: [];
       };
       refresh_runs: {
         Row: {
@@ -504,6 +512,7 @@ export type Database = {
           daily_brief_count?: number | null;
           error_message?: string | null;
         };
+        Relationships: [];
       };
       usage_events: {
         Row: {
@@ -554,6 +563,7 @@ export type Database = {
           category_slug?: string | null;
           details?: string | null;
         };
+        Relationships: [];
       };
       billing_events: {
         Row: {
@@ -595,6 +605,7 @@ export type Database = {
           amount?: number | null;
           currency?: string | null;
         };
+        Relationships: [];
       };
       purchases: {
         Row: {
@@ -624,11 +635,13 @@ export type Database = {
           currency?: string;
           purchased_at?: string;
         };
+        Relationships: [];
       };
       subscriptions: {
         Row: {
           id: string;
           customer_id: string;
+          clerk_user_id: string | null;
           customer_email: string | null;
           plan_slug: string | null;
           status: string;
@@ -641,6 +654,7 @@ export type Database = {
         Insert: {
           id: string;
           customer_id: string;
+          clerk_user_id?: string | null;
           customer_email?: string | null;
           plan_slug?: string | null;
           status: string;
@@ -653,6 +667,7 @@ export type Database = {
         Update: {
           id?: string;
           customer_id?: string;
+          clerk_user_id?: string | null;
           customer_email?: string | null;
           plan_slug?: string | null;
           status?: string;
@@ -662,6 +677,7 @@ export type Database = {
           updated_at?: string;
           latest_invoice_id?: string | null;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

@@ -575,7 +575,7 @@ export type SkillPurchaseRecord = {
   purchasedAt: string;
 };
 
-export type ConversationChannel = "copilot" | "agent-studio";
+export type ConversationChannel = "copilot" | "agent-studio" | "sandbox";
 
 export type ConversationMessage = {
   id: string;

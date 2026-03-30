@@ -267,7 +267,7 @@ export async function createSkill(input: CreateSkillInput): Promise<SkillRecord>
 
   const { data, error } = await db
     .from("skills")
-    .insert(row)
+    .insert(row as never)
     .select("*")
     .single();
 
@@ -310,7 +310,7 @@ export async function updateSkill(
 
   const { data, error } = await db
     .from("skills")
-    .update(mapped)
+    .update(mapped as never)
     .eq("slug", slug)
     .select("*")
     .single();
@@ -331,7 +331,7 @@ export async function upsertSkillFromFilesystem(input: CreateSkillInput): Promis
 
   const { data, error } = await db
     .from("skills")
-    .upsert(row, { onConflict: "slug" })
+    .upsert(row as never, { onConflict: "slug" })
     .select("*")
     .single();
 
@@ -348,5 +348,5 @@ export async function getSkillIdBySlug(slug: string): Promise<string | null> {
     .maybeSingle();
 
   if (error) throw new Error(`getSkillIdBySlug failed: ${error.message}`);
-  return data?.id ?? null;
+  return (data as { id: string } | null)?.id ?? null;
 }

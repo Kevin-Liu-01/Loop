@@ -38,7 +38,7 @@ export async function recordLoopRun(entry: LoopRunRecord): Promise<void> {
       diff_lines: entry.diffLines,
       reasoning_steps: entry.reasoningSteps ?? null,
       error_message: entry.errorMessage ?? null
-    },
+    } as never,
     { onConflict: "id" }
   );
 
@@ -114,7 +114,7 @@ export async function recordRefreshRun(entry: RefreshRunRecord): Promise<void> {
       category_count: entry.categoryCount ?? null,
       daily_brief_count: entry.dailyBriefCount ?? null,
       error_message: entry.errorMessage ?? null
-    },
+    } as never,
     { onConflict: "id" }
   );
 
@@ -173,7 +173,7 @@ export async function recordUsageEvent(entry: UsageEventRecord): Promise<void> {
     skill_slug: entry.skillSlug ?? null,
     category_slug: entry.categorySlug ?? null,
     details: entry.details ?? null
-  });
+  } as never);
 
   if (error) throw new Error(`recordUsageEvent failed: ${error.message}`);
 }
@@ -225,7 +225,7 @@ export async function recordBillingEvent(entry: BillingEventRecord): Promise<voi
       status: entry.status ?? null,
       amount: entry.amount ?? null,
       currency: entry.currency ?? null
-    },
+    } as never,
     { onConflict: "id" }
   );
 
@@ -251,7 +251,7 @@ export async function upsertSubscription(entry: StripeSubscriptionRecord): Promi
       checkout_completed_at: entry.checkoutCompletedAt ?? null,
       updated_at: entry.updatedAt,
       latest_invoice_id: entry.latestInvoiceId ?? null
-    },
+    } as never,
     { onConflict: "id" }
   );
 

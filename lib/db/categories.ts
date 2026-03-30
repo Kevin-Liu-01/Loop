@@ -70,7 +70,7 @@ export async function upsertCategory(category: CategoryDefinition): Promise<void
   const db = getServerSupabase();
   const { error } = await db
     .from("categories")
-    .upsert(categoryToRow(category), { onConflict: "slug" });
+    .upsert(categoryToRow(category) as never, { onConflict: "slug" });
 
   if (error) throw new Error(`upsertCategory failed: ${error.message}`);
 }
@@ -80,7 +80,7 @@ export async function seedCategories(categories: CategoryDefinition[]): Promise<
   const rows = categories.map(categoryToRow);
   const { error } = await db
     .from("categories")
-    .upsert(rows, { onConflict: "slug" });
+    .upsert(rows as never, { onConflict: "slug" });
 
   if (error) throw new Error(`seedCategories failed: ${error.message}`);
 }

@@ -41,7 +41,7 @@ export async function createSkillVersion(input: CreateSkillVersionInput): Promis
     automation: input.automation ?? null,
     updates: input.updates ?? [],
     agent_docs: input.agentDocs ?? {}
-  });
+  } as never);
 
   if (error) throw new Error(`createSkillVersion failed: ${error.message}`);
 }

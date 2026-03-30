@@ -129,7 +129,7 @@ export async function upsertMcp(mcp: ImportedMcpDocument): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db
     .from("imported_mcps")
-    .upsert(mcpToRow(mcp), { onConflict: "id" });
+    .upsert(mcpToRow(mcp) as never, { onConflict: "id" });
 
   if (error) throw new Error(`upsertMcp failed: ${error.message}`);
 }
@@ -150,7 +150,7 @@ export async function createMcpVersion(mcpId: string, version: ImportedMcpVersio
     headers: version.headers ?? null,
     tags: version.tags,
     raw: version.raw
-  });
+  } as never);
 
   if (error) throw new Error(`createMcpVersion failed: ${error.message}`);
 }

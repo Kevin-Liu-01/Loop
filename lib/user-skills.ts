@@ -67,7 +67,8 @@ export const createUserSkillInputSchema = z.object({
   autoUpdate: z.boolean().default(true),
   automationCadence: z.enum(["daily", "weekly", "manual"]).default("daily"),
   automationPrompt: z.string().trim().max(240).optional(),
-  agentDocs: z.record(z.string()).optional()
+  agentDocs: z.record(z.string()).optional(),
+  price: z.object({ amount: z.number(), currency: z.string() }).nullable().optional()
 });
 
 export type CreateUserSkillInput = z.infer<typeof createUserSkillInputSchema>;

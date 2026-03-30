@@ -45,7 +45,7 @@ async function getExistingNames(): Promise<Set<string>> {
 
 async function insertMcp(row: Record<string, unknown>): Promise<void> {
   const db = getServerSupabase();
-  const { error } = await db.from("imported_mcps").insert(row);
+  const { error } = await db.from("imported_mcps").insert(row as never);
   if (error) throw new Error(error.message);
 }
 
