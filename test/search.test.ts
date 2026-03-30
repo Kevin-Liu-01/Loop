@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { buildSearchIndex, searchIndex } from "@/lib/search";
-import type { SkillwireSnapshot } from "@/lib/types";
+import type { LoopSnapshot } from "@/lib/types";
 
 test("searchIndex ranks matching skills and categories from the persisted corpus", () => {
   const snapshot = {
@@ -67,7 +67,7 @@ test("searchIndex ranks matching skills and categories from the persisted corpus
       }
     ],
     plans: []
-  } satisfies SkillwireSnapshot;
+  } satisfies LoopSnapshot;
 
   const index = buildSearchIndex(snapshot);
   const hits = searchIndex(index, "frontend");
@@ -171,7 +171,7 @@ test("searchIndex can return only skills for blank queries", () => {
       }
     ],
     plans: []
-  } satisfies SkillwireSnapshot;
+  } satisfies LoopSnapshot;
 
   const index = buildSearchIndex(snapshot);
   const hits = searchIndex(index, "", { kind: "skill", limit: 50 });

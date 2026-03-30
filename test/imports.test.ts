@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { buildAgentContext } from "@/lib/agents";
 import { buildImportedSkillDraft, buildImportedSkillRecord, extractMcpDocuments } from "@/lib/imports";
-import type { SkillwireSnapshot } from "@/lib/types";
+import type { LoopSnapshot } from "@/lib/types";
 
 test("buildImportedSkillDraft normalizes markdown imports into remote skills", () => {
   const skill = buildImportedSkillDraft(
@@ -78,7 +78,7 @@ test("buildAgentContext includes selected skills and mcps", () => {
         ],
         agents: [
           {
-            provider: "skillwire",
+            provider: "loop",
             displayName: "Default",
             shortDescription: "default",
             defaultPrompt: "Use $frontend-frontier",
@@ -123,7 +123,7 @@ test("buildAgentContext includes selected skills and mcps", () => {
     automations: [],
     dailyBriefs: [],
     plans: []
-  } satisfies SkillwireSnapshot;
+  } satisfies LoopSnapshot;
 
   const context = buildAgentContext(snapshot, {
     providerId: "gateway",

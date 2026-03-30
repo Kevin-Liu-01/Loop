@@ -32,7 +32,7 @@ test("buildLoopUpdateTarget normalizes an updateable user loop", () => {
     visibility: "public",
     origin: "user",
     href: "/skills/frontend-loop/v3",
-    path: "skillwire://community-skills/frontend-loop",
+    path: "loop://community-skills/frontend-loop",
     relativeDir: "community/frontend-loop",
     updatedAt: "2026-03-27T12:00:00.000Z",
     tags: ["frontend"],

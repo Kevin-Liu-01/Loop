@@ -113,7 +113,7 @@ test("buildUserSkillRecord appends automation context into the rendered skill bo
   assert.equal(record.version, 2);
   assert.equal(record.versionLabel, "v2");
   assert.deepEqual(record.availableVersions.map((version) => version.label), ["v2", "v1"]);
-  assert.equal(record.agents[0]?.provider, "skillwire");
+  assert.equal(record.agents[0]?.provider, "loop");
   assert.match(record.body, /## Update engine/);
   assert.match(record.body, /Mode: fetch -> analyze -> rewrite -> version/);
   assert.match(record.body, /## Latest automated refresh/);
