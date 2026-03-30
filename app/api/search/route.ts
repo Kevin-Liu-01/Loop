@@ -1,5 +1,4 @@
-import { getSkillwireSnapshot } from "@/lib/refresh";
-import { buildSearchIndex, getSearchIndex, searchIndex, writeSearchIndex } from "@/lib/search";
+import { search } from "@/lib/search";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import type { CategorySlug, SearchDocumentKind } from "@/lib/types";
@@ -24,18 +23,7 @@ export async function GET(request: Request) {
       const limitParam = Number(searchParams.get("limit") ?? "12");
       const limit = Number.isFinite(limitParam) ? Math.max(1, Math.min(200, limitParam)) : 12;
 
-      let index = await getSearchIndex();
-      if (index.documents.length === 0) {
-        const snapshot = await getSkillwireSnapshot();
-        index = buildSearchIndex(snapshot);
-        await writeSearchIndex(index);
-      }
-
-      const hits = searchIndex(index, query, {
-        category,
-        kind,
-        limit
-      });
+      const hits = await search(query, { category, kind, limit });
 
       if (query.trim()) {
         await logUsageEvent({
@@ -49,7 +37,7 @@ export async function GET(request: Request) {
 
       return Response.json({
         ok: true,
-        generatedAt: index.generatedAt,
+        generatedAt: new Date().toISOString(),
         count: hits.length,
         hits
       });

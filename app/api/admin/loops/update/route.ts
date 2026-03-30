@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 
-import { getAuthorizedAdminEmail } from "@/lib/admin";
+import { requireAuth, AuthError } from "@/lib/auth";
 import { buildImportedSkillDraft, buildImportedSkillRecord, createNextImportedSkillVersion, fetchRemoteText, listImportedSkills, saveImportedSkills } from "@/lib/imports";
 import { buildLoopUpdateSourceLog, buildLoopUpdateTarget } from "@/lib/loop-updates";
-import { refreshSkillwireSnapshot, runTrackedUserSkillUpdate } from "@/lib/refresh";
+import { runTrackedUserSkillUpdate } from "@/lib/refresh";
 import { diffMultilineText } from "@/lib/text-diff";
 import { listUserSkillDocuments, saveUserSkillDocuments } from "@/lib/user-skills";
 import { recordLoopRun } from "@/lib/system-state";
@@ -40,17 +40,6 @@ function buildImportedNoopRefresh(skill: ImportedSkillDocument, lastSyncedAt?: s
         : version
     )
   };
-}
-
-async function rebuildSnapshot() {
-  await refreshSkillwireSnapshot({
-    writeLocal: true,
-    uploadBlob: false,
-    forceFresh: true,
-    refreshCategorySignals: false,
-    refreshUserSkills: false,
-    refreshImportedSkills: false
-  });
 }
 
 async function runUserLoopUpdate(
@@ -98,7 +87,6 @@ async function runUserLoopUpdate(
 
   await saveUserSkillDocuments(skills.map((entry) => (entry.slug === slug ? cycle.nextSkill : entry)));
   await recordLoopRun(cycle.loopRun);
-  await rebuildSnapshot();
   await logUsageEvent({
     kind: "skill_refresh",
     source: "api",
@@ -223,7 +211,6 @@ async function runImportedLoopUpdate(
     : buildImportedNoopRefresh(skill, refreshed.lastSyncedAt);
 
   await saveImportedSkills(importedSkills.map((entry) => (entry.slug === slug ? nextSkill : entry)));
-  await rebuildSnapshot();
 
   const afterRecord = buildImportedSkillRecord(nextSkill);
   const result: LoopUpdateResult = {
@@ -299,8 +286,12 @@ export async function POST(request: Request) {
       label: "Manual loop update"
     },
     async () => {
-      const adminEmail = getAuthorizedAdminEmail(request);
-      if (!adminEmail) {
+      try {
+        await requireAuth();
+      } catch (error) {
+        if (error instanceof AuthError) {
+          return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 

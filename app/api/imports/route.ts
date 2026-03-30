@@ -8,7 +8,6 @@ import {
   listImportedMcps,
   listImportedSkills
 } from "@/lib/imports";
-import { refreshSkillwireSnapshot } from "@/lib/refresh";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const importSchema = z.object({
@@ -49,14 +48,6 @@ export async function POST(request: Request) {
         if (payload.kind === "skill") {
           const skill = await importRemoteSkill(payload.url);
           const record = buildImportedSkillRecord(skill);
-          await refreshSkillwireSnapshot({
-            writeLocal: true,
-            uploadBlob: false,
-            forceFresh: true,
-            refreshCategorySignals: false,
-            refreshUserSkills: false,
-            refreshImportedSkills: false
-          });
 
           revalidatePath("/");
           revalidatePath("/agents");
@@ -82,14 +73,6 @@ export async function POST(request: Request) {
         }
 
         const mcps = await importRemoteMcps(payload.url);
-        await refreshSkillwireSnapshot({
-          writeLocal: true,
-          uploadBlob: false,
-          forceFresh: true,
-          refreshCategorySignals: false,
-          refreshUserSkills: false,
-          refreshImportedSkills: false
-        });
 
         revalidatePath("/");
         revalidatePath("/agents");

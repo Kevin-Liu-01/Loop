@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 
-import { getSkillwireSnapshot } from "@/lib/refresh";
+import { getLoopSnapshot } from "@/lib/refresh";
 import { withApiUsage } from "@/lib/usage-server";
 
 export async function POST(request: Request) {
@@ -17,9 +17,9 @@ export async function POST(request: Request) {
       }
 
       const { messages } = await request.json();
-      const snapshot = await getSkillwireSnapshot();
+      const snapshot = await getLoopSnapshot();
       const context = [
-        "Skillwire local context:",
+        "Loop local context:",
         ...snapshot.skills.slice(0, 28).map((skill) => {
           return [
             `Skill: ${skill.title} ($${skill.slug})`,
@@ -34,8 +34,8 @@ export async function POST(request: Request) {
       ].join("\n");
 
       const result = streamText({
-        model: openai(process.env.SKILLWIRE_MODEL ?? "gpt-5-mini"),
-        system: `You are the in-house Skillwire copilot. Answer using the local skill catalogue and daily briefs only. Prefer exact skill names, category lanes, and concrete next steps.\n\n${context}`,
+        model: openai(process.env.LOOP_MODEL ?? "gpt-5-mini"),
+        system: `You are the in-house Loop copilot. Answer using the local skill catalogue and daily briefs only. Prefer exact skill names, category lanes, and concrete next steps.\n\n${context}`,
         messages
       });
 

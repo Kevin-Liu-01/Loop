@@ -15,14 +15,14 @@ export async function GET(request: Request) {
       const customerId = searchParams.get("customer");
 
       if (!customerId) {
-        return NextResponse.redirect(new URL("/admin?billing=no-customer", request.url));
+        return NextResponse.redirect(new URL("/settings?billing=no-customer", request.url));
       }
 
       try {
         const portalUrl = await createPortalSession(customerId, origin);
         return NextResponse.redirect(portalUrl);
       } catch {
-        return NextResponse.redirect(new URL("/admin?billing=portal-unconfigured", request.url));
+        return NextResponse.redirect(new URL("/settings?billing=portal-unconfigured", request.url));
       }
     }
   );

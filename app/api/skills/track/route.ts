@@ -2,8 +2,7 @@ import { revalidatePath } from "next/cache";
 
 import { z } from "zod";
 
-import { getLocalSnapshotBase } from "@/lib/content";
-import { refreshSkillwireSnapshot } from "@/lib/refresh";
+import { getSkillCatalogue } from "@/lib/content";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import { addTrackedSkillFromRecord, buildUserSkillRecord } from "@/lib/user-skills";
 
@@ -21,7 +20,7 @@ export async function POST(request: Request) {
     async () => {
       try {
         const payload = bodySchema.parse(await request.json());
-        const base = await getLocalSnapshotBase();
+        const base = await getSkillCatalogue();
         const skill = base.skills.find((entry) => entry.slug === payload.slug);
 
         if (!skill) {
@@ -40,15 +39,6 @@ export async function POST(request: Request) {
         const category = base.categories.find((entry) => entry.slug === skill.category);
         const tracked = await addTrackedSkillFromRecord(skill, [...(skill.sources ?? []), ...(category?.sources ?? [])]);
         const record = buildUserSkillRecord(tracked);
-
-        await refreshSkillwireSnapshot({
-          writeLocal: true,
-          uploadBlob: false,
-          forceFresh: true,
-          refreshCategorySignals: false,
-          refreshImportedSkills: false,
-          refreshUserSkills: false
-        });
 
         revalidatePath("/");
         revalidatePath("/admin");

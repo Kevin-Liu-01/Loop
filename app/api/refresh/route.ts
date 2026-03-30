@@ -1,48 +1,46 @@
 import { revalidatePath } from "next/cache";
 
-import { getAdminEmailFromCookieHeader } from "@/lib/admin";
-import { refreshSkillwireSnapshot } from "@/lib/refresh";
+import { auth } from "@clerk/nextjs/server";
+
+import { getSkillCatalogue } from "@/lib/content";
+import { refreshLoopSnapshot } from "@/lib/refresh";
 import { withApiUsage } from "@/lib/usage-server";
 
-function isAuthorized(request: Request): boolean {
+async function isAuthorized(request: Request): Promise<boolean> {
   const secret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
   if (secret && authorization === `Bearer ${secret}`) {
     return true;
   }
 
-  return getAdminEmailFromCookieHeader(request.headers.get("cookie")) !== null;
+  const { userId } = await auth();
+  return userId !== null;
 }
 
 async function handleRefresh(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!(await isAuthorized(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
-  const uploadBlob = url.searchParams.get("mode") === "full";
-  const snapshot = await refreshSkillwireSnapshot({
-    writeLocal: true,
-    uploadBlob
-  });
+  await refreshLoopSnapshot();
+
+  const catalogue = await getSkillCatalogue();
 
   revalidatePath("/");
   revalidatePath("/agents");
   revalidatePath("/feed.xml");
   revalidatePath("/skills/new");
-  snapshot.categories.forEach((category) => revalidatePath(`/categories/${category.slug}`));
-  snapshot.skills.forEach((skill) => {
+  catalogue.categories.forEach((category) => revalidatePath(`/categories/${category.slug}`));
+  catalogue.skills.forEach((skill) => {
     revalidatePath(`/skills/${skill.slug}`);
     revalidatePath(skill.href);
   });
 
   return Response.json({
     ok: true,
-    generatedAt: snapshot.generatedAt,
-    skills: snapshot.skills.length,
-    categories: snapshot.categories.length,
-    dailyBriefs: snapshot.dailyBriefs.length,
-    remoteSnapshotUrl: snapshot.remoteSnapshotUrl ?? null
+    generatedAt: new Date().toISOString(),
+    skills: catalogue.skills.length,
+    categories: catalogue.categories.length
   });
 }
 

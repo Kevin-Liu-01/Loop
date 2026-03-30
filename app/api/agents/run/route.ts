@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { buildAgentContext, resolveLanguageModel } from "@/lib/agents";
 import { buildMcpToolRuntime } from "@/lib/mcp-runtime";
-import { getSkillwireSnapshot } from "@/lib/refresh";
+import { getLoopSnapshot } from "@/lib/refresh";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const runSchema = z.object({
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     async () => {
       try {
         const payload = runSchema.parse(await request.json());
-        const snapshot = await getSkillwireSnapshot();
+        const snapshot = await getLoopSnapshot();
         const model = resolveLanguageModel(payload);
         const selectedMcps =
           payload.selectedMcpIds && payload.selectedMcpIds.length > 0

@@ -1,8 +1,36 @@
+import { randomUUID } from "node:crypto";
+
 import { headers } from "next/headers";
 
+import type Stripe from "stripe";
+
+import { recordPurchase } from "@/lib/purchases";
 import { recordBillingEvent, upsertSubscription } from "@/lib/system-state";
 import { toBillingEventRecord, toSubscriptionRecord, verifyWebhookSignature } from "@/lib/stripe";
 import { withApiUsage } from "@/lib/usage-server";
+
+function isSkillPurchase(session: Stripe.Checkout.Session): boolean {
+  return session.mode === "payment" && session.metadata?.type === "skill_purchase";
+}
+
+async function handleSkillPurchase(session: Stripe.Checkout.Session): Promise<void> {
+  const clerkUserId = session.metadata?.clerkUserId;
+  const skillSlug = session.metadata?.skillSlug;
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? "";
+
+  if (!clerkUserId || !skillSlug) return;
+
+  await recordPurchase({
+    id: randomUUID(),
+    clerkUserId,
+    skillSlug,
+    stripePaymentIntentId: paymentIntentId,
+    amount: session.amount_total ?? 0,
+    currency: session.currency ?? "usd",
+    purchasedAt: new Date().toISOString()
+  });
+}
 
 export async function POST(request: Request) {
   return withApiUsage(
@@ -27,9 +55,15 @@ export async function POST(request: Request) {
 
         switch (event.type) {
           case "checkout.session.completed": {
-            const record = toSubscriptionRecord(event.data.object, updatedAt);
-            if (record) {
-              await upsertSubscription(record);
+            const session = event.data.object as Stripe.Checkout.Session;
+
+            if (isSkillPurchase(session)) {
+              await handleSkillPurchase(session);
+            } else {
+              const record = toSubscriptionRecord(session, updatedAt);
+              if (record) {
+                await upsertSubscription(record);
+              }
             }
             break;
           }

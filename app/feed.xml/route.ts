@@ -1,4 +1,4 @@
-import { getSkillwireSnapshot } from "@/lib/refresh";
+import { getLoopSnapshot } from "@/lib/refresh";
 
 function xmlEscape(value: string): string {
   return value
@@ -10,7 +10,7 @@ function xmlEscape(value: string): string {
 }
 
 export async function GET() {
-  const snapshot = await getSkillwireSnapshot();
+  const snapshot = await getLoopSnapshot();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const items = snapshot.dailyBriefs

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { resolveLanguageModel } from "@/lib/agents";
 import { buildSandboxAgentConfig } from "@/lib/sandbox-agent";
 import { getSandboxInstance } from "@/lib/sandbox";
-import { getSkillwireSnapshot } from "@/lib/refresh";
+import { getLoopSnapshot } from "@/lib/refresh";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const runSchema = z.object({
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         const payload = runSchema.parse(await request.json());
 
         const [snapshot, sandbox] = await Promise.all([
-          getSkillwireSnapshot(),
+          getLoopSnapshot(),
           getSandboxInstance(payload.sandboxId)
         ]);
 

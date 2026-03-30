@@ -1,9 +1,9 @@
 import { revalidatePath } from "next/cache";
 
+import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
 import { createAutomation, createAutomationInputSchema } from "@/lib/automations";
-import { getAuthorizedAdminEmail } from "@/lib/admin";
 import { getSkillRecordBySlug } from "@/lib/content";
-import { refreshSkillwireSnapshot } from "@/lib/refresh";
+import { refreshLoopSnapshot } from "@/lib/refresh";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
       label: "List automations"
     },
     async () => {
-      const snapshot = await refreshSkillwireSnapshot({
+      const snapshot = await refreshLoopSnapshot({
         writeLocal: true,
         uploadBlob: false,
         forceFresh: false,
@@ -39,11 +39,8 @@ export async function POST(request: Request) {
       label: "Create automation"
     },
     async () => {
-      if (!getAuthorizedAdminEmail(request)) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
-
       try {
+        await requireActiveSubscription();
         const payload = createAutomationInputSchema.parse(await request.json());
         const skill = await getSkillRecordBySlug(payload.skillSlug);
 
@@ -52,7 +49,7 @@ export async function POST(request: Request) {
         }
 
         const created = await createAutomation(payload, skill);
-        const snapshot = await refreshSkillwireSnapshot({
+        const snapshot = await refreshLoopSnapshot({
           writeLocal: true,
           uploadBlob: false,
           forceFresh: true,
@@ -62,7 +59,7 @@ export async function POST(request: Request) {
         });
 
         revalidatePath("/");
-        revalidatePath("/admin");
+        revalidatePath("/settings");
         revalidatePath(`/categories/${skill.category}`);
         revalidatePath(`/skills/${skill.slug}`);
         snapshot.skills.forEach((entry) => {
@@ -89,6 +86,9 @@ export async function POST(request: Request) {
           rrule: created.rrule
         });
       } catch (error) {
+        const authResp = authErrorResponse(error);
+        if (authResp) return authResp;
+
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }

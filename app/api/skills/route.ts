@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 
-import { getLocalSnapshotBase } from "@/lib/content";
-import { refreshSkillwireSnapshot } from "@/lib/refresh";
+import { getSkillCatalogue } from "@/lib/content";
+import { refreshLoopSnapshot } from "@/lib/refresh";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   addUserSkill,
@@ -51,9 +51,9 @@ export async function POST(request: Request) {
       try {
         const payload = createUserSkillInputSchema.parse(await request.json());
         const draft = createUserSkillDocument(payload);
-        const snapshot = await getLocalSnapshotBase();
+        const catalogue = await getSkillCatalogue();
 
-        if (snapshot.skills.some((skill) => skill.slug === draft.slug)) {
+        if (catalogue.skills.some((skill) => skill.slug === draft.slug)) {
           return Response.json(
             {
               error: `The slug "${draft.slug}" is already taken. Rename the skill title and try again.`
@@ -64,14 +64,6 @@ export async function POST(request: Request) {
 
         const created = await addUserSkill(payload);
         const createdRecord = buildUserSkillRecord(created);
-        await refreshSkillwireSnapshot({
-          writeLocal: true,
-          uploadBlob: false,
-          forceFresh: true,
-          refreshCategorySignals: false,
-          refreshUserSkills: true,
-          focusSkillSlugs: [created.slug]
-        });
 
         revalidatePath("/");
         revalidatePath("/skills/new");
@@ -128,15 +120,6 @@ export async function PATCH(request: Request) {
         }
 
         const record = buildUserSkillRecord(result.skill);
-        await refreshSkillwireSnapshot({
-          writeLocal: true,
-          uploadBlob: false,
-          forceFresh: true,
-          refreshCategorySignals: false,
-          refreshUserSkills: false,
-          refreshImportedSkills: false,
-          focusSkillSlugs: [result.skill.slug]
-        });
 
         revalidatePath("/");
         revalidatePath("/admin");
