@@ -1,11 +1,14 @@
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/cn";
 
 type EmptyCardProps = {
   className?: string;
+  icon?: ReactNode;
   children: React.ReactNode;
 };
 
-export function EmptyCard({ className, children }: EmptyCardProps) {
+export function EmptyCard({ className, icon, children }: EmptyCardProps) {
   return (
     <div
       className={cn(
@@ -13,7 +16,14 @@ export function EmptyCard({ className, children }: EmptyCardProps) {
         className
       )}
     >
-      {children}
+      {icon ? (
+        <div className="grid place-items-center gap-2">
+          <span className="text-ink-faint">{icon}</span>
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }

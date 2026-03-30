@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import { ShareIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
 
 type ShareButtonProps = {
   href: string;
@@ -32,20 +33,24 @@ export function ShareButton({ href }: ShareButtonProps) {
   }, [href]);
 
   return (
-    <Button
-      onClick={handleShare}
-      size="icon-sm"
-      title="Share skill"
-      type="button"
-      variant="soft"
-    >
-      {shared ? (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <ShareIcon />
-      )}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          onClick={handleShare}
+          size="icon-sm"
+          type="button"
+          variant="soft"
+        >
+          {shared ? (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <ShareIcon />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{shared ? "Link copied!" : "Share skill"}</TooltipContent>
+    </Tooltip>
   );
 }
