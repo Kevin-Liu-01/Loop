@@ -1,6 +1,8 @@
+import { AppGridShell } from "@/components/app-grid-shell";
 import { SandboxShell } from "@/components/sandbox-shell";
 import { SiteHeader } from "@/components/site-header";
 import { UsageBeacon } from "@/components/usage-beacon";
+import { PageShell } from "@/components/ui/page-shell";
 import { AGENT_PROVIDER_PRESETS } from "@/lib/agents";
 import { getLoopSnapshot } from "@/lib/refresh";
 
@@ -17,19 +19,21 @@ export default async function SandboxPage({ searchParams }: SandboxPageProps) {
   ]);
 
   return (
-    <>
-      <UsageBeacon
-        dedupeKey="page:/sandbox"
-        kind="page_view"
-        label="Opened sandbox"
-        path="/sandbox"
-      />
-      <SiteHeader />
-      <SandboxShell
-        initialSkillSlug={params.skill}
-        presets={AGENT_PROVIDER_PRESETS}
-        skills={snapshot.skills}
-      />
-    </>
+    <AppGridShell fillViewport header={<SiteHeader />}>
+      <PageShell inset className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <UsageBeacon
+          dedupeKey="page:/sandbox"
+          kind="page_view"
+          label="Opened sandbox"
+          path="/sandbox"
+        />
+        <SandboxShell
+          initialSkillSlug={params.skill}
+          mcps={snapshot.mcps}
+          presets={AGENT_PROVIDER_PRESETS}
+          skills={snapshot.skills}
+        />
+      </PageShell>
+    </AppGridShell>
   );
 }

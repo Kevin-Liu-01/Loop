@@ -14,7 +14,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-xl bg-paper-3 text-ink",
+      "flex h-full w-full flex-col overflow-hidden bg-paper-3 text-ink",
       className
     )}
     {...props}
@@ -28,7 +28,7 @@ function CommandDialog({
 }: React.ComponentPropsWithoutRef<typeof Dialog>) {
   return (
     <Dialog {...props}>
-      <DialogContent maxWidth="lg" className="overflow-hidden p-0">
+      <DialogContent maxWidth="lg" className="overflow-hidden p-0 [&>.dialog-close]:hidden">
         <DialogTitle className="sr-only">Command palette</DialogTitle>
         <Command className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-ink-faint **:[[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3">
           {children}
@@ -47,7 +47,7 @@ const CommandInput = React.forwardRef<
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-md bg-transparent py-3 text-sm text-ink outline-none placeholder:text-ink-faint disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full bg-transparent py-3 text-sm text-ink outline-none placeholder:text-ink-faint disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props}
@@ -114,7 +114,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none",
+      "relative flex cursor-default select-none items-center gap-2 px-2 py-1.5 text-sm outline-none",
       "data-[selected=true]:bg-paper-2 data-[selected=true]:text-ink",
       "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
       "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",

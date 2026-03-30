@@ -166,7 +166,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
       <form className="contents" id="create" onSubmit={handleSubmit}>
         <PanelHead>
           <div>
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Create</span>
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Create</span>
             <h2>Write one from scratch</h2>
           </div>
         </PanelHead>

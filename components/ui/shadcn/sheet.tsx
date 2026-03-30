@@ -6,6 +6,7 @@ import { XIcon } from "lucide-react";
 import { type VariantProps, cva } from "class-variance-authority";
 
 import { cn } from "@/lib/cn";
+import { modalDialogOverlay } from "@/lib/modal-dialog";
 
 const Sheet = SheetPrimitive.Root;
 const SheetTrigger = SheetPrimitive.Trigger;
@@ -18,9 +19,11 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-ink/20 backdrop-blur-sm",
-      "data-[state=open]:animate-in data-[state=open]:fade-in-0",
-      "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+      "fixed inset-0 z-50",
+      modalDialogOverlay,
+      "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200",
+      "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150",
+      "motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none",
       className
     )}
     {...props}
@@ -61,8 +64,8 @@ const SheetContent = React.forwardRef<
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
-      <SheetPrimitive.Close className="absolute right-4 top-4 grid h-7 w-7 cursor-pointer place-items-center rounded-lg border border-line bg-paper-2 text-ink-soft transition-colors hover:bg-paper-3 hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-paper">
-        <XIcon className="h-3.5 w-3.5" />
+      <SheetPrimitive.Close className="absolute right-5 top-5 z-10 grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-line/70 bg-paper-3/90 text-ink-soft shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow] hover:border-accent/35 hover:bg-paper-2 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-paper dark:bg-paper-2/90">
+        <XIcon className="h-3.5 w-3.5 stroke-[1.5]" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
       {children}

@@ -1,9 +1,13 @@
 "use client";
 
+import Link from "next/link";
+
 import { CopyButton } from "@/components/copy-button";
-import { CodeIcon, LinkIcon, PlayIcon, TerminalIcon } from "@/components/frontier-icons";
+import { ArrowRightIcon, CodeIcon, LinkIcon, PlayIcon, TerminalIcon } from "@/components/frontier-icons";
+import { buttonBase, buttonSizes, buttonVariants } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
-import { LinkButton } from "@/components/ui/link-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/shadcn/tooltip";
+import { cn } from "@/lib/cn";
 import type { AgentDocs } from "@/lib/types";
 
 type UseSkillPanelProps = {
@@ -11,14 +15,23 @@ type UseSkillPanelProps = {
   skillHref: string;
   agentPrompt: string;
   agentDocs?: AgentDocs;
-  versionLabel: string;
 };
 
-const kicker =
-  "inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft";
+const sectionLabel =
+  "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
+
+const rowIcon = "h-4 w-4 shrink-0 text-ink-soft";
+
 const rowClass =
-  "flex items-center gap-3 rounded-xl border border-line bg-paper-3 px-3.5 py-2.5";
-const rowLabel = "min-w-0 flex-1 truncate text-sm font-medium text-ink";
+  "flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-paper-3/80";
+
+function ActionGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-none border border-line bg-paper-3/50 dark:bg-paper-2/40">
+      <div className="divide-y divide-line">{children}</div>
+    </div>
+  );
+}
 
 const PLATFORM_LABELS: Record<string, string> = {
   cursor: "Cursor",
@@ -36,7 +49,6 @@ export function UseSkillPanel({
   skillHref,
   agentPrompt,
   agentDocs,
-  versionLabel,
 }: UseSkillPanelProps) {
   const curlSnippet = buildCurlSnippet(slug);
   const platformKeys = agentDocs
@@ -46,21 +58,39 @@ export function UseSkillPanel({
     : [];
 
   return (
-    <Panel compact className="grid gap-4">
-      <span className={kicker}>Use this skill</span>
+    <Panel compact square className="grid gap-3">
+      <span className={sectionLabel}>Use this skill</span>
 
-      <div className="grid gap-2">
+      <ActionGroup>
         <div className={rowClass}>
-          <PlayIcon className="h-4 w-4 shrink-0 text-accent" />
-          <span className={rowLabel}>Run in sandbox</span>
-          <LinkButton href={`/sandbox?skill=${slug}`} size="sm" variant="soft">
-            Open
-          </LinkButton>
+          <PlayIcon className={rowIcon} />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+            Run in sandbox
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                aria-label="Open sandbox"
+                className={cn(
+                  buttonBase,
+                  buttonVariants.soft,
+                  buttonSizes["icon-sm"],
+                  "shrink-0"
+                )}
+                href={`/sandbox?skill=${slug}`}
+              >
+                <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>Open sandbox</TooltipContent>
+          </Tooltip>
         </div>
 
         <div className={rowClass}>
-          <CodeIcon className="h-4 w-4 shrink-0 text-ink-soft" />
-          <span className={rowLabel}>Agent prompt</span>
+          <CodeIcon className={rowIcon} />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+            Agent prompt
+          </span>
           <CopyButton
             iconOnly
             label="Copy agent prompt"
@@ -75,8 +105,8 @@ export function UseSkillPanel({
         </div>
 
         <div className={rowClass}>
-          <TerminalIcon className="h-4 w-4 shrink-0 text-ink-soft" />
-          <span className={rowLabel}>curl</span>
+          <TerminalIcon className={rowIcon} />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">curl</span>
           <CopyButton
             iconOnly
             label="Copy curl command"
@@ -91,8 +121,10 @@ export function UseSkillPanel({
         </div>
 
         <div className={rowClass}>
-          <LinkIcon className="h-4 w-4 shrink-0 text-ink-soft" />
-          <span className={rowLabel}>Skill link</span>
+          <LinkIcon className={rowIcon} />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+            Skill link
+          </span>
           <CopyButton
             iconOnly
             label="Copy skill link"
@@ -105,34 +137,34 @@ export function UseSkillPanel({
             value={skillHref}
           />
         </div>
-      </div>
+      </ActionGroup>
 
-      {platformKeys.length > 0 && (
-        <div className="grid gap-2">
-          <span className="text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
-            Platform configs
-          </span>
-          {platformKeys.map((key) => (
-            <div className={rowClass} key={key}>
-              <CodeIcon className="h-4 w-4 shrink-0 text-ink-soft" />
-              <span className={rowLabel}>
-                {PLATFORM_LABELS[key] ?? key}
-              </span>
-              <CopyButton
-                iconOnly
-                label={`Copy ${PLATFORM_LABELS[key] ?? key} config`}
-                usageEvent={{
-                  kind: "copy_prompt",
-                  label: `Copied ${key} agent doc`,
-                  path: skillHref,
-                  skillSlug: slug,
-                }}
-                value={agentDocs![key]!}
-              />
-            </div>
-          ))}
+      {platformKeys.length > 0 ? (
+        <div className="grid gap-2 pt-1">
+          <span className={sectionLabel}>Platform configs</span>
+          <ActionGroup>
+            {platformKeys.map((key) => (
+              <div className={rowClass} key={key}>
+                <CodeIcon className={rowIcon} />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                  {PLATFORM_LABELS[key] ?? key}
+                </span>
+                <CopyButton
+                  iconOnly
+                  label={`Copy ${PLATFORM_LABELS[key] ?? key} config`}
+                  usageEvent={{
+                    kind: "copy_prompt",
+                    label: `Copied ${key} agent doc`,
+                    path: skillHref,
+                    skillSlug: slug,
+                  }}
+                  value={agentDocs![key]!}
+                />
+              </div>
+            ))}
+          </ActionGroup>
         </div>
-      )}
+      ) : null}
     </Panel>
   );
 }

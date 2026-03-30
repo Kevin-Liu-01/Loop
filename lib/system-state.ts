@@ -5,10 +5,13 @@ import {
   listRefreshRuns as dbListRefreshRuns,
   recordUsageEvent as dbRecordUsageEvent,
   listUsageEvents as dbListUsageEvents,
+  listUsageEventsSince as dbListUsageEventsSince,
   recordBillingEvent as dbRecordBillingEvent,
   upsertSubscription as dbUpsertSubscription,
   listSubscriptions as dbListSubscriptions
 } from "@/lib/db/system-state";
+import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
+import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 import type {
   BillingEventRecord,
   LoopRunRecord,
@@ -50,6 +53,14 @@ export async function listRefreshRuns(limit?: number): Promise<RefreshRunRecord[
 
 export async function listUsageEvents(limit?: number): Promise<UsageEventRecord[]> {
   return dbListUsageEvents(limit);
+}
+
+/** Enough history for calendar “today vs yesterday” + rolling 24h charts. */
+export async function listUsageEventsForOverview(timeZone = "UTC"): Promise<UsageEventRecord[]> {
+  return dbListUsageEventsSince(
+    usageEventsSinceIsoForOverview(new Date(), timeZone),
+    USAGE_OVERVIEW_EVENTS_LIMIT
+  );
 }
 
 export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {

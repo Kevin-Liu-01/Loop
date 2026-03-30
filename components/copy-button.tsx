@@ -15,6 +15,9 @@ type CopyButtonProps = {
   iconOnly?: boolean;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  className?: string;
+  /** Match compact row actions (e.g. skill header) — same icon size as sm LinkButton + Play icon */
+  iconSize?: "sm" | "md";
   usageEvent?: {
     kind: Exclude<UsageEventKind, "api_call">;
     label: string;
@@ -25,8 +28,10 @@ type CopyButtonProps = {
   };
 };
 
-const CopyIcon = () => <ClipboardIcon className="h-4 w-4" />;
-const CopyCheck = () => <CheckIcon className="h-4 w-4" />;
+const iconSizeClass: Record<NonNullable<CopyButtonProps["iconSize"]>, string> = {
+  sm: "h-3.5 w-3.5",
+  md: "h-4 w-4"
+};
 
 export function CopyButton({
   value,
@@ -34,6 +39,8 @@ export function CopyButton({
   iconOnly,
   variant,
   size,
+  className,
+  iconSize = "md",
   usageEvent,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
@@ -47,17 +54,20 @@ export function CopyButton({
     window.setTimeout(() => setCopied(false), 1400);
   }
 
+  const ic = iconSizeClass[iconSize];
+
   if (iconOnly) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            className={className}
             onClick={handleCopy}
             size={size ?? "icon-sm"}
             type="button"
             variant={variant ?? "soft"}
           >
-            {copied ? <CopyCheck /> : <CopyIcon />}
+            {copied ? <CheckIcon className={ic} /> : <ClipboardIcon className={ic} />}
           </Button>
         </TooltipTrigger>
         <TooltipContent>{copied ? "Copied!" : label}</TooltipContent>
@@ -67,12 +77,13 @@ export function CopyButton({
 
   return (
     <Button
+      className={className}
       onClick={handleCopy}
       size={size ?? "sm"}
       type="button"
       variant={variant ?? "soft"}
     >
-      {copied ? <CopyCheck /> : <CopyIcon />}
+      {copied ? <CheckIcon className={ic} /> : <ClipboardIcon className={ic} />}
       <span>{copied ? "Copied" : label}</span>
     </Button>
   );

@@ -83,8 +83,8 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
         <span
           className={cn(
             "flex h-2.5 w-2.5 shrink-0 rounded-full",
-            icon === "done" && "bg-emerald-500",
-            icon === "running" && "animate-pulse bg-amber-400",
+            icon === "done" && "bg-success",
+            icon === "running" && "animate-pulse bg-warning",
             icon === "error" && "bg-danger",
             icon === "pending" && "bg-line-strong"
           )}
@@ -147,7 +147,7 @@ function RunMetadataBar({
           className={cn(
             statValue,
             status === "error" && "text-danger",
-            status === "running" && "text-amber-600"
+            status === "running" && "text-warning"
           )}
         >
           {status}
@@ -335,7 +335,7 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
 
           {visibleSourceLogs.length > 0 ? (
             <div>
-              <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+              <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
                 Sources
               </span>
               <div className="grid gap-2">
@@ -347,7 +347,7 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
           ) : null}
 
           <div>
-            <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+            <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
               Agent steps
             </span>
             <StepLog isLive={isRunning} messages={visibleMessages} />

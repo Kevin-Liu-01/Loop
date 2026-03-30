@@ -8,6 +8,22 @@ const WEEKDAY_MAP: Record<string, number> = {
   SA: 6
 };
 
+const ALL_DAY_INDICES = [0, 1, 2, 3, 4, 5, 6] as const;
+const WEEKDAY_ONLY_INDICES = [1, 2, 3, 4, 5] as const;
+const WEEKEND_INDICES = [0, 6] as const;
+
+const DAY_LABEL_LONG = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday"
+] as const;
+
+const DAY_LABEL_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
 type ParsedRRule = {
   freq: string;
   interval: number;
@@ -16,28 +32,116 @@ type ParsedRRule = {
   byMinute: number;
 };
 
-function parseRRule(rrule: string): ParsedRRule | null {
-  if (!rrule) return null;
+/** Strip optional `RRULE:` prefix and whitespace (iCal vs bare string). */
+export function normalizeAutomationRRule(schedule: string): string {
+  const trimmed = schedule.trim();
+  if (trimmed.length === 0) return "";
+  const upper = trimmed.toUpperCase();
+  if (upper.startsWith("RRULE:")) {
+    return trimmed.slice(6).trim();
+  }
+  return trimmed;
+}
 
-  const parts = Object.fromEntries(
-    rrule.split(";").map((segment) => {
-      const [key, value] = segment.split("=");
-      return [key, value];
-    })
-  );
+function parseRRuleParts(normalized: string): Record<string, string> {
+  const parts: Record<string, string> = {};
+  for (const segment of normalized.split(";")) {
+    const eq = segment.indexOf("=");
+    if (eq === -1) continue;
+    const key = segment.slice(0, eq).trim().toUpperCase();
+    const value = segment.slice(eq + 1).trim();
+    if (key) parts[key] = value;
+  }
+  return parts;
+}
+
+function parseRRule(rrule: string): ParsedRRule | null {
+  const normalized = normalizeAutomationRRule(rrule);
+  if (!normalized) return null;
+
+  const parts = parseRRuleParts(normalized);
 
   const byDayStr = parts.BYDAY ?? "";
   const byDay = byDayStr
-    ? byDayStr.split(",").map((d) => WEEKDAY_MAP[d] ?? -1).filter((d) => d >= 0)
-    : [0, 1, 2, 3, 4, 5, 6];
+    ? byDayStr
+        .split(",")
+        .map((d) => WEEKDAY_MAP[d.trim().toUpperCase()] ?? -1)
+        .filter((d) => d >= 0)
+    : [...ALL_DAY_INDICES];
+
+  const intervalRaw = parseInt(parts.INTERVAL ?? "1", 10);
+  const interval = Number.isFinite(intervalRaw) && intervalRaw > 0 ? intervalRaw : 1;
+
+  const byHourRaw = parseInt(parts.BYHOUR ?? "0", 10);
+  const byMinuteRaw = parseInt(parts.BYMINUTE ?? "0", 10);
+  const byHour = Number.isFinite(byHourRaw) ? Math.min(23, Math.max(0, byHourRaw)) : 0;
+  const byMinute = Number.isFinite(byMinuteRaw) ? Math.min(59, Math.max(0, byMinuteRaw)) : 0;
 
   return {
-    freq: parts.FREQ ?? "DAILY",
-    interval: parseInt(parts.INTERVAL ?? "1", 10),
+    freq: (parts.FREQ ?? "DAILY").toUpperCase(),
+    interval,
     byDay,
-    byHour: parseInt(parts.BYHOUR ?? "0", 10),
-    byMinute: parseInt(parts.BYMINUTE ?? "0", 10)
+    byHour,
+    byMinute
   };
+}
+
+function sortedUniqueDays(days: number[]): number[] {
+  return [...new Set(days)].sort((a, b) => a - b);
+}
+
+function sameDaySet(days: number[], reference: readonly number[]): boolean {
+  const a = sortedUniqueDays(days);
+  const b = [...reference].sort((x, y) => x - y);
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+function formatTime12h(hour: number, minute: number): string {
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  const mm = minute.toString().padStart(2, "0");
+  return `${h12}:${mm} ${ampm}`;
+}
+
+/** Human-readable automation schedule from an RRULE-like string (any BYDAY order; supports `RRULE:` prefix). */
+export function formatAutomationSchedule(schedule: string): string {
+  if (!schedule.trim()) {
+    return "Manual";
+  }
+
+  const normalized = normalizeAutomationRRule(schedule);
+  const parsed = parseRRule(normalized);
+  if (!parsed) {
+    return schedule;
+  }
+
+  if (parsed.freq === "HOURLY") {
+    if (parsed.interval <= 1) {
+      return "Every hour";
+    }
+    return `Every ${parsed.interval} hours`;
+  }
+
+  const time = formatTime12h(parsed.byHour, parsed.byMinute);
+  const days = sortedUniqueDays(parsed.byDay);
+
+  if (sameDaySet(days, ALL_DAY_INDICES)) {
+    return `Daily · ${time}`;
+  }
+  if (sameDaySet(days, WEEKDAY_ONLY_INDICES)) {
+    return `Weekdays · ${time}`;
+  }
+  if (sameDaySet(days, WEEKEND_INDICES)) {
+    return `Weekends · ${time}`;
+  }
+  if (days.length === 1) {
+    const d = days[0]!;
+    return `${DAY_LABEL_LONG[d]} · ${time}`;
+  }
+
+  const dayPart = days.map((d) => DAY_LABEL_SHORT[d]).join(", ");
+  return `${dayPart} · ${time}`;
 }
 
 export function getRunDatesForMonth(rrule: string, year: number, month: number): Date[] {
@@ -98,6 +202,17 @@ export function getNextRunDate(rrule: string): Date | null {
 
 export function countMonthlyRuns(rrule: string, year: number, month: number): number {
   return getRunDatesForMonth(rrule, year, month).length;
+}
+
+/** True when the given calendar day is included in the RRULE’s projected runs for that month. */
+export function isRRuleScheduledOnDate(rrule: string, date: Date): boolean {
+  const dates = getRunDatesForMonth(rrule, date.getFullYear(), date.getMonth());
+  return dates.some(
+    (d) =>
+      d.getFullYear() === date.getFullYear() &&
+      d.getMonth() === date.getMonth() &&
+      d.getDate() === date.getDate()
+  );
 }
 
 export function formatNextRun(rrule: string): string {

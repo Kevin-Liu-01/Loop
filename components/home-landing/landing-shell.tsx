@@ -1,117 +1,456 @@
 "use client";
 
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { EyeIcon, ScanIcon, TriangleAlertIcon } from "@/components/frontier-icons";
+import { motion } from "motion/react";
 import { LoopLogo } from "@/components/loop-logo";
+import { LandingSkillCardEl } from "@/components/home-landing/landing-skill-card";
+import { LandingPipeline } from "@/components/home-landing/landing-pipeline";
+import { LandingTomlViewer } from "@/components/home-landing/landing-toml-viewer";
 import { DiffLoopCanvas } from "@/components/home-landing/diff-loop-canvas";
-import { FeatureCard } from "@/components/home-landing/feature-card";
+import {
+  LANDING_SKILLS,
+  LANDING_TIMELINE,
+  LANDING_MCP_SERVERS,
+  LANDING_MCP_CAPABILITIES,
+} from "@/lib/home-landing/landing-data";
+import { LANDING_PALETTE } from "@/lib/home-landing/constants";
+import { useLandingParallax } from "@/components/home-landing/use-landing-parallax";
 
-const HeroShader = dynamic(
+const Hero3DCanvas = dynamic(
   () =>
-    import("@/components/home-landing/hero-shader").then((m) => ({
-      default: m.HeroShader,
+    import("@/components/home-landing/hero-3d-canvas").then((m) => ({
+      default: m.Hero3DCanvas,
     })),
   { ssr: false }
 );
 
-const FEATURES = [
-  {
-    icon: <EyeIcon className="h-5 w-5" />,
-    title: "Continuous monitoring",
-    description:
-      "Loop watches your source repos, docs, and APIs. When something changes upstream, it flags the skills that need attention.",
-  },
-  {
-    icon: <ScanIcon className="h-5 w-5" />,
-    title: "Automated diffs",
-    description:
-      "An agent proposes targeted updates to your skill files — model swaps, parameter tuning, new tool integrations — as reviewable diffs.",
-  },
-  {
-    icon: <TriangleAlertIcon className="h-5 w-5" />,
-    title: "Eval-gated deploys",
-    description:
-      "Every proposed change runs through benchmarks before it lands. Skills only update when they measurably improve.",
-  },
-];
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 as const },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+};
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2.5 font-mono text-[0.62rem] font-medium uppercase tracking-[0.18em] text-[#e8650a]/45">
+      <span className="h-px w-5 bg-[#e8650a]/20" />
+      {children}
+    </span>
+  );
+}
+
+function SectionDivider() {
+  return (
+    <div className="relative">
+      <div className="h-px w-full bg-white/[0.04]" />
+      <div className="absolute inset-x-0 top-0 mx-auto h-px w-[min(280px,50%)] bg-gradient-to-r from-transparent via-[#e8650a]/12 to-transparent" />
+    </div>
+  );
+}
+
+function StatPill({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="grid gap-1 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3">
+      <span className="font-serif text-xl font-medium tabular-nums text-white/85">{value}</span>
+      <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-white/22">{label}</span>
+    </div>
+  );
+}
 
 export function LandingShell() {
+  const [brandHover, setBrandHover] = useState(false);
+  const parallaxRootRef = useRef<HTMLDivElement>(null);
+  useLandingParallax(parallaxRootRef);
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#08080a] text-white">
-      <div className="absolute inset-0 overflow-hidden">
-        <HeroShader />
-      </div>
-
-      <nav className="relative z-10 mx-auto flex max-w-[1100px] items-center justify-between px-6 pt-6">
-        <Link href="/home" className="flex items-center gap-2.5">
-          <LoopLogo className="h-7 w-7 text-[#e8650a]" />
-          <span className="text-base font-semibold tracking-tight text-white/90">
-            Loop
-          </span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="text-sm text-white/50 transition-colors hover:text-white/80"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/sign-in"
-            className="rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur transition-colors hover:bg-white/15"
-          >
-            Sign in
-          </Link>
-        </div>
-      </nav>
-
-      <section className="relative z-10 mx-auto grid max-w-[1100px] place-items-center gap-10 px-6 pt-24 pb-32 lg:pt-32">
-        <div className="grid gap-5 text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#e8650a]/60">
-            Stay in the loop
-          </p>
-          <h1 className="mx-auto max-w-[680px] text-balance font-serif text-5xl font-medium leading-[1.1] tracking-tight text-white lg:text-6xl">
-            Skills that never{"\u00A0"}go{"\u00A0"}stale
-          </h1>
-          <p className="mx-auto max-w-[540px] text-balance text-lg leading-relaxed text-white/45">
-            Self-improving skills mean self-improving agents. Loop
-            continuously monitors, evaluates, and updates your playbooks —
-            so every skill evolves on its own.
-          </p>
+    <div
+      ref={parallaxRootRef}
+      className="relative min-h-screen overflow-x-hidden text-white"
+      style={{ backgroundColor: LANDING_PALETTE.bg }}
+    >
+      {/* ═══════════════════════════════════════════════════════════
+          HERO: full-bleed ASCII helmet
+          ═══════════════════════════════════════════════════════════ */}
+      <section className="relative min-h-[100dvh] w-full overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Hero3DCanvas ambient className="h-full w-full" />
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-px rounded-[18px] bg-linear-to-b from-[#e8650a]/10 to-transparent" />
-          <DiffLoopCanvas className="relative rounded-2xl shadow-2xl shadow-[#e8650a]/5" />
-        </div>
+        {/* Scrims */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(108deg,#08080a_0%,rgba(8,8,10,0.96)_min(44vw,480px),transparent_min(75vw,880px))]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[1] bg-linear-to-t from-[#08080a] via-transparent to-[#08080a]/50 md:from-[#08080a]/95"
+        />
 
-        <div className="flex items-center gap-4">
+        {/* Nav */}
+        <nav className="relative z-20 mx-auto flex max-w-[1100px] items-center justify-between px-6 pt-6">
           <Link
-            href="/"
-            className="rounded-full bg-[#e8650a] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            href="/home"
+            className="flex items-center gap-2.5"
+            onPointerEnter={() => setBrandHover(true)}
+            onPointerLeave={() => setBrandHover(false)}
           >
-            Open Dashboard
+            <LoopLogo
+              className="h-7 w-7 text-[#e8650a]"
+              chipClassName="fill-white"
+              interactionActive={brandHover}
+            />
+            <span className="font-serif text-[1.05rem] font-medium tracking-[-0.03em] text-white/90">
+              Loop
+            </span>
           </Link>
-          <Link
-            href="#features"
-            className="rounded-full border border-white/15 px-6 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-[#e8650a]/40 hover:text-white"
-          >
-            Learn more
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="text-sm text-white/35 transition-colors hover:text-white/65"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/sign-in"
+              className="rounded-full bg-white/[0.06] px-4 py-1.5 text-sm font-medium text-white/75 ring-1 ring-inset ring-white/[0.06] transition-all hover:bg-white/[0.1] hover:text-white/90"
+            >
+              Sign in
+            </Link>
+          </div>
+        </nav>
+
+        {/* Hero copy */}
+        <div className="relative z-10 mx-auto grid min-h-[calc(100dvh-4.5rem)] max-w-[1100px] items-center gap-10 px-6 pb-24 pt-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-14">
+          <motion.div className="grid gap-8" data-parallax="-0.08" {...fadeUp}>
+            <div className="grid gap-5 text-center lg:max-w-[34rem] lg:text-left">
+              <SectionLabel>Operator desk for agent skills</SectionLabel>
+              <h1 className="text-balance font-serif text-[clamp(2.4rem,4.2vw,3.75rem)] font-medium leading-[1.06] tracking-[-0.035em] text-white">
+                Skills that{"\u00A0"}never
+                <br className="max-lg:hidden" />
+                {" "}go{"\u00A0"}stale
+              </h1>
+              <p className="max-w-[34rem] text-balance text-[1.05rem] leading-[1.7] text-white/38">
+                Loop continuously monitors, evaluates, and updates your agent
+                playbooks — so every skill evolves on its own. Connect any MCP
+                server, tune models, wire tools: reviewable diffs, eval-gated.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+              <Link
+                href="/"
+                className="rounded-full bg-[#e8650a] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(232,101,10,0.28)] transition-all hover:bg-[#ff7a1a] hover:shadow-[0_0_36px_rgba(232,101,10,0.4)]"
+              >
+                Open Dashboard
+              </Link>
+              <Link
+                href="#how-it-works"
+                className="rounded-full border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-white/45 transition-colors hover:border-[#e8650a]/25 hover:text-white/75"
+              >
+                How it works
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 lg:gap-4">
+              <StatPill value="24/7" label="monitoring" />
+              <StatPill value="< 6h" label="update cycle" />
+              <StatPill value="0.92+" label="eval threshold" />
+              <StatPill value="35+" label="MCP servers" />
+            </div>
+          </motion.div>
+
+          <div className="hidden lg:block" aria-hidden />
         </div>
       </section>
 
+      {/* ═══════════════════════════════════════════════════════════
+          LIVE DIFF — the animated code-changing component
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
+      <section className="relative z-10 bg-[#08080a]">
+        <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-20">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
+            <motion.div className="grid content-center gap-5" {...fadeUp}>
+              <SectionLabel>Live diff preview</SectionLabel>
+              <h2 className="font-serif text-[clamp(1.5rem,2.8vw,2.25rem)] font-medium leading-[1.12] tracking-[-0.03em] text-white">
+                Watch skills evolve<br className="max-sm:hidden" /> in real time
+              </h2>
+              <p className="max-w-[32rem] text-[0.95rem] leading-[1.7] text-white/35">
+                Every update is a clean, reviewable diff. Model swaps light up orange,
+                removed lines fade — you see exactly what changed and why.
+                Loop cycles through versions automatically.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                {["v2 → v3", "v3 → v4", "v4 → v5"].map((v) => (
+                  <span
+                    key={v}
+                    className="rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-1.5 font-mono text-[0.62rem] tabular-nums text-white/28"
+                  >
+                    {v}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="flex justify-center"
+              data-parallax="0.06"
+              {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: 0.12 }}
+            >
+              <div className="relative">
+                {/* Ambient glow behind the canvas */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-8 rounded-3xl bg-[#e8650a]/[0.03] blur-2xl"
+                />
+                <DiffLoopCanvas className="relative rounded-2xl" />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          SKILLS SHOWCASE
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
+      <section className="relative z-10 bg-[#07070a]">
+        <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-20">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+            <motion.div className="grid content-start gap-6" {...fadeUp}>
+              <div className="grid gap-4">
+                <SectionLabel>Live skill catalog</SectionLabel>
+                <h2 className="font-serif text-[clamp(1.5rem,2.8vw,2.25rem)] font-medium leading-[1.12] tracking-[-0.03em] text-white">
+                  Every skill,<br className="max-sm:hidden" /> always{"\u00A0"}current
+                </h2>
+                <p className="max-w-[32rem] text-[0.95rem] leading-[1.7] text-white/35">
+                  Your catalog shows freshness at a glance — status dots, version
+                  badges, timeline history. Click any card to see how Loop evolved it.
+                </p>
+              </div>
+
+              <div className="grid gap-2.5">
+                {LANDING_SKILLS.map((skill, i) => (
+                  <LandingSkillCardEl
+                    key={skill.slug}
+                    skill={skill}
+                    timeline={skill.slug === "reasoning-agent" ? LANDING_TIMELINE : undefined}
+                    index={i}
+                  />
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="grid content-start gap-6"
+              data-parallax="0.07"
+              {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: 0.12 }}
+            >
+              <div className="grid gap-4">
+                <SectionLabel>Skill file</SectionLabel>
+                <p className="max-w-[30rem] text-[0.88rem] leading-[1.65] text-white/30">
+                  Each skill is a versioned TOML file — model config, tools, guardrails, eval
+                  criteria. Switch to the diff tab to see what Loop changed.
+                </p>
+              </div>
+              <LandingTomlViewer />
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { dot: "bg-emerald-500/55", text: "4 versions" },
+                  { dot: "bg-[#e8650a]/55", text: "auto · 6h cycle" },
+                  { dot: "bg-sky-400/45", text: "3 sources watched" },
+                ].map((item) => (
+                  <div
+                    key={item.text}
+                    className="flex items-center gap-2 rounded-xl border border-white/[0.04] bg-white/[0.015] px-3 py-2.5"
+                  >
+                    <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${item.dot}`} />
+                    <span className="font-mono text-[0.6rem] text-white/30">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          MCP INTEGRATION
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
+      <section className="relative z-10 bg-[#08080a]">
+        <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-20">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16">
+            <motion.div className="grid content-start gap-6" {...fadeUp}>
+              <div className="grid gap-4">
+                <SectionLabel>MCP integration</SectionLabel>
+                <h2 className="font-serif text-[clamp(1.5rem,2.8vw,2.25rem)] font-medium leading-[1.12] tracking-[-0.03em] text-white">
+                  Connect any{"\u00A0"}MCP{"\u00A0"}server
+                </h2>
+                <p className="max-w-[32rem] text-[0.95rem] leading-[1.7] text-white/35">
+                  Import server definitions from the open ecosystem. Loop discovers
+                  tools, executes them at runtime, and versions everything alongside
+                  your skills — so agents stay wired to the services they need.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                {LANDING_MCP_CAPABILITIES.map((cap) => (
+                  <div
+                    key={cap.label}
+                    className="flex items-start gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3"
+                  >
+                    <span className="mt-[3px] h-[6px] w-[6px] shrink-0 rounded-full bg-[#e8650a]/55" />
+                    <div className="grid gap-0.5">
+                      <span className="text-[0.88rem] font-medium text-white/65">{cap.label}</span>
+                      <span className="font-mono text-[0.62rem] text-white/22">{cap.mono}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="grid content-start gap-4"
+              data-parallax="0.06"
+              {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: 0.12 }}
+            >
+              <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500/50" />
+                  <span className="font-mono text-[0.65rem] font-medium text-white/40">MCP registry</span>
+                  <span className="flex-1" />
+                  <span className="font-mono text-[0.55rem] tabular-nums text-white/20">
+                    {LANDING_MCP_SERVERS.length} servers · stdio + http
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-px bg-white/[0.03] sm:grid-cols-3">
+                  {LANDING_MCP_SERVERS.map((server) => (
+                    <div
+                      key={server.name}
+                      className="group flex items-center gap-3 bg-[#08080a] px-4 py-3.5 transition-colors hover:bg-white/[0.02]"
+                    >
+                      <div className="grid min-w-0 flex-1 gap-0.5">
+                        <span className="truncate text-[0.84rem] font-medium text-white/60 transition-colors group-hover:text-white/85">
+                          {server.name}
+                        </span>
+                        <span className="font-mono text-[0.58rem] text-white/18">{server.transport}</span>
+                      </div>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/40" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { dot: "bg-[#e8650a]/55", text: "35+ servers" },
+                  { dot: "bg-emerald-500/55", text: "import from URL" },
+                  { dot: "bg-sky-400/45", text: "open protocol" },
+                ].map((item) => (
+                  <div
+                    key={item.text}
+                    className="flex items-center gap-2 rounded-xl border border-white/[0.04] bg-white/[0.015] px-3 py-2.5"
+                  >
+                    <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${item.dot}`} />
+                    <span className="font-mono text-[0.6rem] text-white/30">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          HOW IT WORKS — interactive pipeline
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
       <section
-        id="features"
-        className="relative z-10 mx-auto max-w-[1100px] px-6 pb-32"
+        id="how-it-works"
+        className="relative z-10 bg-[#07070a]"
       >
-        <div className="grid gap-4 md:grid-cols-3">
-          {FEATURES.map((f) => (
-            <FeatureCard key={f.title} {...f} />
-          ))}
+        <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-20">
+          <motion.div className="grid gap-4 pb-12" {...fadeUp}>
+            <SectionLabel>How it works</SectionLabel>
+            <h2 className="font-serif text-[clamp(1.5rem,2.8vw,2.25rem)] font-medium leading-[1.12] tracking-[-0.03em] text-white">
+              Monitor → Evaluate → Deploy
+            </h2>
+            <p className="max-w-[40rem] text-[0.95rem] leading-[1.7] text-white/35">
+              A three-phase loop that keeps every skill sharp. Click each step to
+              see what happens under the hood.
+            </p>
+          </motion.div>
+          <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }}>
+            <div className="rounded-3xl border border-white/[0.04] bg-white/[0.012] p-6 lg:p-10">
+              <LandingPipeline />
+            </div>
+          </motion.div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          CTA
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
+      <section className="relative z-10 bg-[#08080a]">
+        <div className="mx-auto grid max-w-[680px] place-items-center gap-8 px-6 pb-28 pt-24 text-center">
+          <motion.div className="grid gap-5" {...fadeUp}>
+            <div className="relative mx-auto">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-4 rounded-full bg-[#e8650a]/[0.08] blur-xl"
+              />
+              <LoopLogo className="relative h-12 w-12 text-[#e8650a]" chipClassName="fill-white" />
+            </div>
+            <h2 className="font-serif text-[clamp(1.4rem,2.4vw,2rem)] font-medium tracking-[-0.03em] text-white">
+              Start keeping skills fresh
+            </h2>
+            <p className="mx-auto max-w-[30rem] text-[0.95rem] leading-[1.7] text-white/35">
+              Set up in minutes. Connect your repos, import skills and MCP servers,
+              and let Loop handle the rest.
+            </p>
+          </motion.div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/"
+              className="rounded-full bg-[#e8650a] px-7 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(232,101,10,0.28)] transition-all hover:bg-[#ff7a1a] hover:shadow-[0_0_36px_rgba(232,101,10,0.4)]"
+            >
+              Open Dashboard
+            </Link>
+            <Link
+              href="/sign-in"
+              className="rounded-full border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-white/45 transition-colors hover:border-white/15 hover:text-white/75"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          Footer
+          ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider />
+      <footer className="relative z-10 bg-[#08080a] px-6 py-5">
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3">
+          <p className="m-0 font-mono text-[0.62rem] tabular-nums text-white/18">
+            © {new Date().getFullYear()} Loop · Operator desk for agent skills
+          </p>
+          <nav className="flex items-center gap-6 font-mono text-[0.62rem]">
+            <Link className="text-white/22 transition-colors hover:text-white/45" href="/">Skills</Link>
+            <Link className="text-white/22 transition-colors hover:text-white/45" href="/sandbox">Sandbox</Link>
+            <Link className="text-white/22 transition-colors hover:text-white/45" href="/settings">Settings</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

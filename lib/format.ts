@@ -52,29 +52,7 @@ export function formatRelativeDate(value: string): string {
   return formatDate(value);
 }
 
-export function formatAutomationSchedule(schedule: string): string {
-  if (!schedule) {
-    return "Manual";
-  }
-
-  if (schedule === "FREQ=HOURLY;INTERVAL=6") {
-    return "Every 6 hours";
-  }
-
-  if (schedule === "FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH,FR,SA;BYHOUR=9;BYMINUTE=0") {
-    return "Daily · 9:00 AM";
-  }
-
-  if (schedule === "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0") {
-    return "Weekdays · 9:00 AM";
-  }
-
-  if (schedule === "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0") {
-    return "Monday · 9:00 AM";
-  }
-
-  return schedule;
-}
+export { formatAutomationSchedule } from "@/lib/schedule";
 
 export function byUpdatedAtDesc<T extends { updatedAt?: string; publishedAt?: string }>(items: T[]): T[] {
   return [...items].sort((left, right) => {

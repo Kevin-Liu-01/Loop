@@ -1,11 +1,13 @@
 import { HomeShell } from "@/components/home-shell";
 import { UsageBeacon } from "@/components/usage-beacon";
+import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { getSystemSnapshot } from "@/lib/system-summary";
 import { buildUsageOverview } from "@/lib/usage";
 
 export default async function HomePage() {
-  const { snapshot, systemState } = await getSystemSnapshot();
-  const usageOverview = buildUsageOverview(systemState.usageEvents);
+  const timeZone = await getUsageTimeZoneFromCookie();
+  const { snapshot, systemState } = await getSystemSnapshot({ timeZone });
+  const usageOverview = buildUsageOverview(systemState.usageEvents, { timeZone });
 
   return (
     <>
@@ -19,6 +21,7 @@ export default async function HomePage() {
         automations={snapshot.automations}
         categories={snapshot.categories}
         loopRuns={systemState.loopRuns}
+        mcps={snapshot.mcps}
         skills={snapshot.skills}
         usageOverview={usageOverview}
       />

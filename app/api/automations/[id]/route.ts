@@ -80,7 +80,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         ].join("\n");
 
         await fs.writeFile(automationPath, toml);
-        revalidatePath("/settings");
+        revalidatePath("/settings", "layout");
 
         return Response.json({ ok: true, id });
       } catch (error) {
@@ -113,7 +113,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
         }
 
         await fs.rm(automationDir, { recursive: true, force: true });
-        revalidatePath("/settings");
+        revalidatePath("/settings", "layout");
 
         return Response.json({ ok: true, id });
       } catch (error) {

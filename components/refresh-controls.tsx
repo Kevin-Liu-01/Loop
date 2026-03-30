@@ -3,10 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { RefreshIcon } from "@/components/frontier-icons";
-import { EyebrowPill } from "@/components/ui/badge";
+import { CheckIcon, RefreshIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
-import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/cn";
 
 type RefreshResponse = {
@@ -16,14 +14,33 @@ type RefreshResponse = {
   dailyBriefs?: number;
 };
 
+type RefreshResult = {
+  generatedAt: string;
+  skills: number;
+  dailyBriefs: number;
+};
+
+function ResultTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="grid gap-0.5 rounded-none border border-line bg-paper-2/40 p-3 dark:bg-black/20">
+      <span className="text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
+        {label}
+      </span>
+      <strong className="text-sm font-semibold tabular-nums tracking-[-0.03em] text-ink">
+        {value}
+      </strong>
+    </div>
+  );
+}
+
 export function RefreshControls() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<RefreshResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   function handleRefresh() {
-    setStatusMessage(null);
+    setResult(null);
     setErrorMessage(null);
 
     startTransition(async () => {
@@ -35,34 +52,75 @@ export function RefreshControls() {
         return;
       }
 
-      const generatedAt = payload.generatedAt
-        ? new Date(payload.generatedAt).toLocaleString()
-        : "just now";
-      setStatusMessage(
-        `Refresh finished at ${generatedAt}. ${payload.skills ?? 0} skills and ${payload.dailyBriefs ?? 0} briefs updated.`
-      );
+      setResult({
+        generatedAt: payload.generatedAt
+          ? new Date(payload.generatedAt).toLocaleString()
+          : new Date().toLocaleString(),
+        skills: payload.skills ?? 0,
+        dailyBriefs: payload.dailyBriefs ?? 0,
+      });
       router.refresh();
     });
   }
 
   return (
-    <Panel className="gap-4">
-      <div>
-        <EyebrowPill>Refresh</EyebrowPill>
-        <h2 className="m-0 text-[1.15rem] font-semibold tracking-[-0.03em]">
-          Manual refresh
-        </h2>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button disabled={isPending} onClick={handleRefresh} type="button">
+    <div className="grid gap-0 rounded-none border border-line bg-paper-3/92">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line p-5 sm:p-6">
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-xl border shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]",
+              result
+                ? "border-success/25 bg-success/8"
+                : "border-line bg-paper-2"
+            )}
+          >
+            {result ? (
+              <CheckIcon className="h-4.5 w-4.5 text-success" />
+            ) : (
+              <RefreshIcon className={cn("h-4.5 w-4.5 text-ink-soft", isPending && "animate-spin")} />
+            )}
+          </span>
+          <div>
+            <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+              {isPending ? "Refreshing..." : result ? "Refresh complete" : "Manual refresh"}
+            </p>
+            <p className="m-0 text-xs text-ink-faint">
+              {isPending
+                ? "Rebuilding snapshot, skills, and briefs"
+                : result
+                  ? `Finished at ${result.generatedAt}`
+                  : "Rebuild the local Loop snapshot on demand"}
+            </p>
+          </div>
+        </div>
+        <Button disabled={isPending} onClick={handleRefresh} type="button" size="sm">
           <RefreshIcon className={cn("h-3.5 w-3.5", isPending && "animate-spin")} />
           {isPending ? "Running..." : "Run full refresh"}
         </Button>
       </div>
 
-      {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
-      {statusMessage ? <p className="text-ink-soft leading-7">{statusMessage}</p> : null}
-    </Panel>
+      {result ? (
+        <div className="grid grid-cols-3 gap-3 p-5 sm:p-6">
+          <ResultTile label="Skills" value={result.skills} />
+          <ResultTile label="Briefs" value={result.dailyBriefs} />
+          <ResultTile label="Finished" value={result.generatedAt.split(",")[1]?.trim() ?? result.generatedAt} />
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="border-t border-danger/20 bg-danger/5 px-5 py-3 sm:px-6">
+          <p className="m-0 text-sm text-danger">{errorMessage}</p>
+        </div>
+      ) : null}
+
+      {!result && !errorMessage ? (
+        <div className="p-5 sm:p-6">
+          <p className="m-0 text-xs leading-relaxed text-ink-faint">
+            Safe to run repeatedly. Walks the refresh pipeline: re-reads sources, regenerates artifacts, and updates counters.
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }

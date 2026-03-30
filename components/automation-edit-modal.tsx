@@ -8,6 +8,8 @@ import { FieldGroup, textFieldBase, textFieldArea, textFieldSelect } from "@/com
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
@@ -79,12 +81,16 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent>
+      <DialogContent className="gap-0 overflow-hidden p-0">
         <DialogHeader>
-          <DialogTitle>Edit Automation</DialogTitle>
+          <DialogTitle>Edit automation</DialogTitle>
+          <DialogDescription>
+            Update schedule, status, and display name. The prompt is read-only here.
+          </DialogDescription>
         </DialogHeader>
-        <form className="grid gap-0" onSubmit={handleSave}>
-          <div className="grid gap-5 p-5">
+        <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSave}>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="grid gap-5">
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper-2/60 px-4 py-3">
             <div className="grid flex-1 gap-0.5">
               <span className="text-xs text-ink-faint">Next run</span>
@@ -156,9 +162,10 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
           </FieldGroup>
 
           {error && <p className="text-sm text-danger">{error}</p>}
+          </div>
         </div>
 
-          <div className="flex items-center justify-between border-t border-line px-5 py-4">
+          <DialogFooter className="shrink-0 justify-between sm:justify-between">
             <Button
               disabled={isDeleting || isPending}
               onClick={handleDelete}
@@ -177,7 +184,7 @@ export function AutomationEditModal({ automation, open, onClose }: AutomationEdi
                 {isPending ? "Saving..." : "Save changes"}
               </Button>
             </div>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

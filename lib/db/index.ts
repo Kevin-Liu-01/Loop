@@ -45,6 +45,7 @@ export {
   listRefreshRuns,
   recordUsageEvent,
   listUsageEvents,
+  listUsageEventsSince,
   recordBillingEvent,
   upsertSubscription,
   listSubscriptions

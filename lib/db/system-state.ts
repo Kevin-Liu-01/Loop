@@ -178,6 +178,25 @@ export async function recordUsageEvent(entry: UsageEventRecord): Promise<void> {
   if (error) throw new Error(`recordUsageEvent failed: ${error.message}`);
 }
 
+function mapUsageEventRow(row: Record<string, unknown>): UsageEventRecord {
+  return {
+    id: row.id as string,
+    at: row.at as string,
+    kind: row.kind as UsageEventRecord["kind"],
+    source: row.source as UsageEventRecord["source"],
+    label: row.label as string,
+    path: (row.path ?? undefined) as string | undefined,
+    route: (row.route ?? undefined) as string | undefined,
+    method: (row.method ?? undefined) as string | undefined,
+    status: (row.status ?? undefined) as number | undefined,
+    durationMs: (row.duration_ms ?? undefined) as number | undefined,
+    ok: (row.ok ?? undefined) as boolean | undefined,
+    skillSlug: (row.skill_slug ?? undefined) as string | undefined,
+    categorySlug: (row.category_slug ?? undefined) as UsageEventRecord["categorySlug"],
+    details: (row.details ?? undefined) as string | undefined
+  };
+}
+
 export async function listUsageEvents(limit = 100): Promise<UsageEventRecord[]> {
   const db = getServerSupabase();
   const { data, error } = await db
@@ -188,22 +207,25 @@ export async function listUsageEvents(limit = 100): Promise<UsageEventRecord[]> 
 
   if (error) throw new Error(`listUsageEvents failed: ${error.message}`);
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    at: row.at,
-    kind: row.kind as UsageEventRecord["kind"],
-    source: row.source as UsageEventRecord["source"],
-    label: row.label,
-    path: row.path ?? undefined,
-    route: row.route ?? undefined,
-    method: row.method ?? undefined,
-    status: row.status ?? undefined,
-    durationMs: row.duration_ms ?? undefined,
-    ok: row.ok ?? undefined,
-    skillSlug: row.skill_slug ?? undefined,
-    categorySlug: (row.category_slug ?? undefined) as UsageEventRecord["categorySlug"],
-    details: row.details ?? undefined
-  }));
+  return (data ?? []).map((row) => mapUsageEventRow(row as Record<string, unknown>));
+}
+
+/** Events with `at >= sinceIso`, newest first (for calendar-bounded overview windows). */
+export async function listUsageEventsSince(
+  sinceIso: string,
+  limit: number
+): Promise<UsageEventRecord[]> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("usage_events")
+    .select("*")
+    .gte("at", sinceIso)
+    .order("at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`listUsageEventsSince failed: ${error.message}`);
+
+  return (data ?? []).map((row) => mapUsageEventRow(row as Record<string, unknown>));
 }
 
 // ---------------------------------------------------------------------------

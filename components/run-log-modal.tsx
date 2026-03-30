@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
@@ -38,10 +39,10 @@ type RunLogModalProps = {
   error: string | null;
 };
 
-const statBox = "grid gap-1 rounded-xl border border-line bg-paper-3 p-3";
+const statBox = "grid gap-1 border border-line bg-paper-3 p-3";
 const statLabel = "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
 const statValue = "text-sm font-semibold tracking-[-0.03em]";
-const sectionLabel = "text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft";
+const sectionLabel = "text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft";
 
 function formatDuration(startedAt: string, finishedAt: string): string {
   const ms = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
@@ -87,7 +88,7 @@ function StepTimeline({
             >
               <span
                 className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[0.6rem] font-bold",
+                  "flex h-5 w-5 shrink-0 items-center justify-center border text-[0.6rem] font-bold",
                   isCurrent
                     ? "border-accent bg-accent text-white"
                     : "border-line bg-paper-3 text-ink-muted",
@@ -100,7 +101,7 @@ function StepTimeline({
                 {step.toolCall ? toolDisplayName(step.toolCall.name) : "Reasoning"}
               </span>
               {hasDiff ? (
-                <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-success" />
               ) : null}
             </button>
           );
@@ -113,15 +114,15 @@ function StepTimeline({
 function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
   const statusColor =
     source.status === "done"
-      ? "bg-emerald-500"
+      ? "bg-success"
       : source.status === "running"
-        ? "animate-pulse bg-amber-400"
+        ? "animate-pulse bg-warning"
         : source.status === "error"
           ? "bg-danger"
           : "bg-line-strong";
 
   return (
-    <article className="grid gap-2 rounded-xl border border-line bg-paper-3 px-4 py-3">
+    <article className="grid gap-2 border border-line bg-paper-3 px-4 py-3">
       <div className="flex items-center gap-3">
         <span className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)} />
         <strong className="text-sm text-ink">{source.label}</strong>
@@ -134,7 +135,7 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
         <div className="grid gap-1.5">
           {source.items.map((item) => (
             <a
-              className="grid gap-0.5 rounded-lg border border-line bg-paper px-3 py-2 transition-colors hover:border-ink-muted"
+              className="grid gap-0.5 border border-line bg-paper px-3 py-2 transition-colors hover:border-ink-muted"
               href={item.url}
               key={item.url}
               rel="noreferrer"
@@ -160,7 +161,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
   return (
     <div className="grid gap-4">
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-paper-3 text-ink-soft [&>svg]:h-3.5 [&>svg]:w-3.5">
+        <span className="flex h-7 w-7 items-center justify-center border border-line bg-paper-3 text-ink-soft [&>svg]:h-3.5 [&>svg]:w-3.5">
           <FlowIcon />
         </span>
         <span className="text-sm font-semibold text-ink">
@@ -173,7 +174,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
       </div>
 
       {step.reasoning ? (
-        <div className="rounded-xl border border-line bg-paper-3 p-4">
+        <div className="border border-line bg-paper-3 p-4">
           <h4 className={cn(sectionLabel, "mb-2")}>Agent reasoning</h4>
           <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
             {step.reasoning}
@@ -182,7 +183,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
       ) : null}
 
       {step.toolCall ? (
-        <div className="rounded-xl border border-line bg-paper-3 p-4">
+        <div className="border border-line bg-paper-3 p-4">
           <h4 className={cn(sectionLabel, "mb-2")}>Tool call</h4>
           <div className="grid gap-2">
             <div className="flex items-center gap-2">
@@ -195,7 +196,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
                   <span className="text-ink-muted transition-transform group-open:rotate-90">▶</span>
                 </span>
               </summary>
-              <pre className="mt-2 max-h-60 overflow-auto rounded-lg bg-paper p-3 font-mono text-xs text-ink-soft">
+              <pre className="mt-2 max-h-60 overflow-auto bg-paper p-3 font-mono text-xs text-ink-soft">
                 {JSON.stringify(step.toolCall.args, null, 2)}
               </pre>
             </details>
@@ -204,9 +205,9 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
       ) : null}
 
       {step.toolResult ? (
-        <div className="rounded-xl border border-line bg-paper-3 p-4">
+        <div className="border border-line bg-paper-3 p-4">
           <h4 className={cn(sectionLabel, "mb-2")}>Tool result</h4>
-          <pre className="max-h-40 overflow-auto rounded-lg bg-paper p-3 font-mono text-xs text-ink-soft">
+          <pre className="max-h-40 overflow-auto bg-paper p-3 font-mono text-xs text-ink-soft">
             {step.toolResult}
           </pre>
         </div>
@@ -230,7 +231,7 @@ function LegacyStepView({ messages, diffLines }: { messages: string[]; diffLines
               className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-t border-line py-3 first:border-t-0 first:pt-0"
               key={`${message}-${index}`}
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-paper-3 text-[0.6rem] font-bold text-ink-muted">
+              <span className="flex h-7 w-7 items-center justify-center border border-line bg-paper-3 text-[0.6rem] font-bold text-ink-muted">
                 {index + 1}
               </span>
               <span className="pt-1 text-sm text-ink-soft">{message}</span>
@@ -268,12 +269,15 @@ export function RunLogModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent maxWidth="6xl">
+      <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="6xl">
         <DialogHeader>
-          <DialogTitle>Run log detail</DialogTitle>
+          <DialogTitle>Run log</DialogTitle>
+          <DialogDescription>
+            Trace, sources, diffs, and agent steps for this execution.
+          </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[75vh]">
-        <div className="p-5">
+        <ScrollArea className="min-h-0 flex-1">
+        <div className="px-6 py-5">
         <div className="grid gap-6">
           {/* Metadata bar */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -297,7 +301,7 @@ export function RunLogModal({
                 className={cn(
                   statValue,
                   status === "error" && "text-danger",
-                  status === "running" && "text-amber-600"
+                  status === "running" && "text-warning"
                 )}
               >
                 {status}
@@ -341,7 +345,7 @@ export function RunLogModal({
 
                 {/* Result summary at the bottom of the detail pane */}
                 {result ? (
-                  <div className="grid gap-2 rounded-xl border border-line bg-paper-3 p-4">
+                  <div className="grid gap-2 border border-line bg-paper-3 p-4">
                     <strong className="text-sm text-ink">
                       {result.changed
                         ? `New revision: ${result.nextVersionLabel}`
@@ -389,7 +393,7 @@ export function RunLogModal({
                 <LegacyStepView diffLines={diffLines} messages={messages} />
 
                 {result ? (
-                  <div className="grid gap-2 rounded-xl border border-line bg-paper-3 p-4">
+                  <div className="grid gap-2 border border-line bg-paper-3 p-4">
                     <strong className="text-sm text-ink">
                       {result.changed
                         ? `New revision: ${result.nextVersionLabel}`
@@ -408,7 +412,7 @@ export function RunLogModal({
           )}
 
           {error ? (
-            <p className="m-0 rounded-xl border border-danger/20 bg-danger/5 p-4 text-sm text-danger">
+            <p className="m-0 border border-danger/20 bg-danger/5 p-4 text-sm text-danger">
               {error}
             </p>
           ) : null}

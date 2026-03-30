@@ -75,7 +75,7 @@ export function ImportSkillForm() {
       <form className="contents" id="import" onSubmit={handleSubmit}>
         <PanelHead>
           <div>
-            <span className="inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Import</span>
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Import</span>
             <h2>Import your own skill</h2>
           </div>
         </PanelHead>

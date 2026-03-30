@@ -21,11 +21,11 @@ const statusLabel: Record<SandboxStatusBarProps["status"], string> = {
 };
 
 const statusColor: Record<SandboxStatusBarProps["status"], string> = {
-  idle: "bg-zinc-400",
-  creating: "bg-amber-400 animate-pulse",
-  running: "bg-emerald-500",
-  stopped: "bg-zinc-400",
-  error: "bg-red-500"
+  idle: "bg-ink-faint",
+  creating: "animate-pulse bg-warning",
+  running: "bg-success",
+  stopped: "bg-ink-faint",
+  error: "bg-danger"
 };
 
 export function SandboxStatusBar({
@@ -38,7 +38,7 @@ export function SandboxStatusBar({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border border-line bg-paper-2/80 px-3 py-2 text-xs text-ink-soft",
+        "flex w-full flex-wrap items-center gap-2 border border-line/80 bg-paper-2/70 px-3 py-2.5 text-xs text-ink-soft shadow-sm ring-1 ring-ink/[0.03] dark:bg-paper-2/50 dark:ring-white/[0.05]",
         className
       )}
     >

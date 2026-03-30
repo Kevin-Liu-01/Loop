@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { pageHeaderSub } from "@/lib/ui-layout";
 
 type PageHeaderProps = {
   className?: string;
@@ -51,7 +52,7 @@ export function PageHeaderTitle({ className, children }: { className?: string; c
 }
 
 export function PageHeaderSub({ className, children }: PageHeaderSubProps) {
-  return <p className={cn("m-0 text-sm leading-6 text-ink-soft", className)}>{children}</p>;
+  return <p className={cn(pageHeaderSub, className)}>{children}</p>;
 }
 
 export function PageHeaderActions({ className, children }: PageHeaderActionsProps) {

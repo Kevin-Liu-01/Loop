@@ -223,7 +223,7 @@ export function SkillSetupForm(props: SkillSetupFormProps) {
     <Panel className="grid gap-5 content-start">
       <PanelHead>
         <div>
-          <span className="inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Setup</span>
+          <span className="inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Setup</span>
           <h2>Sources and refresh rules</h2>
         </div>
       </PanelHead>

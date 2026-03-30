@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
@@ -36,12 +37,15 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent>
+      <DialogContent className="gap-0 overflow-hidden p-0">
         <DialogHeader>
-          <DialogTitle>New Skill</DialogTitle>
+          <DialogTitle>New skill</DialogTitle>
+          <DialogDescription>
+            Import from a URL or draft a custom skill. Operators can manage both in one place.
+          </DialogDescription>
         </DialogHeader>
         {!isSignedIn ? (
-          <div className="grid gap-4 p-5 text-center">
+          <div className="grid gap-4 px-6 py-8 text-center">
             <p className="text-sm text-ink-soft">
               Sign in with an Operator subscription to create or import skills.
             </p>
@@ -50,8 +54,8 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
             </SignInButton>
           </div>
         ) : (
-          <Tabs defaultValue="import" className="grid gap-0">
-            <TabsList className="mx-5 mt-1 w-fit">
+          <Tabs defaultValue="import" className="flex min-h-0 flex-1 flex-col gap-0">
+            <TabsList className="mx-6 mt-4 w-fit shrink-0">
               <TabsTrigger value="import" className="gap-1.5">
                 <DownloadIcon className="h-3.5 w-3.5" />
                 Import URL
@@ -62,16 +66,16 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="import" className="mt-0">
-              <ScrollArea className="max-h-[60vh]">
-                <div className="p-5">
+            <TabsContent value="import" className="mt-0 min-h-0 flex-1">
+              <ScrollArea className="h-full">
+                <div className="px-6 pb-6 pt-2">
                   <ImportSkillForm />
                 </div>
               </ScrollArea>
             </TabsContent>
-            <TabsContent value="create" className="mt-0">
-              <ScrollArea className="max-h-[60vh]">
-                <div className="p-5">
+            <TabsContent value="create" className="mt-0 min-h-0 flex-1">
+              <ScrollArea className="h-full">
+                <div className="px-6 pb-6 pt-2">
                   <UserSkillForm categories={categories} />
                 </div>
               </ScrollArea>

@@ -1,5 +1,18 @@
 import type { LoopRunRecord, UsageEventRecord } from "@/lib/types";
 import {
+  filterEventsInClosedRange,
+  prior24hWindowBeforeRolling,
+  rolling24hWindowEndInclusive,
+  startOfDayInTimeZone,
+  yesterdaySameClockWindow,
+} from "@/lib/usage-day-bounds";
+import type { UsageComparisonMode } from "@/lib/usage-comparison-modes";
+import { buildVsYesterdayStrings } from "@/lib/usage-vs-yesterday";
+import {
+  latencyHalfComparison,
+  rollingHalfDeltas,
+} from "@/lib/usage-sidebar-insights";
+import {
   bucketEventsByHour,
   bucketLatencyByHour,
   type LatencyBucket,
@@ -14,14 +27,36 @@ export type RouteUsageSummary = {
   lastAt: string;
 };
 
+export type UsageTotalsSnapshot = {
+  pageViews: number;
+  interactions: number;
+  apiCalls: number;
+  errorCalls: number;
+  avgApiDurationMs: number;
+};
+
+export type UsageDeltaSet = {
+  pageViews: string | null;
+  interactions: string | null;
+  apiCalls: string | null;
+  avgApiDurationMs: string | null;
+};
+
+/** @deprecated Use `comparisons.yesterday_same_time` */
+export type VsYesterdaySameTime = UsageDeltaSet;
+
 export type UsageOverview = {
-  totals: {
-    pageViews: number;
-    interactions: number;
-    apiCalls: number;
-    errorCalls: number;
-    avgApiDurationMs: number;
-  };
+  /** IANA zone used for “today” / “yesterday same time” windows. */
+  timeZone: string;
+  /** Local calendar day in `timeZone`: midnight → now. */
+  totals: UsageTotalsSnapshot;
+  /** Last 24h rolling; aligns with timeline chart and route breakdown. */
+  totalsRolling24h: UsageTotalsSnapshot;
+  /** @deprecated Use `comparisons.yesterday_same_time` */
+  vsYesterday: UsageDeltaSet;
+  comparisons: Record<UsageComparisonMode, UsageDeltaSet>;
+  /** Short labels for UI toggles. */
+  comparisonFootnotes: Record<UsageComparisonMode, string>;
   timeSeries: TimeSeriesBucket[];
   latencySeries: LatencyBucket[];
   routeUsage: RouteUsageSummary[];
@@ -58,10 +93,29 @@ export function formatUsageEvent(event: UsageEventRecord): string {
   return event.label;
 }
 
-export function buildUsageOverview(events: UsageEventRecord[]): UsageOverview {
+/** Main numbers on stat tiles depend on comparison mode (today vs rolling 24h). */
+export function usageStatTileValues(
+  overview: UsageOverview,
+  mode: UsageComparisonMode
+): UsageTotalsSnapshot {
+  if (mode === "yesterday_same_time") return overview.totals;
+  return overview.totalsRolling24h;
+}
+
+export function computeUsageTotals(events: UsageEventRecord[]): UsageTotalsSnapshot {
   const pageViews = events.filter((event) => event.kind === "page_view").length;
   const apiEvents = events.filter((event) => event.kind === "api_call");
   const interactions = events.length - pageViews - apiEvents.length;
+  return {
+    pageViews,
+    interactions,
+    apiCalls: apiEvents.length,
+    errorCalls: apiEvents.filter((event) => event.ok === false || (event.status ?? 200) >= 400).length,
+    avgApiDurationMs: average(apiEvents.map((event) => event.durationMs ?? 0).filter((value) => value > 0)),
+  };
+}
+
+function buildRouteUsage(apiEvents: UsageEventRecord[]): RouteUsageSummary[] {
   const routeMap = new Map<string, { count: number; errorCount: number; durations: number[]; lastAt: string }>();
 
   for (const event of apiEvents) {
@@ -70,7 +124,7 @@ export function buildUsageOverview(events: UsageEventRecord[]): UsageOverview {
       count: 0,
       errorCount: 0,
       durations: [],
-      lastAt: event.at
+      lastAt: event.at,
     };
 
     current.count += 1;
@@ -85,51 +139,146 @@ export function buildUsageOverview(events: UsageEventRecord[]): UsageOverview {
     routeMap.set(route, current);
   }
 
-  const routeUsage = Array.from(routeMap.entries())
+  return Array.from(routeMap.entries())
     .map(([route, value]) => ({
       route,
       count: value.count,
       errorCount: value.errorCount,
       avgDurationMs: average(value.durations),
-      lastAt: value.lastAt
+      lastAt: value.lastAt,
     }))
     .sort((left, right) => right.count - left.count || right.lastAt.localeCompare(left.lastAt))
     .slice(0, 6);
+}
 
-  const activityLabels: Array<[UsageEventRecord["kind"], string]> = [
-    ["page_view", "views"],
-    ["copy_prompt", "prompt copies"],
-    ["copy_url", "link copies"],
-    ["skill_save", "setup saves"],
-    ["skill_refresh", "manual refreshes"],
-    ["skill_import", "imports"],
-    ["skill_create", "created skills"],
-    ["automation_create", "automations"],
-    ["agent_run", "agent runs"],
-    ["search", "searches"]
-  ];
+const activityLabels: Array<[UsageEventRecord["kind"], string]> = [
+  ["page_view", "views"],
+  ["copy_prompt", "prompt copies"],
+  ["copy_url", "link copies"],
+  ["skill_save", "setup saves"],
+  ["skill_refresh", "manual refreshes"],
+  ["skill_import", "imports"],
+  ["skill_create", "created skills"],
+  ["automation_create", "automations"],
+  ["agent_run", "agent runs"],
+  ["search", "searches"],
+];
 
-  const activityCounts = activityLabels
+function buildActivityCounts(events: UsageEventRecord[]) {
+  return activityLabels
     .map(([kind, label]) => ({
       label,
-      count: events.filter((event) => event.kind === kind).length
+      count: events.filter((event) => event.kind === kind).length,
     }))
     .filter((entry) => entry.count > 0)
     .slice(0, 6);
+}
+
+export type BuildUsageOverviewOptions = {
+  /** Freeze time in tests; defaults to `new Date()`. */
+  now?: Date;
+  /** IANA timezone for calendar windows; default UTC. */
+  timeZone?: string;
+};
+
+function buildVsPrior24hStrings(
+  current: UsageTotalsSnapshot,
+  baseline: UsageTotalsSnapshot
+): UsageDeltaSet {
+  return {
+    pageViews: formatVsPrior24hCount(current.pageViews, baseline.pageViews),
+    interactions: formatVsPrior24hCount(current.interactions, baseline.interactions),
+    apiCalls: formatVsPrior24hCount(current.apiCalls, baseline.apiCalls),
+    avgApiDurationMs: formatVsPrior24hLatency(current.avgApiDurationMs, baseline.avgApiDurationMs),
+  };
+}
+
+function formatVsPrior24hCount(current: number, baseline: number): string | null {
+  if (baseline === 0 && current === 0) return null;
+  if (baseline === 0) return "↑ vs prior 24h";
+  const pct = Math.round(((current - baseline) / baseline) * 100);
+  if (pct === 0) return "Flat vs prior 24h";
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct}% vs prior 24h`;
+}
+
+function formatVsPrior24hLatency(currentMs: number, baselineMs: number): string | null {
+  if (currentMs === 0 && baselineMs === 0) return null;
+  if (baselineMs === 0 && currentMs > 0) return "vs prior 24h";
+  if (baselineMs === 0) return null;
+  if (currentMs === 0) return "-100% avg vs prior 24h";
+  const pct = Math.round(((currentMs - baselineMs) / baselineMs) * 100);
+  if (pct === 0) return "Flat vs prior 24h";
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct}% avg vs prior 24h`;
+}
+
+export function buildUsageOverview(
+  events: UsageEventRecord[],
+  options?: BuildUsageOverviewOptions
+): UsageOverview {
+  const now = options?.now ?? new Date();
+  const timeZone = options?.timeZone ?? "UTC";
+  const { start: rollStart, end: rollEnd } = rolling24hWindowEndInclusive(now);
+  const rollingEvents = filterEventsInClosedRange(events, rollStart, rollEnd);
+  const startToday = startOfDayInTimeZone(now, timeZone);
+  const todayEvents = filterEventsInClosedRange(events, startToday, now);
+  const { start: yStart, end: yEnd } = yesterdaySameClockWindow(now, timeZone);
+  const yesterdayEvents = filterEventsInClosedRange(events, yStart, yEnd);
+
+  const totals = computeUsageTotals(todayEvents);
+  const totalsRolling24h = computeUsageTotals(rollingEvents);
+  const yesterdayTotals = computeUsageTotals(yesterdayEvents);
+  const vsYesterday = buildVsYesterdayStrings(totals, yesterdayTotals);
+
+  const { start: pStart, end: pEnd } = prior24hWindowBeforeRolling(now);
+  const priorRollingEvents = filterEventsInClosedRange(events, pStart, pEnd);
+  const priorRollingTotals = computeUsageTotals(priorRollingEvents);
+  const prior24h = buildVsPrior24hStrings(totalsRolling24h, priorRollingTotals);
+
+  const timeSeries = bucketEventsByHour(rollingEvents, 24, now);
+  const latencySeries = bucketLatencyByHour(rollingEvents, 24, now);
+  const half = rollingHalfDeltas(timeSeries);
+  const prior12h: UsageDeltaSet = {
+    pageViews: half.views,
+    interactions: half.interactions,
+    apiCalls: half.api,
+    avgApiDurationMs: latencyHalfComparison(latencySeries),
+  };
+
+  const comparisons: Record<UsageComparisonMode, UsageDeltaSet> = {
+    yesterday_same_time: vsYesterday,
+    prior_24h: prior24h,
+    prior_12h: prior12h,
+  };
+
+  const tzShort = timeZone.replace(/_/g, " ");
+  const comparisonFootnotes: Record<UsageComparisonMode, string> = {
+    yesterday_same_time: `Deltas vs same clock span yesterday (${tzShort}).`,
+    prior_24h: "Deltas: last 24h vs the 24h before that.",
+    prior_12h: "Deltas: last 12h vs prior 12h, same rolling window.",
+  };
+
+  const apiRolling = rollingEvents.filter((e) => e.kind === "api_call");
+  const routeUsage = buildRouteUsage(apiRolling);
+  const activityCounts = buildActivityCounts(rollingEvents);
+  const recentEvents = rollingEvents
+    .slice()
+    .sort((left, right) => right.at.localeCompare(left.at))
+    .slice(0, 12);
 
   return {
-    totals: {
-      pageViews,
-      interactions,
-      apiCalls: apiEvents.length,
-      errorCalls: apiEvents.filter((event) => event.ok === false || (event.status ?? 200) >= 400).length,
-      avgApiDurationMs: average(apiEvents.map((event) => event.durationMs ?? 0).filter((value) => value > 0))
-    },
-    timeSeries: bucketEventsByHour(events),
-    latencySeries: bucketLatencyByHour(events),
+    timeZone,
+    totals,
+    totalsRolling24h,
+    vsYesterday,
+    comparisons,
+    comparisonFootnotes,
+    timeSeries,
+    latencySeries,
     routeUsage,
-    recentEvents: events.slice().sort((left, right) => right.at.localeCompare(left.at)).slice(0, 12),
-    activityCounts
+    recentEvents,
+    activityCounts,
   };
 }
 

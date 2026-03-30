@@ -47,8 +47,8 @@ export async function createOnboardingLink(
 
   const link = await stripe.accountLinks.create({
     account: accountId,
-    refresh_url: `${origin}/settings?connect=refresh`,
-    return_url: `${origin}/settings?connect=complete`,
+    refresh_url: `${origin}/settings/connect?connect=refresh`,
+    return_url: `${origin}/settings/connect?connect=complete`,
     type: "account_onboarding"
   });
 

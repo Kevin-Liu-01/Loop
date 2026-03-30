@@ -14,7 +14,7 @@ type VersionTimelineProps = {
 export function VersionTimeline({ slug, currentVersion, versions }: VersionTimelineProps) {
   return (
     <nav className="grid gap-0">
-      <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+      <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
         <TagIcon className="h-3 w-3" />
         Versions
       </h3>

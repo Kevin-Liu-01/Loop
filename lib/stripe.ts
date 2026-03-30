@@ -50,8 +50,8 @@ export async function createCheckoutSession(planSlug: string, origin: string, cl
     ],
     allow_promotion_codes: true,
     customer_creation: "always",
-    success_url: `${origin}/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/settings?checkout=canceled`,
+    success_url: `${origin}/settings/subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/settings/subscription?checkout=canceled`,
     metadata: {
       product: "loop",
       plan: planSlug,
@@ -77,7 +77,7 @@ export async function createPortalSession(customerId: string, origin: string): P
   const stripe = getStripeClient();
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${origin}/settings`
+    return_url: `${origin}/settings/subscription`
   });
 
   return session.url;

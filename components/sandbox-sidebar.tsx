@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
+import { pageInsetPadX } from "@/lib/ui-layout";
 
 type ConversationSummary = {
   id: string;
@@ -54,12 +55,17 @@ export function SandboxSidebar({
   }, [refresh, version]);
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div className={cn("flex h-full min-h-0 min-w-0 flex-col", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-line px-4 py-3">
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-between border-b border-line/80 bg-linear-to-b from-paper-2/45 to-transparent py-4 dark:from-paper-2/25",
+          pageInsetPadX
+        )}
+      >
         <div className="flex items-center gap-2">
           <ClockIcon className="h-3.5 w-3.5 text-ink-faint" />
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+          <span className="font-serif text-sm font-medium tracking-[-0.02em] text-ink">
             Sessions
           </span>
         </div>
@@ -74,13 +80,13 @@ export function SandboxSidebar({
       </div>
 
       {/* Conversation list */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3 pt-2">
         {isLoading ? (
           <div className="grid gap-2 p-2">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[52px] animate-pulse rounded-xl bg-paper-2/60"
+                className="h-[52px] animate-pulse bg-paper-2/60"
               />
             ))}
           </div>
@@ -101,7 +107,7 @@ export function SandboxSidebar({
               <button
                 key={c.id}
                 className={cn(
-                  "group grid gap-0.5 rounded-xl px-3 py-2.5 text-left transition-all duration-150",
+                  "group grid gap-0.5 px-3 py-2.5 text-left transition-all duration-150",
                   c.id === currentId
                     ? "bg-accent/8 ring-1 ring-accent/20"
                     : "hover:bg-paper-2/80"

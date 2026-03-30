@@ -2,6 +2,8 @@ import { cn } from "@/lib/cn";
 
 type PanelProps = {
   compact?: boolean;
+  /** Flush corners + tighter rhythm for AppGridShell / skill detail. */
+  square?: boolean;
   className?: string;
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>;
@@ -11,12 +13,14 @@ type PanelHeadProps = {
   children: React.ReactNode;
 };
 
-export function Panel({ compact, className, children, ...rest }: PanelProps) {
+export function Panel({ compact, square, className, children, ...rest }: PanelProps) {
   return (
     <div
       className={cn(
-        "grid gap-5 rounded-2xl border border-line bg-paper-3/92 p-6",
-        compact && "p-5",
+        "grid border border-line bg-paper-3/92",
+        square
+          ? cn("rounded-none gap-4", compact ? "p-4" : "p-5 sm:p-6")
+          : cn("gap-5 rounded-2xl", compact ? "p-5" : "p-6"),
         className
       )}
       {...rest}

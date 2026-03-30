@@ -7,13 +7,15 @@ import { useRouter } from "next/navigation";
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
 import { FlowIcon, TimelineIcon } from "@/components/frontier-icons";
-import { Badge, EyebrowPill } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { FieldGroup, textFieldBase, textFieldArea, textFieldSelect } from "@/components/ui/field";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
@@ -54,38 +56,48 @@ export function AutomationManager({ automations, skills }: AutomationManagerProp
 
   return (
     <section className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="grid gap-1">
+      <div className="grid gap-0 rounded-none border border-line bg-paper-3/92">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <span className="text-sm tabular-nums text-ink-faint">{automations.length} total</span>
-            <span className="h-1 w-1 rounded-full bg-line-strong" />
-            <span className="flex items-center gap-1.5 text-sm text-ink-faint">
-              <StatusDot tone={activeCount > 0 ? "fresh" : "idle"} pulse={activeCount > 0} />
-              {activeCount} active
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-paper-2 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
+              <FlowIcon className="h-4.5 w-4.5 text-ink-soft" />
             </span>
-          </div>
-        </div>
-        <Button onClick={() => setCreateOpen(true)} size="sm">
-          <FlowIcon className="h-3.5 w-3.5" />
-          New automation
-        </Button>
-      </div>
-
-      {automations.length > 0 && (
-        <Panel>
-          <PanelHead>
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
-                Monthly schedule
-              </span>
-              <p className="mt-1 text-sm text-ink-faint">
-                {now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+                {automations.length === 0
+                  ? "No automations"
+                  : `${automations.length} automation${automations.length !== 1 ? "s" : ""}`}
+              </p>
+              <p className="m-0 flex items-center gap-1.5 text-xs text-ink-faint">
+                <StatusDot tone={activeCount > 0 ? "fresh" : "idle"} pulse={activeCount > 0} />
+                {activeCount} active
               </p>
             </div>
-          </PanelHead>
-          <AutomationCalendar automations={automations} />
-        </Panel>
-      )}
+          </div>
+          <Button onClick={() => setCreateOpen(true)} size="sm">
+            <FlowIcon className="h-3.5 w-3.5" />
+            New automation
+          </Button>
+        </div>
+
+        {automations.length > 0 ? (
+          <div className="p-5 sm:p-6">
+            <Panel square compact>
+              <PanelHead>
+                <div>
+                  <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                    Monthly schedule
+                  </span>
+                  <p className="mt-1 text-sm text-ink-faint">
+                    {now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  </p>
+                </div>
+              </PanelHead>
+              <AutomationCalendar automations={automations} />
+            </Panel>
+          </div>
+        ) : null}
+      </div>
 
       {automations.length > 3 && (
         <FieldGroup>
@@ -109,8 +121,9 @@ export function AutomationManager({ automations, skills }: AutomationManagerProp
             />
           ))
         ) : automations.length === 0 ? (
-          <EmptyCard>
-            No automations yet. Create one to keep your skills up to date on a schedule.
+          <EmptyCard icon={<FlowIcon className="h-5 w-5" />}>
+            <p className="m-0 text-sm">No automations yet.</p>
+            <p className="m-0 text-xs text-ink-faint">Create one to keep your skills up to date on a schedule.</p>
           </EmptyCard>
         ) : (
           <EmptyCard>No automations match this filter.</EmptyCard>
@@ -152,7 +165,7 @@ function AutomationCard({ automation, skillMap, onEdit }: AutomationCardProps) {
   return (
     <article
       className={cn(
-        "group grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded-2xl border border-line bg-paper-3/60 p-4 transition-colors",
+        "group grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 border border-line bg-paper-3/60 p-4 transition-colors",
         isActive
           ? "hover:border-accent/20 hover:bg-paper-3"
           : "opacity-60 hover:opacity-80"
@@ -266,12 +279,15 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent maxWidth="lg">
+      <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="lg">
         <DialogHeader>
-          <DialogTitle>New Automation</DialogTitle>
+          <DialogTitle>New automation</DialogTitle>
+          <DialogDescription>
+            Pick a skill, set a cadence, and add a short instruction for each run.
+          </DialogDescription>
         </DialogHeader>
         <form className="grid gap-0" onSubmit={handleSubmit}>
-          <div className="grid gap-5 p-5">
+          <div className="grid gap-5 px-6 py-5">
           <FieldGroup>
             <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Skill</span>
             <select
@@ -340,17 +356,17 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
           </FieldGroup>
 
           {error && <p className="text-sm text-danger">{error}</p>}
-          {message && <p className="text-sm text-emerald-500">{message}</p>}
+          {message && <p className="text-sm text-success">{message}</p>}
         </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+          <DialogFooter>
             <Button onClick={onClose} type="button" variant="ghost" size="sm">
               Cancel
             </Button>
             <Button disabled={isPending || !selectedSkillSlug} size="sm" type="submit">
               {isPending ? "Creating..." : "Create automation"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

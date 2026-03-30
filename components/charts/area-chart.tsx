@@ -132,6 +132,24 @@ export function AreaChart({
           ) : null
         )}
 
+        {data.map((d, i) => {
+          const bandW = chartW / Math.max(1, data.length);
+          const cx = xScale(i);
+          const tip = `${d.label} · Total ${d.value} · API ${d.secondary ?? 0}`;
+          return (
+            <g key={`hit-${i}`} style={{ pointerEvents: "all" }}>
+              <title>{tip}</title>
+              <rect
+                x={cx - bandW / 2}
+                y={PAD.top}
+                width={bandW}
+                height={chartH}
+                fill="transparent"
+              />
+            </g>
+          );
+        })}
+
         {yTicks.map((tick) => (
           <text
             key={tick}

@@ -24,7 +24,6 @@ type AttachedAutomation = {
 type SkillDetailSidebarProps = {
   slug: string;
   currentVersion: number;
-  versionLabel: string;
   skillHref: string;
   agentPrompt: string;
   agentDocs?: AgentDocs;
@@ -61,7 +60,6 @@ function formatDuration(startedAt: string, finishedAt: string): string {
 export function SkillDetailSidebar({
   slug,
   currentVersion,
-  versionLabel,
   skillHref,
   agentPrompt,
   agentDocs,
@@ -76,13 +74,12 @@ export function SkillDetailSidebar({
   usage
 }: SkillDetailSidebarProps) {
   return (
-    <aside className="grid content-start gap-5">
+    <aside className="grid content-start gap-4">
       <UseSkillPanel
         agentDocs={agentDocs}
         agentPrompt={agentPrompt}
         skillHref={skillHref}
         slug={slug}
-        versionLabel={versionLabel}
       />
 
       <SkillObservabilityPanel usage={usage} />
@@ -102,7 +99,7 @@ export function SkillDetailSidebar({
       ) : null}
 
       {diffLines.length > 0 ? (
-        <Panel compact>
+        <Panel compact square>
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
               <h3 className={sidebarTitle}>Diff</h3>
@@ -121,7 +118,7 @@ export function SkillDetailSidebar({
       ) : null}
 
       {updates && updates.length > 1 ? (
-        <Panel compact>
+        <Panel compact square>
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
               <h3 className={sidebarTitle}>Update history</h3>
@@ -155,7 +152,7 @@ export function SkillDetailSidebar({
       ) : null}
 
       {automations.length > 0 ? (
-        <Panel compact>
+        <Panel compact square>
           <div className="flex items-center gap-2">
             <h3 className={sidebarTitle}>Automations</h3>
             <Badge>{automations.length}</Badge>
@@ -197,8 +194,8 @@ function LatestRefreshPanel({
     (latestRun && (latestRun.sourceCount > 0 || latestRun.signalCount > 0));
 
   return (
-    <Panel compact className="overflow-hidden">
-      <div className="dither-gradient-orange -mx-5 -mt-5 px-5 pb-4 pt-5">
+    <Panel compact square className="overflow-hidden">
+      <div className="dither-gradient-orange -mx-4 -mt-4 mb-4 px-4 pb-4 pt-4">
         <PanelHead>
           <div className="flex items-center gap-2">
             <RefreshIcon className="h-3.5 w-3.5 text-accent" />
@@ -219,7 +216,7 @@ function LatestRefreshPanel({
       {hasHighlights ? (
         <div className="grid gap-3">
           {latestUpdate?.whatChanged ? (
-            <div className="rounded-xl border border-line bg-paper-3 px-3.5 py-3">
+            <div className="rounded-none border border-line bg-paper-3/90 px-3.5 py-3 dark:bg-paper-2/40">
               <small className={metaLabel}>what changed</small>
               <p className="m-0 mt-1 text-sm leading-relaxed text-ink-soft">
                 {latestUpdate.whatChanged}
@@ -230,13 +227,13 @@ function LatestRefreshPanel({
           {latestRun && (latestRun.sourceCount > 0 || latestRun.signalCount > 0) ? (
             <div className="flex flex-wrap gap-2">
               {latestRun.sourceCount > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/6 px-2.5 py-1 text-xs font-medium text-accent">
+                <span className="inline-flex items-center gap-1.5 rounded-none border border-accent/25 bg-accent/8 px-2.5 py-1 text-xs font-medium text-accent">
                   <SearchIcon className="h-3 w-3" />
                   {latestRun.sourceCount} sources scanned
                 </span>
               ) : null}
               {latestRun.signalCount > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/6 px-2.5 py-1 text-xs font-medium text-accent">
+                <span className="inline-flex items-center gap-1.5 rounded-none border border-accent/25 bg-accent/8 px-2.5 py-1 text-xs font-medium text-accent">
                   <SparkIcon className="h-3 w-3" />
                   {latestRun.signalCount} signals found
                 </span>
@@ -250,7 +247,7 @@ function LatestRefreshPanel({
               <div className="flex flex-wrap gap-1.5">
                 {visibleChangedSections.map((section) => (
                   <span
-                    className="rounded-md border border-line bg-paper-2 px-2 py-0.5 text-[0.7rem] font-medium text-ink-soft"
+                    className="rounded-none border border-line bg-paper-2/90 px-2 py-0.5 text-[0.7rem] font-medium text-ink-soft dark:bg-paper-2/50"
                     key={section}
                   >
                     {section}
@@ -264,7 +261,7 @@ function LatestRefreshPanel({
 
       {latestRun ? (
         <div className="grid grid-cols-2 gap-2">
-          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+          <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
             <small className={metaLabel}>status</small>
             <div className="flex items-center gap-1.5">
               <span
@@ -278,15 +275,15 @@ function LatestRefreshPanel({
               </strong>
             </div>
           </div>
-          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+          <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
             <small className={metaLabel}>trigger</small>
             <strong className={metaValue}>{formatTriggerLabel(latestRun.trigger)}</strong>
           </div>
-          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+          <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
             <small className={metaLabel}>editor</small>
             <strong className={cn(metaValue, "truncate")}>{latestRun.editorModel ?? "—"}</strong>
           </div>
-          <div className="grid gap-0.5 rounded-lg border border-line bg-paper-3 px-3 py-2">
+          <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
             <small className={metaLabel}>duration</small>
             <strong className={metaValue}>
               {formatDuration(latestRun.startedAt, latestRun.finishedAt)}

@@ -1,25 +1,110 @@
+"use client";
+
 import type { SVGProps } from "react";
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+
+import { cn } from "@/lib/cn";
+import { LOOP_GEAR_BODY_PATH, LOOP_GEAR_CHIP_PATH } from "@/lib/loop-logo-paths";
 
 type LoopLogoProps = SVGProps<SVGSVGElement> & {
   title?: string;
+  /** When set (e.g. brand link hover), expands hit target beyond the SVG. */
+  interactionActive?: boolean;
+  /** Override chip fill class. Defaults to black in light / white in dark. */
+  chipClassName?: string;
 };
 
-/**
- * Golden-ratio gear-loop mark.
- *
- * 275° ring-arc with 6 gear teeth on the outer edge. Gap ≈ 360°/φ³.
- * Tip R 52 / Base R 42 / Bore R 28 — base/bore ≈ φ (1.5).
- * Center dot (r 7) = axle. Filled path, no stroke.
- */
-export function LoopLogo({ title = "Loop", ...props }: LoopLogoProps) {
+const ORIGIN = "64px 60px";
+
+/** Rest: chip offset in viewBox units. Hover: 0,0 (seated in rim). */
+const CHIP_FLOAT = { x: -12, y: 2.87 };
+
+function ChipPath({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path
+      d={LOOP_GEAR_CHIP_PATH}
+      className={className}
+    />
+  );
+}
+
+/**
+ * Golden-ratio gear-loop mark with a detachable white chip.
+ * Rest: chip floating. Hover: chip seats + gear spins (reduced motion: seat, no spin).
+ *
+ * Chip uses Motion x/y on SVG (user units). `reducedMotion` does not force the chip seated
+ * at rest — that made the piece look “locked” until hover for prefers-reduced-motion users.
+ */
+export function LoopLogo({
+  title = "Loop",
+  className,
+  interactionActive,
+  chipClassName,
+  ...props
+}: LoopLogoProps) {
+  const [mounted, setMounted] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const controlled = interactionActive !== undefined;
+  const engaged = controlled ? interactionActive : hovered;
+
+  const spin = mounted && engaged && !reducedMotion;
+  const chipSeated = engaged;
+
+  const chipPathClass = chipClassName ?? "fill-black dark:fill-white";
+
+  return (
+    <svg
+      viewBox="0 0 134 120"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn("touch-manipulation", className)}
+      onPointerEnter={controlled ? undefined : () => setHovered(true)}
+      onPointerLeave={controlled ? undefined : () => setHovered(false)}
+      {...props}
+    >
       <title>{title}</title>
-      <path
-        d="M103 76A42 42 0 0 1 98 84L107 90A52 52 0 0 1 94 103L88 94A42 42 0 0 1 71 102L72 111A52 52 0 0 1 54 111L56 101A42 42 0 0 1 39 94L33 102A52 52 0 0 1 20 88L29 83A42 42 0 0 1 22 65L12 66A52 52 0 0 1 13 48L23 51A42 42 0 0 1 31 34L24 27A52 52 0 0 1 37 15L42 24A42 42 0 0 1 60 18L60 8A52 52 0 0 1 78 10L75 19A42 42 0 0 1 83 23A7 7 0 0 1 77 35A28 28 0 1 0 90 71A7 7 0 0 1 103 76Z"
-        fill="currentColor"
-      />
-      <circle cx="64" cy="60" fill="currentColor" r="7" />
+      {!mounted ? (
+        <g style={{ transformOrigin: ORIGIN }}>
+          <path d={LOOP_GEAR_BODY_PATH} fill="currentColor" />
+          <circle cx="64" cy="60" r="7" fill="currentColor" />
+          <g
+            style={{ transformOrigin: ORIGIN }}
+            transform={`translate(${CHIP_FLOAT.x},${CHIP_FLOAT.y})`}
+          >
+            <ChipPath className={chipPathClass} />
+          </g>
+        </g>
+      ) : (
+        <motion.g
+          style={{ transformOrigin: ORIGIN }}
+          animate={{ rotate: spin ? 360 : 0 }}
+          transition={
+            spin
+              ? { rotate: { repeat: Infinity, ease: "linear", duration: 3.8 } }
+              : { rotate: { duration: 0.35, ease: "easeOut" } }
+          }
+        >
+          <path d={LOOP_GEAR_BODY_PATH} fill="currentColor" />
+          <circle cx="64" cy="60" r="7" fill="currentColor" />
+          <motion.g
+            style={{ transformOrigin: ORIGIN }}
+            initial={false}
+            animate={{
+              x: chipSeated ? 0 : CHIP_FLOAT.x,
+              y: chipSeated ? 0 : CHIP_FLOAT.y,
+            }}
+            transition={{ type: "spring", stiffness: 420, damping: 28 }}
+          >
+            <ChipPath className={chipPathClass} />
+          </motion.g>
+        </motion.g>
+      )}
     </svg>
   );
 }

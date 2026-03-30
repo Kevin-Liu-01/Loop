@@ -3,7 +3,6 @@ import { AreaChart } from "@/components/charts/area-chart";
 import { BarList } from "@/components/charts/bar-list";
 import { StatTile } from "@/components/charts/stat-tile";
 import { EmptyCard } from "@/components/ui/empty-card";
-import { Panel, PanelHead } from "@/components/ui/panel";
 import {
   SimpleList,
   SimpleListBody,
@@ -23,11 +22,38 @@ type SkillObservabilityPanelProps = {
   usage: SkillUsageSummary;
 };
 
-const sectionKicker = "inline-block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft";
-
 function formatEventDetail(details?: string) {
   if (!details) return null;
   return details.length > 96 ? `${details.slice(0, 93)}...` : details;
+}
+
+function SubCard({
+  title,
+  legend,
+  children,
+}: {
+  title: string;
+  legend?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <article className="grid gap-3.5 rounded-none border border-line bg-paper-3/90 p-4 dark:bg-paper-2/40">
+      <div className="flex items-end justify-between gap-3">
+        <h3 className="m-0 text-sm font-semibold tracking-tight text-ink">{title}</h3>
+        {legend ?? null}
+      </div>
+      {children}
+    </article>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[0.65rem] text-ink-faint">
+      <span className="inline-block h-0.5 w-3 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
+  );
 }
 
 export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelProps) {
@@ -57,81 +83,67 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
   }));
 
   return (
-    <Panel className="gap-[18px]">
-      <PanelHead>
-        <div>
-          <span className={sectionKicker}>Observability</span>
-          <h2 className="m-0 text-lg font-semibold tracking-[-0.03em]">Usage and route calls</h2>
+    <div className="grid gap-5">
+      <div className="grid gap-0 rounded-none border border-line bg-paper-3/92">
+        <div className="flex items-center gap-3 border-b border-line p-5 sm:p-6">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-paper-2 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
+            <PulseIcon className="h-4.5 w-4.5 text-ink-soft" />
+          </span>
+          <div>
+            <p className="m-0 text-sm font-semibold tracking-tight text-ink">Usage overview</p>
+            <p className="m-0 text-xs text-ink-faint">Rolling 24-hour window</p>
+          </div>
         </div>
-      </PanelHead>
 
-      <div className="grid max-lg:grid-cols-2 grid-cols-4 gap-3">
-        <StatTile label="views" value={overview.totals.pageViews} sparkData={viewsSpark} />
-        <StatTile label="interactions" value={overview.totals.interactions} sparkData={interactionsSpark} />
-        <StatTile label="api calls" value={overview.totals.apiCalls} sparkData={apiSpark} />
-        <StatTile label="avg api ms" value={overview.totals.avgApiDurationMs || "0"} sparkData={latencySpark} />
+        <div className="grid grid-cols-2 gap-0 border-b border-line sm:grid-cols-4">
+          <StatTile label="views" value={overview.totalsRolling24h.pageViews} sparkData={viewsSpark} />
+          <StatTile
+            label="interactions"
+            value={overview.totalsRolling24h.interactions}
+            sparkData={interactionsSpark}
+          />
+          <StatTile label="api calls" value={overview.totalsRolling24h.apiCalls} sparkData={apiSpark} />
+          <StatTile
+            label="avg api ms"
+            value={overview.totalsRolling24h.avgApiDurationMs || "0"}
+            sparkData={latencySpark}
+          />
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <SubCard
+            title="Event volume — 24h"
+            legend={
+              <div className="flex items-center gap-3">
+                <LegendDot color="var(--color-accent)" label="total" />
+                <LegendDot color="color-mix(in oklch, var(--color-ink-faint) 50%, transparent)" label="api" />
+              </div>
+            }
+          >
+            <AreaChart id="sys-events" data={areaData} />
+          </SubCard>
+        </div>
       </div>
 
-      <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <span className={sectionKicker}>Timeline</span>
-            <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">Event volume — 24h</h3>
-          </div>
-          <div className="flex items-center gap-3 text-[0.65rem] text-ink-faint">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-0.5 w-3 rounded-full bg-accent" />
-              total
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block h-0.5 w-3 rounded-full"
-                style={{ background: "var(--color-ink-faint)", opacity: 0.5 }}
-              />
-              api
-            </span>
-          </div>
-        </div>
-        <AreaChart id="sys-events" data={areaData} />
-      </article>
-
-      <div className="grid max-lg:grid-cols-1 grid-cols-2 gap-4">
-        <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <span className={sectionKicker}>Routes</span>
-              <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">Top route usage</h3>
-            </div>
-          </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <SubCard title="Top route usage">
           {routeItems.length > 0 ? (
             <BarList items={routeItems} />
           ) : (
             <EmptyCard>No route data yet.</EmptyCard>
           )}
-        </article>
+        </SubCard>
 
-        <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <span className={sectionKicker}>Activity</span>
-              <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">What people do</h3>
-            </div>
-          </div>
+        <SubCard title="Activity breakdown">
           {activityItems.length > 0 ? (
             <BarList items={activityItems} />
           ) : (
             <EmptyCard>No activity yet.</EmptyCard>
           )}
-        </article>
+        </SubCard>
       </div>
 
-      <article className="grid gap-3.5 rounded-2xl border border-line bg-paper-3 p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <span className={sectionKicker}>Recent</span>
-            <h3 className="m-0 text-base font-semibold tracking-[-0.03em]">Recent activity</h3>
-          </div>
-        </div>
+      <SubCard title="Recent activity">
         <SimpleList tight>
           {overview.recentEvents.length > 0 ? (
             overview.recentEvents.map((event) => (
@@ -158,8 +170,8 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
             <EmptyCard>No events yet.</EmptyCard>
           )}
         </SimpleList>
-      </article>
-    </Panel>
+      </SubCard>
+    </div>
   );
 }
 
@@ -176,32 +188,27 @@ export function SkillObservabilityPanel({ usage }: SkillObservabilityPanelProps)
   ];
 
   return (
-    <Panel compact className="grid gap-[18px]">
-      <div className="grid gap-0.5">
-        <span className={sectionKicker}>Observability</span>
-        <h2 className="m-0 text-lg font-semibold tracking-[-0.03em]">Usage stats</h2>
-      </div>
+    <div className="grid gap-4 rounded-none border border-line bg-paper-3/92 p-4 sm:p-5">
+      <h2 className="m-0 font-serif text-lg font-medium tracking-[-0.02em] text-ink">
+        Usage stats
+      </h2>
 
       {usage.lastSeenAt && (
-        <div className="flex items-center gap-2 text-xs text-ink-faint">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-          Active {formatRelativeDate(usage.lastSeenAt)}
-        </div>
+        <p className="m-0 text-xs leading-relaxed text-ink-muted">
+          Last active {formatRelativeDate(usage.lastSeenAt)}
+        </p>
       )}
 
       {hasAnyActivity ? (
         <BarList items={statsItems} compact />
       ) : (
-        <div className="rounded-xl border border-line/60 px-4 py-5 text-center text-xs text-ink-faint">
+        <div className="rounded-none border border-line/70 px-4 py-5 text-center text-xs text-ink-faint dark:border-line/50">
           No usage recorded yet
         </div>
       )}
 
       {usage.recentEvents.length > 0 && (
-        <article className="grid gap-3 rounded-2xl border border-line bg-paper-3 p-4">
-          <h3 className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
-            Latest usage
-          </h3>
+        <SubCard title="Latest usage">
           <SimpleList tight>
             {usage.recentEvents.map((event) => (
               <SimpleListItem key={event.id}>
@@ -222,8 +229,8 @@ export function SkillObservabilityPanel({ usage }: SkillObservabilityPanelProps)
               </SimpleListItem>
             ))}
           </SimpleList>
-        </article>
+        </SubCard>
       )}
-    </Panel>
+    </div>
   );
 }

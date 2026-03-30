@@ -112,7 +112,7 @@ function StatusDot({
   if (state === "result") {
     const ok = exitCode === undefined || exitCode === 0;
     return ok ? (
-      <CheckIcon className="h-3 w-3 text-emerald-500" />
+      <CheckIcon className="h-3 w-3 text-success" />
     ) : (
       <TriangleAlertIcon className="h-3 w-3 text-red-400" />
     );
@@ -180,7 +180,7 @@ export function SandboxToolBlock({
           <span
             className={cn(
               "ml-auto shrink-0 font-mono text-[0.6rem] tabular-nums",
-              exitCode === 0 ? "text-emerald-500" : "text-red-400"
+              exitCode === 0 ? "text-success" : "text-danger"
             )}
           >
             exit {exitCode}

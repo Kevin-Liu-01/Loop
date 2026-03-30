@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         });
 
         revalidatePath("/");
-        revalidatePath("/settings");
+        revalidatePath("/settings", "layout");
         revalidatePath(`/categories/${skill.category}`);
         revalidatePath(`/skills/${skill.slug}`);
 

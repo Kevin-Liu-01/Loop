@@ -40,7 +40,7 @@ export function DiffViewer({
       <header className="diff-viewer__header">
         <div className="flex items-center gap-2.5">
           {label ? (
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
               {label}
             </span>
           ) : null}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+
+import { buttonBase, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 type ThemeToggleProps = {
@@ -21,7 +23,9 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     <button
       aria-label={mounted ? (isLight ? "Switch to dark mode" : "Switch to light mode") : "Toggle theme"}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-paper-2/80 text-ink-soft transition-colors duration-150 hover:border-accent/40 hover:text-ink",
+        buttonBase,
+        buttonVariants.soft,
+        "size-9 shrink-0 p-0",
         className
       )}
       onClick={() => setTheme(isLight ? "dark" : "light")}

@@ -31,9 +31,10 @@ function averageOf(values: number[]): number {
 
 export function bucketEventsByHour(
   events: UsageEventRecord[],
-  hours = 24
+  hours = 24,
+  nowInput?: Date
 ): TimeSeriesBucket[] {
-  const now = new Date();
+  const now = nowInput ?? new Date();
   const buckets: TimeSeriesBucket[] = [];
 
   for (let i = hours - 1; i >= 0; i--) {
@@ -68,9 +69,10 @@ export function bucketEventsByHour(
 
 export function bucketLatencyByHour(
   events: UsageEventRecord[],
-  hours = 24
+  hours = 24,
+  nowInput?: Date
 ): LatencyBucket[] {
-  const now = new Date();
+  const now = nowInput ?? new Date();
   const apiEvents = events.filter(
     (e) => e.kind === "api_call" && typeof e.durationMs === "number"
   );

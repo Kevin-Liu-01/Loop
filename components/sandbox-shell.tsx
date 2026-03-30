@@ -24,15 +24,19 @@ import { Button } from "@/components/ui/button";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { Separator } from "@/components/ui/shadcn/separator";
 import { cn } from "@/lib/cn";
+import { sandboxToolbarControl, sandboxToolbarLabel } from "@/lib/sandbox-ui";
+import { pageHeaderSub, pageInsetPadX } from "@/lib/ui-layout";
 import type {
   AgentProviderPreset,
   ConversationMessage,
+  ImportedMcpDocument,
   SkillRecord
 } from "@/lib/types";
 
 type SandboxRuntime = "node24" | "python3.13";
 
 type SandboxShellProps = {
+  mcps: ImportedMcpDocument[];
   presets: AgentProviderPreset[];
   skills: SkillRecord[];
   initialSkillSlug?: string;
@@ -49,6 +53,7 @@ type SandboxConfig = {
   model: string;
   apiKeyEnvVar: string;
   selectedSkillSlugs: string[];
+  selectedMcpIds: string[];
 };
 
 function defaultConfig(
@@ -61,7 +66,8 @@ function defaultConfig(
     providerId: preset?.id ?? "gateway",
     model: preset?.defaultModel ?? "openai/gpt-5.4-mini",
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
-    selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : []
+    selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : [],
+    selectedMcpIds: []
   };
 }
 
@@ -112,10 +118,11 @@ type MessagePart = {
 const SUGGESTIONS = [
   "Fetch the top HN story and analyze it",
   "Create a simple HTTP server and test it",
-  "Write a Python script to process CSV data"
+  "Use attached MCP tools to query my data"
 ];
 
 export function SandboxShell({
+  mcps = [],
   presets,
   skills,
   initialSkillSlug
@@ -169,7 +176,8 @@ export function SandboxShell({
           apiKeyEnvVar: saved.apiKeyEnvVar ?? prev.apiKeyEnvVar,
           selectedSkillSlugs: initialSkillSlug
             ? prev.selectedSkillSlugs
-            : saved.selectedSkillSlugs ?? prev.selectedSkillSlugs
+            : saved.selectedSkillSlugs ?? prev.selectedSkillSlugs,
+          selectedMcpIds: saved.selectedMcpIds ?? prev.selectedMcpIds
         }));
       }
     } catch {
@@ -223,7 +231,8 @@ export function SandboxShell({
           providerId: configRef.current.providerId,
           model: configRef.current.model,
           apiKeyEnvVar: configRef.current.apiKeyEnvVar,
-          selectedSkillSlugs: configRef.current.selectedSkillSlugs
+          selectedSkillSlugs: configRef.current.selectedSkillSlugs,
+          selectedMcpIds: configRef.current.selectedMcpIds
         })
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,6 +410,19 @@ export function SandboxShell({
     }));
   }
 
+  function toggleMcp(id: string) {
+    setConfig((prev) => ({
+      ...prev,
+      selectedMcpIds: prev.selectedMcpIds.includes(id)
+        ? prev.selectedMcpIds.filter((m) => m !== id)
+        : [...prev.selectedMcpIds, id]
+    }));
+  }
+
+  const executableMcps = mcps.filter(
+    (m) => m.transport === "stdio" || m.transport === "http"
+  );
+
   function updateConfig<K extends keyof SandboxConfig>(
     key: K,
     value: SandboxConfig[K]
@@ -413,11 +435,18 @@ export function SandboxShell({
   const isBusy = isStreaming || sandboxState === "creating";
   const isActive = !viewConvo;
 
+  const showEmptyHero = isActive && messages.length === 0;
+
   return (
-    <div className="flex h-[calc(100dvh-5rem)]">
+    <div className="flex h-full min-h-0 min-w-0 flex-1">
       {/* ── Sidebar ── */}
       {sidebarOpen && (
-        <aside className="w-[280px] shrink-0 border-r border-line bg-paper/60 max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[260px] max-sm:shadow-xl">
+        <aside
+          className={cn(
+            "flex h-full min-h-0 w-[280px] shrink-0 flex-col overflow-hidden border-r border-line/80 bg-paper-2/35 backdrop-blur-sm dark:bg-paper-2/25",
+            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)] max-sm:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.2)]"
+          )}
+        >
           <SandboxSidebar
             currentId={conversationId}
             onNew={handleNewConversation}
@@ -428,225 +457,276 @@ export function SandboxShell({
       )}
 
       {/* ── Main area ── */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* ── Header / Config bar ── */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-paper-2 hover:text-ink"
-            onClick={() => setSidebarOpen((p) => !p)}
-            type="button"
-            aria-label="Toggle sidebar"
-          >
-            <PanelLeftIcon className="h-4 w-4" />
-          </button>
-
-          <Separator orientation="vertical" className="h-4" />
-
-          <label className="flex items-center gap-2 text-xs font-medium text-ink-soft">
-            Runtime
-            <select
-              className="rounded-lg border border-line bg-paper-2 px-2 py-1 text-xs text-ink outline-none"
-              onChange={(e) =>
-                updateConfig("runtime", e.target.value as SandboxRuntime)
-              }
-              value={config.runtime}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-paper/40 dark:bg-paper/25">
+        {/* ── Toolbar ── */}
+        <div
+          className={cn(
+            "shrink-0 border-b border-line/80 bg-linear-to-b from-paper-2/55 to-transparent py-3 dark:from-paper-2/30",
+            pageInsetPadX
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <button
+              className="flex h-9 w-9 shrink-0 items-center justify-center border border-transparent text-ink-soft transition-colors hover:border-line/80 hover:bg-paper-3 hover:text-ink"
+              onClick={() => setSidebarOpen((p) => !p)}
+              type="button"
+              aria-label="Toggle sidebar"
             >
-              <option value="node24">Node.js 24</option>
-              <option value="python3.13">Python 3.13</option>
-            </select>
-          </label>
+              <PanelLeftIcon className="h-4 w-4" />
+            </button>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-ink-soft">
-            Provider
-            <select
-              className="rounded-lg border border-line bg-paper-2 px-2 py-1 text-xs text-ink outline-none"
-              onChange={(e) => {
-                const preset = presets.find((p) => p.id === e.target.value);
-                updateConfig("providerId", e.target.value);
-                if (preset) {
-                  updateConfig("model", preset.defaultModel);
-                  updateConfig("apiKeyEnvVar", preset.apiKeyEnvVar ?? "");
+            <Separator orientation="vertical" className="h-5 hidden sm:block" />
+
+            <label className="flex flex-wrap items-center gap-2">
+              <span className={sandboxToolbarLabel}>Runtime</span>
+              <select
+                className={sandboxToolbarControl}
+                onChange={(e) =>
+                  updateConfig("runtime", e.target.value as SandboxRuntime)
                 }
-              }}
-              value={config.providerId}
-            >
-              {presets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex items-center gap-2 text-xs font-medium text-ink-soft">
-            Model
-            <input
-              className="w-36 rounded-lg border border-line bg-paper-2 px-2 py-1 text-xs text-ink outline-none focus:border-line-strong"
-              onChange={(e) => updateConfig("model", e.target.value)}
-              placeholder={selectedPreset?.defaultModel}
-              value={config.model}
-            />
-          </label>
-
-          <Separator orientation="vertical" className="h-4 max-sm:hidden" />
-
-          <div className="flex flex-wrap items-center gap-1.5 max-sm:hidden">
-            <span className="text-xs font-medium text-ink-soft">Skills</span>
-            {skills.slice(0, 12).map((skill) => (
-              <FilterChip
-                active={config.selectedSkillSlugs.includes(skill.slug)}
-                className="max-w-40 truncate text-[0.6rem]! px-2! py-0.5!"
-                key={skill.slug}
-                onClick={() => toggleSkill(skill.slug)}
+                value={config.runtime}
               >
-                {skill.title}
-              </FilterChip>
-            ))}
-          </div>
-        </div>
+                <option value="node24">Node.js 24</option>
+                <option value="python3.13">Python 3.13</option>
+              </select>
+            </label>
 
-        {/* ── Chat area ── */}
-        <div className="flex-1 overflow-y-auto">
-          {isActive && messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
-              <div className="rounded-2xl border border-line bg-paper-2/60 p-5">
-                <TerminalIcon className="h-10 w-10 text-ink-faint" />
-              </div>
-              <div className="grid gap-2">
-                <h2 className="text-xl font-semibold text-ink">
-                  Sandbox Agent
-                </h2>
-                <p className="mx-auto max-w-md text-sm leading-relaxed text-ink-soft">
-                  Write code, run commands, and explore data in an isolated
-                  sandbox. A session starts automatically when you send your
-                  first message.
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    className="rounded-full border border-line bg-paper-2/60 px-3.5 py-2 text-xs text-ink-soft transition-all hover:border-accent/40 hover:text-ink"
-                    onClick={() => setInput(suggestion)}
-                    type="button"
+            <label className="flex flex-wrap items-center gap-2">
+              <span className={sandboxToolbarLabel}>Provider</span>
+              <select
+                className={cn(sandboxToolbarControl, "min-w-[7.5rem]")}
+                onChange={(e) => {
+                  const preset = presets.find((p) => p.id === e.target.value);
+                  updateConfig("providerId", e.target.value);
+                  if (preset) {
+                    updateConfig("model", preset.defaultModel);
+                    updateConfig("apiKeyEnvVar", preset.apiKeyEnvVar ?? "");
+                  }
+                }}
+                value={config.providerId}
+              >
+                {presets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:max-w-[min(100%,14rem)] sm:flex-initial">
+              <span className={sandboxToolbarLabel}>Model</span>
+              <input
+                className={cn(sandboxToolbarControl, "min-w-0 flex-1 font-mono sm:w-48")}
+                onChange={(e) => updateConfig("model", e.target.value)}
+                placeholder={selectedPreset?.defaultModel}
+                value={config.model}
+              />
+            </label>
+          </div>
+
+          <div className="mt-3 flex min-w-0 flex-col gap-2 border-t border-line/50 pt-3 sm:flex-row sm:items-center">
+            <span className={cn(sandboxToolbarLabel, "shrink-0")}>Skills</span>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-wrap gap-1.5 sm:overflow-visible">
+              {skills.slice(0, 16).map((skill) => (
+                <FilterChip
+                  active={config.selectedSkillSlugs.includes(skill.slug)}
+                  className="max-w-[min(100%,12rem)] truncate text-[0.65rem]! px-2! py-0.5!"
+                  key={skill.slug}
+                  onClick={() => toggleSkill(skill.slug)}
+                >
+                  {skill.title}
+                </FilterChip>
+              ))}
+            </div>
+          </div>
+
+          {executableMcps.length > 0 && (
+            <div className="mt-2 flex min-w-0 flex-col gap-2 border-t border-line/50 pt-3 sm:flex-row sm:items-center">
+              <span className={cn(sandboxToolbarLabel, "shrink-0")}>
+                MCPs
+                <span className="ml-1 text-[0.55rem] tabular-nums text-ink-faint">
+                  {config.selectedMcpIds.length}/{executableMcps.length}
+                </span>
+              </span>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-wrap gap-1.5 sm:overflow-visible">
+                {executableMcps.slice(0, 16).map((mcp) => (
+                  <FilterChip
+                    active={config.selectedMcpIds.includes(mcp.id)}
+                    className="max-w-[min(100%,12rem)] truncate text-[0.65rem]! px-2! py-0.5!"
+                    key={mcp.id}
+                    onClick={() => toggleMcp(mcp.id)}
                   >
-                    <SparkIcon className="mr-1.5 inline-block h-3 w-3 text-accent/60" />
-                    {suggestion}
-                  </button>
+                    <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
+                    {mcp.name}
+                    <span className="ml-1 text-[0.5rem] text-ink-faint">{mcp.transport}</span>
+                  </FilterChip>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="mx-auto grid w-full max-w-3xl gap-6 px-4 py-6">
-              {/* Viewing a saved conversation */}
-              {viewConvo && (
-                <>
-                  <div className="flex items-center gap-3 rounded-xl border border-line/60 bg-paper-2/40 px-4 py-3">
-                    <ClockIcon className="h-4 w-4 shrink-0 text-ink-faint" />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-sm font-medium text-ink">
-                        {viewConvo.title || "Untitled session"}
-                      </span>
-                      <span className="ml-2 text-xs text-ink-faint">
-                        (read-only)
-                      </span>
-                    </div>
-                    <Button
-                      onClick={handleNewConversation}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      New session
-                    </Button>
+          )}
+        </div>
+
+        {/* ── Messages (scroll) ── */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth">
+            {showEmptyHero ? (
+              <div
+                className={cn(
+                  "flex min-h-full flex-1 flex-col items-center justify-center gap-8 py-16 text-center sm:py-20",
+                  pageInsetPadX
+                )}
+              >
+                <div className="grid max-w-md gap-6">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center border border-line bg-paper-3/90 shadow-[0_1px_0_rgba(0,0,0,0.04),0_12px_32px_-8px_rgba(0,0,0,0.08)] ring-1 ring-ink/[0.04] dark:ring-white/[0.06]">
+                    <TerminalIcon className="h-8 w-8 text-ink-muted" />
                   </div>
-                  {viewConvo.messages.map((m) => (
-                    <SavedMessage
-                      key={m.id}
-                      content={m.content}
-                      createdAt={m.createdAt}
-                      role={m.role}
+                  <div className="grid gap-2">
+                    <h2 className="m-0 font-serif text-2xl font-medium tracking-[-0.03em] text-balance text-ink">
+                      Sandbox
+                    </h2>
+                    <p className={cn(pageHeaderSub, "mx-auto max-w-[min(100%,44ch)]")}>
+                      Run code, tools, and MCP servers in an isolated VM. Attach
+                      skills and MCPs from the toolbar — a session spins up when
+                      you send your first message.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {SUGGESTIONS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        className="rounded-full border border-line/60 bg-paper-3/80 px-3.5 py-2 text-left text-xs text-ink-soft shadow-sm transition-[border-color,background-color,color] hover:border-accent/35 hover:bg-paper-2 hover:text-ink"
+                        onClick={() => setInput(suggestion)}
+                        type="button"
+                      >
+                        <SparkIcon className="mr-1.5 inline-block h-3 w-3 text-accent/70" />
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "mx-auto grid w-full max-w-3xl gap-6 py-6",
+                  pageInsetPadX
+                )}
+              >
+                {viewConvo && (
+                  <>
+                    <div className="flex items-center gap-3 border border-line/70 bg-paper-3/90 px-4 py-3 shadow-sm ring-1 ring-ink/[0.03] dark:bg-paper-3/70">
+                      <ClockIcon className="h-4 w-4 shrink-0 text-ink-faint" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium text-ink">
+                          {viewConvo.title || "Untitled session"}
+                        </span>
+                        <span className="ml-2 text-xs text-ink-faint">
+                          (read-only)
+                        </span>
+                      </div>
+                      <Button
+                        onClick={handleNewConversation}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        New session
+                      </Button>
+                    </div>
+                    {viewConvo.messages.map((m) => (
+                      <SavedMessage
+                        key={m.id}
+                        content={m.content}
+                        createdAt={m.createdAt}
+                        role={m.role}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {isActive &&
+                  messages.map((message) => (
+                    <SandboxMessage
+                      key={message.id}
+                      createdAt={
+                        (message as unknown as { createdAt?: Date }).createdAt
+                      }
+                      parts={(message.parts ?? []) as MessagePart[]}
+                      role={message.role as "user" | "assistant"}
                     />
                   ))}
-                </>
-              )}
 
-              {/* Active conversation */}
-              {isActive &&
-                messages.map((message) => (
-                  <SandboxMessage
-                    key={message.id}
-                    createdAt={
-                      (message as unknown as { createdAt?: Date }).createdAt
-                    }
-                    parts={(message.parts ?? []) as MessagePart[]}
-                    role={message.role as "user" | "assistant"}
-                  />
-                ))}
-
-              {isBusy && isActive && (
-                <div className="flex items-center gap-3 pl-10">
-                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
-                  <span className="text-xs text-ink-soft">
-                    {sandboxState === "creating"
-                      ? "Starting sandbox..."
-                      : "Agent is thinking..."}
-                  </span>
-                </div>
-              )}
-
-              <div ref={chatEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* ── Input area ── */}
-        <div className="border-t border-line px-4 py-3">
-          <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
-            <div className="relative flex-1">
-              <textarea
-                ref={textareaRef}
-                className={cn(
-                  "w-full resize-none rounded-2xl border border-line bg-paper-2/80 px-4 py-3 pr-12 text-sm text-ink outline-none transition-colors",
-                  "placeholder:text-ink-faint focus:border-line-strong focus:bg-paper-2"
+                {isBusy && isActive && (
+                  <div className="flex items-center gap-3 pl-10">
+                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
+                    <span className="text-xs text-ink-soft">
+                      {sandboxState === "creating"
+                        ? "Starting sandbox..."
+                        : "Agent is thinking..."}
+                    </span>
+                  </div>
                 )}
-                disabled={isBusy}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  viewConvo
-                    ? "Start a new session to send messages..."
-                    : "Ask the agent to do something..."
-                }
-                rows={2}
-                value={input}
-              />
-              <Button
-                className="absolute bottom-2.5 right-2.5"
-                disabled={!input.trim() || isBusy}
-                onClick={handleSend}
-                size="icon-sm"
-              >
-                <SendIcon className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+
+                <div ref={chatEndRef} />
+              </div>
+            )}
           </div>
-          {(error || sandboxError) && (
-            <p className="mx-auto mt-2 max-w-3xl text-xs text-red-400">
-              {error?.message ?? sandboxError}
-            </p>
-          )}
         </div>
 
-        {/* ── Status bar ── */}
-        {isActive && (
-          <SandboxStatusBar
-            className="mx-4 mb-3"
-            onStop={stopSandbox}
-            runtime={config.runtime}
-            sandboxId={sandboxId}
-            status={sandboxState}
-          />
-        )}
+        {/* ── Composer + status ── */}
+        <div
+          className={cn(
+            "shrink-0 border-t border-line/80 bg-paper-3/85 backdrop-blur-md dark:bg-paper-2/40",
+            pageInsetPadX,
+            "pb-[max(1rem,env(safe-area-inset-bottom))] pt-3"
+          )}
+        >
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+            {isActive && (
+              <SandboxStatusBar
+                onStop={stopSandbox}
+                runtime={config.runtime}
+                sandboxId={sandboxId}
+                status={sandboxState}
+              />
+            )}
+
+            <div className="flex items-end gap-2">
+              <div className="relative min-w-0 flex-1">
+                <textarea
+                  ref={textareaRef}
+                  className={cn(
+                    "w-full resize-none border border-line/90 bg-paper-2/90 px-4 py-3 pr-12 text-sm leading-relaxed text-ink outline-none transition-[border-color,box-shadow,background-color]",
+                    "placeholder:text-ink-faint focus:border-accent/35 focus:bg-paper-3 focus:shadow-[0_0_0_4px_rgba(232,101,10,0.08)] dark:bg-paper-2/80"
+                  )}
+                  disabled={isBusy}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    viewConvo
+                      ? "Start a new session to send messages..."
+                      : "Ask the agent to do something..."
+                  }
+                  rows={2}
+                  value={input}
+                />
+                <Button
+                  className="absolute bottom-2.5 right-2.5"
+                  disabled={!input.trim() || isBusy}
+                  onClick={handleSend}
+                  size="icon-sm"
+                >
+                  <SendIcon className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {(error || sandboxError) && (
+              <p className="m-0 text-xs text-danger">
+                {error?.message ?? sandboxError}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

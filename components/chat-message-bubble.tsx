@@ -51,7 +51,7 @@ export function ChatMessageBubble({ role, text, createdAt }: ChatMessageBubblePr
         ) : (
           <BotIcon className="h-3.5 w-3.5 text-accent/60" />
         )}
-        <span className="text-[0.65rem] font-medium uppercase tracking-[0.1em] text-ink-faint">
+        <span className="text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
           {isUser ? "You" : "Loop"}
         </span>
       </div>

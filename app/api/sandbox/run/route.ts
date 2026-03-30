@@ -2,6 +2,7 @@ import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { z } from "zod";
 
 import { resolveLanguageModel } from "@/lib/agents";
+import { buildMcpToolRuntime } from "@/lib/mcp-runtime";
 import { buildSandboxAgentConfig } from "@/lib/sandbox-agent";
 import { getSandboxInstance } from "@/lib/sandbox";
 import { getLoopSnapshot } from "@/lib/refresh";
@@ -17,6 +18,7 @@ const runSchema = z.object({
   apiKeyEnvVar: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
   selectedSkillSlugs: z.array(z.string()).optional(),
+  selectedMcpIds: z.array(z.string()).optional(),
   systemPrompt: z.string().optional()
 });
 
@@ -41,27 +43,58 @@ export async function POST(request: Request) {
               )
             : [];
 
-        const agentConfig = buildSandboxAgentConfig({
-          model,
-          skills: selectedSkills,
-          sandbox,
-          runtime: payload.runtime,
-          systemPrompt: payload.systemPrompt
-        });
+        const selectedMcps =
+          payload.selectedMcpIds && payload.selectedMcpIds.length > 0
+            ? snapshot.mcps.filter((mcp) => payload.selectedMcpIds?.includes(mcp.id))
+            : [];
+
+        const [agentConfig, mcpRuntime] = await Promise.all([
+          Promise.resolve(
+            buildSandboxAgentConfig({
+              model,
+              skills: selectedSkills,
+              sandbox,
+              runtime: payload.runtime,
+              systemPrompt: payload.systemPrompt
+            })
+          ),
+          buildMcpToolRuntime(selectedMcps)
+        ]);
+
+        const mcpToolContext =
+          mcpRuntime.catalog.length > 0
+            ? [
+                "\n\n## MCP tools (from attached servers):",
+                ...mcpRuntime.catalog.map(
+                  (t) => `- ${t.toolKey} → ${t.serverName}/${t.toolName}: ${t.description}`
+                )
+              ].join("\n")
+            : "";
+
+        const mcpWarnings =
+          mcpRuntime.warnings.length > 0
+            ? `\n\nMCP runtime warnings:\n- ${mcpRuntime.warnings.join("\n- ")}`
+            : "";
+
+        const tools = { ...agentConfig.tools, ...mcpRuntime.tools };
+        const maxSteps = agentConfig.maxToolSteps + (mcpRuntime.catalog.length > 0 ? 5 : 0);
 
         await logUsageEvent({
           kind: "agent_run",
           source: "api",
           label: "Ran sandbox agent",
-          details: `${payload.providerId} · ${payload.model} · sandbox:${payload.sandboxId}`
+          details: `${payload.providerId} · ${payload.model} · sandbox:${payload.sandboxId} · ${selectedMcps.length} MCPs`
         });
 
         const result = streamText({
           model,
-          system: agentConfig.system,
+          system: `${agentConfig.system}${mcpToolContext}${mcpWarnings}`,
           messages: convertToModelMessages(payload.messages),
-          tools: agentConfig.tools,
-          stopWhen: stepCountIs(agentConfig.maxToolSteps)
+          tools,
+          stopWhen: stepCountIs(maxSteps),
+          onFinish: async () => {
+            await mcpRuntime.close();
+          }
         });
 
         return result.toUIMessageStreamResponse();
