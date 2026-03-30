@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth, SignInButton } from "@clerk/nextjs";
 
-import { DownloadIcon, PencilIcon } from "@/components/frontier-icons";
+import { DownloadIcon, PencilIcon, SearchIcon } from "@/components/frontier-icons";
+import { ExternalSkillSources } from "@/components/external-skill-sources";
 import { ImportSkillForm } from "@/components/import-skill-form";
 import { UserSkillForm } from "@/components/user-skill-form";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
-import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/shadcn/tabs";
 import type { CategoryDefinition } from "@/lib/types";
 
@@ -37,7 +37,7 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="gap-0 overflow-hidden p-0">
+      <DialogContent className="h-[min(85vh,calc(100dvh-2rem))] gap-0 overflow-hidden p-0">
         <DialogHeader>
           <DialogTitle>New skill</DialogTitle>
           <DialogDescription>
@@ -54,8 +54,12 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
             </SignInButton>
           </div>
         ) : (
-          <Tabs defaultValue="import" className="flex min-h-0 flex-1 flex-col gap-0">
+          <Tabs defaultValue="discover" className="flex min-h-0 flex-1 flex-col gap-0">
             <TabsList className="mx-6 mt-4 w-fit shrink-0">
+              <TabsTrigger value="discover" className="gap-1.5">
+                <SearchIcon className="h-3.5 w-3.5" />
+                Discover
+              </TabsTrigger>
               <TabsTrigger value="import" className="gap-1.5">
                 <DownloadIcon className="h-3.5 w-3.5" />
                 Import URL
@@ -66,19 +70,20 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="import" className="mt-0 min-h-0 flex-1">
-              <ScrollArea className="h-full">
-                <div className="px-6 pb-6 pt-2">
-                  <ImportSkillForm />
-                </div>
-              </ScrollArea>
+            <TabsContent value="discover" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <div className="px-6 pb-6 pt-2">
+                <ExternalSkillSources />
+              </div>
             </TabsContent>
-            <TabsContent value="create" className="mt-0 min-h-0 flex-1">
-              <ScrollArea className="h-full">
-                <div className="px-6 pb-6 pt-2">
-                  <UserSkillForm categories={categories} />
-                </div>
-              </ScrollArea>
+            <TabsContent value="import" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <div className="px-6 pb-6 pt-2">
+                <ImportSkillForm />
+              </div>
+            </TabsContent>
+            <TabsContent value="create" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <div className="px-6 pb-6 pt-2">
+                <UserSkillForm categories={categories} />
+              </div>
             </TabsContent>
           </Tabs>
         )}

@@ -18,7 +18,7 @@ export default function FaqPage() {
   return (
     <AppGridShell header={<SiteHeader />}>
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
-        <div className={pageInsetColumnClass("grid gap-8 pb-16")}>
+        <div className={pageInsetColumnClass("grid min-h-0 flex-1 gap-8 overflow-y-auto pb-16")}>
           <PageHeader>
             <PageHeaderLead>
               <PageHeaderTitle>Frequently asked questions</PageHeaderTitle>
