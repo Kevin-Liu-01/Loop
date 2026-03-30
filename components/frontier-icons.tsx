@@ -7,25 +7,34 @@ import {
   Boxes,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ChevronUp,
   CircleDot,
   Clipboard,
   Clock,
   Code,
+  Copy,
+  Cpu,
   CreditCard,
   Download,
   Eye,
+  File,
   FileCode,
   FilePenLine,
+  Folder,
+  FolderOpen,
   Globe,
+  HardDrive,
   Hash,
   KeyRound,
   Link2,
   ListTree,
   LogOut,
   MessageSquare,
+  Package,
   PanelLeft,
+  PanelRight,
   PencilLine,
   Play,
   Plus,
@@ -42,6 +51,7 @@ import {
   Square,
   Tag,
   Terminal,
+  Timer,
   TriangleAlert,
   User,
   Wallet,
@@ -114,3 +124,13 @@ export const EyeIcon = wrapIcon(Eye);
 export const ScanIcon = wrapIcon(Scan);
 export const CircleDotIcon = wrapIcon(CircleDot);
 export const TriangleAlertIcon = wrapIcon(TriangleAlert);
+export const CopyIcon = wrapIcon(Copy);
+export const CpuIcon = wrapIcon(Cpu);
+export const FileIcon = wrapIcon(File);
+export const FolderIcon = wrapIcon(Folder);
+export const FolderOpenIcon = wrapIcon(FolderOpen);
+export const HardDriveIcon = wrapIcon(HardDrive);
+export const PackageIcon = wrapIcon(Package);
+export const PanelRightIcon = wrapIcon(PanelRight);
+export const TimerIcon = wrapIcon(Timer);
+export const ChevronLeftIcon = wrapIcon(ChevronLeft);
