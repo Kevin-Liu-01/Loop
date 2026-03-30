@@ -13,7 +13,7 @@ const frontend: SeedSkill[] = [
     slug: "frontend-frontier",
     title: "Frontend Frontier",
     description:
-      "Art direction, motion systems, design-engineering references, and tokenized design systems that avoid generic AI-generated UI.",
+      "Art direction, motion systems, design-engineering references, and tokenized design systems built with Figma, Tailwind, and Motion.",
     category: "frontend",
     accent: "signal-red",
     featured: true,
@@ -95,9 +95,9 @@ Rules for this skill in Cursor:
   },
   {
     slug: "motion-framer",
-    title: "Motion (Framer Motion)",
+    title: "Framer Motion",
     description:
-      "React animation with motion components, variants, gestures, layout animations, AnimatePresence, spring physics, and scroll effects.",
+      "React animation with Framer Motion components, variants, gestures, layout animations, AnimatePresence, spring physics, and scroll effects.",
     category: "frontend",
     accent: "signal-red",
     tags: ["animation", "react", "motion", "framer-motion", "gestures"],
@@ -370,9 +370,9 @@ Review:
   },
   {
     slug: "web-performance",
-    title: "Web Performance",
+    title: "Lighthouse Web Performance",
     description:
-      "Core Web Vitals optimization: LCP, CLS, INP, bundle analysis, image optimization, caching strategies, and runtime profiling.",
+      "Core Web Vitals via Google Lighthouse and Chrome DevTools: LCP, CLS, INP, bundle analysis, image optimization, caching strategies, and runtime profiling.",
     category: "frontend",
     accent: "signal-red",
     tags: ["performance", "vitals", "lcp", "cls", "optimization"],
@@ -444,9 +444,9 @@ Review:
   },
   {
     slug: "accessible-ui",
-    title: "Accessible UI",
+    title: "WCAG Accessible UI",
     description:
-      "WCAG compliance, ARIA patterns, keyboard navigation, screen reader testing, focus management, and inclusive design for web applications.",
+      "W3C WCAG 2.2 compliance, ARIA patterns, keyboard navigation, screen reader testing with VoiceOver and NVDA, focus management, and inclusive design.",
     category: "frontend",
     accent: "signal-red",
     tags: ["accessibility", "a11y", "wcag", "aria", "keyboard"],
@@ -593,9 +593,9 @@ Review:
   },
   {
     slug: "responsive-layouts",
-    title: "Responsive Layouts",
+    title: "CSS Responsive Layouts",
     description:
-      "Responsive design with container queries, fluid typography, modern CSS grid and flexbox patterns, and mobile-first development.",
+      "Responsive design with CSS container queries, fluid typography, modern CSS grid and flexbox patterns, and mobile-first development.",
     category: "frontend",
     accent: "signal-red",
     tags: ["responsive", "css", "grid", "flexbox", "container-queries"],
@@ -663,7 +663,7 @@ Review:
   },
   {
     slug: "component-architecture",
-    title: "Component Architecture",
+    title: "React Component Architecture",
     description:
       "React component patterns: composition, compound components, render props, custom hooks, state management boundaries, and code organization.",
     category: "frontend",
@@ -755,9 +755,9 @@ Review:
 const seoGeo: SeedSkill[] = [
   {
     slug: "seo-geo",
-    title: "SEO + GEO",
+    title: "Google SEO & GEO",
     description:
-      "On-page SEO and generative-engine optimization for keyword placement, entity coverage, schema markup, AI citability, and crawler readiness.",
+      "On-page SEO for Google and generative-engine optimization for keyword placement, entity coverage, schema markup, AI citability, and crawler readiness.",
     category: "seo-geo",
     accent: "signal-blue",
     featured: true,
@@ -828,9 +828,9 @@ Review:
   },
   {
     slug: "schema-markup",
-    title: "Schema Markup",
+    title: "Schema.org Markup",
     description:
-      "JSON-LD structured data for rich snippets, knowledge panels, and AI search grounding — Article, Product, FAQ, HowTo, Organization, and more.",
+      "Schema.org JSON-LD structured data for Google rich snippets, knowledge panels, and AI search grounding — Article, Product, FAQ, HowTo, and more.",
     category: "seo-geo",
     accent: "signal-blue",
     tags: ["schema", "json-ld", "structured-data", "rich-snippets", "seo"],
@@ -898,9 +898,9 @@ Review:
   },
   {
     slug: "technical-seo-audit",
-    title: "Technical SEO Audit",
+    title: "Google Technical SEO Audit",
     description:
-      "Crawlability, indexing, site speed, canonicalization, robots.txt, sitemaps, and Core Web Vitals from the search infrastructure perspective.",
+      "Google Search Console crawlability, indexing, site speed, canonicalization, robots.txt, sitemaps, and Core Web Vitals from the search infrastructure perspective.",
     category: "seo-geo",
     accent: "signal-blue",
     tags: ["technical-seo", "crawlability", "indexing", "sitemap", "audit"],
@@ -1049,9 +1049,9 @@ Review:
   },
   {
     slug: "keyword-research",
-    title: "Keyword Research",
+    title: "Ahrefs Keyword Research",
     description:
-      "Intent-mapped keyword clusters, competitor analysis, search volume prioritization, and content gap identification for SEO strategy.",
+      "Intent-mapped keyword clusters with Ahrefs and Semrush, competitor analysis, search volume prioritization, and content gap identification for SEO strategy.",
     category: "seo-geo",
     accent: "signal-blue",
     tags: ["keywords", "research", "intent", "clusters", "strategy"],
@@ -1118,9 +1118,9 @@ Review:
   },
   {
     slug: "content-seo-strategy",
-    title: "Content SEO Strategy",
+    title: "Google Content SEO Strategy",
     description:
-      "Topic clusters, content calendars, pillar-page architecture, internal linking strategy, and content lifecycle management for organic growth.",
+      "Topic clusters for Google, content calendars, pillar-page architecture, internal linking strategy, and content lifecycle management for organic growth.",
     category: "seo-geo",
     accent: "signal-blue",
     tags: ["content-strategy", "topic-clusters", "pillar-pages", "internal-linking"],
@@ -1192,9 +1192,9 @@ Review:
 const social: SeedSkill[] = [
   {
     slug: "social-content-os",
-    title: "Social Content OS",
+    title: "X & LinkedIn Content OS",
     description:
-      "Strategy and operating system for a technical social presence — content pillars, ranked backlogs, recurring series, and proof-backed publishing workflows.",
+      "Strategy and operating system for X and LinkedIn — content pillars, ranked backlogs, recurring series, and proof-backed publishing workflows.",
     category: "social",
     accent: "signal-gold",
     featured: true,
@@ -1260,7 +1260,7 @@ Review:
   },
   {
     slug: "social-draft",
-    title: "Social Draft",
+    title: "X & LinkedIn Social Draft",
     description:
       "Platform-optimized drafting for X and LinkedIn — hooks, threading, tone calibration, and proof-backed posts that sound like a builder, not a content marketer.",
     category: "social",
@@ -1332,9 +1332,9 @@ Review:
   },
   {
     slug: "audience-growth",
-    title: "Audience Growth",
+    title: "YouTube & X Audience Growth",
     description:
-      "Follower growth mechanics, engagement optimization, reply strategies, collaboration tactics, and analytics-driven content iteration for X and LinkedIn.",
+      "Follower growth mechanics on YouTube and X, engagement optimization, reply strategies, collaboration tactics, and analytics-driven content iteration.",
     category: "social",
     accent: "signal-gold",
     tags: ["growth", "engagement", "followers", "analytics", "social"],
@@ -1459,9 +1459,9 @@ Review:
   },
   {
     slug: "newsletter-craft",
-    title: "Newsletter Craft",
+    title: "Substack Newsletter Craft",
     description:
-      "Email newsletter writing, growth tactics, subject line optimization, audience segmentation, and retention strategies for technical newsletters.",
+      "Email newsletter writing with Substack and Resend, growth tactics, subject line optimization, audience segmentation, and retention strategies.",
     category: "social",
     accent: "signal-gold",
     tags: ["newsletter", "email", "growth", "writing", "distribution"],
@@ -1532,7 +1532,7 @@ Review:
 const infra: SeedSkill[] = [
   {
     slug: "edge-compute",
-    title: "Edge Compute",
+    title: "Cloudflare Edge Compute",
     description:
       "Cloudflare Workers, Vercel Edge Functions, Deno Deploy — patterns for running code at the edge with low latency and global distribution.",
     category: "infra",
@@ -1599,9 +1599,9 @@ Review:
   },
   {
     slug: "database-patterns",
-    title: "Database Patterns",
+    title: "Supabase Database Patterns",
     description:
-      "Postgres best practices: connection pooling, migrations, indexing, query optimization, and schema design for web applications.",
+      "Supabase and Postgres best practices: connection pooling, RLS policies, migrations, indexing, query optimization, and schema design for web apps.",
     category: "infra",
     accent: "signal-blue",
     tags: ["postgres", "database", "sql", "migrations", "indexing"],
@@ -1672,9 +1672,9 @@ Review:
   },
   {
     slug: "observability-stack",
-    title: "Observability Stack",
+    title: "Grafana Observability Stack",
     description:
-      "Logging, tracing, alerting, and metrics for production systems — structured logs, distributed traces, error tracking, and dashboard design.",
+      "Grafana, Prometheus, and Sentry — logging, tracing, alerting, and metrics for production systems with structured logs and distributed traces.",
     category: "infra",
     accent: "signal-blue",
     tags: ["observability", "logging", "tracing", "alerting", "metrics"],
@@ -1743,9 +1743,9 @@ Review:
   },
   {
     slug: "serverless-architecture",
-    title: "Serverless Architecture",
+    title: "Vercel Serverless Architecture",
     description:
-      "Lambda functions, edge functions, API route patterns, cold start mitigation, and event-driven architectures for serverless deployments.",
+      "Vercel Functions, AWS Lambda, and edge functions — API route patterns, cold start mitigation, Fluid Compute, and event-driven architectures.",
     category: "infra",
     accent: "signal-blue",
     tags: ["serverless", "lambda", "functions", "event-driven", "architecture"],
@@ -1815,9 +1815,9 @@ Review:
   },
   {
     slug: "cdn-caching",
-    title: "CDN & Caching",
+    title: "Cloudflare CDN & Caching",
     description:
-      "Cache strategies, CDN configuration, stale-while-revalidate, cache invalidation, and edge caching for fast global content delivery.",
+      "Cloudflare and Vercel cache strategies, CDN configuration, stale-while-revalidate, cache invalidation, and edge caching for global delivery.",
     category: "infra",
     accent: "signal-blue",
     tags: ["cdn", "caching", "swr", "invalidation", "performance"],
@@ -2042,9 +2042,9 @@ Review:
   },
   {
     slug: "container-security",
-    title: "Container Security",
+    title: "Snyk Container Security",
     description:
-      "Image scanning, runtime policies, non-root execution, secrets management, and supply chain security for containerized applications.",
+      "Snyk and Trivy image scanning, runtime policies, non-root execution, secrets management, and supply chain security for containers.",
     category: "containers",
     accent: "signal-red",
     tags: ["security", "containers", "scanning", "runtime", "supply-chain"],
@@ -2123,9 +2123,9 @@ Review:
 const a2a: SeedSkill[] = [
   {
     slug: "agent-orchestration",
-    title: "Agent Orchestration",
+    title: "OpenAI Agent Orchestration",
     description:
-      "Multi-agent patterns, handoff protocols, tool routing, state management, and coordination strategies for AI agent systems.",
+      "OpenAI and Anthropic multi-agent patterns, handoff protocols, tool routing, state management, and coordination strategies for AI agent systems.",
     category: "a2a",
     accent: "signal-gold",
     tags: ["agents", "orchestration", "handoff", "multi-agent", "patterns"],
@@ -2197,9 +2197,9 @@ Review:
   },
   {
     slug: "mcp-development",
-    title: "MCP Development",
+    title: "Anthropic MCP Development",
     description:
-      "Building Model Context Protocol servers and clients — tool definitions, resource exposure, transport layers, and integration patterns.",
+      "Building Anthropic Model Context Protocol servers and clients — tool definitions, resource exposure, transport layers, and integration patterns.",
     category: "a2a",
     accent: "signal-gold",
     tags: ["mcp", "protocol", "tools", "server", "integration"],
@@ -2274,9 +2274,9 @@ Review:
   },
   {
     slug: "prompt-engineering",
-    title: "Prompt Engineering",
+    title: "OpenAI Prompt Engineering",
     description:
-      "System prompts, few-shot examples, chain-of-thought, structured outputs, and prompt optimization techniques for production AI applications.",
+      "System prompts for OpenAI and Claude, few-shot examples, chain-of-thought, structured outputs, and prompt optimization for production AI.",
     category: "a2a",
     accent: "signal-gold",
     tags: ["prompts", "system-prompt", "few-shot", "chain-of-thought", "llm"],
@@ -2347,9 +2347,9 @@ Review:
   },
   {
     slug: "tool-use-patterns",
-    title: "Tool Use Patterns",
+    title: "Tool Use & Function Calling",
     description:
-      "Function calling, structured outputs, tool selection strategies, error recovery, and composable tool chains for AI agent applications.",
+      "OpenAI and Anthropic function calling, structured outputs, tool selection strategies, error recovery, and composable tool chains for AI agents.",
     category: "a2a",
     accent: "signal-gold",
     tags: ["function-calling", "tools", "structured-output", "agents", "api"],
@@ -2420,9 +2420,9 @@ Review:
   },
   {
     slug: "rag-pipelines",
-    title: "RAG Pipelines",
+    title: "OpenAI RAG Pipelines",
     description:
-      "Retrieval-augmented generation: chunking strategies, embedding models, vector search, context window management, and hybrid search for AI applications.",
+      "Retrieval-augmented generation with OpenAI embeddings and Pinecone: chunking strategies, vector search, context window management, and hybrid search.",
     category: "a2a",
     accent: "signal-gold",
     tags: ["rag", "retrieval", "embeddings", "vector-search", "context"],
@@ -2501,9 +2501,9 @@ Review:
 const security: SeedSkill[] = [
   {
     slug: "security-best-practices",
-    title: "Security Best Practices",
+    title: "OWASP Security Best Practices",
     description:
-      "Secure coding defaults for web applications: input validation, output encoding, authentication, authorization, and dependency management.",
+      "OWASP secure coding defaults for web applications: input validation, output encoding, authentication, authorization, and dependency management.",
     category: "security",
     accent: "signal-blue",
     featured: true,
@@ -2576,9 +2576,9 @@ Review:
   },
   {
     slug: "security-threat-model",
-    title: "Security Threat Model",
+    title: "OWASP Threat Modeling",
     description:
-      "Threat modeling methodology: trust boundaries, asset inventory, attacker capabilities, abuse paths, and structured mitigation planning.",
+      "OWASP threat modeling methodology: trust boundaries, asset inventory, STRIDE analysis, abuse paths, and structured mitigation planning.",
     category: "security",
     accent: "signal-blue",
     featured: true,
@@ -2659,9 +2659,9 @@ Review:
   },
   {
     slug: "auth-patterns",
-    title: "Auth Patterns",
+    title: "Clerk Auth Patterns",
     description:
-      "Authentication and authorization patterns: JWT, sessions, OAuth, RBAC, row-level security, and multi-tenant access control for web apps.",
+      "Clerk, Auth0, and OAuth authentication patterns: JWT, sessions, RBAC, Supabase row-level security, and multi-tenant access control for web apps.",
     category: "security",
     accent: "signal-blue",
     tags: ["auth", "jwt", "sessions", "oauth", "rbac"],
@@ -2734,9 +2734,9 @@ Review:
   },
   {
     slug: "api-security",
-    title: "API Security",
+    title: "OAuth & JWT API Security",
     description:
-      "Rate limiting, input validation, CORS configuration, API key management, webhook verification, and abuse prevention for HTTP APIs.",
+      "OAuth 2.0, JWT verification, rate limiting, input validation, CORS configuration, API key management, webhook verification, and abuse prevention.",
     category: "security",
     accent: "signal-blue",
     tags: ["api", "rate-limiting", "cors", "validation", "webhooks"],
@@ -2905,9 +2905,9 @@ Review:
   },
   {
     slug: "release-management",
-    title: "Release Management",
+    title: "GitHub Release Management",
     description:
-      "Semantic versioning, changelogs, release automation, feature flags, canary deployments, and rollback strategies for production software.",
+      "GitHub Releases, semantic versioning, changelogs, release automation, Vercel feature flags, canary deployments, and rollback strategies.",
     category: "ops",
     accent: "signal-gold",
     tags: ["releases", "versioning", "changelog", "deployment", "feature-flags"],

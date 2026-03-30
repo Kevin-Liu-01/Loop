@@ -99,184 +99,184 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
   // FRONTEND (10)
   // =========================================================================
   config("frontend-frontier", "daily",
-    "Refresh Frontend Frontier from tracked sources. Focus on new art direction references, motion library updates, design-system tooling, and frontier stack changes.",
+    "Scrape tracked sources for new art-direction references, motion-library API changes, design-system tooling releases, and frontier CSS/JS features. If a new Tailwind, Motion, or Three.js release dropped, summarize breaking changes and update recommended patterns.",
     [SRC.vercelBlog, SRC.chromeDevBlog, SRC.smashingMag, SRC.tailwindBlog, SRC.motionReleases, SRC.threejsReleases]),
 
   config("motion-framer", "daily",
-    "Refresh Motion (Framer Motion) skill. Track new API features, migration guides, performance improvements, and community patterns.",
+    "Check Motion (Framer Motion) releases for new hooks, layout animation APIs, or performance fixes. Search GitHub discussions and the Vercel blog for migration guides. Update the skill if any API surface changed or a new best-practice pattern emerged.",
     [SRC.motionReleases, SRC.vercelBlog, SRC.reactBlog, SRC.chromeDevBlog]),
 
   config("gsap-scrolltrigger", "weekly",
-    "Refresh GSAP + ScrollTrigger skill. Focus on new plugin features, scroll-driven animation patterns, and browser API changes that affect scroll behavior.",
+    "Scan the GSAP community forum and Chrome DevTools blog for new ScrollTrigger features, scroll-timeline CSS spec progress, or breaking changes in scroll-driven animation APIs. Update pinning, scrubbing, and parallax guidance if anything shipped.",
     [SRC.gsapForum, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag]),
 
   config("react-three-fiber", "weekly",
-    "Refresh React Three Fiber skill. Track Three.js core updates, drei additions, R3F ecosystem changes, and WebGPU progress.",
-    [SRC.threejsReleases, SRC.reactBlog, SRC.chromeDevBlog]),
+    "Check Three.js releases for WebGPU renderer progress, new geometry or material types, and breaking API changes. Scan the React blog for Suspense/RSC patterns that affect R3F. Update drei helper recommendations and performance tips.",
+    [SRC.threejsReleases, SRC.reactBlog, SRC.chromeDevBlog, SRC.vercelBlog]),
 
   config("tailwind-design-system", "daily",
-    "Refresh Tailwind Design System skill. Track Tailwind CSS releases, @theme API changes, and design token patterns.",
+    "Check Tailwind CSS and plugin releases for @theme API changes, new utility classes, or config schema updates. Scan the CSS WG drafts for spec changes that affect token transport. Update design-token patterns and migration notes.",
     [SRC.tailwindBlog, SRC.tailwindReleases, SRC.chromeDevBlog, SRC.cssWg]),
 
   config("web-performance", "daily",
-    "Refresh Web Performance skill. Track Core Web Vitals changes, Lighthouse updates, browser engine optimizations, and new performance APIs.",
+    "Scan for Core Web Vitals threshold changes, new Lighthouse audit rules, V8 engine optimizations, and browser API additions (e.g. Scheduler.yield, fetchLater). Update the skill with concrete before/after guidance for any metric change.",
     [SRC.webDev, SRC.chromeDevBlog, SRC.lighthouseReleases, SRC.v8Blog, SRC.vercelBlog]),
 
   config("accessible-ui", "weekly",
-    "Refresh Accessible UI skill. Track WCAG updates, ARIA pattern changes, browser accessibility improvements, and community resources.",
+    "Check W3C WAI for WCAG 2.2+ criterion updates, new ARIA roles or attributes, and browser accessibility-tree changes. Scan The A11Y Project for practical pattern shifts. Update component-level guidance and testing recommendations.",
     [SRC.a11yProject, SRC.wcagUpdates, SRC.chromeDevBlog, SRC.webDev]),
 
   config("nextjs-patterns", "daily",
-    "Refresh Next.js Patterns skill. Track Next.js releases, Vercel platform changes, React Server Component patterns, and caching strategy updates.",
+    "Check Next.js releases for App Router changes, new cache directives, proxy.ts updates, and Turbopack defaults. Scan the Vercel blog for platform-level changes affecting SSR/ISR/PPR. Update routing, data-fetching, and deployment patterns.",
     [SRC.nextjsReleases, SRC.vercelBlog, SRC.reactBlog, SRC.chromeDevBlog]),
 
   config("responsive-layouts", "weekly",
-    "Refresh Responsive Layouts skill. Track container query support, new CSS features, viewport unit changes, and responsive design patterns.",
+    "Scan CSS WG drafts for container-query, anchor-positioning, and viewport-unit spec changes. Check Chrome DevTools blog for new layout debugging tools. Update breakpoint strategies, fluid typography formulas, and grid/flex patterns.",
     [SRC.cssWg, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag]),
 
   config("component-architecture", "weekly",
-    "Refresh Component Architecture skill. Track React patterns, composition techniques, state management trends, and ecosystem tooling changes.",
-    [SRC.reactBlog, SRC.vercelBlog, SRC.hnFrontpage]),
+    "Scan React blog for Server Component composition patterns, hook best practices, and state management recommendations. Check Vercel blog for App Router architecture guidance. Search HN for emerging component patterns gaining traction in production apps.",
+    [SRC.reactBlog, SRC.vercelBlog, SRC.hnFrontpage, SRC.smashingMag]),
 
   // =========================================================================
   // SEO + GEO (6)
   // =========================================================================
   config("seo-geo", "daily",
-    "Refresh SEO + GEO skill. Track Google algorithm changes, AI search platform updates, entity coverage patterns, schema.org changes, and crawler behavior shifts.",
+    "Scan Google Search Central for algorithm updates, indexing policy changes, and rich-result requirements. Check AI search platforms (OpenAI, Perplexity) for citation behavior changes. Track schema.org releases and update entity-optimization guidance.",
     [SRC.googleSearchCentral, SRC.mozBlog, SRC.searchEngineLand, SRC.ahrefsBlog, SRC.sej, SRC.openaiNews]),
 
   config("schema-markup", "weekly",
-    "Refresh Schema Markup skill. Track schema.org releases, Google rich result changes, structured data validation updates, and new schema types.",
+    "Check schema.org GitHub releases for new types and deprecated properties. Scan Google Search Central for rich-result eligibility changes. Update structured-data templates, validation rules, and JSON-LD patterns.",
     [SRC.schemaOrg, SRC.googleSearchCentral, SRC.mozBlog, SRC.searchEngineLand]),
 
   config("technical-seo-audit", "weekly",
-    "Refresh Technical SEO Audit skill. Track crawlability changes, indexing behavior, Core Web Vitals thresholds, and site infrastructure best practices.",
+    "Scan Google Search Central for crawl-budget policy changes, indexing API updates, and Core Web Vitals threshold shifts. Check web.dev for infrastructure best practices. Update the audit checklist with any new requirements.",
     [SRC.googleSearchCentral, SRC.webDev, SRC.chromeDevBlog, SRC.mozBlog, SRC.ahrefsBlog]),
 
   config("ai-citability", "daily",
-    "Refresh AI Citability & GEO skill. Track AI search platform changes from OpenAI, Google, Perplexity, and Anthropic. Focus on citation behavior, grounding patterns, and llms.txt adoption.",
+    "Monitor OpenAI, Anthropic, and Google for changes to how AI search cites sources. Track llms.txt adoption, grounding-API updates, and retrieval-augmented search behavior. Update citability checklist and content-optimization patterns.",
     [SRC.openaiNews, SRC.anthropicNews, SRC.googleAi, SRC.googleSearchCentral, SRC.searchEngineLand, SRC.sej]),
 
   config("keyword-research", "weekly",
-    "Refresh Keyword Research skill. Track search intent changes, keyword tool updates, and competitor analysis methodology.",
+    "Scan Ahrefs and Moz blogs for search-intent classification changes, keyword difficulty algorithm updates, and SERP feature evolution. Check Search Engine Journal for competitive analysis methodology changes. Update research workflow guidance.",
     [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.sej]),
 
   config("content-seo-strategy", "weekly",
-    "Refresh Content SEO Strategy skill. Track content marketing trends, topic cluster methodology, internal linking best practices, and content refresh strategies.",
+    "Scan Moz and Ahrefs for topic-cluster methodology updates, internal-linking algorithm signals, and content-freshness ranking factors. Check Smashing Magazine for editorial workflow patterns. Update the content calendar and refresh strategy guidance.",
     [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.smashingMag]),
 
   // =========================================================================
   // SOCIAL (5)
   // =========================================================================
   config("social-content-os", "weekly",
-    "Refresh Social Content OS skill. Track platform algorithm changes, content strategy trends, and distribution patterns that affect technical audiences.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers]),
+    "Scrape Hacker News, Product Hunt, and Indie Hackers for trending distribution tactics and platform algorithm changes. Identify which content formats are driving engagement for technical audiences this week. Update the content operating system with new channel priorities.",
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag]),
 
   config("social-draft", "weekly",
-    "Refresh Social Draft skill. Track platform format changes, hook patterns, and engagement mechanics for X and LinkedIn.",
-    [SRC.hnFrontpage, SRC.productHunt]),
+    "Scan HN and Product Hunt for high-performing post formats, hook patterns, and thread structures. Identify X and LinkedIn algorithm signals that changed this week. Update the drafting templates, character-limit guidance, and engagement-bait patterns to avoid.",
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog]),
 
   config("audience-growth", "weekly",
-    "Refresh Audience Growth skill. Track platform algorithm changes, follower growth mechanics, and engagement optimization patterns.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers]),
+    "Scrape Indie Hackers for audience-building case studies and growth experiments. Check Product Hunt for new growth tools. Monitor HN for algorithm-change discussions on X, LinkedIn, and newsletter platforms. Update follower-growth and engagement-optimization playbooks.",
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag]),
 
   config("content-repurposing", "weekly",
-    "Refresh Content Repurposing skill. Track multi-format content trends, platform-specific format changes, and distribution channel effectiveness.",
-    [SRC.hnFrontpage, SRC.productHunt]),
+    "Scan Product Hunt for new repurposing tools (blog-to-video, thread-to-carousel). Check Indie Hackers for multi-format distribution case studies. Monitor HN for platform-specific format requirement changes. Update the repurposing workflow and format matrix.",
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog]),
 
   config("newsletter-craft", "weekly",
-    "Refresh Newsletter Craft skill. Track email deliverability changes, subject line trends, newsletter platform features, and growth tactics.",
-    [SRC.hnFrontpage, SRC.indiehackers, SRC.productHunt]),
+    "Scan Indie Hackers for newsletter growth tactics and deliverability case studies. Check Product Hunt for new email platform features. Monitor HN for email authentication requirement changes (DKIM, DMARC, BIMI). Update subject-line formulas and growth-loop patterns.",
+    [SRC.hnFrontpage, SRC.indiehackers, SRC.productHunt, SRC.smashingMag]),
 
   // =========================================================================
   // INFRA (5)
   // =========================================================================
   config("edge-compute", "daily",
-    "Refresh Edge Compute skill. Track Cloudflare Workers updates, Vercel Edge Function changes, Deno Deploy features, and edge runtime API evolution.",
+    "Check Cloudflare blog for Workers runtime changes, new binding types, and Durable Object updates. Scan Vercel blog for Edge Function and Fluid Compute changes. Monitor Deno releases for Deploy API updates. Update edge runtime comparison table and migration notes.",
     [SRC.cloudflareBlog, SRC.vercelBlog, SRC.denoReleases, SRC.chromeDevBlog]),
 
   config("database-patterns", "daily",
-    "Refresh Database Patterns skill. Track Postgres releases, Supabase features, connection pooling changes, and query optimization techniques.",
+    "Check Supabase blog for new Postgres extensions, RLS pattern updates, and connection-pooling changes. Scan Neon blog for serverless Postgres features. Monitor Postgres Weekly for query-optimization techniques. Update schema-design and indexing guidance.",
     [SRC.supabaseBlog, SRC.postgresWeekly, SRC.neonBlog, SRC.vercelBlog]),
 
   config("observability-stack", "weekly",
-    "Refresh Observability Stack skill. Track logging, tracing, and alerting tool updates, OpenTelemetry changes, and best practices for structured observability.",
+    "Scan Cloudflare and Vercel blogs for logging/tracing infrastructure changes. Check GitHub blog for Actions observability features. Monitor HN for OpenTelemetry ecosystem updates. Update structured-logging patterns and alerting threshold recommendations.",
     [SRC.cloudflareBlog, SRC.vercelBlog, SRC.githubBlog, SRC.hnFrontpage]),
 
   config("serverless-architecture", "daily",
-    "Refresh Serverless Architecture skill. Track serverless platform changes, cold start improvements, edge function updates, and event-driven patterns.",
+    "Check Vercel blog for Fluid Compute, Queues, and Function configuration changes. Scan Cloudflare blog for Workers pricing or runtime updates. Monitor Supabase for Edge Function changes. Update cold-start mitigation patterns and event-driven architecture guidance.",
     [SRC.vercelBlog, SRC.cloudflareBlog, SRC.supabaseBlog, SRC.denoReleases]),
 
   config("cdn-caching", "weekly",
-    "Refresh CDN & Caching skill. Track CDN provider updates, Cache-Control best practices, ISR changes, and cache invalidation patterns.",
+    "Scan Cloudflare blog for cache-rule and purge-API changes. Check Vercel blog for ISR, Runtime Cache, and CDN invalidation updates. Monitor web.dev for Cache-Control best-practice revisions. Update cache-hierarchy diagrams and TTL recommendations.",
     [SRC.cloudflareBlog, SRC.vercelBlog, SRC.webDev, SRC.chromeDevBlog]),
 
   // =========================================================================
   // CONTAINERS (3)
   // =========================================================================
   config("dockerfile-mastery", "weekly",
-    "Refresh Dockerfile Mastery skill. Track Docker releases, multi-stage build improvements, security hardening patterns, and image optimization techniques.",
+    "Check Docker blog for BuildKit updates, new Dockerfile syntax directives, and multi-stage build improvements. Scan Trivy releases for image-scanning rule changes. Update Dockerfile templates, layer-caching strategies, and security-hardening patterns.",
     [SRC.dockerBlog, SRC.containerdReleases, SRC.trivyReleases, SRC.githubBlog]),
 
   config("kubernetes-essentials", "weekly",
-    "Refresh Kubernetes Essentials skill. Track Kubernetes releases, new resource types, security policies, and deployment pattern changes.",
+    "Check Kubernetes blog for new resource types, deprecation notices, and security-policy changes. Scan containerd releases for runtime updates. Monitor Docker blog for K8s integration changes. Update deployment manifests, RBAC patterns, and upgrade-path guidance.",
     [SRC.kubernetesBlog, SRC.dockerBlog, SRC.containerdReleases, SRC.githubBlog]),
 
   config("container-security", "daily",
-    "Refresh Container Security skill. Track CVEs, image scanning tool updates, runtime security policies, and supply chain security patterns.",
+    "Scan Trivy releases for new vulnerability rules and scanning-engine updates. Check Snyk blog for container CVE advisories. Monitor GitHub Security Advisories for base-image vulnerabilities. Update image-hardening checklist and runtime-policy recommendations.",
     [SRC.trivyReleases, SRC.snykBlog, SRC.dockerBlog, SRC.githubAdvisory, SRC.containerdReleases]),
 
   // =========================================================================
   // A2A — AGENTS (5)
   // =========================================================================
   config("agent-orchestration", "daily",
-    "Refresh Agent Orchestration skill. Track multi-agent patterns from OpenAI, Anthropic, Google, and LangChain. Focus on handoff protocols, state management, and orchestration architecture changes.",
+    "Scan OpenAI, Anthropic, and Google blogs for multi-agent protocol changes, handoff-API updates, and orchestration pattern guidance. Check Vercel AI SDK releases for Agent class changes. Monitor LangChain for graph-based orchestration updates. Update the architecture decision tree and state-management patterns.",
     [SRC.openaiNews, SRC.openaiChangelog, SRC.anthropicNews, SRC.anthropicDocs, SRC.googleAi, SRC.vercelAiSdk, SRC.langchainBlog, SRC.huggingFace]),
 
   config("mcp-development", "daily",
-    "Refresh MCP Development skill. Track MCP spec changes, new server implementations, transport protocol updates, and tool definition patterns.",
+    "Check MCP specification repo for protocol version bumps, new transport types, and capability changes. Scan the MCP servers repo for new reference implementations. Monitor Anthropic and OpenAI blogs for tool-protocol convergence signals. Update server scaffolding templates and auth patterns.",
     [SRC.mcpSpec, SRC.mcpServers, SRC.anthropicNews, SRC.openaiNews, SRC.vercelAiSdk]),
 
   config("prompt-engineering", "daily",
-    "Refresh Prompt Engineering skill. Track new prompting techniques from OpenAI, Anthropic, and Google. Focus on structured output, chain-of-thought, and production prompt patterns.",
+    "Scan OpenAI and Anthropic changelogs for model behavior changes that affect prompting (system prompt handling, structured-output schemas, reasoning-token limits). Check Google AI blog for Gemini prompting guidance. Update chain-of-thought templates, few-shot examples, and production prompt-versioning patterns.",
     [SRC.openaiNews, SRC.openaiChangelog, SRC.anthropicNews, SRC.anthropicDocs, SRC.googleAi, SRC.googleDevAi, SRC.huggingFace]),
 
   config("tool-use-patterns", "daily",
-    "Refresh Tool Use Patterns skill. Track function calling API changes, structured output evolution, and tool composition patterns across major LLM providers.",
+    "Check OpenAI and Anthropic changelogs for function-calling schema changes, parallel-tool-use updates, and output-format requirements. Scan Vercel AI SDK for inputSchema/outputSchema API changes. Update tool-definition templates, error-handling patterns, and multi-tool composition guidance.",
     [SRC.openaiNews, SRC.openaiChangelog, SRC.anthropicNews, SRC.anthropicDocs, SRC.googleDevAi, SRC.vercelAiSdk, SRC.langchainBlog]),
 
   config("rag-pipelines", "daily",
-    "Refresh RAG Pipelines skill. Track embedding model releases, vector database updates, retrieval technique improvements, and evaluation methodology changes.",
+    "Check OpenAI for new embedding models or retrieval-API changes. Scan Hugging Face for open embedding model releases. Monitor LangChain for retriever and reranker updates. Check Supabase/Neon for pgvector improvements. Update chunking strategies, similarity-search patterns, and evaluation benchmarks.",
     [SRC.openaiNews, SRC.openaiChangelog, SRC.anthropicNews, SRC.huggingFace, SRC.langchainBlog, SRC.supabaseBlog, SRC.neonBlog]),
 
   // =========================================================================
   // SECURITY (4)
   // =========================================================================
   config("security-best-practices", "daily",
-    "Refresh Security Best Practices skill. Track CVEs, dependency vulnerabilities, secure coding pattern updates, and web security advisories.",
+    "Scan GitHub Security Advisories for critical npm CVEs. Check Snyk blog for dependency vulnerability trends. Monitor PortSwigger for new web-attack techniques. Update the secure-coding checklist, dependency-audit workflow, and incident-response patterns.",
     [SRC.githubAdvisory, SRC.snykBlog, SRC.portswigger, SRC.owaspBlog, SRC.krebsSecurity]),
 
   config("security-threat-model", "weekly",
-    "Refresh Security Threat Model skill. Track threat modeling methodology updates, STRIDE/DREAD pattern evolution, and application security trends.",
+    "Scan OWASP for threat-modeling methodology updates and new attack-tree patterns. Check PortSwigger for novel attack vectors. Monitor Snyk for supply-chain threat intelligence. Update STRIDE/DREAD worksheets and application-boundary diagrams.",
     [SRC.owaspBlog, SRC.portswigger, SRC.snykBlog, SRC.krebsSecurity]),
 
   config("auth-patterns", "daily",
-    "Refresh Auth Patterns skill. Track auth provider changes from Clerk, JWT/session security updates, OAuth spec evolution, and RLS patterns.",
+    "Check Clerk changelog for SDK changes, middleware patterns, and organization-feature updates. Scan OWASP for session-management and JWT security advisories. Monitor Supabase for RLS and auth-hook changes. Update auth-flow diagrams and token-handling patterns.",
     [SRC.clerkChangelog, SRC.owaspBlog, SRC.supabaseBlog, SRC.portswigger, SRC.snykBlog]),
 
   config("api-security", "daily",
-    "Refresh API Security skill. Track rate limiting best practices, CORS changes, webhook security patterns, and API vulnerability disclosures.",
+    "Scan PortSwigger for new API attack techniques and bypass patterns. Check Snyk for API-specific CVEs. Monitor OWASP API Top 10 for guidance changes. Check Vercel blog for webhook-verification and rate-limiting updates. Update rate-limit configurations and CORS policy templates.",
     [SRC.portswigger, SRC.snykBlog, SRC.owaspBlog, SRC.githubAdvisory, SRC.vercelBlog]),
 
   // =========================================================================
   // OPS (2)
   // =========================================================================
   config("gh-actions-ci", "daily",
-    "Refresh GitHub Actions CI skill. Track GitHub Actions runner updates, new action releases, caching improvements, and CI/CD best practices.",
-    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog]),
+    "Check GitHub Blog and Changelog for Actions runner updates, new built-in actions, caching-API changes, and OIDC token improvements. Scan Vercel blog for deployment-integration updates. Update workflow templates, caching strategies, and secret-management patterns.",
+    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.hnFrontpage]),
 
   config("release-management", "weekly",
-    "Refresh Release Management skill. Track versioning tool updates, changelog automation, feature flag tooling, and deployment strategy patterns.",
+    "Scan GitHub Blog for release-automation features and tag-management updates. Check Linear changelog for project-management integration changes. Monitor Vercel blog for preview-deployment and promotion-flow updates. Update changelog-generation templates and feature-flag rollout patterns.",
     [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.linearChangelog]),
 ];
 

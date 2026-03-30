@@ -82,7 +82,8 @@ export function rowToSkillRecord(row: SkillRow, availableVersions?: VersionRefer
     updates: (row.updates ?? []) as SkillUpdateEntry[],
     agentDocs: (row.agent_docs ?? {}) as AgentDocs,
     price: (row as Record<string, unknown>).price as SkillRecord["price"] ?? null,
-    creatorClerkUserId: (row as Record<string, unknown>).creator_clerk_user_id as string ?? undefined
+    creatorClerkUserId: (row as Record<string, unknown>).creator_clerk_user_id as string ?? undefined,
+    iconUrl: (row as Record<string, unknown>).icon_url as string ?? undefined
   };
 }
 
@@ -113,6 +114,7 @@ export type CreateSkillInput = {
   version?: number;
   price?: { amount: number; currency: string } | null;
   creatorClerkUserId?: string;
+  iconUrl?: string;
 };
 
 function inputToRow(input: CreateSkillInput): Record<string, unknown> {
@@ -145,6 +147,7 @@ function inputToRow(input: CreateSkillInput): Record<string, unknown> {
 
   if (input.price !== undefined) row.price = input.price;
   if (input.creatorClerkUserId !== undefined) row.creator_clerk_user_id = input.creatorClerkUserId;
+  if (input.iconUrl !== undefined) row.icon_url = input.iconUrl;
 
   return row;
 }
@@ -307,6 +310,7 @@ export async function updateSkill(
   if (updates.relativeDir !== undefined) mapped.relative_dir = updates.relativeDir;
   if (updates.price !== undefined) mapped.price = updates.price;
   if (updates.creatorClerkUserId !== undefined) mapped.creator_clerk_user_id = updates.creatorClerkUserId;
+  if (updates.iconUrl !== undefined) mapped.icon_url = updates.iconUrl;
 
   const { data, error } = await db
     .from("skills")
