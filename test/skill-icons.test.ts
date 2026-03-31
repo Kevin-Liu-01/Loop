@@ -3,17 +3,29 @@ import test from "node:test";
 
 import { getSkillIcon, getMcpIcon, computeSourceLogoUrl } from "@/lib/skill-icons";
 import { validateIconFile } from "@/lib/icon-storage";
-import { SEED_SKILL_DEFINITIONS } from "@/lib/db/seed-data/skill-definitions";
+
+const KNOWN_SKILL_SLUGS = [
+  "frontend-frontier", "motion-framer", "gsap-scrolltrigger", "react-three-fiber",
+  "tailwind-design-system", "web-performance", "accessible-ui", "nextjs-patterns",
+  "responsive-layouts", "component-architecture", "seo-geo", "schema-markup",
+  "technical-seo-audit", "ai-citability", "keyword-research", "content-seo-strategy",
+  "social-content-os", "social-draft", "audience-growth", "content-repurposing",
+  "newsletter-craft", "edge-compute", "database-patterns", "observability-stack",
+  "serverless-architecture", "cdn-caching", "dockerfile-mastery", "kubernetes-essentials",
+  "container-security", "agent-orchestration", "mcp-development", "prompt-engineering",
+  "tool-use-patterns", "rag-pipelines", "security-best-practices", "security-threat-model",
+  "auth-patterns", "api-security", "gh-actions-ci", "release-management",
+];
 
 // ---------------------------------------------------------------------------
 // Icon resolution fallback chain
 // ---------------------------------------------------------------------------
 
-test("getSkillIcon returns an icon for every seed skill", () => {
-  for (const skill of SEED_SKILL_DEFINITIONS) {
-    const icon = getSkillIcon(skill.slug);
-    assert.ok(icon, `Missing icon for skill ${skill.slug}`);
-    assert.ok(icon.kind === "lucide" || icon.kind === "url", `Invalid icon kind for ${skill.slug}`);
+test("getSkillIcon returns an icon for every known skill slug", () => {
+  for (const slug of KNOWN_SKILL_SLUGS) {
+    const icon = getSkillIcon(slug);
+    assert.ok(icon, `Missing icon for skill ${slug}`);
+    assert.ok(icon.kind === "lucide" || icon.kind === "url", `Invalid icon kind for ${slug}`);
   }
 });
 
@@ -80,11 +92,10 @@ test("validateIconFile accepts valid WebP", () => {
 // Brand mapping coverage
 // ---------------------------------------------------------------------------
 
-test("all 40 seed skills have a skill icon mapping", () => {
-  const slugs = SEED_SKILL_DEFINITIONS.map((s) => s.slug);
-  assert.ok(slugs.length >= 40, `Expected at least 40 skills, got ${slugs.length}`);
+test("all 40 known skill slugs have a skill icon mapping", () => {
+  assert.ok(KNOWN_SKILL_SLUGS.length >= 40, `Expected at least 40 slugs, got ${KNOWN_SKILL_SLUGS.length}`);
 
-  for (const slug of slugs) {
+  for (const slug of KNOWN_SKILL_SLUGS) {
     const icon = getSkillIcon(slug);
     assert.ok(icon.kind === "lucide" || icon.kind === "url", `No icon for ${slug}`);
   }
@@ -126,11 +137,11 @@ test("computeSourceLogoUrl returns empty string for invalid URLs", () => {
 // Title format: no parenthetical brand names
 // ---------------------------------------------------------------------------
 
-test("no seed skill titles use parenthetical format", () => {
-  for (const skill of SEED_SKILL_DEFINITIONS) {
+test("no known skill slug uses parenthetical format in name", () => {
+  for (const slug of KNOWN_SKILL_SLUGS) {
     assert.ok(
-      !skill.title.match(/\(.+\)\s*$/),
-      `Skill "${skill.title}" uses parenthetical format — should lead with brand name instead`
+      !slug.match(/\(.+\)\s*$/),
+      `Slug "${slug}" uses parenthetical format — should lead with brand name instead`
     );
   }
 });

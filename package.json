@@ -13,8 +13,6 @@
     "typecheck": "next typegen && tsc --noEmit",
     "content:build": "node --import tsx ./lib/refresh.ts --write-local",
     "content:refresh": "node --import tsx ./lib/refresh.ts --write-local --upload-blob",
-    "seed:skills": "node --import tsx ./lib/db/seed-skills.ts",
-    "seed:sync": "node --import tsx ./lib/db/sync-seed-content.ts",
     "browser:debug": "bash ./scripts/browser-debug.sh"
   },
   "dependencies": {

@@ -8,7 +8,6 @@
 import { getServerSupabase } from "@/lib/db/client";
 import { listSkills, updateSkill } from "@/lib/db/skills";
 import { listMcps, upsertMcp } from "@/lib/db/mcps";
-import { SEED_SKILL_DEFINITIONS } from "@/lib/db/seed-data/skill-definitions";
 import { SKILL_SOURCE_CONFIGS } from "@/lib/db/seed-data/skill-sources";
 import {
   DIRECT_TRANSPLANT_SKILLS,
@@ -354,13 +353,11 @@ async function seedTrustedSourcesAndUpstreams(
 
 async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
   const skills = await listSkills();
-  const seedBySlug = new Map(SEED_SKILL_DEFINITIONS.map((skill) => [skill.slug, skill]));
   const sourceConfigBySlug = new Map(SKILL_SOURCE_CONFIGS.map((config) => [config.slug, config]));
 
   let updated = 0;
 
   for (const existing of skills) {
-    const seed = seedBySlug.get(existing.slug);
     const sourceConfig = sourceConfigBySlug.get(existing.slug);
     const upstreamEntries = (SKILL_UPSTREAM_LINKS[existing.slug] ?? [])
       .map((slug) => upstreams.get(slug))
@@ -371,16 +368,14 @@ async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
     const skillIcon = getSkillIcon(existing.slug);
     const draft: SkillRecord = {
       ...existing,
-      title: seed?.title ?? existing.title,
-      description: transplant?.description ?? seed?.description ?? existing.description,
-      body: buildBody(transplant?.body ?? seed?.body ?? existing.body, {
+      description: transplant?.description ?? existing.description,
+      body: buildBody(transplant?.body ?? existing.body, {
         ...existing,
-        title: seed?.title ?? existing.title,
-        description: transplant?.description ?? seed?.description ?? existing.description,
+        description: transplant?.description ?? existing.description,
         sources: sourceConfig?.sources ?? existing.sources,
         automation: sourceConfig?.automation ?? existing.automation,
       }, upstreamEntries),
-      tags: Array.from(new Set([...(seed?.tags ?? []), ...existing.tags, ...upstreamEntries.flatMap((entry) => entry.tags)])),
+      tags: Array.from(new Set([...existing.tags, ...upstreamEntries.flatMap((entry) => entry.tags)])),
       sources: sourceConfig?.sources ?? existing.sources,
       automation: sourceConfig?.automation ?? existing.automation,
     };
@@ -393,7 +388,7 @@ async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
       tags: draft.tags,
       sources: draft.sources,
       automation: draft.automation,
-      featured: buildFeaturedRank(existing.slug) > 0 || Boolean(seed?.featured),
+      featured: buildFeaturedRank(existing.slug) > 0 || existing.featured,
       featuredRank: buildFeaturedRank(existing.slug),
       qualityScore: buildQualityScore(draft, upstreamEntries),
       researchProfile,
