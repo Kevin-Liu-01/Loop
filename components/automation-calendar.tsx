@@ -115,10 +115,11 @@ export function AutomationCalendar({
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
     "dark:border-line-strong/60 dark:bg-paper-2/95 dark:text-ink-soft dark:hover:border-line-strong/80 dark:hover:bg-white/10 dark:hover:text-ink"
   );
+  const legendRowsAreClickable = typeof onEditAutomation === "function";
 
   return (
     <div className={cn("grid gap-4", sidebar && "gap-5")}>
-      <div className="grid gap-0 overflow-hidden rounded-none border border-line bg-paper-3/25 p-1.5 dark:bg-black/30">
+      <div className="grid gap-0 overflow-hidden rounded-none border border-line bg-paper-3 p-1.5 dark:bg-paper-2/60">
         <DayPicker
           mode="single"
           month={month}
@@ -234,13 +235,30 @@ export function AutomationCalendar({
             const m = month.getMonth();
             const count = getRunDatesForMonth(automation.schedule, year, m).length;
             const nextRun = formatNextRun(automation.schedule);
-
-            return (
-              <div className="flex min-w-0 items-center gap-2 text-xs text-ink-soft" key={automation.id}>
+            const content = (
+              <>
                 <span className={cn("h-2 w-2 shrink-0 rounded-none shadow-sm ring-1 ring-line/40", color)} />
                 <span className="min-w-0 truncate font-medium">{automation.name}</span>
                 <span className="shrink-0 tabular-nums text-ink-faint">{count} runs</span>
                 <span className="ml-auto shrink-0 tabular-nums text-ink-faint/70">{nextRun}</span>
+              </>
+            );
+
+            return legendRowsAreClickable ? (
+              <button
+                className={cn(
+                  "flex min-w-0 items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-left text-xs text-ink-soft transition-colors",
+                  "hover:border-accent/20 hover:bg-paper-2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                )}
+                key={automation.id}
+                onClick={() => onEditAutomation(automation)}
+                type="button"
+              >
+                {content}
+              </button>
+            ) : (
+              <div className="flex min-w-0 items-center gap-2 px-2 py-1.5 text-xs text-ink-soft" key={automation.id}>
+                {content}
               </div>
             );
           })}

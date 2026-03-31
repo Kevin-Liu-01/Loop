@@ -18,16 +18,23 @@ import { cn } from "@/lib/cn";
 import { formatAutomationSchedule } from "@/lib/format";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
 import type { AutomationSummary } from "@/lib/types";
-import { CADENCE_OPTIONS, rruleToCadence } from "@/lib/automation-constants";
+import { CADENCE_OPTIONS, cadenceToRRule, rruleToCadence } from "@/lib/automation-constants";
 
 type AutomationEditModalProps = {
   automation: AutomationSummary;
   open: boolean;
   onClose: () => void;
   skillName?: string;
+  canManage?: boolean;
 };
 
-export function AutomationEditModal({ automation, open, onClose, skillName }: AutomationEditModalProps) {
+export function AutomationEditModal({
+  automation,
+  open,
+  onClose,
+  skillName,
+  canManage = true,
+}: AutomationEditModalProps) {
   const router = useRouter();
   const [name, setName] = useState(automation.name);
   const [cadence, setCadence] = useState(rruleToCadence(automation.schedule));
@@ -38,6 +45,9 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const linkedSkillLabel = skillName ?? automation.matchedSkillSlugs[0] ?? "";
+  const previewSchedule = cadenceToRRule(cadence);
+  const workspacesLabel =
+    automation.cwd.length > 0 ? automation.cwd.join("\n") : "No workspace attached.";
 
   useEffect(() => {
     setName(automation.name);
@@ -89,16 +99,18 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
   }
 
   const now = new Date();
-  const monthlyRuns = countMonthlyRuns(automation.schedule, now.getFullYear(), now.getMonth());
+  const monthlyRuns = countMonthlyRuns(previewSchedule, now.getFullYear(), now.getMonth());
+  const nextRunLabel = status === "PAUSED" ? "Paused" : formatNextRun(previewSchedule);
+  const previewScheduleLabel = formatAutomationSchedule(previewSchedule);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="gap-0 overflow-hidden p-0">
         <DialogHeader>
-          <DialogTitle>Edit automation</DialogTitle>
+          <DialogTitle>{canManage ? "Edit automation" : "Automation details"}</DialogTitle>
           <DialogDescription>
-            Update schedule, status, and prompt for{" "}
-            {linkedSkillLabel ? <strong>{linkedSkillLabel}</strong> : "this skill"}.
+            {canManage ? "Update" : "Inspect"} schedule, status, and prompt for{" "}
+            {linkedSkillLabel ? <strong>{linkedSkillLabel}</strong> : "this automation"}.
           </DialogDescription>
         </DialogHeader>
         <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSave}>
@@ -108,7 +120,7 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
             <div className="grid flex-1 gap-0.5">
               <span className="text-xs text-ink-faint">Next run</span>
               <span className="text-sm font-medium tabular-nums text-ink">
-                {formatNextRun(automation.schedule)}
+                {nextRunLabel}
               </span>
             </div>
             <Separator orientation="vertical" className="h-6" />
@@ -120,15 +132,36 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
             <div className="grid flex-1 gap-0.5">
               <span className="text-xs text-ink-faint">Schedule</span>
               <span className="text-sm font-medium text-ink">
-                {formatAutomationSchedule(automation.schedule)}
+                {previewScheduleLabel}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <FieldGroup>
+              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Name</span>
+              <input
+                className={cn(textFieldBase)}
+                disabled={!canManage}
+                maxLength={80}
+                onChange={(e) => setName(e.target.value)}
+                value={name}
+              />
+            </FieldGroup>
+
+            <FieldGroup>
+              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Skill</span>
+              <div className={cn(textFieldBase, "flex items-center text-sm text-ink", !linkedSkillLabel && "text-ink-faint")}>
+                {linkedSkillLabel || "No linked skill"}
+              </div>
+            </FieldGroup>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+            <FieldGroup>
               <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Schedule</span>
               <select
+                disabled={!canManage}
                 className={cn(textFieldBase, textFieldSelect)}
                 onChange={(e) => setCadence(e.target.value as typeof cadence)}
                 value={cadence}
@@ -144,6 +177,7 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
             <FieldGroup>
               <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Status</span>
               <select
+                disabled={!canManage}
                 className={cn(textFieldBase, textFieldSelect)}
                 onChange={(e) => setStatus(e.target.value as "ACTIVE" | "PAUSED")}
                 value={status}
@@ -160,8 +194,19 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
               className={cn(textFieldBase, textFieldArea)}
               maxLength={2000}
               onChange={(e) => setPrompt(e.target.value)}
+              readOnly={!canManage}
               rows={4}
               value={prompt}
+            />
+          </FieldGroup>
+
+          <FieldGroup>
+            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Workspaces</span>
+            <textarea
+              className={cn(textFieldBase, textFieldArea, "min-h-[112px]")}
+              readOnly
+              rows={Math.max(3, Math.min(automation.cwd.length, 6))}
+              value={workspacesLabel}
             />
           </FieldGroup>
 
@@ -169,26 +214,34 @@ export function AutomationEditModal({ automation, open, onClose, skillName }: Au
           </div>
         </div>
 
-          <DialogFooter className="shrink-0 justify-between sm:justify-between">
-            <Button
-              disabled={isDeleting || isPending}
-              onClick={handleDelete}
-              type="button"
-              variant="danger"
-              size="sm"
-            >
-              {isDeleting ? "Disabling..." : "Disable"}
-            </Button>
+          {canManage ? (
+            <DialogFooter className="shrink-0 justify-between sm:justify-between">
+              <Button
+                disabled={isDeleting || isPending}
+                onClick={handleDelete}
+                type="button"
+                variant="danger"
+                size="sm"
+              >
+                {isDeleting ? "Disabling..." : "Disable"}
+              </Button>
 
-            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Button onClick={onClose} type="button" variant="ghost" size="sm">
+                  Cancel
+                </Button>
+                <Button disabled={isPending || !prompt.trim() || !name.trim()} size="sm" type="submit">
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              </div>
+            </DialogFooter>
+          ) : (
+            <DialogFooter>
               <Button onClick={onClose} type="button" variant="ghost" size="sm">
-                Cancel
+                Close
               </Button>
-              <Button disabled={isPending || !prompt.trim()} size="sm" type="submit">
-                {isPending ? "Saving..." : "Save changes"}
-              </Button>
-            </div>
-          </DialogFooter>
+            </DialogFooter>
+          )}
         </form>
       </DialogContent>
     </Dialog>

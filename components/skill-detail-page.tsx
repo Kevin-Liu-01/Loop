@@ -8,10 +8,14 @@ import { CopyButton } from "@/components/copy-button";
 import { ExpandableContent } from "@/components/expandable-content";
 import { FlowIcon, PlayIcon } from "@/components/frontier-icons";
 import { ShareButton } from "@/components/share-button";
+import { SkillAuthorBadge } from "@/components/skill-author-badge";
+import { SkillAuthorStudio } from "@/components/skill-author-studio";
+import { SkillAutomationPanel } from "@/components/skill-automation-panel";
 import { SkillHeaderShaderEmbed } from "@/components/skill-header-shader-embed";
+import { GrainGradient } from "@/components/ui/grain-gradient";
+import { SkillResearchPanel } from "@/components/skill-research-panel";
 import { SiteHeader } from "@/components/site-header";
 import { SkillDetailSidebar } from "@/components/skill-detail-sidebar";
-import { SkillSetupForm } from "@/components/skill-setup-form";
 import { SkillUpdateRunner } from "@/components/skill-update-runner";
 import { TrackSkillButton } from "@/components/track-skill-button";
 import { UsageBeacon } from "@/components/usage-beacon";
@@ -20,6 +24,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { Panel } from "@/components/ui/panel";
 import { SimpleList, SimpleListBody, SimpleListItem } from "@/components/ui/simple-list";
+import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
 import { formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { inlineSectionLabel, pageInsetPadX } from "@/lib/ui-layout";
@@ -27,7 +32,7 @@ import { diffMultilineText } from "@/lib/text-diff";
 import { buildUpdateDigest } from "@/lib/update-digest";
 import { SkillIcon } from "@/components/ui/skill-icon";
 import type { SkillUsageSummary } from "@/lib/usage";
-import type { AutomationSummary, CategoryBrief, LoopRunRecord, SkillRecord } from "@/lib/types";
+import type { CategoryBrief, LoopRunRecord, SkillRecord } from "@/lib/types";
 
 const sectionH2 = "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
 const promptSurface =
@@ -41,30 +46,8 @@ type SkillDetailPageProps = {
   latestRun?: LoopRunRecord | null;
   usage: SkillUsageSummary;
   purchased?: boolean;
+  canEdit?: boolean;
 };
-
-function buildAttachedAutomations(skill: SkillRecord): AutomationSummary[] {
-  const builtIn: AutomationSummary[] =
-    skill.origin === "user" && skill.automation
-      ? [
-          {
-            id: `built-in:${skill.slug}`,
-            name: skill.automation.enabled ? `${skill.title} refresh` : "Manual refresh",
-            prompt: skill.automation.prompt,
-            schedule: skill.automation.enabled
-              ? `${skill.automation.cadence} ${skill.automation.status}`
-              : "manual",
-            status: skill.automation.status === "paused" ? "PAUSED" : "ACTIVE",
-            path: "",
-            cwd: [],
-            matchedSkillSlugs: [skill.slug],
-            matchedCategorySlugs: []
-          }
-        ]
-      : [];
-
-  return [...builtIn, ...skill.automations];
-}
 
 function formatPrice(amount: number, currency: string): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount / 100);
@@ -76,7 +59,8 @@ export function SkillDetailPage({
   previousSkill,
   latestRun,
   usage,
-  purchased = false
+  purchased = false,
+  canEdit = false
 }: SkillDetailPageProps) {
   const isPaid = skill.price && skill.price.amount > 0;
   const priceLabel = isPaid ? formatPrice(skill.price!.amount, skill.price!.currency) : null;
@@ -84,7 +68,8 @@ export function SkillDetailPage({
     skill.agents[0]?.defaultPrompt ?? `Use $${skill.slug} for this task.`;
   const trackedSources =
     skill.origin === "user" ? skill.sources ?? [] : skill.references;
-  const attachedAutomations = buildAttachedAutomations(skill);
+  const attachedAutomations = buildSkillAutomationSummaries(skill);
+  const primaryAutomation = attachedAutomations[0];
   const latestUpdate = skill.updates?.[0];
   const isUpdateable = skill.origin === "user" || skill.origin === "remote";
   const sourceCount =
@@ -99,9 +84,9 @@ export function SkillDetailPage({
   const updateDigestDiff =
     latestUpdate || previousSkill?.updates?.[0]
       ? diffMultilineText(
-          buildUpdateDigest(previousSkill?.updates?.[0]),
-          buildUpdateDigest(latestUpdate)
-        )
+        buildUpdateDigest(previousSkill?.updates?.[0]),
+        buildUpdateDigest(latestUpdate)
+      )
       : [];
   const rawDiff =
     updateDigestDiff.length > 0
@@ -123,6 +108,7 @@ export function SkillDetailPage({
       />
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
         <div className={cn("relative shrink-0 overflow-hidden border-b border-line py-4", pageInsetPadX)}>
+          <GrainGradient tint="accent" intensity="medium" />
           <SkillHeaderShaderEmbed />
           <header className="relative z-10 grid gap-4">
             <Link
@@ -149,9 +135,12 @@ export function SkillDetailPage({
             <p className="m-0 max-w-[min(100%,52ch)] text-pretty text-sm leading-relaxed text-ink-muted wrap-break-word">
               {skill.description}
             </p>
-            <p className="m-0 text-xs leading-normal text-ink-soft tabular-nums">
-              {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt)}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} />
+              <span className="text-xs tabular-nums text-ink-faint">
+                {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt)}
+              </span>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2">
               {isPaid && priceLabel ? (
@@ -162,6 +151,7 @@ export function SkillDetailPage({
                 />
               ) : null}
               <LinkButton
+                grain
                 href={`/sandbox?skill=${skill.slug}`}
                 size="sm"
                 variant="primary"
@@ -221,145 +211,179 @@ export function SkillDetailPage({
             )}
           >
             <div className="grid gap-8">
-            {/* Content */}
-            <section id="content" className="grid gap-5">
-              <h2 className={sectionH2}>Content</h2>
-
-              <div className={promptSurface}>
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <span className={inlineSectionLabel}>Default agent prompt</span>
-                  <CopyButton
-                    className="text-xs"
-                    iconSize="sm"
-                    label="Copy"
-                    size="sm"
-                    usageEvent={{
-                      kind: "copy_prompt",
-                      label: "Copied prompt",
-                      path: skill.href,
-                      skillSlug: skill.slug,
-                      categorySlug: skill.category
-                    }}
-                    value={primaryAgentPrompt}
-                    variant="soft"
-                  />
-                </div>
-                <code className="block whitespace-pre-wrap wrap-break-word font-mono text-sm text-ink">
-                  {primaryAgentPrompt}
-                </code>
-              </div>
-
-              <div className={cn(promptSurface, "p-0")}>
-                <ExpandableContent maxHeight={400}>
-                  <div className="markdown-shell p-4">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {skill.body}
-                    </ReactMarkdown>
-                  </div>
-                </ExpandableContent>
-              </div>
-            </section>
-
-            {/* Sources & Config */}
-            <section
-              className="grid gap-5 border-t border-line pt-8"
-              id="sources"
-            >
-              <h2 className={sectionH2}>Sources &amp; config</h2>
-
-              {skill.origin === "user" ? (
-                <SkillSetupForm
-                  automation={skill.automation}
-                  body={skill.body}
-                  category={skill.category}
-                  description={skill.description}
-                  ownerName={skill.ownerName}
-                  slug={skill.slug}
-                  sources={skill.sources ?? []}
-                  tags={skill.tags}
-                  title={skill.title}
-                  updatedAt={skill.updatedAt}
-                  versionLabel={skill.versionLabel}
-                />
-              ) : (
-                <Panel square>
-                  <h3 className={sectionTitle}>Track this skill</h3>
-                  <p className="text-ink-soft">
-                    Create an editable copy to add sources, configure refresh, and
-                    keep it updated.
-                  </p>
-                  <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-none border border-line bg-paper-3/80 p-4 dark:bg-paper-2/40">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-none border border-line bg-paper-2/80 text-ink-soft dark:bg-paper-2/50">
-                      <FlowIcon />
-                    </span>
-                    <div>
-                      <strong className="text-ink">What happens</strong>
-                      <p className="mt-1 text-sm text-ink-soft">
-                        Loop copies this skill into your tracked set. You can then
-                        edit sources and run refreshes.
-                      </p>
-                    </div>
-                  </div>
-                  <TrackSkillButton
-                    label="Create editable copy"
-                    redirectTo="detail"
-                    slug={skill.slug}
-                  />
-                </Panel>
-              )}
-
-              {trackedSources.length > 0 ? (
-                <Panel compact square>
-                  <details className="group">
-                    <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-                      <h3 className={sectionTitle}>Tracked sources</h3>
-                      <Badge>{trackedSources.length}</Badge>
-                      <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
-                    </summary>
-                    <SimpleList tight className="mt-3">
-                      {trackedSources.map((ref) =>
-                        "url" in ref ? (
-                          <a
-                            className="grid grid-cols-1 border-t border-line bg-transparent py-3 first:border-t-0 first:pt-0 transition-colors hover:bg-transparent"
-                            href={ref.url}
-                            key={ref.url}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            <SimpleListBody>
-                              <strong className="text-ink">{ref.label}</strong>
-                              <p className="m-0 text-sm text-ink-soft">
-                                {ref.tags.join(" · ") || ref.kind}
-                              </p>
-                            </SimpleListBody>
-                          </a>
-                        ) : (
-                          <SimpleListItem className="grid-cols-1" key={ref.path}>
-                            <SimpleListBody>
-                              <strong className="text-ink">{ref.title}</strong>
-                              <p className="m-0 text-sm text-ink-soft">
-                                {ref.excerpt}
-                              </p>
-                            </SimpleListBody>
-                          </SimpleListItem>
-                        )
-                      )}
-                    </SimpleList>
-                  </details>
-                </Panel>
+              {canEdit ? (
+                <section id="author-studio">
+                  <SkillAuthorStudio skill={skill} />
+                </section>
               ) : null}
-            </section>
+              {/* Content */}
+              <section id="content" className="grid gap-5">
+                <h2 className={sectionH2}>Content</h2>
 
-            {isUpdateable ? (
-              <section className="border-t border-line pt-8" id="run-log">
-                <SkillUpdateRunner
-                  latestRun={latestRun}
-                  origin={skill.origin === "user" ? "user" : "remote"}
-                  slug={skill.slug}
-                  sourceCount={sourceCount}
-                />
+                <div className={promptSurface}>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <span className={inlineSectionLabel}>Default agent prompt</span>
+                    <CopyButton
+                      className="text-xs"
+                      iconSize="sm"
+                      label="Copy"
+                      size="sm"
+                      usageEvent={{
+                        kind: "copy_prompt",
+                        label: "Copied prompt",
+                        path: skill.href,
+                        skillSlug: skill.slug,
+                        categorySlug: skill.category
+                      }}
+                      value={primaryAgentPrompt}
+                      variant="soft"
+                    />
+                  </div>
+                  <code className="block whitespace-pre-wrap wrap-break-word font-mono text-sm text-ink">
+                    {primaryAgentPrompt}
+                  </code>
+                </div>
+
+                <div className={cn(promptSurface, "p-0")}>
+                  <ExpandableContent maxHeight={400}>
+                    <div className="markdown-shell p-4">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {skill.body}
+                      </ReactMarkdown>
+                    </div>
+                  </ExpandableContent>
+                </div>
               </section>
-            ) : null}
+
+              <SkillAutomationPanel
+                automation={primaryAutomation}
+                canManage={canEdit}
+                origin={skill.origin}
+                skillTitle={skill.title}
+                slug={skill.slug}
+                sourceCount={sourceCount}
+              />
+
+              <SkillResearchPanel skill={skill} />
+
+              {/* Sources & Config */}
+              <section
+                className="grid gap-5 border-t border-line pt-8"
+                id="sources"
+              >
+                <h2 className={sectionH2}>Sources &amp; config</h2>
+
+                {canEdit ? (
+                  <Panel square>
+                    <h3 className={sectionTitle}>Publishing controls live above</h3>
+                    <p className="text-ink-soft">
+                      The author studio is now the single place to edit metadata, markdown, automation,
+                      and branding for this skill.
+                    </p>
+                    <div className="rounded-none border border-line bg-paper-3/80 p-4 text-sm text-ink-soft dark:bg-paper-2/35">
+                      Save a version there, then use the refresh panel below to inspect logs, diffs, and
+                      source reasoning.
+                    </div>
+                  </Panel>
+                ) : skill.origin === "user" ? (
+                  <Panel square>
+                    <h3 className={sectionTitle}>Publisher-managed skill</h3>
+                    <p className="text-ink-soft">
+                      This skill is maintained by its publisher. You can use it in the sandbox, but only
+                      the attached author profile can change the source watchlist or content.
+                    </p>
+                    <div className="rounded-none border border-line bg-paper-3/80 p-4 dark:bg-paper-2/35">
+                      <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} />
+                    </div>
+                  </Panel>
+                ) : (
+                  <Panel square>
+                    <h3 className={sectionTitle}>Track this skill</h3>
+                    <p className="text-ink-soft">
+                      Create an editable copy to add sources, configure refresh, and
+                      keep it updated.
+                    </p>
+                    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-none border border-line bg-paper-3/80 p-4 dark:bg-paper-2/40">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-none border border-line bg-paper-2/80 text-ink-soft dark:bg-paper-2/50">
+                        <FlowIcon />
+                      </span>
+                      <div>
+                        <strong className="text-ink">What happens</strong>
+                        <p className="mt-1 text-sm text-ink-soft">
+                          Loop copies this skill into your tracked set. You can then
+                          edit sources and run refreshes.
+                        </p>
+                      </div>
+                    </div>
+                    <TrackSkillButton
+                      label="Create editable copy"
+                      redirectTo="detail"
+                      slug={skill.slug}
+                    />
+                  </Panel>
+                )}
+
+                {trackedSources.length > 0 ? (
+                  <Panel compact square>
+                    <details className="group">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+                        <h3 className={sectionTitle}>Tracked sources</h3>
+                        <Badge>{trackedSources.length}</Badge>
+                        <span className="ml-auto text-xs text-ink-muted transition-transform group-open:rotate-90">▶</span>
+                      </summary>
+                      <SimpleList tight className="mt-3">
+                        {trackedSources.map((ref) =>
+                          "url" in ref ? (
+                            <a
+                              className="grid grid-cols-1 border-t border-line bg-transparent py-3 first:border-t-0 first:pt-0 transition-colors hover:bg-transparent"
+                              href={ref.url}
+                              key={ref.url}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              <SimpleListBody>
+                                <strong className="text-ink">{ref.label}</strong>
+                                <p className="m-0 text-sm text-ink-soft">
+                                  {[
+                                    ref.tags.join(" · ") || ref.kind,
+                                    ref.mode ? `Mode: ${ref.mode}` : null,
+                                    ref.trust ? `Trust: ${ref.trust}` : null,
+                                    ref.parser ? `Parser: ${ref.parser}` : null
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
+                              </SimpleListBody>
+                            </a>
+                          ) : (
+                            <SimpleListItem className="grid-cols-1" key={ref.path}>
+                              <SimpleListBody>
+                                <strong className="text-ink">{ref.title}</strong>
+                                <p className="m-0 text-sm text-ink-soft">
+                                  {ref.excerpt}
+                                </p>
+                              </SimpleListBody>
+                            </SimpleListItem>
+                          )
+                        )}
+                      </SimpleList>
+                    </details>
+                  </Panel>
+                ) : null}
+              </section>
+
+              {isUpdateable ? (
+                <section className="border-t border-line pt-8" id="run-log">
+                  <SkillUpdateRunner
+                    automation={primaryAutomation}
+                    canManage={canEdit}
+                    latestRun={latestRun}
+                    origin={skill.origin === "user" ? "user" : "remote"}
+                    slug={skill.slug}
+                    sourceCount={sourceCount}
+                  />
+                </section>
+              ) : null}
             </div>
           </div>
 

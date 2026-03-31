@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { DiffViewer } from "@/components/diff-viewer";
 import { FlowIcon, RefreshIcon } from "@/components/frontier-icons";
 import { RunLogModal } from "@/components/run-log-modal";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +11,12 @@ import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { cn } from "@/lib/cn";
+import { formatAutomationSchedule } from "@/lib/format";
+import { formatNextRun } from "@/lib/schedule";
 import { applySourceUpdate, streamLoopUpdate } from "@/lib/stream-loop-update";
 import type {
   AgentReasoningStep,
+  AutomationSummary,
   LoopRunRecord,
   LoopUpdateResult,
   LoopUpdateSourceLog,
@@ -24,7 +28,9 @@ type SkillUpdateRunnerProps = {
   slug: string;
   origin: LoopUpdateTargetOrigin;
   sourceCount: number;
+  automation?: AutomationSummary;
   latestRun?: LoopRunRecord | null;
+  canManage?: boolean;
 };
 
 const statBox = "grid gap-1 rounded-2xl border border-line bg-paper-3 p-4";
@@ -70,12 +76,23 @@ function buildPendingSourcesFromTarget(loop: LoopUpdateTarget): LoopUpdateSource
     status: "pending",
     itemCount: 0,
     items: [],
-    note: "Queued for scan."
+    note: "Queued for scan.",
+    reasoning:
+      source.mode === "discover"
+        ? "Scanning an index-style source and ranking discovered links against the skill's query hints."
+        : source.mode === "search"
+          ? "Biasing discovery toward the source's query hints instead of static navigation links."
+          : "Tracking the canonical source for fresh deltas."
   }));
 }
 
 function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
   const icon = sourceStatusIcon(source.status);
+  const metadata = [
+    source.mode ? source.mode.replace(/-/g, " ") : null,
+    source.trust ? source.trust.replace(/-/g, " ") : null,
+    source.parser ? source.parser.replace(/-/g, " ") : null
+  ].filter(Boolean);
 
   return (
     <article className="grid gap-1.5 rounded-xl border border-line bg-paper-3 px-4 py-3">
@@ -92,7 +109,24 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
         <strong className="text-sm text-ink">{source.label}</strong>
         <span className="ml-auto text-xs text-ink-faint">{source.status}</span>
       </div>
+      {metadata.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {metadata.map((entry) => (
+            <Badge key={entry} muted>
+              {entry}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
       <p className="m-0 text-sm text-ink-soft">{source.note ?? `${source.itemCount} items found.`}</p>
+      {source.reasoning ? (
+        <p className="m-0 text-xs leading-relaxed text-ink-faint">{source.reasoning}</p>
+      ) : null}
+      {source.searchQueries && source.searchQueries.length > 0 ? (
+        <p className="m-0 text-xs text-ink-faint">
+          Queries: {source.searchQueries.slice(0, 3).join(" · ")}
+        </p>
+      ) : null}
       {source.items.length > 0 ? (
         <div className="grid gap-1">
           {source.items.slice(0, 3).map((item) => (
@@ -185,7 +219,14 @@ function StepLog({ messages, isLive }: { messages: string[]; isLive: boolean }) 
   );
 }
 
-export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: SkillUpdateRunnerProps) {
+export function SkillUpdateRunner({
+  slug,
+  origin,
+  sourceCount,
+  automation,
+  latestRun,
+  canManage = false
+}: SkillUpdateRunnerProps) {
   const router = useRouter();
   const [isRunning, startTransition] = useTransition();
   const [messages, setMessages] = useState<string[]>([]);
@@ -221,6 +262,29 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
       : result
         ? "success"
         : latestRun?.status ?? "success";
+  const scheduleLabel = automation
+    ? formatAutomationSchedule(automation.schedule)
+    : origin === "remote"
+      ? "Import sync"
+      : "Manual";
+  const nextRunLabel = automation
+    ? automation.status === "PAUSED"
+      ? "Paused"
+      : formatNextRun(automation.schedule)
+    : origin === "remote"
+      ? "On source change"
+      : "On demand";
+  const latestOutcomeLabel = result
+    ? result.changed
+      ? result.nextVersionLabel
+      : "No material diff"
+    : latestRun
+      ? latestRun.status === "error"
+        ? "Needs attention"
+        : latestRun.bodyChanged
+          ? latestRun.nextVersionLabel
+          : "No material diff"
+      : "No runs yet";
 
   const handleRun = useCallback(() => {
     setError(null);
@@ -278,36 +342,74 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
     });
   }, [slug, origin, router, startTransition]);
 
-  const canRun = sourceCount > 0 && !isRunning;
+  const canRun = sourceCount > 0 && !isRunning && canManage;
   const buttonLabel = origin === "remote" ? "Sync from source" : "Run update now";
 
   return (
     <div className="grid gap-6">
-      <Panel compact>
-        <PanelHead>
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-paper-3 text-ink-soft [&>svg]:h-4 [&>svg]:w-4">
-              <RefreshIcon />
+      <Panel className="overflow-hidden">
+        <div className="dither-gradient-orange -mx-6 -mt-6 mb-1 px-6 pb-5 pt-6">
+          <PanelHead className="items-start">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-paper-3/90 text-ink-soft [&>svg]:h-4 [&>svg]:w-4 dark:bg-paper-2/50">
+                <RefreshIcon className={cn(isRunning && "animate-spin")} />
+              </div>
+              <div>
+                <h2 className={panelTitleClass}>{buttonLabel}</h2>
+                <p className="m-0 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
+                  {!canManage
+                    ? "Only the skill owner can trigger manual refreshes. You can still inspect the trace and latest diff."
+                    : sourceCount > 0
+                    ? `Fetch ${sourceCount} sources, rank fresh leads, and rewrite the skill with a visible trace.`
+                    : "Add sources in Setup to enable updates."}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className={panelTitleClass}>{buttonLabel}</h2>
-              <p className="m-0 text-sm text-ink-soft">
-                {sourceCount > 0
-                  ? `Fetch ${sourceCount} sources, analyze, and rewrite.`
-                  : "Add sources in Setup to enable updates."}
-              </p>
+            <div className="flex flex-wrap gap-2">
+              {automation ? <Badge muted>{automation.status.toLowerCase()}</Badge> : null}
+              <Button disabled={!canRun} onClick={handleRun} type="button">
+                {isRunning ? "Running..." : buttonLabel}
+              </Button>
             </div>
+          </PanelHead>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className={statBox}>
+            <small className={statLabel}>sources</small>
+            <strong className={statValue}>{sourceCount}</strong>
           </div>
-          <Button disabled={!canRun} onClick={handleRun} type="button">
-            {isRunning ? "Running..." : buttonLabel}
-          </Button>
-        </PanelHead>
+          <div className={statBox}>
+            <small className={statLabel}>cadence</small>
+            <strong className={statValue}>{scheduleLabel}</strong>
+          </div>
+          <div className={statBox}>
+            <small className={statLabel}>next run</small>
+            <strong className={statValue}>{nextRunLabel}</strong>
+          </div>
+          <div className={statBox}>
+            <small className={statLabel}>latest</small>
+            <strong
+              className={cn(
+                statValue,
+                visibleStatus === "error" && "text-danger"
+              )}
+            >
+              {latestOutcomeLabel}
+            </strong>
+          </div>
+        </div>
       </Panel>
 
       {(visibleMessages.length > 0 || visibleSourceLogs.length > 0) ? (
-        <Panel compact>
+        <Panel compact className="overflow-hidden">
           <PanelHead>
-            <h2 className={panelTitleClass}>Run log</h2>
+            <div>
+              <h2 className={panelTitleClass}>Refresh trace</h2>
+              <p className="m-0 text-sm text-ink-soft">
+                Live reasoning, source results, and the diff that landed.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               {visibleStatus === "running" ? (
                 <Badge>streaming</Badge>
@@ -333,26 +435,6 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
             trigger={visibleTrigger}
           />
 
-          {visibleSourceLogs.length > 0 ? (
-            <div>
-              <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
-                Sources
-              </span>
-              <div className="grid gap-2">
-                {visibleSourceLogs.map((source) => (
-                  <SourceCard key={source.id} source={source} />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div>
-            <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
-              Agent steps
-            </span>
-            <StepLog isLive={isRunning} messages={visibleMessages} />
-          </div>
-
           {visibleError ? (
             <p className="m-0 text-sm text-danger">{visibleError}</p>
           ) : null}
@@ -370,6 +452,46 @@ export function SkillUpdateRunner({ slug, origin, sourceCount, latestRun }: Skil
               {result.whatChanged ? (
                 <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p>
               ) : null}
+            </div>
+          ) : null}
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div>
+              <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
+                Agent steps
+              </span>
+              <StepLog isLive={isRunning} messages={visibleMessages} />
+            </div>
+
+            {visibleSourceLogs.length > 0 ? (
+              <div>
+                <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
+                  Sources
+                </span>
+                <div className="grid gap-2">
+                  {visibleSourceLogs.map((source) => (
+                    <SourceCard key={source.id} source={source} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {visibleDiffLines.length > 0 ? (
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
+                  Diff preview
+                </span>
+                <button
+                  className="text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+                  onClick={() => setModalOpen(true)}
+                  type="button"
+                >
+                  Open full diff
+                </button>
+              </div>
+              <DiffViewer compact label="Latest skill diff" lines={visibleDiffLines} maxHeight={260} />
             </div>
           ) : null}
         </Panel>
