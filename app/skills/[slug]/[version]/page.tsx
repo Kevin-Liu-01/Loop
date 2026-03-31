@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 
-import { auth } from "@clerk/nextjs/server";
-
 import { SkillDetailPage } from "@/components/skill-detail-page";
+import { getSessionUser } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
+import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { listSkillUpstreams } from "@/lib/db/skill-intelligence";
 import { getBrief, parseVersionSegment } from "@/lib/format";
 import { hasUserPurchasedSkill } from "@/lib/purchases";
 import { getLoopSnapshot } from "@/lib/refresh";
+import { canSessionEditSkill } from "@/lib/skill-authoring";
 import { listLoopRuns, listUsageEvents } from "@/lib/system-state";
 import { buildSkillUsageSummary } from "@/lib/usage";
 
@@ -25,8 +27,8 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const [{ userId }, snapshot, skill, previousSkill, loopRuns, usageEvents] = await Promise.all([
-    auth(),
+  const [session, snapshot, skill, previousSkill, loopRuns, usageEvents] = await Promise.all([
+    getSessionUser(),
     getLoopSnapshot(),
     getSkillRecordBySlug(slug, versionNumber),
     versionNumber > 1 ? getSkillRecordBySlug(slug, versionNumber - 1) : Promise.resolve(null),
@@ -38,8 +40,11 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const purchased = userId ? await hasUserPurchasedSkill(userId, slug) : false;
-  const isCreator = userId !== null && skill.creatorClerkUserId === userId;
+  const upstreams = await listSkillUpstreams(skill.slug);
+  const sessionAuthor = session ? await findSkillAuthorForSession(session) : null;
+
+  const purchased = session?.userId ? await hasUserPurchasedSkill(session.userId, slug) : false;
+  const canEdit = canSessionEditSkill(skill, session, sessionAuthor);
 
   const brief = getBrief(snapshot.dailyBriefs, skill.category);
   const latestRun =
@@ -51,10 +56,11 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
   return (
     <SkillDetailPage
       brief={brief}
+      canEdit={canEdit}
       latestRun={latestRun}
       previousSkill={previousSkill}
-      purchased={purchased || isCreator}
-      skill={skill}
+      purchased={purchased || canEdit}
+      skill={{ ...skill, upstreams }}
       usage={usage}
     />
   );

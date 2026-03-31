@@ -4,10 +4,10 @@ import { SiteHeader } from "@/components/site-header";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { PageShell } from "@/components/ui/page-shell";
 import { AGENT_PROVIDER_PRESETS } from "@/lib/agents";
-import { getLoopSnapshot } from "@/lib/refresh";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 
 type SandboxPageProps = {
-  searchParams: Promise<{ skill?: string }>;
+  searchParams: Promise<{ skill?: string; mcp?: string; mcpId?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,15 @@ export default async function SandboxPage({ searchParams }: SandboxPageProps) {
     import("@/lib/system-summary").then((m) => m.getSystemSnapshot()),
     searchParams
   ]);
+  const initialMcpId =
+    params.mcpId ??
+    snapshot.mcps.find((mcp) => {
+      if (params.mcp === undefined) return false;
+      return (
+        supportsSandboxMcp(mcp) &&
+        (mcp.id === params.mcp || mcp.slug === params.mcp || mcp.name === params.mcp)
+      );
+    })?.id;
 
   return (
     <AppGridShell fillViewport header={<SiteHeader />}>
@@ -29,6 +38,7 @@ export default async function SandboxPage({ searchParams }: SandboxPageProps) {
         />
         <SandboxShell
           initialSkillSlug={params.skill}
+          initialMcpId={initialMcpId}
           mcps={snapshot.mcps}
           presets={AGENT_PROVIDER_PRESETS}
           skills={snapshot.skills}

@@ -29,29 +29,31 @@ export const buttonSizes: Record<ButtonSize, string> = {
 type ButtonProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  grain?: boolean;
   className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 type ButtonLinkProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  grain?: boolean;
   className?: string;
   href: string;
 } & React.AnchorHTMLAttributes<HTMLAnchorElement>;
 
-export function Button({ variant = "primary", size = "default", className, ...rest }: ButtonProps) {
+export function Button({ variant = "primary", size = "default", grain, className, ...rest }: ButtonProps) {
   return (
     <button
-      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], className)}
+      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], grain && "grain-btn", className)}
       {...rest}
     />
   );
 }
 
-export function ButtonLink({ variant = "primary", size = "default", className, ...rest }: ButtonLinkProps) {
+export function ButtonLink({ variant = "primary", size = "default", grain, className, ...rest }: ButtonLinkProps) {
   return (
     <a
-      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], className)}
+      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], grain && "grain-btn", className)}
       {...rest}
     />
   );

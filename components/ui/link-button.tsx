@@ -7,6 +7,7 @@ import type { ButtonVariant, ButtonSize } from "@/components/ui/button";
 type LinkButtonProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  grain?: boolean;
   className?: string;
   href: string;
   children: React.ReactNode;
@@ -15,12 +16,13 @@ type LinkButtonProps = {
 export function LinkButton({
   variant = "primary",
   size = "default",
+  grain,
   className,
   ...rest
 }: LinkButtonProps) {
   return (
     <Link
-      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], className)}
+      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], grain && "grain-btn", className)}
       {...rest}
     />
   );
