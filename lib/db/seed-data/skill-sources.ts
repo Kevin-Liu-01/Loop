@@ -8,11 +8,57 @@ import type { SkillAutomationState, SourceDefinition } from "@/lib/types";
 const SRC = {
   // --- AI / LLM providers ---
   openaiNews: src("openai-news", "OpenAI News", "https://openai.com/news/rss.xml", "rss", ["openai", "llm", "agents"]),
-  openaiChangelog: src("openai-changelog", "OpenAI Platform Changelog", "https://platform.openai.com/docs/changelog", "docs", ["openai", "api", "changelog"]),
-  anthropicNews: src("anthropic-news", "Anthropic News", "https://www.anthropic.com/news", "docs", ["anthropic", "claude", "llm"]),
-  anthropicDocs: src("anthropic-docs", "Anthropic Docs", "https://docs.anthropic.com/en/docs/about-claude/models", "docs", ["anthropic", "models", "api"]),
+  openaiChangelog: src(
+    "openai-changelog",
+    "OpenAI Platform Changelog",
+    "https://platform.openai.com/docs/changelog",
+    "docs-index",
+    ["openai", "api", "changelog"],
+    {
+      mode: "discover",
+      parser: "html-links",
+      searchQueries: ["responses api", "agents sdk", "structured outputs", "tool calling", "mcp"],
+      rationale: "Rank OpenAI changelog entries against the skill's query hints instead of trusting page order.",
+    }
+  ),
+  anthropicNews: src(
+    "anthropic-news",
+    "Anthropic News",
+    "https://www.anthropic.com/news",
+    "docs-index",
+    ["anthropic", "claude", "llm"],
+    {
+      mode: "discover",
+      parser: "html-links",
+      searchQueries: ["claude", "tool use", "mcp", "computer use", "prompting"],
+    }
+  ),
+  anthropicDocs: src(
+    "anthropic-docs",
+    "Anthropic Docs Index",
+    "https://docs.anthropic.com/en/sitemap.xml",
+    "sitemap",
+    ["anthropic", "models", "api"],
+    {
+      mode: "discover",
+      parser: "sitemap",
+      searchQueries: ["tool use", "json schema", "mcp", "prompting", "models"],
+      rationale: "Use the Anthropic docs sitemap to discover newly-added docs and rank them by relevance.",
+    }
+  ),
   googleAi: src("google-ai-blog", "Google AI Blog", "https://blog.google/technology/ai/rss/", "rss", ["google", "gemini", "ai"]),
-  googleDevAi: src("google-dev-ai", "Google AI Dev", "https://ai.google.dev/", "docs", ["google", "gemini", "sdk"]),
+  googleDevAi: src(
+    "google-dev-ai",
+    "Google AI Dev",
+    "https://ai.google.dev/",
+    "docs-index",
+    ["google", "gemini", "sdk"],
+    {
+      mode: "discover",
+      parser: "html-links",
+      searchQueries: ["tool calling", "structured output", "agents", "grounding", "gemini api"],
+    }
+  ),
   metaAi: src("meta-ai-blog", "Meta AI Blog", "https://ai.meta.com/blog/", "docs", ["meta", "llama", "ai"]),
   vercelAiSdk: src("vercel-ai-sdk", "Vercel AI SDK Releases", "https://github.com/vercel/ai/releases.atom", "atom", ["vercel", "ai-sdk", "agents"]),
   langchainBlog: src("langchain-blog", "LangChain Blog", "https://blog.langchain.dev/feed/", "rss", ["langchain", "agents", "rag"]),
@@ -27,15 +73,34 @@ const SRC = {
   cssWg: src("css-wg-drafts", "CSS Drafts", "https://github.com/w3c/csswg-drafts/releases.atom", "atom", ["css", "standards"]),
   smashingMag: src("smashing-magazine", "Smashing Magazine", "https://www.smashingmagazine.com/feed/", "rss", ["frontend", "design", "ux"]),
   motionReleases: src("motion-releases", "Motion Releases", "https://github.com/motiondivision/motion/releases.atom", "atom", ["motion", "animation"]),
-  gsapForum: src("gsap-forum", "GSAP Community", "https://gsap.com/community/", "docs", ["gsap", "animation"]),
+  gsapForum: src("gsap-forum", "GSAP Community", "https://gsap.com/community/", "docs-index", ["gsap", "animation"], {
+    mode: "discover",
+    parser: "html-links",
+    searchQueries: ["scrolltrigger", "scrub", "pin", "lenis", "react"],
+  }),
   threejsReleases: src("threejs-releases", "Three.js Releases", "https://github.com/mrdoob/three.js/releases.atom", "atom", ["threejs", "3d", "webgl"]),
-  tailwindBlog: src("tailwind-blog", "Tailwind CSS Blog", "https://tailwindcss.com/blog", "docs", ["tailwind", "css"]),
+  tailwindBlog: src("tailwind-blog", "Tailwind CSS Blog", "https://tailwindcss.com/blog", "docs-index", ["tailwind", "css"], {
+    mode: "discover",
+    parser: "html-links",
+    searchQueries: ["tailwind v4", "@theme", "design tokens", "plugins", "upgrade guide"],
+  }),
   tailwindReleases: src("tailwind-releases", "Tailwind Releases", "https://github.com/tailwindlabs/tailwindcss/releases.atom", "atom", ["tailwind", "releases"]),
 
   // --- SEO / GEO ---
   mozBlog: src("moz-blog", "Moz Blog", "https://moz.com/blog/feed", "rss", ["seo", "industry"]),
   searchEngineLand: src("search-engine-land", "Search Engine Land", "https://searchengineland.com/feed", "rss", ["seo", "industry"]),
-  googleSearchCentral: src("google-search-central", "Google Search Central", "https://developers.google.com/search/blog", "docs", ["google", "search"]),
+  googleSearchCentral: src(
+    "google-search-central",
+    "Google Search Central",
+    "https://developers.google.com/search/blog",
+    "docs-index",
+    ["google", "search"],
+    {
+      mode: "discover",
+      parser: "html-links",
+      searchQueries: ["search console", "structured data", "ai overviews", "ranking", "crawling"],
+    }
+  ),
   ahrefsBlog: src("ahrefs-blog", "Ahrefs Blog", "https://ahrefs.com/blog/feed/", "rss", ["seo", "backlinks", "research"]),
   sej: src("search-engine-journal", "Search Engine Journal", "https://www.searchenginejournal.com/feed/", "rss", ["seo", "geo"]),
   schemaOrg: src("schema-org", "Schema.org Releases", "https://github.com/schemaorg/schemaorg/releases.atom", "atom", ["schema", "structured-data"]),
@@ -54,7 +119,19 @@ const SRC = {
   trivyReleases: src("trivy-releases", "Trivy Releases", "https://github.com/aquasecurity/trivy/releases.atom", "atom", ["trivy", "security", "scanning"]),
 
   // --- Security ---
-  githubAdvisory: src("github-advisory", "GitHub Security Advisories", "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm", "docs", ["security", "npm"]),
+  githubAdvisory: src(
+    "github-advisory",
+    "GitHub Security Advisories",
+    "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm",
+    "docs-index",
+    ["security", "npm"],
+    {
+      mode: "search",
+      parser: "html-links",
+      searchQueries: ["critical npm advisory", "supply chain", "authentication bypass", "rce"],
+      rationale: "Treat the advisory index as a search surface and bias toward high-severity npm issues.",
+    }
+  ),
   portswigger: src("portswigger-research", "PortSwigger Research", "https://portswigger.net/research/rss", "rss", ["security", "research"]),
   krebsSecurity: src("krebs-security", "Krebs on Security", "https://krebsonsecurity.com/feed/", "rss", ["security", "industry"]),
   snykBlog: src("snyk-blog", "Snyk Blog", "https://snyk.io/blog/feed/", "rss", ["security", "vulnerabilities"]),
@@ -64,7 +141,11 @@ const SRC = {
   // --- Ops ---
   githubBlog: src("github-blog", "GitHub Blog", "https://github.blog/feed/", "rss", ["github", "ops"]),
   githubChangelog: src("github-changelog", "GitHub Changelog", "https://github.blog/changelog/feed/", "rss", ["github", "changelog"]),
-  linearChangelog: src("linear-changelog", "Linear Changelog", "https://linear.app/changelog", "docs", ["linear", "ops"]),
+  linearChangelog: src("linear-changelog", "Linear Changelog", "https://linear.app/changelog", "docs-index", ["linear", "ops"], {
+    mode: "discover",
+    parser: "html-links",
+    searchQueries: ["workflow", "issue", "project", "triage", "automation"],
+  }),
 
   // --- Social / Content ---
   hnFrontpage: src("hn-frontpage", "Hacker News", "https://hnrss.org/frontpage", "rss", ["hn", "tech"]),
@@ -289,9 +370,81 @@ function src(
   label: string,
   url: string,
   kind: SourceDefinition["kind"],
-  tags: string[]
+  tags: string[],
+  overrides: Partial<SourceDefinition> = {}
 ): SourceDefinition {
-  return { id, label, url, kind, tags, logoUrl: computeSourceLogoUrl(url) };
+  const hostname = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  })();
+
+  const trust =
+    overrides.trust ??
+    (hostname.includes("w3.org") || hostname.includes("schema.org")
+      ? "standards"
+      : hostname.includes("github.com") ||
+          hostname.includes("openai.com") ||
+          hostname.includes("anthropic.com") ||
+          hostname.includes("google.com") ||
+          hostname.includes("react.dev") ||
+          hostname.includes("tailwindcss.com") ||
+          hostname.includes("vercel.com") ||
+          hostname.includes("supabase.com") ||
+          hostname.includes("cloudflare.com") ||
+          hostname.includes("owasp.org")
+        ? "official"
+        : hostname.includes("moz.com") ||
+            hostname.includes("ahrefs.com") ||
+            hostname.includes("snyk.io") ||
+            hostname.includes("clerk.com") ||
+            hostname.includes("linear.app")
+          ? "vendor"
+          : "community");
+
+  const mode =
+    overrides.mode ??
+    (kind === "github-search" || kind === "registry"
+      ? "search"
+      : kind === "sitemap" || kind === "docs-index" || kind === "docs"
+        ? "discover"
+        : "track");
+
+  const parser =
+    overrides.parser ??
+    (kind === "sitemap"
+      ? "sitemap"
+      : kind === "docs-index" || kind === "docs" || kind === "blog"
+        ? "html-links"
+        : kind === "releases" || kind === "changelog"
+          ? "release-feed"
+          : "feed");
+
+  const searchQueries = overrides.searchQueries ?? [
+    label.toLowerCase(),
+    ...tags.slice(0, 4)
+  ];
+
+  return {
+    id,
+    label,
+    url,
+    kind,
+    tags,
+    logoUrl: overrides.logoUrl ?? computeSourceLogoUrl(url),
+    mode,
+    trust,
+    parser,
+    searchQueries,
+    rationale:
+      overrides.rationale ??
+      (mode === "track"
+        ? "Track the canonical feed for concrete deltas."
+        : "Discover fresh links from an index-like source, then rank them against the skill's query hints."),
+    signalHints: overrides.signalHints ?? tags
+  };
 }
 
 function config(

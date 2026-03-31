@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/db/client";
+import { listSkillAuthorsByIds } from "@/lib/db/skill-authors";
 import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
 import { createExcerpt } from "@/lib/markdown";
 import type {
@@ -6,6 +7,7 @@ import type {
   AgentPrompt,
   AutomationSummary,
   ReferenceDoc,
+  SkillResearchProfile,
   SkillAutomationState,
   SkillHeading,
   SkillOrigin,
@@ -32,6 +34,7 @@ type SkillRow = {
   tags: string[];
   headings: unknown;
   owner_name: string | null;
+  author_id?: string | null;
   sources: unknown;
   automation: unknown;
   updates: unknown;
@@ -45,9 +48,28 @@ type SkillRow = {
   version: number;
   created_at: string;
   updated_at: string;
+  price?: { amount: number; currency: string } | null;
+  creator_clerk_user_id?: string | null;
+  icon_url?: string | null;
+  featured_rank?: number;
+  quality_score?: number;
+  research_profile?: unknown;
 };
 
-export function rowToSkillRecord(row: SkillRow, availableVersions?: VersionReference[]): SkillRecord {
+async function attachAuthors(rows: SkillRow[]): Promise<Map<string, SkillRecord["author"]>> {
+  const authorIds = Array.from(
+    new Set(rows.map((row) => row.author_id).filter((value): value is string => Boolean(value)))
+  );
+
+  const authors = await listSkillAuthorsByIds(authorIds);
+  return new Map(authors.map((author) => [author.id, author]));
+}
+
+export function rowToSkillRecord(
+  row: SkillRow,
+  availableVersions?: VersionReference[],
+  author?: SkillRecord["author"]
+): SkillRecord {
   const version = row.version;
   const versions = availableVersions ?? [
     { version, label: buildVersionLabel(version), updatedAt: row.updated_at }
@@ -77,13 +99,18 @@ export function rowToSkillRecord(row: SkillRow, availableVersions?: VersionRefer
     versionLabel: buildVersionLabel(version),
     availableVersions: versions,
     ownerName: row.owner_name ?? undefined,
+    authorId: row.author_id ?? undefined,
+    author,
     sources: (row.sources ?? []) as SourceDefinition[],
     automation: (row.automation ?? undefined) as SkillAutomationState | undefined,
     updates: (row.updates ?? []) as SkillUpdateEntry[],
     agentDocs: (row.agent_docs ?? {}) as AgentDocs,
-    price: (row as Record<string, unknown>).price as SkillRecord["price"] ?? null,
-    creatorClerkUserId: (row as Record<string, unknown>).creator_clerk_user_id as string ?? undefined,
-    iconUrl: (row as Record<string, unknown>).icon_url as string ?? undefined
+    price: row.price ?? null,
+    creatorClerkUserId: row.creator_clerk_user_id ?? undefined,
+    iconUrl: row.icon_url ?? undefined,
+    featuredRank: row.featured_rank ?? 0,
+    qualityScore: row.quality_score ?? 0,
+    researchProfile: row.research_profile as SkillResearchProfile | undefined
   };
 }
 
@@ -102,6 +129,7 @@ export type CreateSkillInput = {
   tags?: string[];
   headings?: SkillHeading[];
   ownerName?: string;
+  authorId?: string;
   sources?: SourceDefinition[];
   automation?: SkillAutomationState;
   updates?: SkillUpdateEntry[];
@@ -115,6 +143,9 @@ export type CreateSkillInput = {
   price?: { amount: number; currency: string } | null;
   creatorClerkUserId?: string;
   iconUrl?: string;
+  featuredRank?: number;
+  qualityScore?: number;
+  researchProfile?: SkillResearchProfile;
 };
 
 function inputToRow(input: CreateSkillInput): Record<string, unknown> {
@@ -133,6 +164,7 @@ function inputToRow(input: CreateSkillInput): Record<string, unknown> {
     tags: input.tags ?? [],
     headings: input.headings ?? [],
     owner_name: input.ownerName ?? null,
+    author_id: input.authorId ?? null,
     sources: input.sources ?? [],
     automation: input.automation ?? null,
     updates: input.updates ?? [],
@@ -148,6 +180,9 @@ function inputToRow(input: CreateSkillInput): Record<string, unknown> {
   if (input.price !== undefined) row.price = input.price;
   if (input.creatorClerkUserId !== undefined) row.creator_clerk_user_id = input.creatorClerkUserId;
   if (input.iconUrl !== undefined) row.icon_url = input.iconUrl;
+  if (input.featuredRank !== undefined) row.featured_rank = input.featuredRank;
+  if (input.qualityScore !== undefined) row.quality_score = input.qualityScore;
+  if (input.researchProfile !== undefined) row.research_profile = input.researchProfile;
 
   return row;
 }
@@ -168,7 +203,11 @@ export async function listSkills(filter?: {
 
   const { data, error } = await query.order("title");
   if (error) throw new Error(`listSkills failed: ${error.message}`);
-  return (data as SkillRow[]).map((row) => rowToSkillRecord(row));
+  const rows = data as SkillRow[];
+  const authors = await attachAuthors(rows);
+  return rows.map((row) =>
+    rowToSkillRecord(row, undefined, row.author_id ? authors.get(row.author_id) : undefined)
+  );
 }
 
 export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> {
@@ -189,6 +228,7 @@ export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> 
     .order("version", { ascending: false });
 
   const row = data as SkillRow;
+  const authors = await attachAuthors([row]);
   const availableVersions: VersionReference[] = [
     { version: row.version, label: buildVersionLabel(row.version), updatedAt: row.updated_at },
     ...(versions ?? [])
@@ -200,7 +240,11 @@ export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> 
       }))
   ].sort((a, b) => b.version - a.version);
 
-  return rowToSkillRecord(row, availableVersions);
+  return rowToSkillRecord(
+    row,
+    availableVersions,
+    row.author_id ? authors.get(row.author_id) : undefined
+  );
 }
 
 export async function getSkillAtVersion(slug: string, version: number): Promise<SkillRecord | null> {
@@ -261,7 +305,12 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
     updated_at: v.created_at
   };
 
-  return rowToSkillRecord(versionRow);
+  const authors = await attachAuthors([currentRow]);
+  return rowToSkillRecord(
+    versionRow,
+    undefined,
+    currentRow.author_id ? authors.get(currentRow.author_id) : undefined
+  );
 }
 
 export async function createSkill(input: CreateSkillInput): Promise<SkillRecord> {
@@ -275,7 +324,13 @@ export async function createSkill(input: CreateSkillInput): Promise<SkillRecord>
     .single();
 
   if (error) throw new Error(`createSkill failed: ${error.message}`);
-  return rowToSkillRecord(data as SkillRow);
+  const skillRow = data as SkillRow;
+  const authors = await attachAuthors([skillRow]);
+  return rowToSkillRecord(
+    skillRow,
+    undefined,
+    skillRow.author_id ? authors.get(skillRow.author_id) : undefined
+  );
 }
 
 export async function updateSkill(
@@ -296,6 +351,7 @@ export async function updateSkill(
   if (updates.tags !== undefined) mapped.tags = updates.tags;
   if (updates.headings !== undefined) mapped.headings = updates.headings;
   if (updates.ownerName !== undefined) mapped.owner_name = updates.ownerName;
+  if (updates.authorId !== undefined) mapped.author_id = updates.authorId;
   if (updates.sources !== undefined) mapped.sources = updates.sources;
   if (updates.automation !== undefined) mapped.automation = updates.automation;
   if (updates.updates !== undefined) mapped.updates = updates.updates;
@@ -311,6 +367,9 @@ export async function updateSkill(
   if (updates.price !== undefined) mapped.price = updates.price;
   if (updates.creatorClerkUserId !== undefined) mapped.creator_clerk_user_id = updates.creatorClerkUserId;
   if (updates.iconUrl !== undefined) mapped.icon_url = updates.iconUrl;
+  if (updates.featuredRank !== undefined) mapped.featured_rank = updates.featuredRank;
+  if (updates.qualityScore !== undefined) mapped.quality_score = updates.qualityScore;
+  if (updates.researchProfile !== undefined) mapped.research_profile = updates.researchProfile;
 
   const { data, error } = await db
     .from("skills")
@@ -320,7 +379,9 @@ export async function updateSkill(
     .single();
 
   if (error) throw new Error(`updateSkill failed: ${error.message}`);
-  return rowToSkillRecord(data as SkillRow);
+  const row = data as SkillRow;
+  const authors = await attachAuthors([row]);
+  return rowToSkillRecord(row, undefined, row.author_id ? authors.get(row.author_id) : undefined);
 }
 
 export async function deleteSkill(slug: string): Promise<void> {
@@ -340,7 +401,13 @@ export async function upsertSkillFromFilesystem(input: CreateSkillInput): Promis
     .single();
 
   if (error) throw new Error(`upsertSkillFromFilesystem failed: ${error.message}`);
-  return rowToSkillRecord(data as SkillRow);
+  const skillRow = data as SkillRow;
+  const authors = await attachAuthors([skillRow]);
+  return rowToSkillRecord(
+    skillRow,
+    undefined,
+    skillRow.author_id ? authors.get(skillRow.author_id) : undefined
+  );
 }
 
 export async function getSkillIdBySlug(slug: string): Promise<string | null> {
