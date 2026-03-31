@@ -4,6 +4,8 @@ import { tool } from "ai";
 import { z } from "zod";
 
 import { stableHash } from "@/lib/markdown";
+import { supportsExecutableMcpTransport } from "@/lib/mcp-utils";
+export { supportsExecutableMcpTransport } from "@/lib/mcp-utils";
 import type { ImportedMcpDocument } from "@/lib/types";
 
 const MCP_PROTOCOL_VERSION = "2025-11-25";
@@ -86,14 +88,6 @@ function buildInitializeParams() {
       version: "0.1.0"
     }
   };
-}
-
-function isExecutableTransport(transport: ImportedMcpDocument["transport"]): boolean {
-  return transport === "stdio" || transport === "http";
-}
-
-export function supportsExecutableMcpTransport(transport: ImportedMcpDocument["transport"]): boolean {
-  return isExecutableTransport(transport);
 }
 
 function sanitizeToolKey(serverName: string, toolName: string): string {
@@ -510,7 +504,7 @@ export async function buildMcpToolRuntime(selectedMcps: ImportedMcpDocument[]): 
   const sessions: McpSession[] = [];
 
   for (const server of selectedMcps) {
-    if (!isExecutableTransport(server.transport)) {
+    if (!supportsExecutableMcpTransport(server.transport)) {
       warnings.push(`${server.name}: ${server.transport} transport is not executable yet.`);
       continue;
     }
