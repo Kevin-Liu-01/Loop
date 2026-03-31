@@ -113,6 +113,10 @@ export type Database = {
           updated_at: string;
           search_vector: unknown;
           icon_url: string | null;
+          author_id: string | null;
+          featured_rank: number;
+          quality_score: number;
+          research_profile: Json;
         };
         Insert: {
           id?: string;
@@ -144,6 +148,10 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           icon_url?: string | null;
+          author_id?: string | null;
+          featured_rank?: number;
+          quality_score?: number;
+          research_profile?: Json;
         };
         Update: {
           id?: string;
@@ -175,6 +183,61 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           icon_url?: string | null;
+          author_id?: string | null;
+          featured_rank?: number;
+          quality_score?: number;
+          research_profile?: Json;
+        };
+        Relationships: [];
+      };
+      skill_authors: {
+        Row: {
+          id: string;
+          slug: string;
+          display_name: string;
+          bio: string;
+          logo_url: string | null;
+          website_url: string | null;
+          primary_email: string | null;
+          clerk_user_id: string | null;
+          verified: boolean;
+          is_official: boolean;
+          badge_label: string;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          display_name: string;
+          bio?: string;
+          logo_url?: string | null;
+          website_url?: string | null;
+          primary_email?: string | null;
+          clerk_user_id?: string | null;
+          verified?: boolean;
+          is_official?: boolean;
+          badge_label?: string;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          display_name?: string;
+          bio?: string;
+          logo_url?: string | null;
+          website_url?: string | null;
+          primary_email?: string | null;
+          clerk_user_id?: string | null;
+          verified?: boolean;
+          is_official?: boolean;
+          badge_label?: string;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -237,8 +300,10 @@ export type Database = {
           id: string;
           name: string;
           description: string;
+          slug: string | null;
           manifest_url: string;
           homepage_url: string | null;
+          docs_url: string | null;
           transport: string;
           url: string | null;
           command: string | null;
@@ -252,13 +317,23 @@ export type Database = {
           created_at: string;
           updated_at: string;
           icon_url: string | null;
+          package_name: string | null;
+          package_registry: string | null;
+          install_strategy: string;
+          auth_type: string;
+          verification_status: string;
+          sandbox_supported: boolean;
+          sandbox_notes: string;
+          normalized_config: Json;
         };
         Insert: {
           id?: string;
           name: string;
           description?: string;
+          slug?: string | null;
           manifest_url: string;
           homepage_url?: string | null;
+          docs_url?: string | null;
           transport?: string;
           url?: string | null;
           command?: string | null;
@@ -272,13 +347,23 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           icon_url?: string | null;
+          package_name?: string | null;
+          package_registry?: string | null;
+          install_strategy?: string;
+          auth_type?: string;
+          verification_status?: string;
+          sandbox_supported?: boolean;
+          sandbox_notes?: string;
+          normalized_config?: Json;
         };
         Update: {
           id?: string;
           name?: string;
           description?: string;
+          slug?: string | null;
           manifest_url?: string;
           homepage_url?: string | null;
+          docs_url?: string | null;
           transport?: string;
           url?: string | null;
           command?: string | null;
@@ -292,6 +377,14 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           icon_url?: string | null;
+          package_name?: string | null;
+          package_registry?: string | null;
+          install_strategy?: string;
+          auth_type?: string;
+          verification_status?: string;
+          sandbox_supported?: boolean;
+          sandbox_notes?: string;
+          normalized_config?: Json;
         };
         Relationships: [];
       };
@@ -303,6 +396,7 @@ export type Database = {
           description: string;
           manifest_url: string;
           homepage_url: string | null;
+          docs_url: string | null;
           transport: string;
           url: string | null;
           command: string | null;
@@ -312,6 +406,14 @@ export type Database = {
           tags: string[];
           raw: string;
           created_at: string;
+          package_name: string | null;
+          package_registry: string | null;
+          install_strategy: string;
+          auth_type: string;
+          verification_status: string;
+          sandbox_supported: boolean;
+          sandbox_notes: string;
+          normalized_config: Json;
         };
         Insert: {
           id?: string;
@@ -320,6 +422,7 @@ export type Database = {
           description?: string;
           manifest_url: string;
           homepage_url?: string | null;
+          docs_url?: string | null;
           transport?: string;
           url?: string | null;
           command?: string | null;
@@ -329,6 +432,14 @@ export type Database = {
           tags?: string[];
           raw?: string;
           created_at?: string;
+          package_name?: string | null;
+          package_registry?: string | null;
+          install_strategy?: string;
+          auth_type?: string;
+          verification_status?: string;
+          sandbox_supported?: boolean;
+          sandbox_notes?: string;
+          normalized_config?: Json;
         };
         Update: {
           id?: string;
@@ -337,6 +448,7 @@ export type Database = {
           description?: string;
           manifest_url?: string;
           homepage_url?: string | null;
+          docs_url?: string | null;
           transport?: string;
           url?: string | null;
           command?: string | null;
@@ -345,6 +457,176 @@ export type Database = {
           headers?: Json | null;
           tags?: string[];
           raw?: string;
+          created_at?: string;
+          package_name?: string | null;
+          package_registry?: string | null;
+          install_strategy?: string;
+          auth_type?: string;
+          verification_status?: string;
+          sandbox_supported?: boolean;
+          sandbox_notes?: string;
+          normalized_config?: Json;
+        };
+        Relationships: [];
+      };
+      trusted_skill_sources: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          trust_tier: string;
+          source_type: string;
+          homepage_url: string;
+          repo_url: string | null;
+          logo_url: string | null;
+          discovery_mode: string;
+          search_queries: string[];
+          tags: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          slug: string;
+          name: string;
+          trust_tier: string;
+          source_type: string;
+          homepage_url: string;
+          repo_url?: string | null;
+          logo_url?: string | null;
+          discovery_mode?: string;
+          search_queries?: string[];
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          trust_tier?: string;
+          source_type?: string;
+          homepage_url?: string;
+          repo_url?: string | null;
+          logo_url?: string | null;
+          discovery_mode?: string;
+          search_queries?: string[];
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      skill_upstreams: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string;
+          category: string;
+          source_id: string;
+          upstream_url: string;
+          upstream_kind: string;
+          body: string;
+          logo_url: string | null;
+          tags: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description?: string;
+          category: string;
+          source_id: string;
+          upstream_url: string;
+          upstream_kind: string;
+          body: string;
+          logo_url?: string | null;
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          description?: string;
+          category?: string;
+          source_id?: string;
+          upstream_url?: string;
+          upstream_kind?: string;
+          body?: string;
+          logo_url?: string | null;
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      skill_upstream_links: {
+        Row: {
+          skill_slug: string;
+          upstream_slug: string;
+          relation: string;
+          created_at: string;
+        };
+        Insert: {
+          skill_slug: string;
+          upstream_slug: string;
+          relation?: string;
+          created_at?: string;
+        };
+        Update: {
+          skill_slug?: string;
+          upstream_slug?: string;
+          relation?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      skill_source_runs: {
+        Row: {
+          id: string;
+          loop_run_id: string | null;
+          skill_slug: string;
+          source_id: string;
+          phase: string;
+          status: string;
+          strategy: string | null;
+          query: string | null;
+          reasoning: string | null;
+          signal_count: number;
+          results: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          loop_run_id?: string | null;
+          skill_slug: string;
+          source_id: string;
+          phase: string;
+          status: string;
+          strategy?: string | null;
+          query?: string | null;
+          reasoning?: string | null;
+          signal_count?: number;
+          results?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          loop_run_id?: string | null;
+          skill_slug?: string;
+          source_id?: string;
+          phase?: string;
+          status?: string;
+          strategy?: string | null;
+          query?: string | null;
+          reasoning?: string | null;
+          signal_count?: number;
+          results?: Json;
           created_at?: string;
         };
         Relationships: [];
