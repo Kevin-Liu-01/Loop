@@ -164,7 +164,7 @@ function ActivitySidebarView({
           />
         </div>
 
-        <div className="mt-5 grid gap-3 rounded-none border border-line/90 bg-paper-2/20 p-3 dark:bg-black/20">
+        <div className="mt-5 grid gap-3 rounded-none border border-line/90 bg-paper-3 p-3 dark:bg-black/20">
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="min-w-0 space-y-0.5">
               <p className={cn(inlineSectionLabel, "m-0")}>24h volume</p>
@@ -228,7 +228,7 @@ function ActivitySidebarView({
               <div className="flex flex-wrap gap-1.5">
                 {mix.map((item) => (
                   <span
-                    className="inline-flex items-center gap-1 rounded-none border border-line/80 bg-paper-3/80 px-2 py-0.5 text-[0.65rem] tabular-nums text-ink-soft dark:bg-paper-2/80"
+                    className="inline-flex items-center gap-1 rounded-none border border-line/80 bg-paper-3 px-2 py-0.5 text-[0.65rem] tabular-nums text-ink-soft dark:bg-paper-2/80"
                     key={item.label}
                   >
                     <span className="font-medium text-ink">{item.count}</span>

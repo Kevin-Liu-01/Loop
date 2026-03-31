@@ -15,6 +15,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/cn";
 import { buildMcpVersionHref, formatRelativeDate } from "@/lib/format";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import { pageInsetPadX } from "@/lib/ui-layout";
 import type { ImportedMcpDocument, VersionReference } from "@/lib/types";
 
@@ -66,11 +67,42 @@ function formatTransportLabel(transport: string): string {
   }
 }
 
+function formatVerificationLabel(status?: ImportedMcpDocument["verificationStatus"]): string {
+  switch (status) {
+    case "verified":
+      return "Verified";
+    case "partial":
+      return "Partially verified";
+    case "broken":
+      return "Broken";
+    case "unverified":
+    default:
+      return "Unverified";
+  }
+}
+
+function formatInstallStrategy(strategy?: ImportedMcpDocument["installStrategy"]): string {
+  switch (strategy) {
+    case "remote-http":
+      return "Remote HTTP";
+    case "uvx":
+      return "uvx";
+    case "binary":
+      return "Binary";
+    case "manual":
+      return "Manual";
+    case "npx":
+    default:
+      return "npx";
+  }
+}
+
 export function McpDetailPage({ mcp }: McpDetailPageProps) {
-  const isRunnable = mcp.transport === "stdio" || mcp.transport === "http";
+  const isRunnable = supportsSandboxMcp(mcp);
   const href = buildMcpVersionHref(mcp.name, mcp.version);
   const versions = buildAvailableVersions(mcp);
   const hasHeaders = mcp.headers && Object.keys(mcp.headers).length > 0;
+  const docsHref = mcp.docsUrl ?? mcp.homepageUrl;
 
   return (
     <AppGridShell header={<SiteHeader />}>
@@ -93,15 +125,16 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
             <div className="flex flex-wrap items-center gap-2">
               <Badge>{mcp.transport}</Badge>
               <Badge muted>{mcp.versionLabel}</Badge>
+              <Badge muted>{formatVerificationLabel(mcp.verificationStatus)}</Badge>
               {isRunnable ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                  Executable
+                  Sandbox ready
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint">
                   <span className="inline-block h-2 w-2 rounded-full bg-ink-faint/40" />
-                  Config only
+                  Hidden from sandbox
                 </span>
               )}
             </div>
@@ -142,17 +175,19 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
             </p>
 
             <div className="flex flex-wrap items-center gap-2">
-              <LinkButton
-                href={`/sandbox?mcp=${mcp.name}`}
-                size="sm"
-                variant="primary"
-              >
-                <PlayIcon className="h-3.5 w-3.5" />
-                Run in sandbox
-              </LinkButton>
-              {mcp.homepageUrl && (
+              {isRunnable ? (
                 <LinkButton
-                  href={mcp.homepageUrl}
+                  href={`/sandbox?mcp=${encodeURIComponent(mcp.slug ?? mcp.name)}`}
+                  size="sm"
+                  variant="primary"
+                >
+                  <PlayIcon className="h-3.5 w-3.5" />
+                  Run in sandbox
+                </LinkButton>
+              ) : null}
+              {docsHref ? (
+                <LinkButton
+                  href={docsHref}
                   rel="noreferrer"
                   size="sm"
                   target="_blank"
@@ -161,7 +196,7 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
                   <GlobeIcon className="h-3.5 w-3.5" />
                   Docs
                 </LinkButton>
-              )}
+              ) : null}
               <CopyButton
                 className="text-xs"
                 iconSize="sm"
@@ -223,8 +258,10 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
             <McpDetailSidebar
               currentVersion={mcp.version}
               mcpName={mcp.name}
+              sandboxHref={`/sandbox?mcp=${encodeURIComponent(mcp.slug ?? mcp.name)}`}
+              sandboxSupported={mcp.sandboxSupported}
               manifestUrl={mcp.manifestUrl}
-              homepageUrl={mcp.homepageUrl}
+              docsHref={docsHref}
               transport={mcp.transport}
               envKeyCount={mcp.envKeys.length}
               tags={mcp.tags}
@@ -247,6 +284,21 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
           <div className="grid gap-0.5">
             <small className={metaLabel}>transport</small>
             <strong className={metaValue}>{formatTransportLabel(mcp.transport)}</strong>
+          </div>
+
+          <div className="grid gap-0.5">
+            <small className={metaLabel}>verification</small>
+            <strong className={metaValue}>{formatVerificationLabel(mcp.verificationStatus)}</strong>
+          </div>
+
+          <div className="grid gap-0.5">
+            <small className={metaLabel}>install</small>
+            <strong className={metaValue}>{formatInstallStrategy(mcp.installStrategy)}</strong>
+          </div>
+
+          <div className="grid gap-0.5">
+            <small className={metaLabel}>auth</small>
+            <strong className={metaValue}>{mcp.authType ?? "unknown"}</strong>
           </div>
 
           {mcp.url && (
@@ -274,6 +326,13 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
               <code className="font-mono text-sm text-ink">{mcp.args.join(" ")}</code>
             </div>
           )}
+
+          {mcp.sandboxNotes ? (
+            <div className="col-span-2 grid gap-0.5 sm:col-span-3">
+              <small className={metaLabel}>sandbox notes</small>
+              <p className="m-0 text-sm text-ink-soft">{mcp.sandboxNotes}</p>
+            </div>
+          ) : null}
         </div>
       </Panel>
     </section>

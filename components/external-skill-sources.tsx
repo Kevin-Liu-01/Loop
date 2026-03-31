@@ -45,6 +45,10 @@ type SourceResult = {
     iconUrl: string;
     description: string;
     homepage: string;
+    trustTier: "official" | "community";
+    discoveryMode: "canonical" | "lead-list";
+    searchQueries: string[];
+    discoveryRationale: string;
   };
   skills: DiscoveredSkill[];
   count: number;
@@ -201,6 +205,8 @@ export function ExternalSkillSources() {
                 <div className="flex items-center gap-2">
                   <strong className="text-sm font-semibold text-ink">{result.source.name}</strong>
                   <Badge muted>{result.count} skills</Badge>
+                  <Badge muted>{result.source.trustTier}</Badge>
+                  <Badge muted>{result.source.discoveryMode}</Badge>
                 </div>
                 <p className="m-0 line-clamp-1 text-xs text-ink-faint">{result.source.description}</p>
               </div>
@@ -216,6 +222,15 @@ export function ExternalSkillSources() {
             </summary>
 
             <div className="border-t border-line px-4 py-3">
+              <div className="mb-3 grid gap-1">
+                <p className="m-0 text-xs leading-relaxed text-ink-soft">
+                  {result.source.discoveryRationale}
+                </p>
+                <p className="m-0 text-[0.7rem] text-ink-faint">
+                  Query hints: {result.source.searchQueries.join(" · ")}
+                </p>
+              </div>
+
               <div className="grid gap-2">
                 {result.skills.map((skill) => (
                   <div

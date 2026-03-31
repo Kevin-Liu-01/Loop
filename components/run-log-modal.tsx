@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DiffViewer } from "@/components/diff-viewer";
 import { FlowIcon } from "@/components/frontier-icons";
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
 import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
 import { cn } from "@/lib/cn";
 import type {
   AgentReasoningStep,
@@ -247,6 +248,114 @@ function LegacyStepView({ messages, diffLines }: { messages: string[]; diffLines
   );
 }
 
+function ResultSummary({
+  result,
+  error
+}: {
+  result: LoopUpdateResult | null;
+  error: string | null;
+}) {
+  if (!result && !error) {
+    return (
+      <div className="border border-line bg-paper-3 p-4">
+        <p className="m-0 text-sm text-ink-soft">
+          No structured result yet. Open the steps tab for the raw trace.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 border border-line bg-paper-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <strong className="text-sm text-ink">
+          {result
+            ? result.changed
+              ? `New revision: ${result.nextVersionLabel}`
+              : "No material changes"
+            : "Run error"}
+        </strong>
+        {result?.changedSections?.length ? <Badge>{result.changedSections.length} sections</Badge> : null}
+      </div>
+
+      {result?.summary ? <p className="m-0 text-sm text-ink-soft">{result.summary}</p> : null}
+      {result?.whatChanged ? <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p> : null}
+
+      {result?.changedSections?.length ? (
+        <div className="flex flex-wrap gap-1.5">
+          {result.changedSections.map((section) => (
+            <span
+              className="rounded-none border border-line bg-paper px-2 py-0.5 text-[0.7rem] font-medium text-ink-soft"
+              key={section}
+            >
+              {section}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {error ? (
+        <p className="m-0 border border-danger/20 bg-danger/5 p-3 text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function StepOverview({
+  isLive,
+  messages,
+  reasoningSteps
+}: {
+  isLive: boolean;
+  messages: string[];
+  reasoningSteps: AgentReasoningStep[];
+}) {
+  if (reasoningSteps.length > 0) {
+    return (
+      <div className="grid gap-2">
+        {reasoningSteps.slice(-5).map((step) => (
+          <article
+            className="grid gap-1 rounded-none border border-line bg-paper-3 px-3 py-2"
+            key={`${step.index}-${step.timestamp}`}
+          >
+            <div className="flex items-center gap-2 text-xs text-ink-faint">
+              <span className="font-semibold text-ink">Step {step.index + 1}</span>
+              <span>{step.toolCall ? toolDisplayName(step.toolCall.name) : "Reasoning"}</span>
+              <span className="ml-auto">{new Date(step.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <p className="m-0 line-clamp-3 text-sm text-ink-soft">
+              {step.reasoning || step.toolResult || "Waiting for more detail."}
+            </p>
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      {messages.map((message, index) => (
+        <article
+          className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-none border border-line bg-paper-3 px-3 py-2"
+          key={`${message}-${index}`}
+        >
+          <span
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-sm border border-line bg-paper text-[0.65rem] font-semibold text-ink-muted",
+              isLive && index === messages.length - 1 && "animate-pulse"
+            )}
+          >
+            {index + 1}
+          </span>
+          <p className="m-0 pt-0.5 text-sm text-ink-soft">{message}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export function RunLogModal({
   open,
   onClose,
@@ -266,6 +375,12 @@ export function RunLogModal({
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
   const hasReasoningSteps = reasoningSteps.length > 0;
   const selectedStep = reasoningSteps[selectedStepIndex] ?? null;
+
+  useEffect(() => {
+    if (selectedStepIndex >= reasoningSteps.length) {
+      setSelectedStepIndex(Math.max(reasoningSteps.length - 1, 0));
+    }
+  }, [reasoningSteps, selectedStepIndex]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -309,113 +424,92 @@ export function RunLogModal({
             </div>
           </div>
 
-          {/* Two-column: timeline + detail OR legacy view */}
-          {hasReasoningSteps ? (
-            <div className="grid grid-cols-[240px_minmax(0,1fr)] items-start gap-6 max-lg:grid-cols-1">
-              {/* Left column: step timeline + sources */}
-              <div className="grid content-start gap-5">
-                <StepTimeline
-                  isLive={isLive}
-                  onSelect={setSelectedStepIndex}
-                  selectedIndex={selectedStepIndex}
-                  steps={reasoningSteps}
-                />
+          <Tabs className="grid gap-4" defaultValue="overview">
+            <TabsList className="w-fit">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="sources">Sources</TabsTrigger>
+              <TabsTrigger value="steps">Steps</TabsTrigger>
+              <TabsTrigger value="diff">Diff</TabsTrigger>
+            </TabsList>
 
-                {sourceLogs.length > 0 ? (
+            <TabsContent className="grid gap-5" value="overview">
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+                <div className="grid gap-5">
+                  <ResultSummary error={error} result={result} />
+                  {diffLines.length > 0 ? (
+                    <DiffViewer compact label="Diff preview" lines={diffLines} maxHeight={280} />
+                  ) : null}
+                </div>
+
+                <div className="grid content-start gap-5">
                   <div>
-                    <h3 className={cn(sectionLabel, "mb-2")}>
-                      Sources ({sourceLogs.length})
-                    </h3>
-                    <div className="grid gap-2">
-                      {sourceLogs.map((source) => (
-                        <SourceCardFull key={source.id} source={source} />
-                      ))}
+                    <h3 className={cn(sectionLabel, "mb-2")}>Recent steps</h3>
+                    <StepOverview isLive={isLive} messages={messages} reasoningSteps={reasoningSteps} />
+                  </div>
+
+                  {sourceLogs.length > 0 ? (
+                    <div>
+                      <h3 className={cn(sectionLabel, "mb-2")}>
+                        Source signals ({sourceLogs.length})
+                      </h3>
+                      <div className="grid gap-2">
+                        {sourceLogs.slice(0, 3).map((source) => (
+                          <SourceCardFull key={source.id} source={source} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
+            </TabsContent>
 
-              {/* Right column: selected step detail */}
-              <div className="grid content-start gap-5">
-                {selectedStep ? (
-                  <StepDetail step={selectedStep} />
-                ) : (
-                  <p className="text-sm text-ink-soft">Select a step to view details.</p>
-                )}
+            <TabsContent className="grid gap-4" value="sources">
+              {sourceLogs.length > 0 ? (
+                <div className="grid gap-2">
+                  {sourceLogs.map((source) => (
+                    <SourceCardFull key={source.id} source={source} />
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
+                  No source logs were recorded for this run.
+                </div>
+              )}
+            </TabsContent>
 
-                {/* Result summary at the bottom of the detail pane */}
-                {result ? (
-                  <div className="grid gap-2 border border-line bg-paper-3 p-4">
-                    <strong className="text-sm text-ink">
-                      {result.changed
-                        ? `New revision: ${result.nextVersionLabel}`
-                        : "No material changes"}
-                    </strong>
-                    {result.summary ? (
-                      <p className="m-0 text-sm text-ink-soft">{result.summary}</p>
-                    ) : null}
-                    {result.whatChanged ? (
-                      <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p>
-                    ) : null}
-                    {result.changedSections && result.changedSections.length > 0 ? (
-                      <p className="m-0 text-xs text-ink-muted">
-                        Sections: {result.changedSections.join(", ")}
-                      </p>
-                    ) : null}
+            <TabsContent className="grid gap-4" value="steps">
+              {hasReasoningSteps ? (
+                <div className="grid grid-cols-[240px_minmax(0,1fr)] items-start gap-6 max-lg:grid-cols-1">
+                  <StepTimeline
+                    isLive={isLive}
+                    onSelect={setSelectedStepIndex}
+                    selectedIndex={selectedStepIndex}
+                    steps={reasoningSteps}
+                  />
+
+                  <div className="grid content-start gap-5">
+                    {selectedStep ? (
+                      <StepDetail step={selectedStep} />
+                    ) : (
+                      <p className="text-sm text-ink-soft">Select a step to view details.</p>
+                    )}
                   </div>
-                ) : null}
-
-                {/* Full diff (skill-level) */}
-                {diffLines.length > 0 ? (
-                  <DiffViewer label="Full skill diff" lines={diffLines} />
-                ) : null}
-              </div>
-            </div>
-          ) : (
-            /* Legacy view for old runs without reasoning steps */
-            <div className="grid grid-cols-[240px_minmax(0,1fr)] items-start gap-6 max-lg:grid-cols-1">
-              <div className="grid content-start gap-5">
-                {sourceLogs.length > 0 ? (
-                  <div>
-                    <h3 className={cn(sectionLabel, "mb-2")}>
-                      Sources ({sourceLogs.length})
-                    </h3>
-                    <div className="grid gap-2">
-                      {sourceLogs.map((source) => (
-                        <SourceCardFull key={source.id} source={source} />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid content-start gap-5">
+                </div>
+              ) : (
                 <LegacyStepView diffLines={diffLines} messages={messages} />
+              )}
+            </TabsContent>
 
-                {result ? (
-                  <div className="grid gap-2 border border-line bg-paper-3 p-4">
-                    <strong className="text-sm text-ink">
-                      {result.changed
-                        ? `New revision: ${result.nextVersionLabel}`
-                        : "No material changes"}
-                    </strong>
-                    {result.summary ? (
-                      <p className="m-0 text-sm text-ink-soft">{result.summary}</p>
-                    ) : null}
-                    {result.whatChanged ? (
-                      <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          )}
-
-          {error ? (
-            <p className="m-0 border border-danger/20 bg-danger/5 p-4 text-sm text-danger">
-              {error}
-            </p>
-          ) : null}
+            <TabsContent className="grid gap-4" value="diff">
+              {diffLines.length > 0 ? (
+                <DiffViewer label="Full skill diff" lines={diffLines} />
+              ) : (
+                <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
+                  No diff was produced for this run.
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
       </ScrollArea>

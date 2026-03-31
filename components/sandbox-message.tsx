@@ -5,8 +5,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { BotIcon, UserIcon } from "@/components/frontier-icons";
+import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { SandboxToolBlock } from "@/components/ui/sandbox-tool-block";
 import { cn } from "@/lib/cn";
+import type { ConversationMessageMetadata } from "@/lib/types";
 
 type MessagePart = {
   type: string;
@@ -24,12 +26,14 @@ type SandboxMessageProps = {
   role: "user" | "assistant" | "system";
   parts: MessagePart[];
   createdAt?: Date;
+  metadata?: ConversationMessageMetadata;
 };
 
 type SavedMessageProps = {
   role: string;
   content: string;
   createdAt: string;
+  metadata?: ConversationMessageMetadata;
 };
 
 function formatMessageTime(date: Date): string {
@@ -73,14 +77,42 @@ function Timestamp({ date }: { date: Date }) {
 
 function UserBubble({
   text,
-  timestamp
+  timestamp,
+  metadata
 }: {
   text: string;
   timestamp: Date;
+  metadata?: ConversationMessageMetadata;
 }) {
+  const attachments = metadata?.attachments;
+  const hasAttachments =
+    (attachments?.skills.length ?? 0) > 0 || (attachments?.mcps.length ?? 0) > 0;
+
   return (
     <div className="flex justify-end gap-3">
       <div className="grid max-w-[75%] gap-1.5">
+        {hasAttachments ? (
+          <div className="flex flex-wrap justify-end gap-1.5 px-1">
+            {attachments?.skills.map((skill) => (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-paper-3/80 px-2 py-1 text-[0.65rem] font-medium text-ink"
+                key={`skill:${skill.slug}`}
+              >
+                <SkillIcon iconUrl={skill.iconUrl} size={14} slug={skill.slug} />
+                {skill.title}
+              </span>
+            ))}
+            {attachments?.mcps.map((mcp) => (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-paper-3/80 px-2 py-1 text-[0.65rem] font-medium text-ink"
+                key={`mcp:${mcp.id}`}
+              >
+                <McpIcon iconUrl={mcp.iconUrl} name={mcp.name} size={14} />
+                {mcp.name}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="rounded-2xl rounded-br-sm bg-accent px-4 py-3 text-sm leading-relaxed text-white shadow-[0_2px_12px_-4px_rgba(232,101,10,0.3)]">
           <span className="whitespace-pre-wrap">{text}</span>
         </div>
@@ -126,7 +158,7 @@ function AssistantBubble({
   );
 }
 
-export function SandboxMessage({ role, parts, createdAt }: SandboxMessageProps) {
+export function SandboxMessage({ role, parts, createdAt, metadata }: SandboxMessageProps) {
   const timestamp = createdAt ?? new Date();
 
   if (role === "user") {
@@ -134,7 +166,7 @@ export function SandboxMessage({ role, parts, createdAt }: SandboxMessageProps) 
       .filter((p) => p.type === "text")
       .map((p) => p.text ?? "")
       .join("");
-    return <UserBubble text={text} timestamp={timestamp} />;
+    return <UserBubble metadata={metadata} text={text} timestamp={timestamp} />;
   }
 
   return (
@@ -171,11 +203,11 @@ export function SandboxMessage({ role, parts, createdAt }: SandboxMessageProps) 
   );
 }
 
-export function SavedMessage({ role, content, createdAt }: SavedMessageProps) {
+export function SavedMessage({ role, content, createdAt, metadata }: SavedMessageProps) {
   const timestamp = new Date(createdAt);
 
   if (role === "user") {
-    return <UserBubble text={content} timestamp={timestamp} />;
+    return <UserBubble metadata={metadata} text={content} timestamp={timestamp} />;
   }
 
   return (

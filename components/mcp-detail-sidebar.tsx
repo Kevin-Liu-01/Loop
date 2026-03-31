@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { buildMcpVersionHref } from "@/lib/format";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import type { ImportedMcpTransport, VersionReference } from "@/lib/types";
 
 const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
@@ -14,8 +15,10 @@ const metaValue = "text-sm font-semibold tracking-[-0.03em]";
 type McpDetailSidebarProps = {
   mcpName: string;
   currentVersion: number;
+  sandboxHref: string;
+  sandboxSupported?: boolean;
   manifestUrl: string;
-  homepageUrl?: string;
+  docsHref?: string;
   transport: ImportedMcpTransport;
   envKeyCount: number;
   tags: string[];
@@ -25,14 +28,16 @@ type McpDetailSidebarProps = {
 export function McpDetailSidebar({
   mcpName,
   currentVersion,
+  sandboxHref,
+  sandboxSupported,
   manifestUrl,
-  homepageUrl,
+  docsHref,
   transport,
   envKeyCount,
   tags,
   versions
 }: McpDetailSidebarProps) {
-  const isRunnable = transport === "stdio" || transport === "http";
+  const isRunnable = supportsSandboxMcp({ transport, sandboxSupported });
 
   return (
     <aside className="grid content-start gap-4">
@@ -42,18 +47,16 @@ export function McpDetailSidebar({
         </PanelHead>
 
         <div className="grid gap-2">
-          <LinkButton
-            href={`/sandbox?mcp=${mcpName}`}
-            size="sm"
-            variant="primary"
-          >
-            <PlayIcon className="h-3.5 w-3.5" />
-            Run in sandbox
-          </LinkButton>
+          {isRunnable ? (
+            <LinkButton href={sandboxHref} size="sm" variant="primary">
+              <PlayIcon className="h-3.5 w-3.5" />
+              Run in sandbox
+            </LinkButton>
+          ) : null}
 
-          {homepageUrl && (
+          {docsHref && (
             <LinkButton
-              href={homepageUrl}
+              href={docsHref}
               rel="noreferrer"
               size="sm"
               target="_blank"

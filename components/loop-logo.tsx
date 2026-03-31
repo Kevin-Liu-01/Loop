@@ -57,7 +57,7 @@ export function LoopLogo({
   const spin = mounted && engaged && !reducedMotion;
   const chipSeated = engaged;
 
-  const chipPathClass = chipClassName ?? "fill-black dark:fill-white";
+  const chipPathClass = chipClassName ?? "fill-ink";
 
   return (
     <svg

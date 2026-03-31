@@ -12,6 +12,7 @@ import {
 import { SkillIcon, McpIcon } from "@/components/ui/skill-icon";
 import { Separator } from "@/components/ui/shadcn/separator";
 import { cn } from "@/lib/cn";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import {
   sandboxToolbarControl,
   sandboxToolbarLabel,
@@ -121,9 +122,7 @@ export function SandboxToolbar({
   onToggleMcp,
 }: SandboxToolbarProps) {
   const selectedPreset = presets.find((p) => p.id === config.providerId);
-  const executableMcps = mcps.filter(
-    (m) => m.transport === "stdio" || m.transport === "http",
-  );
+  const executableMcps = mcps.filter((mcp) => supportsSandboxMcp(mcp));
 
   const [contextOpen, setContextOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

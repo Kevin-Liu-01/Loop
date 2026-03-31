@@ -29,9 +29,11 @@ import { SandboxInspector } from "@/components/sandbox-inspector";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { useSandboxInspector } from "@/hooks/use-sandbox-inspector";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import type {
   AgentProviderPreset,
   ConversationMessage,
+  ConversationMessageMetadata,
   ImportedMcpDocument,
   SkillRecord,
 } from "@/lib/types";
@@ -43,6 +45,7 @@ type SandboxShellProps = {
   presets: AgentProviderPreset[];
   skills: SkillRecord[];
   initialSkillSlug?: string;
+  initialMcpId?: string;
 };
 
 type SandboxState = "idle" | "creating" | "running" | "stopped" | "error";
@@ -54,6 +57,7 @@ const INSPECTOR_KEY = "loop.sandbox.inspector";
 function defaultConfig(
   presets: AgentProviderPreset[],
   initialSkillSlug?: string,
+  initialMcpId?: string,
 ): SandboxToolbarConfig {
   const preset = presets[0];
   return {
@@ -62,7 +66,7 @@ function defaultConfig(
     model: preset?.defaultModel ?? "openai/gpt-5.4-mini",
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
     selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : [],
-    selectedMcpIds: [],
+    selectedMcpIds: initialMcpId ? [initialMcpId] : [],
   };
 }
 
@@ -140,10 +144,11 @@ export function SandboxShell({
   presets,
   skills,
   initialSkillSlug,
+  initialMcpId,
 }: SandboxShellProps) {
   // ── Config ──
   const [config, setConfig] = useState<SandboxToolbarConfig>(() =>
-    defaultConfig(presets, initialSkillSlug),
+    defaultConfig(presets, initialSkillSlug, initialMcpId),
   );
   const hydratedRef = useRef(false);
 
@@ -177,6 +182,14 @@ export function SandboxShell({
   configRef.current = config;
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
+  const skillBySlug = useMemo(
+    () => new Map(skills.map((skill) => [skill.slug, skill])),
+    [skills],
+  );
+  const mcpById = useMemo(
+    () => new Map(mcps.map((mcp) => [mcp.id, mcp])),
+    [mcps],
+  );
 
   // ── VM Inspector hook ──
   const inspector = useSandboxInspector(
@@ -200,7 +213,9 @@ export function SandboxShell({
           selectedSkillSlugs: initialSkillSlug
             ? prev.selectedSkillSlugs
             : saved.selectedSkillSlugs ?? prev.selectedSkillSlugs,
-          selectedMcpIds: saved.selectedMcpIds ?? prev.selectedMcpIds,
+          selectedMcpIds: initialMcpId
+            ? prev.selectedMcpIds
+            : saved.selectedMcpIds ?? prev.selectedMcpIds,
         }));
       }
     } catch {
@@ -219,7 +234,7 @@ export function SandboxShell({
       /* ignore */
     }
     hydratedRef.current = true;
-  }, [initialSkillSlug]);
+  }, [initialMcpId, initialSkillSlug]);
 
   // ── Persist config ──
   useEffect(() => {
@@ -227,6 +242,27 @@ export function SandboxShell({
       window.localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
     }
   }, [config]);
+
+  useEffect(() => {
+    const supportedMcpIds = new Set(
+      mcps.filter((mcp) => supportsSandboxMcp(mcp)).map((mcp) => mcp.id),
+    );
+
+    setConfig((prev) => {
+      const nextSelectedMcpIds = prev.selectedMcpIds.filter((id) =>
+        supportedMcpIds.has(id),
+      );
+
+      if (nextSelectedMcpIds.length === prev.selectedMcpIds.length) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        selectedMcpIds: nextSelectedMcpIds,
+      };
+    });
+  }, [mcps]);
 
   // ── Persist panel states ──
   useEffect(() => {
@@ -326,6 +362,9 @@ export function SandboxShell({
       createdAt:
         (m as unknown as { createdAt?: Date }).createdAt?.toISOString() ??
         new Date().toISOString(),
+      metadata:
+        (m as unknown as { metadata?: ConversationMessageMetadata }).metadata ??
+        undefined,
     }));
 
     try {
@@ -349,6 +388,40 @@ export function SandboxShell({
     } catch {
       /* best effort */
     }
+  }
+
+  function buildAttachmentMetadata(): ConversationMessageMetadata | undefined {
+    const attachedSkills = configRef.current.selectedSkillSlugs
+      .map((slug) => skillBySlug.get(slug))
+      .filter((skill): skill is SkillRecord => Boolean(skill))
+      .map((skill) => ({
+        slug: skill.slug,
+        title: skill.title,
+        versionLabel: skill.versionLabel,
+        iconUrl: skill.iconUrl,
+      }));
+
+    const attachedMcps = configRef.current.selectedMcpIds
+      .map((id) => mcpById.get(id))
+      .filter((mcp): mcp is ImportedMcpDocument => Boolean(mcp))
+      .map((mcp) => ({
+        id: mcp.id,
+        name: mcp.name,
+        transport: mcp.transport,
+        iconUrl: mcp.iconUrl,
+        sandboxSupported: mcp.sandboxSupported,
+      }));
+
+    if (attachedSkills.length === 0 && attachedMcps.length === 0) {
+      return undefined;
+    }
+
+    return {
+      attachments: {
+        skills: attachedSkills,
+        mcps: attachedMcps,
+      },
+    };
   }
 
   // ── Sandbox lifecycle ──
@@ -403,7 +476,10 @@ export function SandboxShell({
       if (!created) return;
     }
 
-    sendMessage({ text });
+    sendMessage({
+      text,
+      metadata: buildAttachmentMetadata(),
+    });
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -588,6 +664,7 @@ export function SandboxShell({
                         key={m.id}
                         content={m.content}
                         createdAt={m.createdAt}
+                        metadata={m.metadata}
                         role={m.role}
                       />
                     ))}
@@ -600,6 +677,9 @@ export function SandboxShell({
                       key={message.id}
                       createdAt={
                         (message as unknown as { createdAt?: Date }).createdAt
+                      }
+                      metadata={
+                        (message as unknown as { metadata?: ConversationMessageMetadata }).metadata
                       }
                       parts={(message.parts ?? []) as MessagePart[]}
                       role={message.role as "user" | "assistant"}

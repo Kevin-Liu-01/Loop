@@ -10,6 +10,7 @@ import {
   ActivityDashboard,
   shouldShowActivityDashboard,
 } from "@/components/activity-dashboard";
+import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { UsageComparisonProvider } from "@/components/usage-comparison-context";
 import { AppGridShell } from "@/components/app-grid-shell";
@@ -31,6 +32,7 @@ import { textFieldSearch } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { computeFreshness } from "@/lib/freshness";
 import { buildMcpVersionHref } from "@/lib/format";
+import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import { formatNextRun } from "@/lib/schedule";
 import { pageHeaderSub, pageInsetPadX, pageInsetPadY } from "@/lib/ui-layout";
 import { RelativeTime } from "@/components/relative-time";
@@ -70,7 +72,19 @@ function filterSkills(
         .toLowerCase();
       return haystack.includes(normalized);
     })
-    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+    .sort((a, b) => {
+      const featuredDelta = (b.featuredRank ?? 0) - (a.featuredRank ?? 0);
+      if (featuredDelta !== 0) return featuredDelta;
+
+      const qualityDelta = (b.qualityScore ?? 0) - (a.qualityScore ?? 0);
+      if (qualityDelta !== 0) return qualityDelta;
+
+      if (a.featured !== b.featured) {
+        return a.featured ? -1 : 1;
+      }
+
+      return +new Date(b.updatedAt) - +new Date(a.updatedAt);
+    });
 }
 
 function originLabel(skill: SkillRecord): string {
@@ -117,7 +131,30 @@ function filterMcps(mcps: ImportedMcpDocument[], query: string, tagFilter: strin
       const haystack = [m.name, m.description, ...m.tags].join(" ").toLowerCase();
       return haystack.includes(normalized);
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      const sandboxDelta = Number(supportsSandboxMcp(b)) - Number(supportsSandboxMcp(a));
+      if (sandboxDelta !== 0) return sandboxDelta;
+
+      const verificationRank = (status?: ImportedMcpDocument["verificationStatus"]) => {
+        switch (status) {
+          case "verified":
+            return 3;
+          case "partial":
+            return 2;
+          case "unverified":
+            return 1;
+          case "broken":
+          default:
+            return 0;
+        }
+      };
+
+      const verificationDelta =
+        verificationRank(b.verificationStatus) - verificationRank(a.verificationStatus);
+      if (verificationDelta !== 0) return verificationDelta;
+
+      return a.name.localeCompare(b.name);
+    });
 }
 
 export function HomeShell({ automations, categories, mcps = [], skills, loopRuns, usageOverview }: HomeShellProps) {
@@ -215,9 +252,12 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
                       <Badge muted>{skill.versionLabel}</Badge>
                     </div>
                     <p className="m-0 line-clamp-1 text-sm text-ink-soft">{summary}</p>
-                    <span className="text-xs text-ink-faint">
-                      <RelativeTime date={skill.updatedAt} /> · {skillMetaSegments(skill, freshness).join(" · ")}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+                      <SkillAuthorBadge author={skill.author} compact linked={false} ownerName={skill.ownerName} />
+                      <span>
+                        <RelativeTime date={skill.updatedAt} /> · {skillMetaSegments(skill, freshness).join(" · ")}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -262,7 +302,8 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
     <div className="grid gap-0">
       {filteredMcps.length > 0 ? (
         filteredMcps.map((mcp) => {
-          const isRunnable = mcp.transport === "stdio" || mcp.transport === "http";
+          const isRunnable = supportsSandboxMcp(mcp);
+          const sandboxHref = `/sandbox?mcp=${encodeURIComponent(mcp.slug ?? mcp.name)}`;
           const mcpHref = buildMcpVersionHref(mcp.name, mcp.version);
           return (
             <article
@@ -322,10 +363,12 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
                         Open homepage
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onSelect={() => router.push(`/sandbox?mcp=${mcp.name}`)}>
-                      <TerminalIcon />
-                      Open in sandbox
-                    </DropdownMenuItem>
+                    {isRunnable ? (
+                      <DropdownMenuItem onSelect={() => router.push(sandboxHref)}>
+                        <TerminalIcon />
+                        Open in sandbox
+                      </DropdownMenuItem>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -411,9 +454,7 @@ export function HomeShell({ automations, categories, mcps = [], skills, loopRuns
     </div>
   );
 
-  const executableMcpCount = mcps.filter(
-    (m) => m.transport === "stdio" || m.transport === "http"
-  ).length;
+  const executableMcpCount = mcps.filter((mcp) => supportsSandboxMcp(mcp)).length;
 
   const pageTitle = (
     <div className="grid gap-2">
