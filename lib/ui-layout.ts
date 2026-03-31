@@ -19,3 +19,6 @@ export const pageHeaderSub =
 
 /** Small label inside a surface (e.g. prompt box header) — not an eyebrow above a page title. */
 export const inlineSectionLabel = "text-xs font-medium text-ink-muted";
+
+/** Site header height in px (banner min-h-[52px] + py-2.5 + border-b ≈ 57px). */
+export const SITE_HEADER_HEIGHT_PX = 57;

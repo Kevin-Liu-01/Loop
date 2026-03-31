@@ -27,6 +27,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { Panel } from "@/components/ui/panel";
 import { SimpleList, SimpleListBody, SimpleListItem } from "@/components/ui/simple-list";
+import { VersionSwitcher } from "@/components/version-switcher";
 import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
 import { formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -156,6 +157,14 @@ export function SkillDetailPage({
                 {skill.title}
               </h1>
               <ShareButton href={skill.href} />
+              {skill.availableVersions.length > 1 && (
+                <VersionSwitcher
+                  className="ml-auto"
+                  currentVersion={skill.version}
+                  slug={skill.slug}
+                  versions={skill.availableVersions}
+                />
+              )}
             </div>
             <p className="m-0 max-w-[min(100%,52ch)] text-pretty text-sm leading-relaxed text-ink-muted wrap-break-word">
               {skill.description}
@@ -238,10 +247,10 @@ export function SkillDetailPage({
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* Main column */}
           <div
-            className="min-h-0 flex-1 overflow-y-auto border-line lg:border-r"
+            className="min-h-0 flex-1 border-line lg:border-r"
             id="skill-main-scroll"
           >
-            <SkillSectionNav scrollContainerId="skill-main-scroll" sections={sectionTabs} />
+            <SkillSectionNav sections={sectionTabs} />
             <div className={cn("grid gap-8 py-5 pb-16 sm:py-6", pageInsetPadX)}>
               {canEdit ? (
                 <section id="author-studio">

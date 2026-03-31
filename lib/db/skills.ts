@@ -313,10 +313,29 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
     updated_at: v.created_at
   };
 
-  const authors = await attachAuthors([currentRow]);
+  const [authors, { data: allVersionRows }] = await Promise.all([
+    attachAuthors([currentRow]),
+    db
+      .from("skill_versions")
+      .select("version, created_at")
+      .eq("skill_id", currentRow.id)
+      .order("version", { ascending: false }),
+  ]);
+
+  const availableVersions: VersionReference[] = [
+    { version: currentRow.version, label: buildVersionLabel(currentRow.version), updatedAt: currentRow.updated_at },
+    ...(allVersionRows ?? [])
+      .filter((r: { version: number }) => r.version !== currentRow.version)
+      .map((r: { version: number; created_at: string }) => ({
+        version: r.version,
+        label: buildVersionLabel(r.version),
+        updatedAt: r.created_at,
+      })),
+  ].sort((a, b) => b.version - a.version);
+
   return rowToSkillRecord(
     versionRow,
-    undefined,
+    availableVersions,
     currentRow.author_id ? authors.get(currentRow.author_id) : undefined
   );
 }

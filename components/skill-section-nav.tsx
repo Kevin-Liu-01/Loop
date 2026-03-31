@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { SITE_HEADER_HEIGHT_PX } from "@/lib/ui-layout";
 
 export type SectionTab = {
   id: string;
@@ -11,23 +12,22 @@ export type SectionTab = {
 
 type SkillSectionNavProps = {
   sections: SectionTab[];
-  scrollContainerId: string;
 };
 
-export function SkillSectionNav({ sections, scrollContainerId }: SkillSectionNavProps) {
+export function SkillSectionNav({ sections }: SkillSectionNavProps) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
+  const navRef = useRef<HTMLElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSet = useRef(new Set<string>());
 
   useEffect(() => {
-    const container = document.getElementById(scrollContainerId);
-    if (!container) return;
+    const navH = navRef.current?.getBoundingClientRect().height ?? 0;
+    const deadZone = SITE_HEADER_HEIGHT_PX + navH;
 
     const pickActive = () => {
-      const ids = sections.map((s) => s.id);
-      for (const id of ids) {
-        if (visibleSet.current.has(id)) {
-          setActiveId(id);
+      for (const s of sections) {
+        if (visibleSet.current.has(s.id)) {
+          setActiveId(s.id);
           return;
         }
       }
@@ -44,7 +44,11 @@ export function SkillSectionNav({ sections, scrollContainerId }: SkillSectionNav
         }
         pickActive();
       },
-      { root: container, rootMargin: "-10% 0px -60% 0px", threshold: 0 }
+      {
+        root: null,
+        rootMargin: `-${deadZone}px 0px -55% 0px`,
+        threshold: 0,
+      }
     );
 
     const targets = sections
@@ -56,37 +60,46 @@ export function SkillSectionNav({ sections, scrollContainerId }: SkillSectionNav
     return () => {
       observerRef.current?.disconnect();
     };
-  }, [sections, scrollContainerId]);
+  }, [sections]);
 
   const handleClick = useCallback(
     (id: string) => {
-      const container = document.getElementById(scrollContainerId);
+      setActiveId(id);
+
       const target = document.getElementById(id);
-      if (!container || !target) return;
+      if (!target) return;
 
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const offset = targetRect.top - containerRect.top + container.scrollTop - 56;
+      const navH = navRef.current?.getBoundingClientRect().height ?? 0;
+      const y =
+        target.getBoundingClientRect().top +
+        window.scrollY -
+        SITE_HEADER_HEIGHT_PX -
+        navH;
 
-      container.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
     },
-    [scrollContainerId]
+    []
   );
 
   if (sections.length === 0) return null;
 
   return (
     <nav
+      ref={navRef}
       aria-label="Page sections"
-      className="sticky top-0 z-20 flex items-center gap-1 overflow-x-auto border-b border-line bg-paper/90 px-4 backdrop-blur-md sm:px-5 lg:px-6"
+      className={cn(
+        "sticky z-30 flex items-center gap-1 overflow-x-auto border-b border-line",
+        "bg-paper/90 px-4 backdrop-blur-md sm:px-5 lg:px-6"
+      )}
+      style={{ top: SITE_HEADER_HEIGHT_PX }}
     >
       {sections.map((section) => (
         <button
           className={cn(
-            "shrink-0 border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors",
+            "shrink-0 cursor-pointer border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors active:scale-[0.97]",
             activeId === section.id
               ? "border-accent text-accent"
-              : "border-transparent text-ink-faint hover:text-ink-muted"
+              : "border-transparent text-ink-faint hover:text-ink-muted hover:border-line"
           )}
           key={section.id}
           onClick={() => handleClick(section.id)}
