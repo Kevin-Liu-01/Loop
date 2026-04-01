@@ -28,6 +28,7 @@ export function IconRefView({ icon, size = 20, className, flush, invert }: IconR
           alt={icon.alt}
           className={cn("shrink-0 object-contain", invert && "brightness-0 invert")}
           height={size - pad * 2}
+          loading="lazy"
           src={icon.url}
           width={size - pad * 2}
         />

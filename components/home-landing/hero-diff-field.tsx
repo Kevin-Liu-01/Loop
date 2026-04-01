@@ -200,6 +200,7 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
         <img
           alt=""
           className="h-4 w-4 shrink-0"
+          loading="lazy"
           src={scene.iconUrl}
           style={{ filter: "var(--hdc-icon-filter)" }}
         />

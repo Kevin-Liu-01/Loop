@@ -24,6 +24,7 @@ function SourceIcon({ src, size }: { src: string; size: number }) {
         alt=""
         className="shrink-0 object-contain"
         height={size - pad * 2}
+        loading="lazy"
         src={src}
         width={size - pad * 2}
       />

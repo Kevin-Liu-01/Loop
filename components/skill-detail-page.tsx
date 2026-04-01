@@ -104,12 +104,20 @@ export function SkillDetailPage({
         : [];
   const diffLines = rawDiff.length > 80 ? rawDiff.slice(0, 80) : rawDiff;
 
+  const hasAgentDocs = Object.values(skill.agentDocs ?? {}).some(
+    (content) => typeof content === "string" && content.trim().length > 0,
+  );
+  const hasResearch =
+    !!skill.researchProfile ||
+    (skill.sources ?? []).length > 0 ||
+    (skill.upstreams?.length ?? 0) > 0;
+
   const sectionTabs: SectionTab[] = [
     ...(canEdit ? [{ id: "author-studio", label: "Studio" }] : []),
     { id: "content", label: "Content" },
-    { id: "agent-docs", label: "Agent docs" },
+    ...(hasAgentDocs ? [{ id: "agent-docs", label: "Agent docs" }] : []),
     { id: "activity", label: "Activity" },
-    { id: "research", label: "Research" },
+    ...(hasResearch ? [{ id: "research", label: "Research" }] : []),
     ...(trackedSources.length > 0 ? [{ id: "sources", label: "Sources" }] : []),
   ];
 

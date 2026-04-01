@@ -65,6 +65,7 @@ function IconTile({ src, size, className, flush, invert }: IconTileProps) {
         alt=""
         className={cn("shrink-0 object-contain", invert && "brightness-0 invert")}
         height={size - pad * 2}
+        loading="lazy"
         src={src}
         width={size - pad * 2}
       />

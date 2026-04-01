@@ -1,5 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+import { buildRootBotResponse, isSocialBot } from "@/lib/social-bot-html";
+
 const isProtectedRoute = createRouteMatcher([
   "/settings(.*)",
   "/api/skills(.*)",
@@ -8,7 +10,13 @@ const isProtectedRoute = createRouteMatcher([
   "/api/connect(.*)"
 ]);
 
+const BOT_ELIGIBLE_PATHS = new Set(["/"]);
+
 export const proxy = clerkMiddleware(async (auth, req) => {
+  if (isSocialBot(req) && BOT_ELIGIBLE_PATHS.has(req.nextUrl.pathname)) {
+    return buildRootBotResponse();
+  }
+
   if (isProtectedRoute(req)) await auth.protect();
 });
 

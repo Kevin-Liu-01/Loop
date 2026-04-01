@@ -55,6 +55,7 @@ function AuthorAvatar({
           size,
           isMonochrome && "brightness-0 dark:invert",
         )}
+        loading="lazy"
         src={src}
       />
     );
