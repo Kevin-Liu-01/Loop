@@ -9,6 +9,7 @@ import {
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImageUrls,
+  buildSiteUrl,
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_TITLE,
   SITE_NAME,
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SEO_DEFAULT_TITLE,
     description: SEO_DEFAULT_DESCRIPTION,
+    url: buildSiteUrl("/").toString(),
     siteName: SITE_NAME,
     type: "website",
     locale: "en_US",

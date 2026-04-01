@@ -10,6 +10,7 @@ import { pageInsetColumnClass } from "@/lib/ui-layout";
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImageUrls,
+  buildSiteUrl,
   SITE_NAME,
 } from "@/lib/seo";
 
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${FAQ_TITLE} · ${SITE_NAME}`,
     description: FAQ_DESCRIPTION,
+    url: buildSiteUrl("/faq").toString(),
     siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
