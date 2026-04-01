@@ -39,6 +39,8 @@ type AgentDocsEditorProps = {
   value: AgentDocs;
   onChange: (docs: AgentDocs) => void;
   readOnly?: boolean;
+  /** When true, renders content directly without its own <details> wrapper. */
+  embedded?: boolean;
 };
 
 const PREDEFINED_OPTIONS: { key: AgentDocKey; label: string; description: string }[] = [
@@ -55,7 +57,7 @@ function docLabel(key: string): string {
   return `${key}.md`;
 }
 
-export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorProps) {
+export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDocsEditorProps) {
   const [open, setOpen] = useState(false);
   const [customKeyInput, setCustomKeyInput] = useState("");
 
@@ -93,46 +95,25 @@ export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorPr
     setCustomKeyInput("");
   }
 
-  return (
-    <details
-      className="grid gap-4 rounded-2xl border border-line bg-paper-3 p-4"
-      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
-      open={open}
-    >
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
-        <FileCodeIcon className="h-4 w-4 text-ink-soft" />
-        Agent docs
-        {allKeys.length > 0 && (
-          <span className="text-xs font-normal tabular-nums text-ink-faint">
-            {allKeys.length} attached
-          </span>
-        )}
-        <ChevronDownIcon
-          className={cn(
-            "ml-auto h-3.5 w-3.5 text-ink-faint transition-transform",
-            open && "rotate-180"
-          )}
-        />
-      </summary>
-
-      <p className="m-0 text-xs text-ink-soft">
+  const body = (
+    <>
+      <p className="m-0 text-[0.625rem] text-ink-soft">
         Attach agent-specific config files. These are included when the skill is used with each
         agent platform. Add predefined types or create custom docs for any platform.
       </p>
 
-      {/* Predefined doc editors */}
       {predefinedActiveKeys.map((key) => {
         const opt = PREDEFINED_OPTIONS.find((o) => o.key === key);
         return (
           <FieldGroup key={key}>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+              <span className="flex items-center gap-1.5 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
                 <PlatformDocFieldIcon docKey={key} />
                 {opt?.label ?? docLabel(key)}
               </span>
               {!readOnly && (
                 <button
-                  className="text-xs text-danger hover:text-danger/80"
+                  className="text-[0.625rem] text-danger hover:text-danger/80"
                   onClick={() => removeDoc(key)}
                   type="button"
                 >
@@ -150,20 +131,19 @@ export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorPr
         );
       })}
 
-      {/* Custom doc editors */}
       {customActiveKeys.map((key) => (
         <FieldGroup key={key}>
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.08em] text-accent">
+            <span className="flex items-center gap-1.5 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-accent">
               <PlatformDocFieldIcon docKey={key} />
               {docLabel(key)}
-              <span className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-accent">
+              <span className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wider text-accent">
                 custom
               </span>
             </span>
             {!readOnly && (
               <button
-                className="inline-flex items-center gap-1 text-xs text-danger hover:text-danger/80"
+                className="inline-flex items-center gap-1 text-[0.625rem] text-danger hover:text-danger/80"
                 onClick={() => removeDoc(key)}
                 type="button"
               >
@@ -183,7 +163,6 @@ export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorPr
 
       {!readOnly && (
         <div className="grid gap-3">
-          {/* Add predefined docs */}
           {inactivePredefined.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {inactivePredefined.map((opt) => (
@@ -201,7 +180,6 @@ export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorPr
             </div>
           )}
 
-          {/* Add custom doc */}
           <div className="flex items-center gap-2">
             <input
               className={cn(
@@ -231,6 +209,35 @@ export function AgentDocsEditor({ value, onChange, readOnly }: AgentDocsEditorPr
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="grid gap-4">{body}</div>;
+  }
+
+  return (
+    <details
+      className="grid gap-4 rounded-2xl border border-line bg-paper-3 p-4"
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+      open={open}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        <FileCodeIcon className="h-4 w-4 text-ink-soft" />
+        Agent docs
+        {allKeys.length > 0 && (
+          <span className="text-[0.625rem] font-normal tabular-nums text-ink-faint">
+            {allKeys.length} attached
+          </span>
+        )}
+        <ChevronDownIcon
+          className={cn(
+            "ml-auto h-3.5 w-3.5 text-ink-faint transition-transform",
+            open && "rotate-180"
+          )}
+        />
+      </summary>
+      {body}
     </details>
   );
 }

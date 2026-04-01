@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { lookupBrandLogoUrl, githubAvatar } from "@/lib/brand-icons";
 
 // -------------------------------------------------------------------------
 // Configuration
@@ -94,21 +95,21 @@ const MCP_ICON_MAP: Record<string, { simpleIcon?: string; color?: string; fallba
   "Sentry": { simpleIcon: "sentry" },
 
   "Supabase": { simpleIcon: "supabase" },
-  "Neon": { fallbackUrl: "https://github.com/neondatabase.png?size=64" },
+  "Neon": { fallbackUrl: lookupBrandLogoUrl("neon") },
   "Prisma": { simpleIcon: "prisma" },
   "Turso": { simpleIcon: "turso" },
   "Upstash": { simpleIcon: "upstash" },
 
-  "Context7": { fallbackUrl: "https://github.com/context7.png?size=64" },
+  "Context7": { fallbackUrl: lookupBrandLogoUrl("context7") },
   "Brave Search": { simpleIcon: "brave" },
-  "Exa": { fallbackUrl: "https://github.com/exa-labs.png?size=64" },
-  "Firecrawl": { fallbackUrl: "https://github.com/mendableai.png?size=64" },
+  "Exa": { fallbackUrl: lookupBrandLogoUrl("exa") },
+  "Firecrawl": { fallbackUrl: lookupBrandLogoUrl("firecrawl") },
 
-  "Playwright": { fallbackUrl: "https://github.com/microsoft.png?size=64" },
+  "Playwright": { fallbackUrl: lookupBrandLogoUrl("playwright") },
   "Puppeteer": { simpleIcon: "puppeteer" },
 
   "Notion": { simpleIcon: "notion" },
-  "Slack": { fallbackUrl: "https://github.com/slackapi.png?size=64" },
+  "Slack": { fallbackUrl: githubAvatar("slackapi") },
   "Linear": { simpleIcon: "linear" },
   "Todoist": { simpleIcon: "todoist" },
 
@@ -116,17 +117,17 @@ const MCP_ICON_MAP: Record<string, { simpleIcon?: string; color?: string; fallba
 
   "Figma": { simpleIcon: "figma" },
 
-  "Resend": { fallbackUrl: "https://github.com/resend.png?size=64" },
+  "Resend": { fallbackUrl: lookupBrandLogoUrl("resend") },
 
   "Grafana": { simpleIcon: "grafana" },
 
-  "OpenAI Agents": { fallbackUrl: "https://github.com/openai.png?size=64" },
+  "OpenAI Agents": { fallbackUrl: lookupBrandLogoUrl("openai") },
 
   "PostgreSQL": { simpleIcon: "postgresql" },
   "SQLite": { simpleIcon: "sqlite" },
 
-  "AWS": { fallbackUrl: "https://github.com/aws.png?size=64" },
-  "AWS API": { fallbackUrl: "https://github.com/aws.png?size=64" },
+  "AWS": { fallbackUrl: lookupBrandLogoUrl("aws") },
+  "AWS API": { fallbackUrl: lookupBrandLogoUrl("aws") },
   "Terraform": { simpleIcon: "terraform" },
   "Docker": { simpleIcon: "docker" },
   "Kubernetes": { simpleIcon: "kubernetes" },

@@ -8,6 +8,7 @@ import {
 } from "@/lib/external-skill-sources";
 import { createExcerpt, slugify } from "@/lib/markdown";
 import { getSkillBySlug, createSkill } from "@/lib/db/skills";
+import { prefetchSourceAuthorIds } from "@/lib/source-authors";
 import type {
   AgentDocKey,
   AgentDocs,
@@ -17,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { AGENT_DOC_FILENAMES } from "@/lib/types";
 import { normalizeSource, normalizeTags } from "@/lib/user-skills";
+import { githubAvatar } from "@/lib/brand-icons";
 
 export type WeeklyImportResult = {
   imported: ImportedSkillSummary[];
@@ -92,7 +94,8 @@ async function fetchAgentDocs(
 
 async function discoverFromReadmeLinks(
   source: ExternalSkillSource,
-  result: WeeklyImportResult
+  result: WeeklyImportResult,
+  authorId?: string,
 ): Promise<void> {
   const readmeUrl = getRawUrl(source, "README.md");
   const readme = await fetchText(readmeUrl);
@@ -157,6 +160,7 @@ async function discoverFromReadmeLinks(
               ...((data.tags as string[]) ?? []),
             ]),
             ownerName: candidate.label,
+            authorId,
             sources: [normalizeSource(candidate.url, category)],
             automation: {
               enabled: true,
@@ -165,7 +169,7 @@ async function discoverFromReadmeLinks(
               prompt: `Refresh ${title} from upstream.`,
             },
             updates: [],
-            iconUrl: `https://github.com/${org}.png?size=64`,
+            iconUrl: githubAvatar(org),
             version: 1,
           });
 
@@ -190,10 +194,11 @@ async function discoverFromReadmeLinks(
 
 async function discoverAndImportFromSource(
   source: ExternalSkillSource,
-  result: WeeklyImportResult
+  result: WeeklyImportResult,
+  authorId?: string,
 ): Promise<void> {
   if (source.skillsPath === "__readme_links__") {
-    await discoverFromReadmeLinks(source, result);
+    await discoverFromReadmeLinks(source, result, authorId);
     return;
   }
 
@@ -289,6 +294,7 @@ async function discoverAndImportFromSource(
           ...((data.tags as string[]) ?? []),
         ]),
         ownerName: source.name,
+        authorId,
         sources,
         automation,
         updates: [],
@@ -326,8 +332,10 @@ export async function runWeeklyImport(): Promise<WeeklyImportResult> {
     errors: [],
   };
 
+  const authorIds = await prefetchSourceAuthorIds();
+
   for (const source of EXTERNAL_SKILL_SOURCES) {
-    await discoverAndImportFromSource(source, result);
+    await discoverAndImportFromSource(source, result, authorIds.get(source.id));
   }
 
   return result;

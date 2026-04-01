@@ -31,6 +31,7 @@ import type {
   LoopRunRecord,
   LoopUpdateSourceLog,
   SkillOrigin,
+  SkillRecord,
   SourceDefinition,
 } from "@/lib/types";
 
@@ -237,6 +238,11 @@ export function SkillActivitySection({
   const isTracked = origin === "user";
   const isActive = automation?.status === "ACTIVE";
   const now = useMemo(() => new Date(), []);
+
+  const skillMap = useMemo(
+    () => new Map([[slug, { slug, iconUrl, category } as SkillRecord]]),
+    [slug, iconUrl, category],
+  );
   const monthlyRuns = automation
     ? countMonthlyRuns(automation.schedule, now.getFullYear(), now.getMonth())
     : 0;
@@ -384,7 +390,7 @@ export function SkillActivitySection({
           </div>
 
           {automation?.schedule?.trim() && (
-            <AutomationCalendar automations={[automation]} variant="sidebar" />
+            <AutomationCalendar automations={[automation]} skillMap={skillMap} variant="sidebar" />
           )}
 
           <PromptPreview prompt={automation?.prompt} />

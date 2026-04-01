@@ -72,12 +72,12 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
 
             <TabsContent value="discover" className="mt-0 min-h-0 flex-1 overflow-y-auto">
               <div className="px-6 pb-6 pt-2">
-                <ExternalSkillSources />
+                <ExternalSkillSources onSuccess={handleClose} />
               </div>
             </TabsContent>
             <TabsContent value="import" className="mt-0 min-h-0 flex-1 overflow-y-auto">
               <div className="px-6 pb-6 pt-2">
-                <ImportSkillForm />
+                <ImportSkillForm onSuccess={handleClose} />
               </div>
             </TabsContent>
             <TabsContent value="create" className="mt-0 min-h-0 flex-1 overflow-y-auto">

@@ -9,13 +9,6 @@ import { cn } from "@/lib/cn";
 import { EXTERNAL_SKILL_SOURCES, type ExternalSkillSource } from "@/lib/external-skill-sources";
 import { getNextWeeklyImportRunUtc } from "@/lib/weekly-import-schedule";
 
-const SOURCE_ICON_OVERRIDES: Record<string, string> = {
-  "cursor-directory": "/brands/cursor.svg",
-  "anthropic-skills": "/brands/anthropic.svg",
-  "codex-community": "/brands/openai.png",
-  "awesome-mcp-servers": "/brands/mcp.svg",
-};
-
 function formatRelativeDate(date: Date): string {
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
@@ -23,10 +16,6 @@ function formatRelativeDate(date: Date): string {
   if (diffDays <= 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   return `In ${diffDays} days`;
-}
-
-function resolveIcon(source: ExternalSkillSource): string {
-  return SOURCE_ICON_OVERRIDES[source.id] ?? source.iconUrl;
 }
 
 type ImportSourcesListProps = {
@@ -127,8 +116,10 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
   );
 }
 
+const MONO_ICON_CLASS = "h-4 w-4 brightness-0 dark:invert";
+
 function SourceIcon({ source }: { source: ExternalSkillSource }) {
-  const iconUrl = resolveIcon(source);
+  const iconUrl = source.iconUrl;
   const isLocal = iconUrl.startsWith("/");
 
   return (
@@ -136,7 +127,7 @@ function SourceIcon({ source }: { source: ExternalSkillSource }) {
       {isLocal ? (
         <Image
           alt=""
-          className="h-4 w-4 dark:invert"
+          className={MONO_ICON_CLASS}
           height={16}
           src={iconUrl}
           unoptimized
@@ -154,7 +145,7 @@ function SourceIcon({ source }: { source: ExternalSkillSource }) {
       ) : iconUrl.includes("simpleicons.org") ? (
         <Image
           alt=""
-          className="h-4 w-4 dark:invert"
+          className={MONO_ICON_CLASS}
           height={16}
           src={iconUrl}
           unoptimized

@@ -21,7 +21,7 @@ import type { AutomationSummary, SkillRecord } from "@/lib/types";
 
 export type DayAutomationEntry = {
   automation: AutomationSummary;
-  color: string;
+  color: { bg: string; ring: string; border: string };
 };
 
 type AutomationDayModalProps = {
@@ -42,21 +42,24 @@ const dayTitleFormatter = new Intl.DateTimeFormat("en-US", {
 
 function AutomationRunIcon({
   skill,
-  accentColor,
+  color,
 }: {
   skill?: SkillRecord;
-  accentColor: string;
+  color: { bg: string; ring: string; border: string };
 }) {
   return (
-    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center border border-line bg-paper-2 dark:bg-paper-2/60">
+    <div className={cn(
+      "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border",
+      skill ? color.border : "border-line bg-paper-2 dark:bg-paper-2/60",
+    )}>
       {skill ? (
-        <SkillIcon className="rounded-md" iconUrl={skill.iconUrl} size={22} slug={skill.slug} />
+        <SkillIcon flush iconUrl={skill.iconUrl} size={40} slug={skill.slug} />
       ) : (
         <AutomationIcon className="h-4 w-4 text-ink-faint" />
       )}
       <span
         aria-hidden
-        className={cn("absolute -right-0.5 -top-0.5 h-2 w-2 border border-paper-3", accentColor)}
+        className={cn("absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-paper-3", color.bg)}
       />
     </div>
   );
@@ -100,7 +103,7 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
 
                 const inner = (
                   <div className="flex items-start gap-3.5">
-                    <AutomationRunIcon accentColor={color} skill={linkedSkill} />
+                    <AutomationRunIcon color={color} skill={linkedSkill} />
 
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
@@ -134,10 +137,7 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
 
                       <div className="flex flex-wrap items-center gap-3 text-[0.6875rem] text-ink-faint">
                         <span className="flex items-center gap-1">
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v6l4 2" />
-                          </svg>
+                          <AutomationIcon className="h-3 w-3" />
                           {schedule}
                         </span>
                         <span className="tabular-nums">

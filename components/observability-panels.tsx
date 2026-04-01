@@ -179,28 +179,34 @@ export function SkillObservabilityPanel({ usage }: SkillObservabilityPanelProps)
   const hasAnyActivity =
     usage.pageViews + usage.copies + usage.saves + usage.refreshes + usage.apiCalls > 0;
 
-  const statsItems = [
-    { label: "views", value: usage.pageViews },
-    { label: "copies", value: usage.copies },
-    { label: "saves", value: usage.saves },
-    { label: "refreshes", value: usage.refreshes },
-    { label: "api calls", value: usage.apiCalls },
-  ];
+  const dc = usage.dailyCounts ?? [];
+  const viewsSpark = dc.map((d) => d.views);
+  const copiesSpark = dc.map((d) => d.copies);
+  const savesSpark = dc.map((d) => d.saves);
+  const refreshesSpark = dc.map((d) => d.refreshes);
+  const apiSpark = dc.map((d) => d.apiCalls);
 
   return (
     <div className="grid gap-4 rounded-none border border-line bg-paper-3/92 p-4 sm:p-5">
-      <h2 className="m-0 font-serif text-lg font-medium tracking-[-0.02em] text-ink">
-        Usage stats
-      </h2>
-
-      {usage.lastSeenAt && (
-        <p className="m-0 text-xs leading-relaxed text-ink-muted">
-          Last active {formatRelativeDate(usage.lastSeenAt)}
-        </p>
-      )}
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="m-0 font-serif text-lg font-medium tracking-[-0.02em] text-ink">
+          Usage stats
+        </h2>
+        {usage.lastSeenAt && (
+          <span className="text-[0.625rem] text-ink-faint">
+            {formatRelativeDate(usage.lastSeenAt)}
+          </span>
+        )}
+      </div>
 
       {hasAnyActivity ? (
-        <BarList items={statsItems} compact />
+        <div className="grid grid-cols-2 gap-px overflow-hidden border border-line bg-line/60 dark:bg-line/40">
+          <StatTile label="views" size="compact" sparkData={viewsSpark} value={usage.pageViews} />
+          <StatTile label="copies" size="compact" sparkData={copiesSpark} value={usage.copies} />
+          <StatTile label="saves" size="compact" sparkData={savesSpark} value={usage.saves} />
+          <StatTile label="refreshes" size="compact" sparkData={refreshesSpark} value={usage.refreshes} />
+          <StatTile className="col-span-2" label="api calls" size="compact" sparkData={apiSpark} value={usage.apiCalls} />
+        </div>
       ) : (
         <div className="rounded-none border border-line/70 px-4 py-5 text-center text-xs text-ink-faint dark:border-line/50">
           No usage recorded yet

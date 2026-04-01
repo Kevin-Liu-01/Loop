@@ -168,7 +168,7 @@ export function SkillDetailPage({
               {skill.description}
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} />
+              <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
               <span className="text-xs tabular-nums text-ink-faint">
                 {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt)}
               </span>

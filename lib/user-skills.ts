@@ -674,11 +674,7 @@ export async function addTrackedSkillFromRecord(
   now = new Date()
 ): Promise<UserSkillDocument> {
   const existing = await dbGetSkillBySlug(skill.slug);
-  if (existing && existing.origin === "user") {
-    return skillRecordToUserDoc(existing);
-  }
 
-  const createdAt = now.toISOString();
   const sources = categorySources.map((source) => normalizeSource(source.url, skill.category));
   const automationEnabled = sources.length > 0;
   const automation: SkillAutomationState = {
@@ -687,6 +683,20 @@ export async function addTrackedSkillFromRecord(
     status: automationEnabled ? "active" : "paused",
     prompt: `Refresh $${skill.slug} from the tracked sources. Capture only concrete changes, fold them into the skill, and stay terse.`
   };
+
+  if (existing) {
+    if (existing.origin === "user" && existing.automation?.enabled) {
+      return skillRecordToUserDoc(existing);
+    }
+
+    const record = await dbUpdateSkill(existing.slug, {
+      origin: "user",
+      tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
+      sources,
+      automation,
+    });
+    return skillRecordToUserDoc(record);
+  }
 
   const record = await dbCreateSkill({
     slug: skill.slug,
@@ -698,6 +708,7 @@ export async function addTrackedSkillFromRecord(
     origin: "user",
     tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
     ownerName: skill.ownerName,
+    authorId: skill.authorId,
     sources,
     automation,
     updates: [],

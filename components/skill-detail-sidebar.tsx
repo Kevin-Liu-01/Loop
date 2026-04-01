@@ -76,8 +76,6 @@ export function SkillDetailSidebar({
         slug={slug}
       />
 
-      <SkillObservabilityPanel usage={usage} />
-
       <VersionTimeline
         currentVersion={currentVersion}
         slug={slug}
@@ -148,6 +146,8 @@ export function SkillDetailSidebar({
       {automations.length > 0 ? (
         <SidebarAutomationsPanel automations={automations} skills={skills} />
       ) : null}
+
+      <SkillObservabilityPanel usage={usage} />
     </aside>
   );
 }

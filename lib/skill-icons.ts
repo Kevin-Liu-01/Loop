@@ -35,6 +35,7 @@ const BRAND_LOGOS = {
   linear:     `${SI}/linear`,
   nextjs:     `${SI}/nextdotjs`,
   notion:     `${SI}/notion`,
+  owasp:      `${SI}/owasp`,
   prisma:     `${SI}/prisma`,
   react:      `${SI}/react`,
   resend:     `${SI}/resend`,
@@ -88,6 +89,10 @@ const BRAND_LOGOS = {
   sonarqube:  `${SI}/sonarqube`,
   storybook:  `${SI}/storybook`,
 } as const;
+
+export function lookupBrandLogoUrl(key: string): string | undefined {
+  return (BRAND_LOGOS as Record<string, string>)[key];
+}
 
 function lucide(name: string): IconRef {
   return { kind: "lucide", name };

@@ -49,6 +49,21 @@ export async function listSkillAuthorsByIds(ids: string[]): Promise<SkillAuthorR
   return (data ?? []).map((row) => rowToSkillAuthor(row as SkillAuthorRow));
 }
 
+export async function getSkillAuthorBySlug(slug: string): Promise<SkillAuthorRecord | null> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("skill_authors")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getSkillAuthorBySlug failed: ${error.message}`);
+  }
+
+  return data ? rowToSkillAuthor(data as SkillAuthorRow) : null;
+}
+
 export async function findSkillAuthorForSession(session: {
   userId: string;
   email: string;

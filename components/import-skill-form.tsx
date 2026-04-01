@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup, textFieldBase } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 
-export function ImportSkillForm() {
+export function ImportSkillForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,7 @@ export function ImportSkillForm() {
         return;
       }
 
+      onSuccess?.();
       router.push(trackPayload.href);
       router.refresh();
     });

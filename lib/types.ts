@@ -438,6 +438,7 @@ export type ImportedSkillDocument = {
   sourceUrl: string;
   canonicalUrl: string;
   ownerName?: string;
+  authorId?: string;
   tags: string[];
   visibility: SkillVisibility;
   createdAt: string;
@@ -497,6 +498,7 @@ export type ImportedSkillVersion = {
   sourceUrl: string;
   canonicalUrl: string;
   ownerName?: string;
+  authorId?: string;
   tags: string[];
   visibility: SkillVisibility;
   syncEnabled: boolean;

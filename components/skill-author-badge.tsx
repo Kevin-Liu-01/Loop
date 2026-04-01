@@ -4,12 +4,15 @@ import { BadgeCheckIcon } from "lucide-react";
 
 import { LoopLogo } from "@/components/loop-logo";
 import { cn } from "@/lib/cn";
+import { resolveAuthorIcon } from "@/lib/icon-resolution";
 import { getSkillPublisherName } from "@/lib/skill-authoring";
 import type { SkillAuthorRecord, SkillRecord } from "@/lib/types";
 
 type SkillAuthorBadgeProps = {
   author?: SkillAuthorRecord;
   ownerName?: string;
+  /** Explicit icon override — when omitted the resolver infers from ownerName. */
+  iconUrl?: string;
   compact?: boolean;
   className?: string;
   linked?: boolean;
@@ -19,14 +22,16 @@ function AuthorAvatar({
   author,
   compact,
   name,
+  iconUrl,
 }: {
   author?: SkillAuthorRecord;
   compact: boolean;
   name: string;
+  iconUrl?: string;
 }) {
   const size = compact ? "size-4" : "size-6";
 
-  if (author?.isOfficial || author?.slug === "loop") {
+  if (author?.slug === "loop") {
     return (
       <LoopLogo
         className={cn("shrink-0 text-accent", size)}
@@ -35,12 +40,22 @@ function AuthorAvatar({
     );
   }
 
-  if (author?.logoUrl) {
+  const { src, isMonochrome } = resolveAuthorIcon({
+    authorLogoUrl: author?.logoUrl,
+    iconUrl,
+    ownerName: name,
+  });
+
+  if (src) {
     return (
       <img
         alt={`${name} logo`}
-        className={cn("shrink-0 rounded-full object-cover", size)}
-        src={author.logoUrl}
+        className={cn(
+          "shrink-0 rounded-full object-cover",
+          size,
+          isMonochrome && "brightness-0 dark:invert",
+        )}
+        src={src}
       />
     );
   }
@@ -81,6 +96,7 @@ function VerifiedTag({
 export function SkillAuthorBadge({
   author,
   ownerName,
+  iconUrl,
   compact = false,
   className,
   linked = true,
@@ -97,7 +113,7 @@ export function SkillAuthorBadge({
         className,
       )}
     >
-      <AuthorAvatar author={author} compact name={name} />
+      <AuthorAvatar author={author} compact name={name} iconUrl={iconUrl} />
       <span className="font-medium text-ink">{name}</span>
       {author?.verified ? (
         <VerifiedTag compact label={author.badgeLabel} />
@@ -112,7 +128,7 @@ export function SkillAuthorBadge({
         className,
       )}
     >
-      <AuthorAvatar author={author} compact={false} name={name} />
+      <AuthorAvatar author={author} compact={false} name={name} iconUrl={iconUrl} />
       <span className="font-medium text-ink">{name}</span>
       {author?.verified ? (
         <VerifiedTag compact={false} label={author.badgeLabel} />

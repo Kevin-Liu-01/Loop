@@ -19,12 +19,15 @@ export function SkillSectionNav({ sections }: SkillSectionNavProps) {
   const navRef = useRef<HTMLElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSet = useRef(new Set<string>());
+  const programmaticScrollRef = useRef(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const navH = navRef.current?.getBoundingClientRect().height ?? 0;
     const deadZone = SITE_HEADER_HEIGHT_PX + navH;
 
     const pickActive = () => {
+      if (programmaticScrollRef.current) return;
       for (const s of sections) {
         if (visibleSet.current.has(s.id)) {
           setActiveId(s.id);
@@ -62,12 +65,23 @@ export function SkillSectionNav({ sections }: SkillSectionNavProps) {
     };
   }, [sections]);
 
+  useEffect(() => {
+    return () => {
+      clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
   const handleClick = useCallback(
     (id: string) => {
       setActiveId(id);
+      programmaticScrollRef.current = true;
+      clearTimeout(scrollTimerRef.current);
 
       const target = document.getElementById(id);
-      if (!target) return;
+      if (!target) {
+        programmaticScrollRef.current = false;
+        return;
+      }
 
       const navH = navRef.current?.getBoundingClientRect().height ?? 0;
       const y =
@@ -77,6 +91,10 @@ export function SkillSectionNav({ sections }: SkillSectionNavProps) {
         navH;
 
       window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+      scrollTimerRef.current = setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, 800);
     },
     []
   );

@@ -19,7 +19,7 @@ import { cn } from "@/lib/cn";
 import type { RecentImportItem } from "@/lib/db/recent-imports";
 import { inlineSectionLabel } from "@/lib/ui-layout";
 import { peakVolumeHour, sumBucketTotals } from "@/lib/usage-sidebar-insights";
-import type { AutomationSummary } from "@/lib/types";
+import type { AutomationSummary, SkillRecord } from "@/lib/types";
 import type { UsageDeltaSet, UsageOverview, UsageTotalsSnapshot } from "@/lib/usage";
 import { usageStatTileValues } from "@/lib/usage";
 
@@ -29,6 +29,7 @@ type ActivityDashboardProps = {
   overview: UsageOverview;
   automations: AutomationSummary[];
   recentImports?: RecentImportItem[];
+  skillMap?: Map<string, SkillRecord>;
   variant?: "default" | "sidebar";
 };
 
@@ -38,6 +39,7 @@ type ActivitySidebarViewProps = {
   deltas: UsageDeltaSet;
   automations: AutomationSummary[];
   recentImports: RecentImportItem[];
+  skillMap?: Map<string, SkillRecord>;
   viewsSpark: number[];
   interactionsSpark: number[];
   apiSpark: number[];
@@ -125,6 +127,7 @@ function ActivitySidebarView({
   deltas,
   automations,
   recentImports,
+  skillMap,
   viewsSpark,
   interactionsSpark,
   apiSpark,
@@ -169,7 +172,7 @@ function ActivitySidebarView({
 
           {sidebarTab === "automations" ? (
             automations.length > 0 ? (
-              <AutomationCalendar automations={automations} onEditAutomation={onEditAutomation} variant="sidebar" />
+              <AutomationCalendar automations={automations} onEditAutomation={onEditAutomation} skillMap={skillMap} variant="sidebar" />
             ) : (
               <EmptyCard className="border-dashed py-4 text-sm">No automations configured yet.</EmptyCard>
             )
@@ -344,6 +347,17 @@ function ActivitySidebarView({
   );
 }
 
+function linkedSkillProps(
+  automation: AutomationSummary,
+  skillMap?: Map<string, SkillRecord>,
+): { skillSlug?: string; skillIconUrl?: string | null; skillName?: string } {
+  const slug = automation.matchedSkillSlugs[0];
+  if (!slug || !skillMap) return {};
+  const skill = skillMap.get(slug);
+  if (!skill) return {};
+  return { skillSlug: skill.slug, skillIconUrl: skill.iconUrl, skillName: skill.name };
+}
+
 function hasRollingUsage(overview: UsageOverview): boolean {
   return (
     overview.totalsRolling24h.pageViews +
@@ -365,6 +379,7 @@ export function ActivityDashboard({
   overview,
   automations,
   recentImports = [],
+  skillMap,
   variant = "default",
 }: ActivityDashboardProps) {
   const mode = useUsageComparisonMode();
@@ -405,6 +420,7 @@ export function ActivityDashboard({
           onEditAutomation={setEditTarget}
           overview={overview}
           recentImports={recentImports}
+          skillMap={skillMap}
           tileValues={tileValues}
           viewsSpark={viewsSpark}
         />
@@ -413,6 +429,7 @@ export function ActivityDashboard({
             automation={editTarget}
             onClose={() => setEditTarget(null)}
             open
+            {...linkedSkillProps(editTarget, skillMap)}
           />
         )}
       </>
@@ -513,7 +530,7 @@ export function ActivityDashboard({
                 </span>
               </Tip>
             </div>
-            <AutomationCalendar automations={automations} onEditAutomation={setEditTarget} />
+            <AutomationCalendar automations={automations} onEditAutomation={setEditTarget} skillMap={skillMap} />
           </article>
         ) : null}
       </div>
@@ -523,6 +540,7 @@ export function ActivityDashboard({
           automation={editTarget}
           onClose={() => setEditTarget(null)}
           open
+          {...linkedSkillProps(editTarget, skillMap)}
         />
       )}
     </Panel>

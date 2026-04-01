@@ -17,15 +17,16 @@ import type { AutomationSummary, SkillRecord } from "@/lib/types";
 
 const LEGEND_COLLAPSED_LIMIT = 12;
 
-const ACCENT_COLORS = [
-  "bg-accent/80",
-  "bg-emerald-500/70",
-  "bg-sky-500/70",
-  "bg-violet-500/70",
-  "bg-amber-500/70",
-  "bg-rose-500/70"
-];
+type AutomationColorSet = { bg: string; ring: string; border: string };
 
+const AUTOMATION_COLORS: AutomationColorSet[] = [
+  { bg: "bg-accent",          ring: "ring-accent/60",        border: "border-accent/50" },
+  { bg: "bg-emerald-500",     ring: "ring-emerald-500/60",   border: "border-emerald-500/50" },
+  { bg: "bg-sky-500",         ring: "ring-sky-500/60",       border: "border-sky-500/50" },
+  { bg: "bg-violet-500",      ring: "ring-violet-500/60",    border: "border-violet-500/50" },
+  { bg: "bg-amber-500",       ring: "ring-amber-500/60",     border: "border-amber-500/50" },
+  { bg: "bg-rose-500",        ring: "ring-rose-500/60",      border: "border-rose-500/50" },
+];
 
 type AutomationCalendarProps = {
   automations: AutomationSummary[];
@@ -34,11 +35,13 @@ type AutomationCalendarProps = {
   /** Sidebar uses slightly larger day type for scanability */
   variant?: "default" | "sidebar";
   skillMap?: Map<string, SkillRecord>;
+  /** Cap the number of legend rows shown before "Show more". Defaults to 12. */
+  maxLegendRows?: number;
 };
 
 type DayAutomation = {
   automation: AutomationSummary;
-  color: string;
+  color: AutomationColorSet;
 };
 
 /** Full-width header row: prev | caption | next, then grid (react-day-picker v9 `navLayout="around"` order). */
@@ -71,25 +74,27 @@ function AutomationMonth({ className, children, calendarMonth: _cm, displayIndex
 function AutomationLegend({
   automations,
   legendRowsAreClickable,
+  limit,
   month,
   onEditAutomation,
   skillMap,
 }: {
   automations: AutomationSummary[];
   legendRowsAreClickable: boolean;
+  limit: number;
   month: Date;
   onEditAutomation?: (automation: AutomationSummary) => void;
   skillMap?: Map<string, SkillRecord>;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const canCollapse = automations.length > LEGEND_COLLAPSED_LIMIT;
-  const visible = canCollapse && !expanded ? automations.slice(0, LEGEND_COLLAPSED_LIMIT) : automations;
-  const hiddenCount = automations.length - LEGEND_COLLAPSED_LIMIT;
+  const canCollapse = automations.length > limit;
+  const visible = canCollapse && !expanded ? automations.slice(0, limit) : automations;
+  const hiddenCount = automations.length - limit;
 
   return (
     <div className="grid gap-1 border-t border-line pt-3">
       {visible.map((automation, index) => {
-        const bgColor = ACCENT_COLORS[index % ACCENT_COLORS.length];
+        const colorSet = AUTOMATION_COLORS[index % AUTOMATION_COLORS.length];
         const year = month.getFullYear();
         const m = month.getMonth();
         const count = getRunDatesForMonth(automation.schedule, year, m).length;
@@ -99,35 +104,45 @@ function AutomationLegend({
         const linkedSkill = automation.matchedSkillSlugs[0]
           ? skillMap?.get(automation.matchedSkillSlugs[0])
           : undefined;
+        const skillSlug = automation.matchedSkillSlugs[0];
 
         const content = (
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center border border-line bg-paper-2 dark:bg-paper-2/60">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "relative flex h-5 w-5 shrink-0 items-center justify-center",
+              linkedSkill || skillSlug ? colorSet.border : "border-line",
+              "border"
+            )}>
               {linkedSkill ? (
-                <SkillIcon className="rounded-sm" iconUrl={linkedSkill.iconUrl} size={16} slug={linkedSkill.slug} />
+                <SkillIcon flush iconUrl={linkedSkill.iconUrl} size={20} slug={linkedSkill.slug} />
+              ) : skillSlug ? (
+                <SkillIcon flush size={20} slug={skillSlug} />
               ) : (
-                <AutomationIcon className="h-3 w-3 text-ink-faint" />
+                <AutomationIcon className="h-2.5 w-2.5 text-ink-faint" />
               )}
               <span
                 aria-hidden
-                className={cn("absolute -right-px -top-px h-1.5 w-1.5 border border-paper-3", bgColor)}
+                className={cn("absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full border border-paper-3", colorSet.bg)}
               />
             </div>
 
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-0">
               <div className="flex items-center gap-1.5">
                 <span className="min-w-0 truncate text-xs font-medium text-ink">{automation.name}</span>
-                {linkedSkill && (
+                {/*linkedSkill && (
                   <Badge color={getTagColorForCategory(linkedSkill.category)} size="sm">
                     {formatTagLabel(linkedSkill.category)}
                   </Badge>
-                )}
+                )*/}
               </div>
-              <div className="flex items-center gap-2 text-[0.625rem] text-ink-faint">
-                <StatusDot tone={isActive ? "fresh" : "idle"} pulse={isActive} />
-                <span>{schedule}</span>
+              <div className="flex mt-[-0.1rem] items-center gap-1.5 text-[0.625rem] text-ink-faint">
+                <StatusDot tone={isActive ? "fresh" : "idle"} pulse={isActive} size="sm" />
+                <span className="flex items-center gap-0.5">                
+                  <AutomationIcon className="h-2.5 w-2.5" />
+                  {schedule}
+                </span>
                 <span className="tabular-nums">{count} runs</span>
-                <span className="ml-auto tabular-nums">{nextRun}</span>
+                <span className="ml-auto tabular-nums text-white">{nextRun}</span>
               </div>
             </div>
           </div>
@@ -166,6 +181,7 @@ function AutomationLegend({
 
 export function AutomationCalendar({
   automations,
+  maxLegendRows = LEGEND_COLLAPSED_LIMIT,
   onDaySelect,
   onEditAutomation,
   variant = "default",
@@ -186,7 +202,7 @@ export function AutomationCalendar({
     const m = month.getMonth();
 
     activeAutomations.forEach((automation, index) => {
-      const color = ACCENT_COLORS[index % ACCENT_COLORS.length];
+      const color = AUTOMATION_COLORS[index % AUTOMATION_COLORS.length];
       const dates = getRunDatesForMonth(automation.schedule, year, m);
 
       dates.forEach((date) => {
@@ -210,7 +226,7 @@ export function AutomationCalendar({
     return automations
       .map((automation, index) => ({
         automation,
-        color: ACCENT_COLORS[index % ACCENT_COLORS.length]
+        color: AUTOMATION_COLORS[index % AUTOMATION_COLORS.length],
       }))
       .filter(({ automation }) => isRRuleScheduledOnDate(automation.schedule, modalDate));
   }, [modalDate, automations]);
@@ -302,20 +318,23 @@ export function AutomationCalendar({
                     <div className="flex w-full max-w-full flex-col items-center gap-0.5">
                       <div className="flex min-h-[14px] w-full flex-wrap items-center justify-center gap-0.5 px-0.5">
                         {entries.slice(0, 3).map((entry, i) => {
-                          const linkedSkill = entry.automation.matchedSkillSlugs[0]
-                            ? skillMap?.get(entry.automation.matchedSkillSlugs[0])
+                          const linkedSkill = !sidebar
+                            ? entry.automation.matchedSkillSlugs[0]
+                              ? skillMap?.get(entry.automation.matchedSkillSlugs[0])
+                              : undefined
                             : undefined;
                           return linkedSkill ? (
                             <SkillIcon
-                              className="rounded-sm"
+                              className={cn("border-2", entry.color.border)}
+                              flush
                               iconUrl={linkedSkill.iconUrl}
                               key={`${entry.automation.id}-${i}`}
-                              size={12}
+                              size={16}
                               slug={linkedSkill.slug}
                             />
                           ) : (
                             <span
-                              className={cn("h-1.5 w-1.5 shrink-0 rounded-none shadow-sm", entry.color)}
+                              className={cn("h-2 w-2 shrink-0", entry.color.bg)}
                               key={`${entry.automation.id}-${i}`}
                               title={entry.automation.name}
                             />
@@ -352,6 +371,7 @@ export function AutomationCalendar({
         <AutomationLegend
           automations={activeAutomations}
           legendRowsAreClickable={legendRowsAreClickable}
+          limit={maxLegendRows}
           month={month}
           onEditAutomation={onEditAutomation}
           skillMap={skillMap}

@@ -137,15 +137,16 @@ export function AutomationEditModal({
         <DialogHeader className="gap-3">
           <div className="flex items-center gap-3">
             <div className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-none border",
+              "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden border",
               isActive
-                ? "border-accent/25 bg-accent/[0.07] text-accent"
+                ? "border-accent/25"
                 : "border-line bg-paper-3 text-ink-faint"
             )}>
               {skillSlug || linkedSlug ? (
                 <SkillIcon
+                  flush
                   iconUrl={skillIconUrl}
-                  size={24}
+                  size={36}
                   slug={skillSlug || linkedSlug}
                 />
               ) : (

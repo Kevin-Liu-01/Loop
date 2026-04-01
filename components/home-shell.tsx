@@ -17,6 +17,7 @@ import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { UsageComparisonProvider } from "@/components/usage-comparison-context";
 import { AppGridShell } from "@/components/app-grid-shell";
 import { ArrowRightIcon, AutomationIcon, SearchIcon } from "@/components/frontier-icons";
+import { SkillMetaBar } from "@/components/skill-meta-bar";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { EmptyCard } from "@/components/ui/empty-card";
@@ -94,33 +95,6 @@ function filterSkills(
     });
 }
 
-function originLabel(skill: SkillRecord): string {
-  if (skill.origin === "user") {
-    return skill.automation?.enabled ? "auto" : "tracked";
-  }
-  return skill.origin === "remote" ? "imported" : "catalog";
-}
-
-function skillMetaSegments(
-  skill: SkillRecord,
-  freshness: { label: string }
-): string[] {
-  const segments = [originLabel(skill), freshness.label];
-
-  const schedule = skill.automations?.[0]?.schedule;
-  if (skill.automation?.enabled && schedule) {
-    const next = formatNextRun(schedule);
-    if (next !== "—") segments.push(`Next ${next}`);
-  }
-
-  const srcCount = skill.sources?.length ?? 0;
-  if (srcCount > 0) {
-    segments.push(`${srcCount} source${srcCount === 1 ? "" : "s"}`);
-  }
-
-  return segments;
-}
-
 const MCP_TAG_GROUPS = [
   "all", "official", "database", "search", "browser", "productivity",
   "developer-tools", "infra", "ai", "security", "utility",
@@ -182,6 +156,12 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
     }
     return map;
   }, [automations]);
+
+  const skillMap = useMemo(() => {
+    const map = new Map<string, SkillRecord>();
+    for (const s of skills) map.set(s.slug, s);
+    return map;
+  }, [skills]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("loop.home.filter");
@@ -262,7 +242,7 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
                   <div className="min-w-0 grid flex-1 gap-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <Tip content={freshness.tone === "fresh" ? "Recently updated" : freshness.tone === "stale" ? "Hasn't changed recently" : "Unknown freshness"} side="top">
-                        <span><StatusDot tone={freshness.tone} /></span>
+                        <span className="inline-flex items-center"><StatusDot tone={freshness.tone} /></span>
                       </Tip>
                       <span className="truncate font-serif text-[0.94rem] font-medium text-ink group-hover:text-ink-soft">
                         {skill.title}
@@ -271,11 +251,9 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
                       <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
                     </div>
                     <p className="m-0 line-clamp-1 text-sm text-ink-soft">{skill.description}</p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
-                      <SkillAuthorBadge author={skill.author} compact linked={false} ownerName={skill.ownerName} />
-                      <span>
-                        <RelativeTime date={skill.updatedAt} /> · {skillMetaSegments(skill, freshness).join(" · ")}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-ink-faint">
+                      <SkillAuthorBadge author={skill.author} compact linked={false} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
+                      <SkillMetaBar freshness={freshness} skill={skill} />
                     </div>
                   </div>
                 </div>
@@ -368,12 +346,14 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
                   <div className="min-w-0 grid flex-1 gap-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <Tip content={isRunnable ? "Executable in sandbox" : "Metadata only"} side="top">
-                        <span
-                          className={cn(
-                            "inline-block h-2 w-2 shrink-0 rounded-full",
-                            isRunnable ? "bg-emerald-500" : "bg-ink-faint/40"
-                          )}
-                        />
+                        <span className="inline-flex items-center">
+                          <span
+                            className={cn(
+                              "inline-block h-2 w-2 shrink-0 rounded-full",
+                              isRunnable ? "bg-emerald-500" : "bg-ink-faint/40"
+                            )}
+                          />
+                        </span>
                       </Tip>
                       <span className="truncate font-serif text-[0.94rem] font-medium text-ink group-hover:text-ink-soft">
                         {mcp.name}
@@ -601,6 +581,7 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
                 automations={automations}
                 overview={usageOverview}
                 recentImports={recentImports}
+                skillMap={skillMap}
                 variant="sidebar"
               />
             </aside>

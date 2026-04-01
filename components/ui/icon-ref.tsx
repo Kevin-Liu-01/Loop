@@ -8,22 +8,25 @@ type IconRefViewProps = {
   icon: IconRef;
   size?: number;
   className?: string;
+  flush?: boolean;
+  invert?: boolean;
 };
 
-export function IconRefView({ icon, size = 20, className }: IconRefViewProps) {
+export function IconRefView({ icon, size = 20, className, flush, invert }: IconRefViewProps) {
   if (icon.kind === "url") {
     const pad = Math.max(2, Math.round(size * 0.14));
     return (
       <span
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-black/10",
+          "inline-flex shrink-0 items-center justify-center bg-white",
+          flush ? "overflow-hidden" : "rounded-lg ring-1 ring-black/10",
           className,
         )}
         style={{ width: size, height: size }}
       >
         <img
           alt={icon.alt}
-          className="shrink-0 object-contain"
+          className={cn("shrink-0 object-contain", invert && "brightness-0 invert")}
           height={size - pad * 2}
           src={icon.url}
           width={size - pad * 2}

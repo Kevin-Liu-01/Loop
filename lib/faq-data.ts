@@ -27,7 +27,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Who is Loop for?",
         answer:
-          "Anyone who operates AI agents and wants their skill playbooks to stay accurate over time — prompt engineers, AI-ops teams, developer-tool authors, and agent builders who publish reusable skills. Loop also automatically imports high-signal skills weekly from trusted sources so your catalog stays current.",
+          "Anyone who operates AI agents and wants their skill playbooks to stay accurate over time — prompt engineers, AI-ops teams, developer-tool authors, verified publishers, and agent builders who publish reusable skills. Loop also automatically imports high-signal skills weekly from trusted sources like Anthropic, OpenAI, and Cursor Directory so your catalog stays current.",
       },
       {
         question: "What problem does Loop solve?",
@@ -48,17 +48,17 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is a skill?",
         answer:
-          "A skill is the main knowledge object in Loop: a versioned playbook with a body, description, tags, category, tracked sources, automation settings, agent docs, and a complete version history. Skills can come from your repo, the Codex directory, a remote URL, or be written from scratch.",
+          "A skill is the main knowledge object in Loop: a versioned playbook with a body, description, tags, category, tracked sources, automation settings, agent docs, research profile, and a complete version history. Skills can come from your repo, the Codex directory, a remote URL, or be written from scratch.",
       },
       {
         question: "Where do skills come from?",
         answer:
-          "Skills have four origins. Repo skills are SKILL.md files found inside your project. Codex skills are SKILL.md files in ~/.codex/skills. User skills are created or forked inside Loop. Remote skills are imported from a URL and normalized into Loop's versioned format.",
+          "Skills have four origins. Repo skills are SKILL.md files found inside your project. Codex skills are SKILL.md files in ~/.codex/skills. User skills are created or forked inside Loop. Remote skills are imported from a URL or discovered from trusted providers like Anthropic, OpenAI, and Cursor Directory, then normalized into Loop's versioned format.",
       },
       {
         question: "Can I create my own skills?",
         answer:
-          "Yes. Free accounts can create up to 2 skills. Operator subscribers ($19/mo) get unlimited skills. Both paths normalize into the same tracked, versioned data model so the app treats them identically after creation.",
+          "Yes. Free accounts can create up to 2 skills. Operator subscribers ($19/mo) get unlimited skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model.",
       },
       {
         question: "What happens when I fork a skill?",
@@ -83,17 +83,58 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is the skill catalog?",
         answer:
-          "The catalog is the home view of Loop — a browsable, searchable collection of all public skills. You can filter by category, search by name or tag, open skill detail pages, and fork skills into your editable set from here.",
+          "The catalog is the home view of Loop — a browsable, searchable collection of all public skills. Skills are sorted by quality score and featured rank. You can filter by category, search by name or tag, open skill detail pages, and fork skills into your editable set from here.",
       },
       {
-        question: "What are public and private skills?",
+        question: "What are public, member, and private skills?",
         answer:
-          "Every skill has a visibility setting. Public skills appear in the catalog for everyone. Private skills are only visible to their owner. You can change a skill's visibility at any time from the detail page or the author studio. All Loop-published skills are public by default.",
+          "Every skill has a visibility setting. Public skills appear in the catalog for everyone, including anonymous visitors. Member skills are visible only to signed-in users. Private skills are visible only to their owner, the attached verified author, and admins. You can toggle between public and private from the skill detail page or the author studio.",
       },
       {
         question: "What are agent docs?",
         answer:
           "Agent docs are platform-specific configuration files attached to a skill — AGENTS.md, cursor.md, claude.md, and codex.md. Each file contains instructions tailored to a specific agent platform. You can add or edit all four from the Author Studio's 'Agent docs' tab. Changes save via the same PATCH endpoint and sync immediately.",
+      },
+      {
+        question: "What are skill icons?",
+        answer:
+          "Every skill and MCP server can display a brand-aware icon. Loop resolves icons through a priority chain: explicit icon URL on the skill, verified author logo, brand inference from the owner name (using a built-in map of 70+ brand logos), and finally a Lucide icon fallback based on category. You can override the icon from the author studio.",
+      },
+      {
+        question: "What is the research engine?",
+        answer:
+          "Some skills have a research profile that documents how they were discovered, validated, and ranked. The research panel on a skill's detail page shows the discovery process, search queries used, trust signals, upstream source links, and the reason a skill was featured — giving you full provenance for catalog content.",
+      },
+    ],
+  },
+  {
+    id: "authors",
+    title: "Authors & publishers",
+    items: [
+      {
+        question: "What is a verified author?",
+        answer:
+          "A verified author is a publisher with a confirmed identity in Loop's skill_authors system. Verified authors display a checkmark badge on every skill they publish. The badge label varies — 'Official' for first-party providers like Anthropic and OpenAI, and 'Verified' for trusted community sources like Cursor Directory.",
+      },
+      {
+        question: "Which providers are verified?",
+        answer:
+          "Loop ships with five verified provider authors. Anthropic and OpenAI are marked as Official (first-party providers). Cursor Directory, Awesome Agent Skills, and Awesome MCP Servers are marked as Verified (trusted community sources). Skills imported from any of these sources automatically receive verified author attribution.",
+      },
+      {
+        question: "How does author verification work for imported skills?",
+        answer:
+          "When a skill is imported from a known provider — whether through the weekly import cron, the admin bulk import, or a manual URL paste — Loop automatically matches the source URL to a registered provider and links the skill to that provider's verified author record. This means the verified badge and correct logo appear immediately without any manual step.",
+      },
+      {
+        question: "Can I become a verified author?",
+        answer:
+          "Verified author records are currently managed at the platform level. If you publish skills under a consistent identity and want a verified badge, reach out to the Loop team. Your Clerk account can be linked to an author record, which gives you edit permissions on all skills tied to your profile.",
+      },
+      {
+        question: "What is the Author Studio?",
+        answer:
+          "The Author Studio is the editing interface for skills you own. It lets you edit the skill body, description, tags, category, icon, attribution line (owner name), agent docs, sources, and automation settings. When a verified author is attached, the studio shows their badge in the preview. The attribution line is a fallback displayed when no verified author profile is linked.",
       },
     ],
   },
@@ -119,7 +160,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do automation schedules work?",
         answer:
-          "You pick a cadence (daily, weekly, or manual) when configuring a skill's automation. Loop converts this to an RRULE schedule internally. The monthly calendar on the Automations settings page shows projected run dates.",
+          "You pick a cadence (daily, weekly, or manual) when configuring a skill's automation. Loop converts this to an RRULE schedule internally. The automation calendar on the settings page shows projected run dates with color-coded dots for each skill, and clicking a day opens a modal listing all automations scheduled for that date.",
       },
       {
         question: "Can Operator subscribers choose the AI model?",
@@ -134,7 +175,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Can I edit automations from different places?",
         answer:
-          "Yes. You can edit an automation from Settings > Automations, from the calendar day modal, from the skill detail sidebar, and from the activity dashboard. All surfaces open the same edit modal and save to the same Supabase column.",
+          "Yes. You can edit an automation from Settings > Automations, from the calendar day modal, from the skill detail sidebar, from the activity dashboard, and from the skill's meta bar. All surfaces open the same edit modal and save to the same Supabase column.",
       },
       {
         question: "Can I pause an automation?",
@@ -155,27 +196,37 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What are weekly imports?",
         answer:
-          "Every Monday at 09:00 UTC, Loop's import cron scans trusted skill sources — official repos from Anthropic, OpenAI, and community-curated lists — discovers new skills, and imports them into the catalog with proper attribution, icons, and agent docs.",
+          "Every Monday at 09:00 UTC, Loop's import cron scans all registered skill sources, discovers new skills, and imports them into the catalog with proper attribution, verified author linkage, icons, and agent docs. Skills from known providers automatically receive their verified author badge.",
       },
       {
         question: "Which sources does Loop import from?",
         answer:
-          "Loop imports from official repos (Anthropic Skills, OpenAI Skills) and community-curated lists (Awesome Agent Skills). Each source has a trust tier — official or community — which is tagged on imported skills. You can see all sources at Settings > Imports.",
+          "Loop imports from five built-in sources. Anthropic Skills and OpenAI Skills are official, canonical repos — Loop imports skill files directly from their maintained directories. Cursor Directory is a community-curated collection of Cursor rules imported as canonical files. Awesome Agent Skills and Awesome MCP Servers are lead-list sources — Loop parses their README links to discover candidate repos with SKILL.md files. Each source has a trust tier (official or community) that is tagged on imported skills.",
+      },
+      {
+        question: "What is the difference between canonical and lead-list sources?",
+        answer:
+          "Canonical sources (like Anthropic Skills, OpenAI Skills, and Cursor Directory) have a structured skills directory that Loop reads directly. Lead-list sources (like Awesome Agent Skills and Awesome MCP Servers) are curated README files — Loop parses the GitHub links, checks each linked repo for a SKILL.md, and imports those that have one. Canonical imports are more reliable; lead-list imports cast a wider net.",
+      },
+      {
+        question: "Can I import a skill from any URL?",
+        answer:
+          "Yes. Paste any markdown or README URL into the import form at Settings > Imports (or the 'Import' tab in the new-skill modal). Loop fetches the content, parses frontmatter and markdown, infers the title, category, and tags, and creates a versioned skill. If the URL matches a known provider (e.g., a GitHub repo under anthropics/ or openai/), the skill is automatically linked to that provider's verified author.",
       },
       {
         question: "Can I add custom import sources?",
         answer:
-          "Operator subscribers can register additional GitHub repositories as import sources from Settings > Imports. Specify the org, repo, branch, and skills path, and Loop will include it in the weekly scan. Custom sources default to the 'community' trust tier.",
+          "Operator subscribers can register additional GitHub repositories as import sources from Settings > Imports. Specify the org, repo, branch, and skills path, and Loop will include it in the weekly scan. Custom sources default to the community trust tier.",
       },
       {
         question: "Where can I see import settings?",
         answer:
-          "Go to Settings > Imports to see all auto-import sources, the next scheduled import date, import history, and the custom source form. You can also see recent imports in the Activity sidebar on the catalog page by switching to the 'New imports' tab.",
+          "Go to Settings > Imports to see all auto-import sources with their trust tier badges, the next scheduled import date, import history, and the custom source form. The activity dashboard on the catalog page also shows recent imports in a dedicated tab.",
       },
       {
         question: "Do I get notified about new imports?",
         answer:
-          "Yes. After each weekly import, Loop sends a digest email to admin accounts via Resend. The email lists all newly imported skills with links, descriptions, and source attribution.",
+          "Yes. After each weekly import, Loop sends a digest email to admin accounts via Resend. The email lists all newly imported skills with links, descriptions, and source attribution. You can manage email preferences (weekly digest and automation alerts) from your account settings.",
       },
     ],
   },
@@ -279,12 +330,22 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What usage data does Loop track?",
         answer:
-          "Loop records page views, interactions, prompt and URL copies, searches, skill creation and import events, automation runs, and API calls with route, method, status, duration, and success/failure. This data powers the usage dashboards and system health views.",
+          "Loop records page views, interactions, prompt and URL copies, searches, skill creation and import events, automation runs, and API calls with route, method, status, duration, and success/failure. This data powers the usage dashboards, the activity dashboard, and per-skill observability panels.",
       },
       {
         question: "Where can I see system health?",
         answer:
           "Go to Settings > System health. You'll see rolling 24-hour totals for views, interactions, API traffic, and average API latency, along with time-series charts, route-level breakdowns, and recent events.",
+      },
+      {
+        question: "Is there per-skill observability?",
+        answer:
+          "Yes. Each skill's detail sidebar includes a skill-level observability panel showing usage metrics specific to that skill — views, copies, API hits, and automation runs. This helps you understand which skills get the most traffic and engagement.",
+      },
+      {
+        question: "What is the activity dashboard?",
+        answer:
+          "The activity dashboard is accessible from the catalog home page. It combines usage overview tiles and charts with two tabs: an automations tab showing the automation calendar with color-coded run dates, and an imports tab listing recent imports with source attribution and trust tier badges.",
       },
       {
         question: "Is usage data used for billing?",
@@ -305,12 +366,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Where is my data stored?",
         answer:
-          "Loop uses Supabase (Postgres) as the single source of truth for all data: skills, automation configs, sources, versions, usage events, custom import sources, and run logs. Everything is read from and written to Supabase.",
+          "Loop uses Supabase (Postgres) as the single source of truth for all data: skills, skill authors, automation configs, sources, versions, usage events, custom import sources, email preferences, and run logs. Everything is read from and written to Supabase.",
       },
       {
         question: "How is authentication handled?",
         answer:
-          "Loop uses Clerk for user authentication with custom sign-in and sign-up pages. Social providers (Google, GitHub) and email are supported. Billing metadata (Stripe customer ID, Connect account ID) is stored on your Clerk user profile.",
+          "Loop uses Clerk for user authentication with custom sign-in and sign-up pages. Social providers (Google, GitHub) and email are supported. Billing metadata (Stripe customer ID, Connect account ID) is stored on your Clerk user profile. Your Clerk account can also be linked to a verified skill author record for publisher permissions.",
       },
       {
         question: "Is my data private?",
@@ -320,7 +381,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What happens to my data if I cancel?",
         answer:
-          "Canceling the Operator plan stops access to paid features at the end of your billing period. Your skills, versions, and history remain in the database. You can always re-subscribe to regain full access.",
+          "Canceling the Operator plan stops access to paid features at the end of your billing period. Your skills, versions, author profile, and history remain in the database. You can always re-subscribe to regain full access.",
+      },
+      {
+        question: "What email preferences are available?",
+        answer:
+          "Loop stores two email preference flags per user: weekly digest (import summaries after the Monday cron) and automation alerts (notifications about automation runs and failures). Both are enabled by default and can be configured from your account settings.",
       },
     ],
   },
@@ -346,7 +412,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is the raw skill URL API?",
         answer:
-          "Every public skill has a raw markdown endpoint at /api/skills/{slug}/raw that returns the skill body as text/markdown. Append ?v=N to pin a specific version. This URL is what agents fetch when you paste a skill link into their context — no HTML, just clean markdown with YAML frontmatter.",
+          "Every public skill has a raw markdown endpoint at /api/skills/{slug}/raw that returns the skill body as text/markdown. Append ?v=N to pin a specific version. This URL is what agents fetch when you paste a skill link into their context — no HTML, just clean markdown with YAML frontmatter. There's also /api/skills/raw/all, which returns a plain-text index of all public skills and MCP servers for agent discovery.",
+      },
+      {
+        question: "What is the skill icon API?",
+        answer:
+          "Each skill exposes a /api/skills/{slug}/icon endpoint that returns the resolved icon URL. Loop resolves icons through a priority chain: explicit icon URL, verified author logo, brand inference from the owner name, and finally a Lucide category fallback. MCP servers have a similar endpoint at /api/mcps/{name}/icon.",
       },
       {
         question: "What is the command palette?",
@@ -361,7 +432,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How does Loop send emails?",
         answer:
-          "Loop uses the Resend API for transactional email. Set the RESEND_API_KEY and optionally RESEND_FROM_EMAIL environment variables. Loop sends a weekly digest email after the import cron runs and a welcome email when new users sign up via the Clerk webhook.",
+          "Loop uses the Resend API for transactional email. Set the RESEND_API_KEY and optionally RESEND_FROM_EMAIL environment variables. Loop sends a weekly digest email after the import cron runs and a welcome email when new users sign up via the Clerk webhook. Users can manage their email preferences (weekly digest and automation alerts) from account settings.",
+      },
+      {
+        question: "What is the skill detail page?",
+        answer:
+          "The skill detail page is the primary view for any skill. It displays the full skill body, a sticky section nav for in-page navigation, a meta bar showing origin, freshness, next automation run, and source count, the research panel (when available), an activity section with update history, and a sidebar with the use-skill panel, version timeline, automation controls, and per-skill observability.",
       },
     ],
   },

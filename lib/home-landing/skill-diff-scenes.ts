@@ -10,15 +10,21 @@ export type DiffSceneLine = {
 
 export type DiffScene = {
   skillTitle: string;
+  skillSlug: string;
+  iconUrl: string;
   category: string;
   versionFrom: string;
   versionTo: string;
   lines: DiffSceneLine[];
 };
 
+import { brandIconForDarkBg } from "@/lib/brand-icons";
+
 export const DIFF_SCENES: DiffScene[] = [
   {
     skillTitle: "Frontend Frontier",
+    skillSlug: "frontend-frontier",
+    iconUrl: brandIconForDarkBg("tailwind")!,
     category: "frontend",
     versionFrom: "v6",
     versionTo: "v7",
@@ -45,6 +51,8 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     skillTitle: "Agent Orchestration",
+    skillSlug: "openai-agent-orchestration",
+    iconUrl: brandIconForDarkBg("openai")!,
     category: "a2a",
     versionFrom: "v4",
     versionTo: "v5",
@@ -70,6 +78,8 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     skillTitle: "Security Best Practices",
+    skillSlug: "owasp-security-best-practices",
+    iconUrl: brandIconForDarkBg("owasp")!,
     category: "security",
     versionFrom: "v3",
     versionTo: "v4",
@@ -95,6 +105,8 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     skillTitle: "Next.js Patterns",
+    skillSlug: "nextjs-patterns",
+    iconUrl: brandIconForDarkBg("nextjs")!,
     category: "frontend",
     versionFrom: "v7",
     versionTo: "v8",
@@ -120,6 +132,8 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     skillTitle: "Prompt Engineering",
+    skillSlug: "openai-prompt-engineering",
+    iconUrl: brandIconForDarkBg("openai")!,
     category: "a2a",
     versionFrom: "v5",
     versionTo: "v6",

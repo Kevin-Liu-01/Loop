@@ -67,6 +67,15 @@ export type UsageOverview = {
   }>;
 };
 
+export type SkillDailyCount = {
+  date: string;
+  views: number;
+  copies: number;
+  saves: number;
+  refreshes: number;
+  apiCalls: number;
+};
+
 export type SkillUsageSummary = {
   pageViews: number;
   copies: number;
@@ -75,6 +84,7 @@ export type SkillUsageSummary = {
   apiCalls: number;
   lastSeenAt: string | null;
   recentEvents: UsageEventRecord[];
+  dailyCounts: SkillDailyCount[];
 };
 
 function average(values: number[]): number {
@@ -282,6 +292,45 @@ export function buildUsageOverview(
   };
 }
 
+function buildDailyCounts(events: UsageEventRecord[], days: number): SkillDailyCount[] {
+  const now = new Date();
+  const buckets = new Map<string, SkillDailyCount>();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    buckets.set(key, { date: key, views: 0, copies: 0, saves: 0, refreshes: 0, apiCalls: 0 });
+  }
+
+  for (const event of events) {
+    const key = event.at.slice(0, 10);
+    const bucket = buckets.get(key);
+    if (!bucket) continue;
+
+    switch (event.kind) {
+      case "page_view":
+        bucket.views++;
+        break;
+      case "copy_prompt":
+      case "copy_url":
+        bucket.copies++;
+        break;
+      case "skill_save":
+        bucket.saves++;
+        break;
+      case "skill_refresh":
+        bucket.refreshes++;
+        break;
+      case "api_call":
+        bucket.apiCalls++;
+        break;
+    }
+  }
+
+  return Array.from(buckets.values());
+}
+
 export function buildSkillUsageSummary(
   skillSlug: string,
   events: UsageEventRecord[],
@@ -301,6 +350,7 @@ export function buildSkillUsageSummary(
     ),
     apiCalls: relevantEvents.filter((event) => event.kind === "api_call").length,
     lastSeenAt: relevantEvents[0]?.at ?? null,
-    recentEvents: relevantEvents.slice(0, 8)
+    recentEvents: relevantEvents.slice(0, 8),
+    dailyCounts: buildDailyCounts(relevantEvents, 14),
   };
 }

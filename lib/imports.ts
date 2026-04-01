@@ -1,3 +1,4 @@
+import matter from "gray-matter";
 import YAML from "yaml";
 
 import {
@@ -10,9 +11,11 @@ import {
   listMcps as dbListMcps,
   upsertMcp as dbUpsertMcp
 } from "@/lib/db/mcps";
+import { resolveAuthorIdForUrl } from "@/lib/source-authors";
 import { buildVersionLabel, buildSkillVersionHref } from "@/lib/format";
 import { createExcerpt, slugify, stableHash } from "@/lib/markdown";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
+import { resolveBrandIcon, githubAvatar } from "@/lib/brand-icons";
 import type {
   AgentPrompt,
   CategorySlug,
@@ -40,6 +43,50 @@ function normalizeTags(input: string[]): string[] {
         .filter(Boolean)
     )
   ).slice(0, 10);
+}
+
+function inferTags(opts: {
+  category: string;
+  sourceUrl: string;
+  ownerName?: string;
+  title?: string;
+  frontmatterTags?: string[];
+}): string[] {
+  const tags: string[] = [opts.category, "imported"];
+
+  if (opts.ownerName) tags.push(opts.ownerName);
+
+  if (opts.frontmatterTags?.length) {
+    tags.push(...opts.frontmatterTags);
+  }
+
+  try {
+    const parsed = new URL(opts.sourceUrl);
+    const segments = parsed.pathname.split("/").filter(Boolean);
+
+    if (
+      parsed.hostname === "raw.githubusercontent.com" ||
+      parsed.hostname === "github.com"
+    ) {
+      const [org, repo] = segments;
+      if (org) tags.push(org);
+      if (repo && repo !== org) tags.push(repo);
+    } else {
+      const hostname = parsed.hostname.replace(/^www\./, "");
+      const domain = hostname.split(".").slice(0, -1).join("-");
+      if (domain && domain !== "raw") tags.push(domain);
+    }
+  } catch { /* ignore */ }
+
+  if (opts.title) {
+    const titleWords = opts.title
+      .toLowerCase()
+      .split(/[\s\-_]+/)
+      .filter((w) => w.length > 2 && !["the", "and", "for", "use", "with", "when", "skill"].includes(w));
+    tags.push(...titleWords.slice(0, 3));
+  }
+
+  return normalizeTags(tags);
 }
 
 function toVersionReference(version: { version: number; updatedAt: string }): VersionReference {
@@ -125,21 +172,36 @@ function inferOwnerName(url: string): string | undefined {
   }
 }
 
-function inferTitle(raw: string, fallbackUrl: string): string {
-  const markdownTitle = /^#\s+(.+)$/m.exec(raw)?.[1]?.trim();
+function inferTitle(content: string, fallbackUrl: string, frontmatterName?: string): string {
+  const markdownTitle = /^#\s+(.+)$/m.exec(content)?.[1]?.trim();
   if (markdownTitle) return markdownTitle;
 
-  const htmlTitle = /<title>([^<]+)<\/title>/i.exec(raw)?.[1]?.trim();
+  if (frontmatterName) return frontmatterName;
+
+  const htmlTitle = /<title>([^<]+)<\/title>/i.exec(content)?.[1]?.trim();
   if (htmlTitle) return decodeHtml(htmlTitle);
 
   const pathname = new URL(fallbackUrl).pathname.split("/").filter(Boolean).pop();
   return pathname?.replace(/\.(md|markdown|txt|html)$/i, "").replace(/[-_]/g, " ") || "Imported skill";
 }
 
-function toMarkdownBody(raw: string, title: string, sourceUrl: string): string {
-  if (!looksLikeHtml(raw, sourceUrl)) return raw.trim();
-  const plain = stripHtml(raw);
+function toMarkdownBody(content: string, title: string, sourceUrl: string): string {
+  if (!looksLikeHtml(content, sourceUrl)) return content.trim();
+  const plain = stripHtml(content);
   return [`# ${title}`, "", plain].join("\n");
+}
+
+/**
+ * Parse YAML frontmatter from raw markdown.
+ * Returns the frontmatter data and the body content with frontmatter stripped.
+ */
+function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
+  try {
+    const parsed = matter(raw);
+    return { data: parsed.data as Record<string, unknown>, content: parsed.content };
+  } catch {
+    return { data: {}, content: raw };
+  }
 }
 
 export async function fetchRemoteText(inputUrl: string): Promise<{ raw: string; normalizedUrl: string }> {
@@ -362,8 +424,13 @@ export function buildImportedSkillDraft(
   sourceUrl: string,
   now = new Date()
 ): ImportedSkillDocument {
-  const title = inferTitle(raw, sourceUrl);
-  const body = toMarkdownBody(raw, title, sourceUrl);
+  const { data, content } = parseFrontmatter(raw);
+  const fmName = typeof data.name === "string" ? data.name.split("-").map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ") : undefined;
+  const fmDescription = typeof data.description === "string" ? data.description : undefined;
+
+  const title = inferTitle(content, sourceUrl, fmName);
+  const body = toMarkdownBody(content, title, sourceUrl);
+  const description = fmDescription || createExcerpt(body, 180);
   const category = inferCategory(title, body, sourceUrl);
   const createdAt = now.toISOString();
   const slugBase = slugify(title) || `imported-skill-${stableHash(sourceUrl)}`;
@@ -371,13 +438,19 @@ export function buildImportedSkillDraft(
   const version = buildImportedSkillVersion(
     {
       title,
-      description: createExcerpt(body, 180),
+      description,
       category,
       body,
       sourceUrl,
       canonicalUrl: sourceUrl,
       ownerName: inferOwnerName(sourceUrl),
-      tags: normalizeTags([category, "imported", new URL(sourceUrl).hostname]),
+      tags: inferTags({
+        category,
+        sourceUrl,
+        ownerName: inferOwnerName(sourceUrl),
+        title,
+        frontmatterTags: Array.isArray(data.tags) ? data.tags.map(String) : undefined,
+      }),
       visibility: "public",
       syncEnabled: true,
       lastSyncedAt: createdAt
@@ -458,6 +531,7 @@ export function buildImportedSkillRecord(
       .sort((left, right) => right.version - left.version)
       .map(toVersionReference),
     ownerName: version.ownerName,
+    authorId: skill.authorId,
     sources: [source]
   };
 }
@@ -587,6 +661,7 @@ function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
     sourceUrl: record.path,
     canonicalUrl: record.path,
     ownerName: record.ownerName,
+    authorId: record.authorId,
     tags: record.tags,
     visibility: record.visibility,
     syncEnabled: true,
@@ -602,6 +677,7 @@ function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
     sourceUrl: record.path,
     canonicalUrl: record.path,
     ownerName: record.ownerName,
+    authorId: record.authorId,
     tags: record.tags,
     visibility: record.visibility,
     createdAt: record.updatedAt,
@@ -633,12 +709,12 @@ export async function saveImportedSkills(skills: ImportedSkillDocument[]): Promi
         visibility: skill.visibility,
         tags: skill.tags,
         ownerName: skill.ownerName,
+        authorId: skill.authorId,
         sourceUrl: skill.sourceUrl,
         canonicalUrl: skill.canonicalUrl,
         syncEnabled: skill.syncEnabled,
         version: skill.version
       }).catch(() => {
-        // Skill may not exist yet; create it
         return dbCreateSkill({
           slug: skill.slug,
           title: skill.title,
@@ -649,6 +725,7 @@ export async function saveImportedSkills(skills: ImportedSkillDocument[]): Promi
           origin: "remote",
           tags: skill.tags,
           ownerName: skill.ownerName,
+          authorId: skill.authorId,
           sourceUrl: skill.sourceUrl,
           canonicalUrl: skill.canonicalUrl,
           syncEnabled: skill.syncEnabled,
@@ -691,29 +768,26 @@ async function fetchSiblingAgentDocs(sourceUrl: string): Promise<Record<string, 
 }
 
 function inferIconUrlFromSource(sourceUrl: string): string | undefined {
-  const SI = "https://cdn.simpleicons.org";
   const lower = sourceUrl.toLowerCase();
 
-  if (lower.includes("github.com/anthropics") || lower.includes("anthropic")) {
-    return `${SI}/anthropic`;
-  }
-  if (lower.includes("github.com/openai") || lower.includes("openai")) {
-    return "https://github.com/openai.png?size=64";
-  }
-  if (lower.includes("github.com/vercel") || lower.includes("vercel")) {
-    return `${SI}/vercel`;
-  }
-  if (lower.includes("github.com/supabase") || lower.includes("supabase")) {
-    return `${SI}/supabase`;
+  const knownBrands: [string, string][] = [
+    ["anthropic", "anthropic"],
+    ["openai", "openai"],
+    ["vercel", "vercel"],
+    ["supabase", "supabase"],
+  ];
+  for (const [pattern, brandKey] of knownBrands) {
+    if (lower.includes(pattern)) {
+      return resolveBrandIcon(brandKey);
+    }
   }
 
   try {
     const { hostname } = new URL(sourceUrl);
     if (hostname === "github.com" || hostname === "raw.githubusercontent.com") {
       const parts = sourceUrl.split("/");
-      const orgIdx = hostname === "raw.githubusercontent.com" ? 3 : 3;
-      const org = parts[orgIdx];
-      if (org) return `https://github.com/${org}.png?size=64`;
+      const org = parts[3];
+      if (org) return githubAvatar(org);
     }
   } catch {
     // ignore
@@ -725,6 +799,8 @@ function inferIconUrlFromSource(sourceUrl: string): string | undefined {
 export type ImportSourceMeta = {
   sourceName?: string;
   sourceIconUrl?: string;
+  /** Pre-resolved verified author ID — skips URL-based author lookup when set. */
+  authorId?: string;
 };
 
 export async function importRemoteSkill(
@@ -734,13 +810,17 @@ export async function importRemoteSkill(
   const { raw, normalizedUrl } = await fetchRemoteText(inputUrl);
   const draft = buildImportedSkillDraft(raw, normalizedUrl);
 
-  const [agentDocs, inferredIcon] = await Promise.all([
+  const [agentDocs, inferredIcon, resolvedAuthorId] = await Promise.all([
     fetchSiblingAgentDocs(normalizedUrl),
     Promise.resolve(inferIconUrlFromSource(normalizedUrl)),
+    sourceMeta?.authorId
+      ? Promise.resolve(sourceMeta.authorId)
+      : resolveAuthorIdForUrl(inputUrl),
   ]);
 
   const ownerName = sourceMeta?.sourceName || draft.ownerName;
   const iconUrl = sourceMeta?.sourceIconUrl || inferredIcon;
+  const authorId = resolvedAuthorId || undefined;
 
   const hasAgentDocs = Object.keys(agentDocs).length > 0;
 
@@ -754,6 +834,7 @@ export async function importRemoteSkill(
     origin: "remote",
     tags: draft.tags,
     ownerName,
+    authorId,
     sourceUrl: draft.sourceUrl,
     canonicalUrl: draft.canonicalUrl,
     syncEnabled: draft.syncEnabled,
@@ -768,6 +849,7 @@ export async function importRemoteSkill(
       body: draft.body,
       tags: draft.tags,
       ownerName,
+      authorId,
       sourceUrl: draft.sourceUrl,
       canonicalUrl: draft.canonicalUrl,
       syncEnabled: draft.syncEnabled,
@@ -776,7 +858,7 @@ export async function importRemoteSkill(
     });
   });
 
-  return { ...draft, ownerName };
+  return { ...draft, ownerName, authorId };
 }
 
 export async function importRemoteMcps(inputUrl: string): Promise<ImportedMcpDocument[]> {

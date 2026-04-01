@@ -46,7 +46,7 @@ function FeedbackBar({ variant, children }: FeedbackBarProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-none border px-3.5 py-2.5 text-sm font-medium",
+        "flex items-center gap-2 rounded-none border px-3.5 py-2 text-xs font-medium",
         styles[variant]
       )}
     >
@@ -74,11 +74,11 @@ function CollapsibleSection({
       className="group border-t border-line"
       open={defaultOpen || undefined}
     >
-      <summary className="flex cursor-pointer list-none items-center gap-2 py-4 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
-        <ChevronDownIcon className="h-3.5 w-3.5 text-ink-faint transition-transform group-open:rotate-180" />
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-3 text-xs font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        <ChevronDownIcon className="h-3 w-3 text-ink-faint transition-transform group-open:rotate-180" />
         {title}
         {summary && (
-          <span className="ml-auto text-xs font-normal text-ink-faint">
+          <span className="ml-auto text-[0.625rem] font-normal text-ink-faint">
             {summary}
           </span>
         )}
@@ -429,7 +429,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         <div className="grid gap-4 pb-5">
           <div className="grid gap-4 xl:grid-cols-2">
             <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Title</span>
+              <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Title</span>
               <input
                 className={cn(textFieldBase)}
                 maxLength={80}
@@ -440,7 +440,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
             </FieldGroup>
 
             <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Category</span>
+              <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Category</span>
               <select
                 className={cn(textFieldBase, textFieldSelect)}
                 onChange={(event) => update("category", event.target.value as SkillRecord["category"])}
@@ -456,7 +456,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
           </div>
 
           <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Description</span>
+            <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Description</span>
             <textarea
               className={cn(textFieldBase, textFieldArea)}
               maxLength={220}
@@ -467,7 +467,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
           </FieldGroup>
 
           <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Tags</span>
+            <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Tags</span>
             <input
               className={cn(textFieldBase)}
               onChange={(event) => update("tags", event.target.value)}
@@ -480,10 +480,10 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         {/* ── Body editor ── */}
         <div className="grid gap-2 border-t border-line pt-5 pb-1">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">
+            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
               Skill body
             </span>
-            <span className="text-xs tabular-nums text-ink-faint">
+            <span className="text-[0.625rem] tabular-nums text-ink-faint">
               {state.body.length.toLocaleString()}/{BODY_MAX_CHARS.toLocaleString()}
             </span>
           </div>
@@ -500,7 +500,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         <CollapsibleSection summary={automationSummary} title="Automation">
           <div className="grid gap-4">
             <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Source watchlist</span>
+              <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Source watchlist</span>
               <textarea
                 className={cn(textFieldBase, textFieldArea, "min-h-48")}
                 onChange={(event) => update("sourceUrls", event.target.value)}
@@ -511,7 +511,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
 
             <div className="grid gap-4 xl:grid-cols-2">
               <FieldGroup>
-                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Refresh cadence</span>
+                <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Refresh cadence</span>
                 <select
                   className={cn(textFieldBase, textFieldSelect)}
                   onChange={(event) => update("cadence", event.target.value as AuthorStudioState["cadence"])}
@@ -524,7 +524,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
               </FieldGroup>
 
               <FieldGroup>
-                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Refresh prompt</span>
+                <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Refresh prompt</span>
                 <textarea
                   className={cn(textFieldBase, textFieldArea)}
                   maxLength={AUTOMATION_PROMPT_MAX_LENGTH}
@@ -543,6 +543,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
           title="Agent docs"
         >
           <AgentDocsEditor
+            embedded
             onChange={(docs) => setState((current) => ({ ...current, agentDocs: docs }))}
             value={state.agentDocs}
           />
@@ -551,7 +552,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         <CollapsibleSection summary={brandingSummary} title="Branding">
           <div className="grid gap-4">
             <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Skill icon</span>
+              <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Skill icon</span>
               <label className="flex cursor-pointer items-center gap-4 rounded-[14px] border border-dashed border-line bg-paper-3 p-4 transition-colors hover:border-ink-faint">
                 {iconPreview ? (
                   <img alt="Icon preview" className="h-12 w-12 shrink-0 rounded-lg object-cover" src={iconPreview} />
@@ -561,8 +562,8 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
                   </span>
                 )}
                 <span className="grid gap-0.5">
-                  <span className="text-sm font-medium text-ink">{iconPreview ? "Change icon" : "Upload icon"}</span>
-                  <span className="text-xs text-ink-faint">Square PNG, SVG, WebP, or JPEG. Max 1 MB.</span>
+                  <span className="text-xs font-medium text-ink">{iconPreview ? "Change icon" : "Upload icon"}</span>
+                  <span className="text-[0.625rem] text-ink-faint">Square PNG, SVG, WebP, or JPEG. Max 1 MB.</span>
                 </span>
                 <input
                   accept="image/png,image/svg+xml,image/webp,image/jpeg"
@@ -574,7 +575,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
             </FieldGroup>
 
             <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Attribution line</span>
+              <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">Attribution line</span>
               <input
                 className={cn(textFieldBase)}
                 onChange={(event) => update("ownerName", event.target.value)}
@@ -584,8 +585,8 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
             </FieldGroup>
 
             <div className="grid gap-2 rounded-none border border-line bg-paper-2/90 p-3 dark:bg-paper-2/40">
-              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft">Published as</span>
-              <SkillAuthorBadge author={skill.author} ownerName={state.ownerName || skill.ownerName} />
+              <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">Published as</span>
+              <SkillAuthorBadge author={skill.author} ownerName={state.ownerName || skill.ownerName} iconUrl={skill.iconUrl} />
             </div>
           </div>
         </CollapsibleSection>

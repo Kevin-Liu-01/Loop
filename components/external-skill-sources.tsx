@@ -63,7 +63,7 @@ type ApiResponse = {
   totalSkills: number;
 };
 
-export function ExternalSkillSources() {
+export function ExternalSkillSources({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,6 +146,7 @@ export function ExternalSkillSources() {
 
         if (trackPayload.href) {
           op.complete(`Imported ${skill.slug}`);
+          onSuccess?.();
           router.push(trackPayload.href);
           router.refresh();
         } else {

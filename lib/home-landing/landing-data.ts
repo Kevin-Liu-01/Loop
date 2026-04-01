@@ -4,6 +4,7 @@
  */
 
 import type { AutomationSummary, ImportedMcpDocument } from "@/lib/types";
+import { githubAvatar } from "@/lib/brand-icons";
 
 export type LandingSkillRow = {
   slug: string;
@@ -240,7 +241,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Search repos, manage issues and PRs, read files, create branches, and review Actions runs",
     transport: "stdio",
-    iconUrl: "https://github.com/github.png?size=64",
+    iconUrl: githubAvatar("github"),
     homepageUrl: "https://github.com/github/github-mcp-server",
   },
   {
@@ -249,7 +250,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Manage deployments, domains, environment variables, and logs",
     transport: "http",
-    iconUrl: "https://github.com/vercel.png?size=64",
+    iconUrl: githubAvatar("vercel"),
     homepageUrl: "https://vercel.com/docs/mcp",
   },
   {
@@ -258,7 +259,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Query databases, manage auth, inspect schemas, and deploy edge functions",
     transport: "stdio",
-    iconUrl: "https://github.com/supabase.png?size=64",
+    iconUrl: githubAvatar("supabase"),
     homepageUrl: "https://github.com/supabase-community/supabase-mcp",
   },
   {
@@ -267,7 +268,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Payments, subscriptions, customers, and invoices via the Stripe API",
     transport: "http",
-    iconUrl: "https://github.com/stripe.png?size=64",
+    iconUrl: githubAvatar("stripe"),
     homepageUrl: "https://docs.stripe.com/mcp",
   },
   {
@@ -276,7 +277,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Search messages, users, channels, and files. Send messages and manage canvases",
     transport: "http",
-    iconUrl: "https://github.com/slackapi.png?size=64",
+    iconUrl: githubAvatar("slackapi"),
     homepageUrl: "https://api.slack.com",
   },
   {
@@ -285,7 +286,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Create and update issues, manage projects and cycles, and search docs",
     transport: "http",
-    iconUrl: "https://github.com/linearapp.png?size=64",
+    iconUrl: githubAvatar("linearapp"),
     homepageUrl: "https://linear.app/docs/mcp",
   },
   {
@@ -294,7 +295,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Extract design context, generate code from frames, and write to the canvas",
     transport: "http",
-    iconUrl: "https://github.com/figma.png?size=64",
+    iconUrl: githubAvatar("figma"),
     homepageUrl: "https://www.figma.com/developers/mcp",
   },
   {
@@ -303,7 +304,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Create pages, query databases, search workspace, and manage content",
     transport: "http",
-    iconUrl: "https://github.com/makenotion.png?size=64",
+    iconUrl: githubAvatar("makenotion"),
     homepageUrl: "https://developers.notion.com",
   },
   {
@@ -312,7 +313,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Access issues, errors, projects, and AI-powered Seer analysis for debugging",
     transport: "stdio",
-    iconUrl: "https://github.com/getsentry.png?size=64",
+    iconUrl: githubAvatar("getsentry"),
     homepageUrl: "https://docs.sentry.io/ai/mcp/",
   },
   {
@@ -321,7 +322,7 @@ export const LANDING_MCPS: LandingMcpRow[] = [
     description:
       "Browser automation using accessibility snapshots — navigate, fill forms, screenshot",
     transport: "stdio",
-    iconUrl: "https://github.com/microsoft.png?size=64",
+    iconUrl: githubAvatar("microsoft"),
     homepageUrl: "https://github.com/microsoft/playwright-mcp",
   },
 ];

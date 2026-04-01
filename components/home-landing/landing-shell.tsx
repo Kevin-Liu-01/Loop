@@ -1,20 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+
 import { motion } from "motion/react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
-import { AutomationIcon } from "@/components/frontier-icons";
+import { ArrowRightIcon, AutomationIcon } from "@/components/frontier-icons";
 import { GrainShader } from "@/components/home-landing/grain-shader";
 import { HeroDiffField } from "@/components/home-landing/hero-diff-field";
 import { LoopLogo } from "@/components/loop-logo";
+import { SkillAuthorBadge } from "@/components/skill-author-badge";
+import { SkillMetaBar } from "@/components/skill-meta-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
-import { SkillIcon } from "@/components/ui/skill-icon";
+import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { StatusDot } from "@/components/ui/status-dot";
+import { Tip } from "@/components/ui/tip";
+import { computeFreshness, type FreshnessInfo } from "@/lib/freshness";
 import { formatTagLabel, getTagColorForCategory, getTagColorForTransport } from "@/lib/tag-utils";
 import type { AutomationSummary, CategorySlug, SkillRecord } from "@/lib/types";
 import type {
@@ -40,6 +45,10 @@ function computeTone(iso: string): "fresh" | "stale" | "idle" {
   if (hours < 6) return "fresh";
   if (hours < 72) return "stale";
   return "idle";
+}
+
+function landingFreshness(skill: SkillRecord): FreshnessInfo {
+  return computeFreshness(skill, []);
 }
 
 function relativeTime(iso: string): string {
@@ -102,15 +111,6 @@ const staggerItem = {
   transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-2.5 text-[0.62rem] font-medium uppercase tracking-[0.18em] text-ink-faint">
-      <span className="h-px w-5 bg-accent/30" />
-      {children}
-    </span>
-  );
-}
-
 type LandingShellProps = {
   skills?: SkillRecord[];
   staticSkills?: LandingSkillRow[];
@@ -124,6 +124,13 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
   const normalizedSkills: NormalizedSkill[] = skills
     ? skills.map(normalizeSkillRecord)
     : (staticSkills ?? []).map(normalizeStaticSkill);
+
+  const skillMap = useMemo(() => {
+    if (!skills) return undefined;
+    const map = new Map<string, SkillRecord>();
+    for (const s of skills) map.set(s.slug, s);
+    return map;
+  }, [skills]);
 
   return (
     <div className="min-h-screen bg-paper text-ink">
@@ -150,23 +157,25 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
               Loop
             </strong>
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <div className="hidden h-9 items-center border border-white/[0.08] bg-white/[0.03] sm:flex">
+              <Link
+                className="inline-flex h-full items-center px-4 text-xs font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white/80"
+                href="#skills"
+              >
+                Skills
+              </Link>
+              <span className="h-4 w-px bg-white/[0.10]" />
+              <Link
+                className="inline-flex h-full items-center px-4 text-xs font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white/80"
+                href="#mcps"
+              >
+                Automations
+              </Link>
+            </div>
+            <ThemeToggle className="size-9 border-white/[0.08] bg-transparent text-white/40 hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white/80 rounded-none" />
             <Link
-              className="inline-flex items-center gap-1.5 border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white/80 max-sm:hidden"
-              href="#skills"
-            >
-              Skills
-            </Link>
-            <Link
-              className="inline-flex items-center gap-1.5 border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white/80 max-sm:hidden"
-              href="#mcps"
-            >
-              Automations
-            </Link>
-            <span className="mx-1.5 hidden h-4 w-px bg-white/[0.08] sm:block" />
-            <ThemeToggle className="size-8 border-white/[0.06] bg-white/[0.04] text-white/50 hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white/80 rounded-none" />
-            <Link
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:text-white/80 max-sm:hidden"
+              className="hidden h-9 items-center px-3 text-xs font-medium text-white/45 transition-colors hover:text-white/80 sm:inline-flex"
               href="/sign-in"
             >
               Sign in
@@ -178,7 +187,7 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
         </nav>
 
         {/* Hero — centered stack */}
-        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-6 pt-[min(14vh,120px)] text-center">
+        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,120px)] text-center">
           <motion.div className="mx-auto grid max-w-[700px] gap-7" {...fadeUp}>
             <div className="grid gap-5">
               <h1 className="font-serif text-[clamp(2.8rem,5.8vw,4.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-white">
@@ -188,8 +197,8 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
               </h1>
 
               <p className="mx-auto max-w-[34rem] text-balance text-[1.1rem] leading-[1.7] text-white/50">
-                Loop continuously monitors, evaluates, and updates your agent
-                playbooks — so every skill evolves on its own.
+                Loop autonomously monitors, evaluates, and updates your agent
+                playbooks, so every skill evolves on its own.
               </p>
             </div>
 
@@ -204,6 +213,7 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
           </motion.div>
 
           {/* Proof strip */}
+          {/* 
           <motion.div
             className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[0.72rem] font-medium tabular-nums text-white/25"
             initial={{ opacity: 0 }}
@@ -217,6 +227,7 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             <span className="hidden h-3 w-px bg-white/10 sm:block" />
             <span>23 MCP providers</span>
           </motion.div>
+          */}
         </div>
 
         {/* 3D diff card field */}
@@ -233,48 +244,93 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
       <section className="relative z-10" id="skills">
         <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-14">
           <motion.div className="mb-8 grid gap-2" {...fadeUp}>
-            <SectionLabel>Live skills · {normalizedSkills.length}</SectionLabel>
             <h2 className="font-serif text-[clamp(1.4rem,2.6vw,2rem)] font-medium leading-[1.12] tracking-[-0.03em]">
               Every skill, always current
             </h2>
           </motion.div>
 
           <motion.div className="grid gap-0" {...staggerWrap}>
-            {normalizedSkills.map((skill) => (
-              <motion.article
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3.5 first:border-t-0 first:pt-0 max-sm:grid-cols-1"
-                key={skill.slug}
-                {...staggerItem}
-              >
-                <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <SkillIcon className="rounded-md" iconUrl={skill.iconUrl} size={24} slug={skill.slug} />
-                    <StatusDot tone={skill.tone} />
-                    <span className="truncate font-serif text-[0.94rem] font-medium text-ink">
-                      {skill.title}
-                    </span>
-                    <Badge color={getTagColorForCategory(skill.category as CategorySlug)} size="sm">
-                      {formatTagLabel(skill.category)}
-                    </Badge>
-                    <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
-                  </div>
-                  <p className="m-0 mt-1 line-clamp-1 text-sm text-ink-soft">
-                    {skill.description}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-ink-faint">
-                    <span>{skill.ownerName}</span>
-                    <span>·</span>
-                    <span className="tabular-nums">{skill.relativeTime}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 max-sm:pl-0">
-                  <LinkButton href={skill.href} size="sm" variant="ghost">
-                    Open
-                  </LinkButton>
-                </div>
-              </motion.article>
-            ))}
+            {skills
+              ? skills.map((skill) => {
+                  const freshness = landingFreshness(skill);
+                  return (
+                    <motion.article
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0 max-sm:grid-cols-1"
+                      key={skill.slug}
+                      {...staggerItem}
+                    >
+                      <a className="group min-w-0" href={skill.href}>
+                        <div className="flex items-start gap-2.5">
+                          <SkillIcon className="mt-0.5 rounded-md" iconUrl={skill.iconUrl} size={28} slug={skill.slug} />
+                          <div className="min-w-0 grid flex-1 gap-1">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                              <Tip content={freshness.tone === "fresh" ? "Recently updated" : freshness.tone === "stale" ? "Hasn't changed recently" : "Unknown freshness"} side="top">
+                                <span className="inline-flex items-center"><StatusDot tone={freshness.tone} /></span>
+                              </Tip>
+                              <span className="truncate font-serif text-[0.94rem] font-medium text-ink group-hover:text-ink-soft">
+                                {skill.title}
+                              </span>
+                              <Badge color={getTagColorForCategory(skill.category)} size="sm">{formatTagLabel(skill.category)}</Badge>
+                              <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
+                            </div>
+                            <p className="m-0 line-clamp-1 text-sm text-ink-soft">{skill.description}</p>
+                            <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-ink-faint">
+                              <SkillAuthorBadge author={skill.author} compact linked={false} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
+                              <SkillMetaBar freshness={freshness} skill={skill} />
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                      <div className="flex items-center gap-1.5 max-sm:pl-4">
+                        {skill.automation?.enabled && (
+                          <Tip content="Automation active" side="top">
+                            <span className="flex h-7 w-7 items-center justify-center text-ink-faint">
+                              <AutomationIcon className="h-3.5 w-3.5" />
+                            </span>
+                          </Tip>
+                        )}
+                        <LinkButton href={skill.href} size="sm" variant="ghost">
+                          Open
+                          <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </LinkButton>
+                      </div>
+                    </motion.article>
+                  );
+                })
+              : normalizedSkills.map((skill) => (
+                  <motion.article
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3.5 first:border-t-0 first:pt-0 max-sm:grid-cols-1"
+                    key={skill.slug}
+                    {...staggerItem}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <SkillIcon className="rounded-md" iconUrl={skill.iconUrl} size={24} slug={skill.slug} />
+                        <StatusDot tone={skill.tone} />
+                        <span className="truncate font-serif text-[0.94rem] font-medium text-ink">
+                          {skill.title}
+                        </span>
+                        <Badge color={getTagColorForCategory(skill.category as CategorySlug)} size="sm">
+                          {formatTagLabel(skill.category)}
+                        </Badge>
+                        <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
+                      </div>
+                      <p className="m-0 mt-1 line-clamp-1 text-sm text-ink-soft">
+                        {skill.description}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-ink-faint">
+                        <span>{skill.ownerName}</span>
+                        <span>·</span>
+                        <span className="tabular-nums">{skill.relativeTime}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 max-sm:pl-0">
+                      <LinkButton href={skill.href} size="sm" variant="ghost">
+                        Open
+                      </LinkButton>
+                    </div>
+                  </motion.article>
+                ))}
           </motion.div>
 
           <motion.div className="mt-6" {...fadeUp}>
@@ -299,7 +355,6 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             {/* Left: Calendar */}
             <motion.div className="lg:border-r lg:border-line lg:pr-8" {...staggerItem}>
               <div className="mb-6 grid gap-2">
-                <SectionLabel>Automations</SectionLabel>
                 <h2 className="font-serif text-[clamp(1.3rem,2.2vw,1.7rem)] font-medium leading-[1.12] tracking-[-0.03em]">
                   Scheduled intelligence
                 </h2>
@@ -307,13 +362,12 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                   Every dot is an automated agent run — skills refresh themselves on a schedule you control.
                 </p>
               </div>
-              <AutomationCalendar automations={automations} variant="sidebar" />
+              <AutomationCalendar automations={automations} maxLegendRows={5} skillMap={skillMap} variant="sidebar" />
             </motion.div>
 
             {/* Right: MCP list */}
             <motion.div className="lg:pl-8" {...staggerItem}>
               <div className="mb-6 grid gap-2">
-                <SectionLabel>MCP servers · {mcps.length}</SectionLabel>
                 <h2 className="font-serif text-[clamp(1.3rem,2.2vw,1.7rem)] font-medium leading-[1.12] tracking-[-0.03em]">
                   Connect any tool
                 </h2>
@@ -321,27 +375,19 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                   Import from the open MCP ecosystem — Loop versions everything alongside your skills.
                 </p>
               </div>
-              <div className="grid gap-0">
+              <div className="grid gap-1.5">
                 {mcps.map((mcp) => (
                   <div
-                    className="flex items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0"
+                    className="group flex items-start gap-3 border border-line bg-paper-2/50 p-3 transition-colors hover:border-accent/25 hover:bg-paper-2"
                     key={mcp.id}
                   >
-                    {mcp.iconUrl ? (
-                      <Image
-                        alt=""
-                        className="h-7 w-7 shrink-0 rounded-md bg-white object-contain ring-1 ring-black/10"
-                        height={28}
-                        src={mcp.iconUrl}
-                        unoptimized
-                        width={28}
-                      />
-                    ) : (
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-paper-3 text-ink-faint ring-1 ring-line">
-                        <AutomationIcon className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                    <div className="min-w-0 flex-1">
+                    <McpIcon
+                      className="mt-0.5 shrink-0 rounded-md"
+                      iconUrl={mcp.iconUrl}
+                      name={mcp.name}
+                      size={28}
+                    />
+                    <div className="min-w-0 flex-1 grid gap-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-sm font-medium text-ink">
                           {mcp.name}

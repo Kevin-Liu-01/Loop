@@ -43,19 +43,19 @@ type CardPlacement = {
 
 const CARD_PLACEMENTS: CardPlacement[] = [
   {
-    xPx: -360,
-    yPx: 10,
-    zPx: -60,
-    rotateYDeg: 6,
-    rotateZDeg: 1.5,
-    scale: 0.88,
-    baseOpacity: 0.55,
-    parallaxStrength: 0.35,
+    xPx: -320,
+    yPx: 6,
+    zPx: -180,
+    rotateYDeg: 28,
+    rotateZDeg: 0,
+    scale: 1,
+    baseOpacity: 0.6,
+    parallaxStrength: 0.3,
   },
   {
     xPx: 0,
     yPx: 0,
-    zPx: 30,
+    zPx: 60,
     rotateYDeg: 0,
     rotateZDeg: 0,
     scale: 1,
@@ -63,14 +63,14 @@ const CARD_PLACEMENTS: CardPlacement[] = [
     parallaxStrength: 0.7,
   },
   {
-    xPx: 360,
-    yPx: 10,
-    zPx: -60,
-    rotateYDeg: -6,
-    rotateZDeg: -1.5,
-    scale: 0.88,
-    baseOpacity: 0.55,
-    parallaxStrength: 0.35,
+    xPx: 320,
+    yPx: 6,
+    zPx: -180,
+    rotateYDeg: -28,
+    rotateZDeg: 0,
+    scale: 1,
+    baseOpacity: 0.6,
+    parallaxStrength: 0.3,
   },
 ];
 
@@ -83,9 +83,9 @@ function HeroDiffLine({ line, index }: { line: DiffSceneLine; index: number }) {
   return (
     <motion.div
       className={cn(
-        "grid grid-cols-[1rem_1fr] items-baseline",
-        isAdded && "bg-[oklch(0.26_0.06_145/0.35)]",
-        isRemoved && "bg-[oklch(0.26_0.06_25/0.3)]",
+        "grid grid-cols-[2px_1.1rem_1fr] items-baseline",
+        isAdded && "bg-[oklch(0.26_0.06_145/0.30)]",
+        isRemoved && "bg-[oklch(0.26_0.06_25/0.25)]",
       )}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -93,21 +93,28 @@ function HeroDiffLine({ line, index }: { line: DiffSceneLine; index: number }) {
     >
       <span
         className={cn(
-          "select-none text-center text-[0.625rem] font-bold leading-[1.65]",
+          "self-stretch",
+          isAdded && "bg-[oklch(0.60_0.16_145)]",
+          isRemoved && "bg-[oklch(0.60_0.14_25)]",
+        )}
+      />
+      <span
+        className={cn(
+          "select-none text-center text-[0.6rem] font-bold leading-[1.7]",
           isAdded && "text-[oklch(0.72_0.16_145)]",
           isRemoved && "text-[oklch(0.72_0.14_25)]",
-          !isAdded && !isRemoved && "text-white/20",
+          !isAdded && !isRemoved && "text-white/15",
         )}
       >
-        {isAdded ? "+" : isRemoved ? "\u2212" : " "}
+        {isAdded ? "+" : isRemoved ? "−" : " "}
       </span>
       <code
         className={cn(
-          "truncate pr-2 text-[0.625rem] leading-[1.65]",
+          "truncate pr-3 text-[0.6rem] leading-[1.7]",
           isAdded && "text-[oklch(0.88_0.06_145)]",
           isRemoved &&
             "text-[oklch(0.78_0.06_25)] line-through decoration-[oklch(0.78_0.06_25/0.3)]",
-          !isAdded && !isRemoved && "text-white/40",
+          !isAdded && !isRemoved && "text-white/35",
         )}
       >
         {line.value || "\u00A0"}
@@ -124,36 +131,39 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
   const accent = CATEGORY_ACCENT[scene.category] ?? "oklch(0.70 0.12 55)";
 
   return (
-    <div className="relative border-b border-white/[0.06]">
-      <div
-        className="absolute inset-x-0 top-0 h-px"
-        style={{ background: accent, opacity: 0.5 }}
-      />
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+    <div className="border-b border-white/[0.06] bg-white/[0.02]">
+      <div className="flex items-center gap-2 px-3.5 py-2.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt=""
+          className="h-4 w-4 shrink-0 brightness-0 invert"
+          src={scene.iconUrl}
+        />
         <span className="truncate font-serif text-[0.8rem] font-medium tracking-[-0.02em] text-white/90">
           {scene.skillTitle}
         </span>
         <span
-          className="shrink-0 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide"
+          className="shrink-0 rounded-[3px] px-1.5 py-[3px] text-[0.5rem] font-bold uppercase tracking-wider"
           style={{
             background: `color-mix(in oklch, ${accent}, transparent 82%)`,
             color: accent,
+            border: `1px solid color-mix(in oklch, ${accent}, transparent 70%)`,
           }}
         >
           {formatTagLabel(scene.category)}
         </span>
-        <span className="shrink-0 font-mono text-[0.5rem] tabular-nums text-white/30">
-          {scene.versionFrom} &rarr; {scene.versionTo}
+        <span className="shrink-0 font-mono text-[0.5rem] tabular-nums text-white/25">
+          {scene.versionFrom} → {scene.versionTo}
         </span>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-1">
           {added > 0 && (
-            <span className="px-1.5 py-0.5 text-[0.55rem] font-bold tabular-nums text-[oklch(0.78_0.14_145)] bg-[oklch(0.42_0.12_145/0.25)]">
+            <span className="rounded-[3px] px-1.5 py-[3px] text-[0.5rem] font-bold tabular-nums text-[oklch(0.78_0.14_145)] bg-[oklch(0.42_0.12_145/0.2)] border border-[oklch(0.42_0.12_145/0.2)]">
               +{added}
             </span>
           )}
           {removed > 0 && (
-            <span className="px-1.5 py-0.5 text-[0.55rem] font-bold tabular-nums text-[oklch(0.78_0.12_25)] bg-[oklch(0.42_0.10_25/0.25)]">
-              &minus;{removed}
+            <span className="rounded-[3px] px-1.5 py-[3px] text-[0.5rem] font-bold tabular-nums text-[oklch(0.78_0.12_25)] bg-[oklch(0.42_0.10_25/0.2)] border border-[oklch(0.42_0.10_25/0.2)]">
+              −{removed}
             </span>
           )}
         </div>
@@ -163,6 +173,8 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
 }
 
 /* ── Card chrome ────────────────────────────────────────────── */
+
+const CARD_BODY_HEIGHT = 280;
 
 function DiffCardChrome({
   children,
@@ -176,16 +188,43 @@ function DiffCardChrome({
   return (
     <div
       className={cn(
-        "overflow-hidden border border-white/[0.07] bg-[rgb(14,14,18)] font-mono shadow-2xl shadow-black/60",
-        glow && "ring-1 ring-white/[0.08]",
+        "relative overflow-hidden border font-mono shadow-2xl",
+        glow
+          ? "border-white/[0.10] ring-1 ring-white/[0.06]"
+          : "border-white/[0.06]",
       )}
-      style={
-        glow && accentColor
-          ? { boxShadow: `0 8px 60px -12px color-mix(in oklch, ${accentColor}, transparent 70%), 0 1px 3px rgba(0,0,0,0.4)` }
-          : undefined
-      }
+      style={{
+        background: "linear-gradient(180deg, rgb(18,18,23) 0%, rgb(12,12,16) 100%)",
+        ...(accentColor
+          ? {
+              boxShadow: glow
+                ? `0 0 0 1px color-mix(in oklch, ${accentColor} 12%, transparent), 0 12px 60px -8px color-mix(in oklch, ${accentColor} 30%, transparent), 0 2px 6px rgba(0,0,0,0.5)`
+                : `0 8px 40px -10px color-mix(in oklch, ${accentColor} 18%, transparent), 0 2px 6px rgba(0,0,0,0.4)`,
+            }
+          : { boxShadow: "0 8px 40px -10px rgba(0,0,0,0.6)" }),
+      }}
     >
+      {accentColor && (
+        <div
+          className="absolute inset-x-0 top-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`, opacity: glow ? 0.7 : 0.35 }}
+        />
+      )}
       {children}
+    </div>
+  );
+}
+
+/* ── Card body with fixed height and fade ──────────────────── */
+
+function DiffCardBody({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative" style={{ height: CARD_BODY_HEIGHT }}>
+      <div className="h-full overflow-hidden py-1">{children}</div>
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+        style={{ background: "linear-gradient(to top, rgb(12,12,16), transparent)" }}
+      />
     </div>
   );
 }
@@ -244,7 +283,7 @@ function SceneDots({
   onSelect: (i: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.06] py-2">
+    <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.05] bg-white/[0.015] py-2">
       {Array.from({ length: count }, (_, i) => (
         <button
           key={i}
@@ -253,8 +292,8 @@ function SceneDots({
           className={cn(
             "h-1 rounded-full transition-all duration-300",
             i === active
-              ? "w-4 bg-accent/80"
-              : "w-1 bg-white/20 hover:bg-white/40",
+              ? "w-5 bg-accent/70"
+              : "w-1 bg-white/15 hover:bg-white/30",
           )}
           aria-label={`Show diff scene ${i + 1}`}
         />
@@ -323,11 +362,11 @@ export function HeroDiffField() {
       >
         <DiffCardChrome accentColor={CATEGORY_ACCENT[leftScene.category]}>
           <HeroCardHeader scene={leftScene} />
-          <div className="overflow-hidden">
-            {leftScene.lines.slice(0, 14).map((line, i) => (
+          <DiffCardBody>
+            {leftScene.lines.map((line, i) => (
               <HeroDiffLine key={`l-${leftScene.skillTitle}-${i}`} line={line} index={i} />
             ))}
-          </div>
+          </DiffCardBody>
         </DiffCardChrome>
       </FloatingCard>
 
@@ -347,7 +386,7 @@ export function HeroDiffField() {
               transition={{ duration: 0.3 }}
             >
               <HeroCardHeader scene={activeScene} />
-              <div className="overflow-hidden">
+              <DiffCardBody>
                 {activeScene.lines.map((line, i) => (
                   <HeroDiffLine
                     key={`c-${activeScene.skillTitle}-${i}`}
@@ -355,7 +394,7 @@ export function HeroDiffField() {
                     index={i}
                   />
                 ))}
-              </div>
+              </DiffCardBody>
             </motion.div>
           </AnimatePresence>
           <SceneDots
@@ -375,11 +414,11 @@ export function HeroDiffField() {
       >
         <DiffCardChrome accentColor={CATEGORY_ACCENT[rightScene.category]}>
           <HeroCardHeader scene={rightScene} />
-          <div className="overflow-hidden">
-            {rightScene.lines.slice(0, 14).map((line, i) => (
+          <DiffCardBody>
+            {rightScene.lines.map((line, i) => (
               <HeroDiffLine key={`r-${rightScene.skillTitle}-${i}`} line={line} index={i} />
             ))}
-          </div>
+          </DiffCardBody>
         </DiffCardChrome>
       </FloatingCard>
     </motion.div>
