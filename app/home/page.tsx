@@ -6,13 +6,36 @@ import {
   LANDING_MCPS,
   LANDING_SKILLS,
 } from "@/lib/home-landing/landing-data";
+import {
+  buildDefaultOpenGraphImages,
+  buildDefaultTwitterImageUrls,
+  SEO_DEFAULT_DESCRIPTION,
+  SEO_DEFAULT_TITLE,
+  SITE_NAME,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
+const LANDING_DESCRIPTION =
+  "Loop monitors, evaluates, and updates your agent playbooks. Every skill stays optimal, every parameter stays current.";
+
 export const metadata: Metadata = {
-  title: "Loop — Skills that never go stale",
-  description:
-    "Loop monitors, evaluates, and updates your agent playbooks. Every skill stays optimal, every parameter stays current.",
+  title: SEO_DEFAULT_TITLE,
+  description: LANDING_DESCRIPTION,
+  openGraph: {
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+    images: buildDefaultOpenGraphImages(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    images: buildDefaultTwitterImageUrls(),
+  },
 };
 
 export default async function HomePage() {

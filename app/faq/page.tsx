@@ -7,11 +7,33 @@ import { PageShell } from "@/components/ui/page-shell";
 import { PageHeader, PageHeaderLead, PageHeaderSub, PageHeaderTitle } from "@/components/ui/page-header";
 import { FAQ_SECTIONS } from "@/lib/faq-data";
 import { pageInsetColumnClass } from "@/lib/ui-layout";
+import {
+  buildDefaultOpenGraphImages,
+  buildDefaultTwitterImageUrls,
+  SITE_NAME,
+} from "@/lib/seo";
+
+const FAQ_TITLE = "FAQ";
+const FAQ_DESCRIPTION =
+  "Frequently asked questions about Loop — the operator desk for self-updating agent skills.";
 
 export const metadata: Metadata = {
-  title: "FAQ — Loop",
-  description:
-    "Frequently asked questions about Loop — the operator desk for self-updating agent skills.",
+  title: FAQ_TITLE,
+  description: FAQ_DESCRIPTION,
+  openGraph: {
+    title: `${FAQ_TITLE} · ${SITE_NAME}`,
+    description: FAQ_DESCRIPTION,
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+    images: buildDefaultOpenGraphImages(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${FAQ_TITLE} · ${SITE_NAME}`,
+    description: FAQ_DESCRIPTION,
+    images: buildDefaultTwitterImageUrls(),
+  },
 };
 
 export default function FaqPage() {

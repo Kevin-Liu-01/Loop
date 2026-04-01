@@ -19,7 +19,14 @@ export async function GET(request: NextRequest) {
 
   return new ImageResponse(
     <OgCard title={title} description={description} category={category} />,
-    { width: OG_WIDTH, height: OG_HEIGHT }
+    {
+      width: OG_WIDTH,
+      height: OG_HEIGHT,
+      headers: {
+        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        "Content-Type": "image/png",
+      },
+    }
   );
 }
 
