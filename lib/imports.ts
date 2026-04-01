@@ -651,6 +651,8 @@ export async function syncImportedSkill(skill: ImportedSkillDocument): Promise<I
 // ---------------------------------------------------------------------------
 
 function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
+  const syncEnabled = record.syncEnabled ?? true;
+
   const versions: ImportedSkillVersion[] = record.availableVersions.map((vRef) => ({
     version: vRef.version,
     updatedAt: vRef.updatedAt,
@@ -664,7 +666,7 @@ function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
     authorId: record.authorId,
     tags: record.tags,
     visibility: record.visibility,
-    syncEnabled: true,
+    syncEnabled,
     lastSyncedAt: vRef.updatedAt
   }));
 
@@ -682,7 +684,7 @@ function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
     visibility: record.visibility,
     createdAt: record.updatedAt,
     updatedAt: record.updatedAt,
-    syncEnabled: true,
+    syncEnabled,
     lastSyncedAt: record.updatedAt,
     version: record.version,
     versions

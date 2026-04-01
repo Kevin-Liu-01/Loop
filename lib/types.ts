@@ -214,6 +214,7 @@ export type SkillRecord = {
   featuredRank?: number;
   qualityScore?: number;
   researchProfile?: SkillResearchProfile;
+  syncEnabled?: boolean;
   upstreams?: SkillUpstreamRecord[];
   forkedFromSlug?: string;
 };

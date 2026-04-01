@@ -32,10 +32,6 @@ export function AuthSplitLayout({ mode, children }: AuthSplitLayoutProps) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper lg:flex-row">
-      <section className="order-1 flex flex-1 flex-col justify-center px-4 py-10 sm:px-8 lg:order-none lg:px-12 xl:px-16">
-        <div className="mx-auto w-full max-w-[28rem] text-ink">{children}</div>
-      </section>
-
       <section
         className="relative isolate order-2 flex min-h-[min(320px,42vh)] flex-1 flex-col justify-between overflow-hidden px-6 py-8 text-white sm:px-10 sm:py-10 lg:order-none lg:min-h-dvh lg:max-w-[min(440px,44vw)] lg:shrink-0 lg:py-14 xl:px-12"
         style={panelSurfaceStyle}
@@ -99,6 +95,10 @@ export function AuthSplitLayout({ mode, children }: AuthSplitLayoutProps) {
             Skills, model choice, and priority support -- so you can ship automation without friction.
           </span>
         </p>
+      </section>
+
+      <section className="order-1 flex flex-1 flex-col justify-center px-4 py-10 sm:px-8 lg:order-none lg:px-12 xl:px-16">
+        <div className="mx-auto w-full max-w-[28rem] text-ink">{children}</div>
       </section>
     </div>
   );

@@ -17,16 +17,22 @@ import { isRRuleScheduledOnDate } from "@/lib/schedule";
 
 test("cadenceToRRule returns a valid RRULE for each cadence value", () => {
   assert.match(cadenceToRRule("daily-9"), /FREQ=WEEKLY.*BYHOUR=9/);
-  assert.match(cadenceToRRule("weekdays-9"), /BYDAY=MO,TU,WE,TH,FR/);
   assert.match(cadenceToRRule("weekly-mon"), /BYDAY=MO/);
-  assert.match(cadenceToRRule("hourly-6"), /INTERVAL=6/);
 });
 
-test("rruleToCadence inverts cadenceToRRule for all known values", () => {
+test("legacy cadence values map to the daily RRULE", () => {
+  assert.match(cadenceToRRule("weekdays-9"), /FREQ=WEEKLY.*BYHOUR=9/);
+  assert.match(cadenceToRRule("hourly-6"), /FREQ=WEEKLY.*BYHOUR=9/);
+});
+
+test("rruleToCadence inverts cadenceToRRule for active values", () => {
   assert.equal(rruleToCadence(cadenceToRRule("daily-9")), "daily-9");
-  assert.equal(rruleToCadence(cadenceToRRule("weekdays-9")), "weekdays-9");
   assert.equal(rruleToCadence(cadenceToRRule("weekly-mon")), "weekly-mon");
-  assert.equal(rruleToCadence(cadenceToRRule("hourly-6")), "hourly-6");
+});
+
+test("rruleToCadence normalizes legacy RRULE patterns to daily-9", () => {
+  assert.equal(rruleToCadence("FREQ=HOURLY;INTERVAL=6"), "daily-9");
+  assert.equal(rruleToCadence("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"), "daily-9");
 });
 
 test("rruleToCadence defaults to daily-9 for unknown RRULE", () => {
@@ -51,9 +57,12 @@ test("skillCadenceToCadenceValue maps UserSkillCadence to CadenceValue", () => {
 
 test("cadenceValueToSkillCadence maps CadenceValue to UserSkillCadence", () => {
   assert.equal(cadenceValueToSkillCadence("daily-9"), "daily");
+  assert.equal(cadenceValueToSkillCadence("weekly-mon"), "weekly");
+});
+
+test("cadenceValueToSkillCadence maps legacy values to daily", () => {
   assert.equal(cadenceValueToSkillCadence("weekdays-9"), "daily");
   assert.equal(cadenceValueToSkillCadence("hourly-6"), "daily");
-  assert.equal(cadenceValueToSkillCadence("weekly-mon"), "weekly");
 });
 
 // ---------------------------------------------------------------------------

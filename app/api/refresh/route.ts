@@ -10,12 +10,14 @@ export const maxDuration = 300;
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.warn("[refresh] CRON_SECRET is not set — cron requests will fail auth");
-  }
   const authorization = request.headers.get("authorization");
+
   if (secret && authorization === `Bearer ${secret}`) {
     return true;
+  }
+
+  if (!secret && authorization) {
+    console.error("[refresh] CRON_SECRET is not set — bearer token auth cannot succeed. Set CRON_SECRET in your environment.");
   }
 
   const { userId } = await auth();

@@ -35,6 +35,7 @@ type MutableRevisionState = {
   whatChanged: string;
   experiments: string[];
   changedSections: string[];
+  revised: boolean;
   finalized: boolean;
 };
 
@@ -140,6 +141,7 @@ function buildReviseSkillTool(skill: UserSkillDocument, state: MutableRevisionSt
         new Set(changedSections.map((s) => s.trim()).filter(Boolean))
       ).slice(0, 6);
       state.experiments = experiments;
+      state.revised = true;
 
       const bodyChanged = state.body !== skill.body.trim();
       return {
@@ -166,11 +168,7 @@ function buildFinalizeTool(state: MutableRevisionState) {
   });
 }
 
-function extractStepsFromResponse(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  response: { steps: any[] },
-  skill: UserSkillDocument
-): AgentReasoningStep[] {
+function extractStepsFromResponse(response: { steps: any[] }, skill: UserSkillDocument): AgentReasoningStep[] {
   const steps: AgentReasoningStep[] = [];
   let stepIndex = 0;
   let previousBody = skill.body;
@@ -241,6 +239,7 @@ export async function runSkillEditorAgent(
     whatChanged: "",
     experiments: [],
     changedSections: [],
+    revised: false,
     finalized: false
   };
 
@@ -267,14 +266,36 @@ export async function runSkillEditorAgent(
     }
   }
 
-  const bodyChanged = revisionState.body.trim() !== skill.body.trim();
   const topItems = signals.slice(0, 4);
+
+  if (!revisionState.revised) {
+    return {
+      update: {
+        generatedAt,
+        summary: `${skill.title} was reviewed by the editor agent but no revision was applied.`,
+        whatChanged: "The agent analyzed signals but did not call revise_skill.",
+        experiments: ["Review the skill body for stale sections.", "Add a higher-signal source.", "Re-run after new signals arrive."],
+        items: topItems,
+        bodyChanged: false,
+        changedSections: [],
+        editorModel: modelLabel
+      },
+      nextBody: skill.body,
+      nextDescription: skill.description,
+      bodyChanged: false,
+      changedSections: [],
+      editorModel: modelLabel,
+      reasoningSteps
+    };
+  }
+
+  const bodyChanged = revisionState.body.trim() !== skill.body.trim();
 
   return {
     update: {
       generatedAt,
       summary: revisionState.summary || `${skill.title} was reviewed by the editor agent.`,
-      whatChanged: revisionState.whatChanged || "The agent analyzed signals but made no substantive changes.",
+      whatChanged: revisionState.whatChanged || "The agent applied a revision with no detailed changelog.",
       experiments: revisionState.experiments.length > 0
         ? revisionState.experiments
         : ["Review the skill body for stale sections.", "Add a higher-signal source.", "Re-run after new signals arrive."],

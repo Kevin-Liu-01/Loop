@@ -112,6 +112,7 @@ export function rowToSkillRecord(
     featuredRank: row.featured_rank ?? 0,
     qualityScore: row.quality_score ?? 0,
     researchProfile: row.research_profile as SkillResearchProfile | undefined,
+    syncEnabled: row.sync_enabled,
     forkedFromSlug: row.forked_from_slug ?? undefined
   };
 }

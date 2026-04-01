@@ -336,20 +336,23 @@ export async function runTrackedUserSkillUpdate(
   messages.push(`Started scanning ${skill.sources.length} sources.`);
   hooks.onMessage?.(messages[messages.length - 1] ?? "");
 
-  for (const source of skill.sources) {
-    const running: LoopUpdateSourceLog = {
-      ...buildLoopUpdateSourceLog(source, "running"),
-      note: "Scanning source."
-    };
-    sourceLogs = sourceLogs.map((entry) => (entry.id === running.id ? running : entry));
-    hooks.onSource?.(running);
-    messages.push(`${running.label}: ${running.note}`);
-    hooks.onMessage?.(messages[messages.length - 1] ?? "");
+  const fetchResults = await Promise.allSettled(
+    skill.sources.map(async (source) => {
+      const items = await fetchSignals(source);
+      return { source, items };
+    })
+  );
 
-    const items = await fetchSignals(source);
+  for (let i = 0; i < skill.sources.length; i++) {
+    const source = skill.sources[i]!;
+    const result = fetchResults[i]!;
+    const items = result.status === "fulfilled" ? result.value.items : [];
+    if (result.status === "rejected") {
+      console.warn(`[refresh] fetchSignals failed for "${source.label}":`, result.reason);
+    }
+
     const completed: LoopUpdateSourceLog = {
-      ...running,
-      status: "done",
+      ...buildLoopUpdateSourceLog(source, "done"),
       itemCount: items.length,
       items,
       note: items.length > 0 ? `${items.length} fresh signals captured.` : "No fresh signals found."
