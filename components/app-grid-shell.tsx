@@ -20,7 +20,7 @@ export function AppGridShell({ header, children, fillViewport, bodyClassName }: 
   return (
     <div
       className={cn(
-        "flex w-full max-w-full flex-col border border-line bg-paper/90 backdrop-blur-xl dark:bg-paper/82",
+        "flex w-full max-w-full flex-col border border-t-0 border-line bg-paper/90 backdrop-blur-xl dark:bg-paper/82",
         fillViewport ? "h-dvh max-h-dvh overflow-hidden" : "min-h-dvh",
       )}
     >

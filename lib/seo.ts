@@ -11,7 +11,11 @@ export const SEO_DEFAULT_TITLE = "Loop — Skills that never go stale";
 export const SEO_DEFAULT_DESCRIPTION =
   "Loop turns your agent playbooks, updates, and source scans into a living operator desk that stays current.";
 
-export const DEFAULT_OG_IMAGE_PATH = "/icon.svg";
+export const OG_WIDTH = 1200;
+export const OG_HEIGHT = 630;
+
+export const DEFAULT_OG_IMAGE_PATH = "/og.png";
+export const LOGO_ICON_PATH = "/icon.svg";
 
 /**
  * Public site origin with no trailing slash.
@@ -34,13 +38,28 @@ export function buildSiteUrl(path?: string): URL {
   return new URL(normalized, `${base}/`);
 }
 
+export function buildOgImageUrl(params?: {
+  title?: string;
+  description?: string;
+  category?: string;
+}): string {
+  if (!params?.title && !params?.description && !params?.category) {
+    return buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString();
+  }
+  const url = buildSiteUrl("/og");
+  if (params?.title) url.searchParams.set("title", params.title);
+  if (params?.description) url.searchParams.set("description", params.description);
+  if (params?.category) url.searchParams.set("category", params.category);
+  return url.toString();
+}
+
 export function buildDefaultOpenGraphImages(): NonNullable<Metadata["openGraph"]>["images"] {
   return [
     {
       url: buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString(),
-      width: 512,
-      height: 512,
-      alt: `${SITE_NAME} mark`,
+      width: OG_WIDTH,
+      height: OG_HEIGHT,
+      alt: `${SITE_NAME} — operator desk for self-updating agent skills`,
     },
   ];
 }
@@ -80,12 +99,13 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
     SEO_DEFAULT_DESCRIPTION
   ).slice(0, 320);
   const indexable = skill.visibility === "public";
-  const ogImages =
-    skill.iconUrl
-      ? [{ url: skill.iconUrl, alt: skill.title }]
-      : buildDefaultOpenGraphImages();
-  const twitterImages =
-    skill.iconUrl ? [skill.iconUrl] : buildDefaultTwitterImageUrls();
+
+  const ogImageUrl = buildOgImageUrl({
+    title: skill.title,
+    description,
+    category: skill.category,
+  });
+  const ogImages = [{ url: ogImageUrl, width: OG_WIDTH, height: OG_HEIGHT, alt: skill.title }];
 
   return {
     title,
@@ -105,7 +125,41 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
       card: "summary_large_image",
       title,
       description,
-      images: twitterImages,
+      images: [ogImageUrl],
+    },
+  };
+}
+
+export function buildMcpMetadata(mcp: ImportedMcpDocument): Metadata {
+  const canonical = buildSiteUrl(buildMcpVersionHref(mcp.name, mcp.version)).toString();
+  const title = `${mcp.name} · ${SITE_NAME}`;
+  const description = (mcp.description?.trim() || SEO_DEFAULT_DESCRIPTION).slice(0, 320);
+
+  const ogImageUrl = buildOgImageUrl({
+    title: mcp.name,
+    description,
+    category: "MCP",
+  });
+  const ogImages = [{ url: ogImageUrl, width: OG_WIDTH, height: OG_HEIGHT, alt: mcp.name }];
+
+  return {
+    title,
+    description,
+    keywords: Array.from(new Set(["MCP", "Model Context Protocol", ...mcp.tags].filter(Boolean))),
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: canonical,
+      siteName: SITE_NAME,
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
     },
   };
 }
@@ -152,6 +206,6 @@ export function buildOrganizationJsonLd(): Record<string, unknown> {
     name: SITE_NAME,
     url: buildSiteUrl("/").toString(),
     description: SEO_DEFAULT_DESCRIPTION,
-    logo: buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString(),
+    logo: buildSiteUrl(LOGO_ICON_PATH).toString(),
   };
 }

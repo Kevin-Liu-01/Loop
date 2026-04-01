@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
+
 import { HomeShell } from "@/components/home-shell";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { listRecentImports } from "@/lib/db/recent-imports";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { getSystemSnapshot } from "@/lib/system-summary";
 import { buildUsageOverview } from "@/lib/usage";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 export default async function HomePage() {
   const timeZone = await getUsageTimeZoneFromCookie();

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { AppGridShell } from "@/components/app-grid-shell";
 import { SandboxShell } from "@/components/sandbox-shell";
 import { SiteHeader } from "@/components/site-header";
@@ -5,6 +7,12 @@ import { UsageBeacon } from "@/components/usage-beacon";
 import { PageShell } from "@/components/ui/page-shell";
 import { AGENT_PROVIDER_PRESETS } from "@/lib/agents";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
+
+export const metadata: Metadata = {
+  title: "Sandbox",
+  description: "Run agents against skills and MCPs in an interactive sandbox environment.",
+  robots: { index: false, follow: false },
+};
 
 type SandboxPageProps = {
   searchParams: Promise<{ skill?: string; mcp?: string; mcpId?: string }>;

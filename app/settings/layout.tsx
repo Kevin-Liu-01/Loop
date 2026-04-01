@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
+
 import { AppGridShell } from "@/components/app-grid-shell";
 import { SiteHeader } from "@/components/site-header";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { PageShell } from "@/components/ui/page-shell";
 import { SettingsShell } from "@/components/settings-shell";
+
+export const metadata: Metadata = {
+  title: "Settings",
+  robots: { index: false, follow: false },
+};
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SkillDetailPage } from "@/components/skill-detail-page";
@@ -8,6 +9,7 @@ import { listSkillUpstreams } from "@/lib/db/skill-intelligence";
 import { getBrief, parseVersionSegment } from "@/lib/format";
 import { hasUserPurchasedSkill } from "@/lib/purchases";
 import { getLoopSnapshot } from "@/lib/refresh";
+import { buildSkillMetadata } from "@/lib/seo";
 import { canSessionEditSkill, canViewPrivateSkill } from "@/lib/skill-authoring";
 import { listLoopRuns, listUsageEvents } from "@/lib/system-state";
 import { buildSkillUsageSummary } from "@/lib/usage";
@@ -18,6 +20,15 @@ type VersionedSkillPageProps = {
     version: string;
   }>;
 };
+
+export async function generateMetadata({ params }: VersionedSkillPageProps): Promise<Metadata> {
+  const { slug, version } = await params;
+  const versionNumber = parseVersionSegment(version);
+  if (!versionNumber) return {};
+  const skill = await getSkillRecordBySlug(slug, versionNumber);
+  if (!skill) return {};
+  return buildSkillMetadata(skill);
+}
 
 export default async function VersionedSkillPage({ params }: VersionedSkillPageProps) {
   const { slug, version } = await params;
