@@ -217,7 +217,7 @@ export function AutomationEditModal({
               {/* Schedule + Preferred Time + Day (when weekly) */}
               <div className={cn(
                 "grid gap-4 max-sm:grid-cols-1",
-                cadence === "weekly" ? "grid-cols-3" : "grid-cols-2",
+                cadence === "weekly" ? "grid-cols-[1fr_1fr_1.5fr]" : "grid-cols-[1fr_1.5fr]",
               )}>
                 <FieldGroup>
                   <span className={fieldLabel}>Schedule</span>

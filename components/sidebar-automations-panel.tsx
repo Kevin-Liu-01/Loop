@@ -1,18 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import { AutomationEditModal } from "@/components/automation-edit-modal";
 import { AutomationIcon } from "@/components/frontier-icons";
-import { SkillIcon } from "@/components/ui/skill-icon";
-import { LinkButton } from "@/components/ui/link-button";
-import { Badge } from "@/components/ui/badge";
-import { Panel, PanelHead } from "@/components/ui/panel";
 import { StatusDot } from "@/components/ui/status-dot";
 import { cn } from "@/lib/cn";
 import { formatNextRun } from "@/lib/schedule";
-import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
+
+const metaLabel = "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
+const metaValue = "text-sm font-semibold tracking-[-0.03em]";
 
 type SidebarAutomationsPanelProps = {
   automations: AutomationSummary[];
@@ -31,90 +30,83 @@ export function SidebarAutomationsPanel({ automations, skills = [] }: SidebarAut
 
   return (
     <>
-      <Panel compact square>
-        <PanelHead>
+      <section className="grid gap-0 overflow-hidden border border-line bg-paper-3 dark:bg-paper-2/60">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
+          <span className={cn(metaLabel, "flex items-center gap-1.5")}>
+            <AutomationIcon className="h-3 w-3" />
+            Automations
+            <span className="tabular-nums">{automations.length}</span>
+          </span>
           <div className="flex items-center gap-2">
-            <h3 className="m-0 text-sm font-semibold tracking-tight text-ink">Automations</h3>
-            <Badge color="blue" size="sm">{automations.length}</Badge>
             {activeCount > 0 && (
-              <span className="flex items-center gap-1 text-[0.6875rem] text-ink-faint">
-                <StatusDot tone="fresh" pulse />
+              <span className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
+                <StatusDot tone="fresh" pulse size="xs" />
                 {activeCount} active
               </span>
             )}
+            <Link
+              className="text-[0.625rem] font-semibold text-ink-faint transition-colors hover:text-ink"
+              href="/settings/automations"
+            >
+              Open desk →
+            </Link>
           </div>
-          <LinkButton href="/settings/automations" size="sm" variant="ghost">
-            Open desk
-          </LinkButton>
-        </PanelHead>
+        </div>
 
-        <div className="grid gap-2">
+        {/* Automation rows */}
+        <div className="grid gap-0">
           {automations.map((auto) => {
             const isActive = auto.status === "ACTIVE";
-            const linkedSkill = auto.matchedSkillSlugs[0]
-              ? skillMap.get(auto.matchedSkillSlugs[0])
-              : undefined;
 
             return (
               <button
                 className={cn(
-                  "group grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border border-line bg-paper-3/85 p-3 text-left transition-colors dark:bg-paper-2/30",
+                  "grid gap-0 border-t border-line/60 text-left transition-colors dark:border-line/40",
                   isActive
-                    ? "hover:border-accent/20 hover:bg-paper-2/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-                    : "opacity-60 hover:opacity-80"
+                    ? "hover:bg-paper-2/40 dark:hover:bg-paper-3/40"
+                    : "opacity-50 hover:opacity-70"
                 )}
                 key={auto.id}
                 onClick={() => setEditTarget(auto)}
                 type="button"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-line bg-paper-2 dark:bg-paper-2/60">
-                  {linkedSkill ? (
-                    <SkillIcon className="rounded-md" iconUrl={linkedSkill.iconUrl} size={20} slug={linkedSkill.slug} />
-                  ) : (
-                    <AutomationIcon className="h-3.5 w-3.5 text-ink-faint" />
-                  )}
+                {/* Name + status */}
+                <div className="flex items-center gap-2 px-3 pb-1 pt-2.5">
+                  <span className="min-w-0 flex-1 truncate text-[0.6875rem] font-semibold text-ink">
+                    {auto.name}
+                  </span>
+                  <span className={cn(
+                    "flex items-center gap-1 text-[0.625rem]",
+                    isActive ? "text-success" : "text-ink-faint"
+                  )}>
+                    <StatusDot
+                      pulse={isActive}
+                      size="xs"
+                      tone={isActive ? "fresh" : "idle"}
+                    />
+                    {isActive ? "active" : "paused"}
+                  </span>
                 </div>
 
-                <div className="min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <strong className="min-w-0 flex-1 truncate text-sm text-ink">{auto.name}</strong>
-                    <Badge color={isActive ? "green" : "neutral"} size="sm">
-                      <StatusDot
-                        className="mr-1"
-                        pulse={isActive}
-                        tone={isActive ? "fresh" : "idle"}
-                      />
-                      {isActive ? "active" : "paused"}
-                    </Badge>
+                {/* Schedule + Next */}
+                <div className="grid grid-cols-2 gap-px bg-line/50 dark:bg-line/30">
+                  <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
+                    <small className={metaLabel}>schedule</small>
+                    <span className="text-[0.6875rem] font-medium text-ink-soft">{auto.schedule}</span>
                   </div>
-
-                  {linkedSkill && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-xs text-ink-soft">{linkedSkill.title}</span>
-                      <Badge color={getTagColorForCategory(linkedSkill.category)} size="sm">
-                        {formatTagLabel(linkedSkill.category)}
-                      </Badge>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <div className="flex-1 border border-line bg-paper-2/70 px-2 py-1.5 dark:bg-paper-2/40">
-                      <span className="block text-[0.6rem] uppercase tracking-[0.08em] text-ink-faint">schedule</span>
-                      <span className="block text-xs font-medium text-ink-soft">
-                        {auto.schedule}
-                      </span>
-                    </div>
-                    <div className="flex-1 border border-line bg-paper-2/70 px-2 py-1.5 dark:bg-paper-2/40">
-                      <span className="block text-[0.6rem] uppercase tracking-[0.08em] text-ink-faint">next</span>
-                      <span className="block text-xs font-medium tabular-nums text-ink-soft">{formatNextRun(auto.cadence, auto.preferredHour ?? 12, auto.preferredDay)}</span>
-                    </div>
+                  <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
+                    <small className={metaLabel}>next</small>
+                    <span className="text-[0.6875rem] font-medium tabular-nums text-ink-soft">
+                      {formatNextRun(auto.cadence, auto.preferredHour ?? 12, auto.preferredDay)}
+                    </span>
                   </div>
                 </div>
               </button>
             );
           })}
         </div>
-      </Panel>
+      </section>
 
       {editTarget && (
         <AutomationEditModal

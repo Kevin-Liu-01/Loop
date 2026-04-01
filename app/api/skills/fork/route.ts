@@ -6,6 +6,7 @@ import { getSkillRecordBySlug } from "@/lib/content";
 import { createSkill as dbCreateSkill } from "@/lib/db/skills";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { buildSkillVersionHref } from "@/lib/format";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { canCreateSkill } from "@/lib/skill-limits";
 import { slugify, stableHash } from "@/lib/markdown";
 import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
@@ -50,6 +51,12 @@ export async function POST(request: Request) {
           newSlug = `${baseSlug}-${attempt}`;
         }
 
+        const forkSources = source.sources ?? [];
+        const researchProfile = buildResearchProfile({
+          title: `${source.title} (Fork)`,
+          sources: forkSources,
+        });
+
         const created = await dbCreateSkill({
           slug: newSlug,
           title: `${source.title} (Fork)`,
@@ -62,7 +69,7 @@ export async function POST(request: Request) {
           tags: source.tags,
           ownerName: sessionAuthor?.displayName ?? undefined,
           authorId: sessionAuthor?.id,
-          sources: source.sources ?? [],
+          sources: forkSources,
           automation: buildPausedAutomationFromSource(source),
           updates: [],
           agentDocs: source.agentDocs,
@@ -72,6 +79,7 @@ export async function POST(request: Request) {
           creatorClerkUserId: session.userId,
           iconUrl: source.iconUrl,
           forkedFromSlug: sourceSlug,
+          researchProfile,
         });
 
         const href = buildSkillVersionHref(newSlug, 1);

@@ -271,9 +271,9 @@ export function HomeShell({ automations, categories, mcps = [], recentImports = 
                     </Button>
                   </Tip>
                 )}
-                <Button onClick={() => router.push(skill.href)} size="sm" variant="ghost">
+                <Button className="h-7 min-h-7 px-2.5" onClick={() => router.push(skill.href)} size="sm" variant="ghost">
                   Open
-                  <ArrowRightIcon className="h-3.5 w-3.5" />
+                  <ArrowRightIcon className="h-3 w-3" />
                 </Button>
                 <DropdownMenu>
                   <Tip content="More actions" side="top">

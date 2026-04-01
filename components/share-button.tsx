@@ -42,11 +42,11 @@ export function ShareButton({ href }: ShareButtonProps) {
           variant="soft"
         >
           {shared ? (
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <ShareIcon />
+            <ShareIcon className="h-3.5 w-3.5" />
           )}
         </Button>
       </TooltipTrigger>

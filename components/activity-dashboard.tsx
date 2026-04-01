@@ -17,7 +17,6 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
 import type { RecentImportItem } from "@/lib/db/recent-imports";
-import { inlineSectionLabel } from "@/lib/ui-layout";
 import { peakVolumeHour, sumBucketTotals } from "@/lib/usage-sidebar-insights";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
 import type { UsageDeltaSet, UsageOverview, UsageTotalsSnapshot } from "@/lib/usage";
@@ -265,82 +264,94 @@ function ActivitySidebarView({
           />
         </div>
 
-        <div className="mt-5 grid gap-3 rounded-none border border-line/90 bg-paper-3 p-3 dark:bg-black/20">
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="min-w-0 space-y-0.5">
-              <p className={cn(inlineSectionLabel, "m-0")}>24h volume</p>
-              <p className="m-0 font-semibold tabular-nums text-ink">{totalRolling}</p>
-              <p className="m-0 text-xs leading-snug text-ink-soft">Events in hourly buckets</p>
+        <div className="mt-5 grid gap-0 overflow-hidden border border-line bg-paper-2/50 dark:bg-paper-3/60">
+          <div className="grid grid-cols-2 gap-px bg-line/50 dark:bg-line/30">
+            <div className="flex flex-col gap-1 bg-paper-3 p-3 dark:bg-paper-2/80">
+              <p className="m-0 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                24h volume
+              </p>
+              <p className="m-0 text-lg font-semibold tabular-nums tracking-[-0.03em] text-ink">
+                {totalRolling}
+              </p>
+              <p className="m-0 text-[0.625rem] leading-snug text-ink-faint">
+                Events in hourly buckets
+              </p>
             </div>
-            <div className="min-w-0 space-y-0.5">
-              <p className={cn(inlineSectionLabel, "m-0")}>Peak hour</p>
+            <div className="flex flex-col gap-1 bg-paper-3 p-3 dark:bg-paper-2/80">
+              <p className="m-0 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                Peak hour
+              </p>
               {peak ? (
                 <>
-                  <p className="m-0 font-semibold tabular-nums text-ink">
-                    {peak.label}{" "}
-                    <span className="font-medium text-ink-soft">· {peak.count}</span>
+                  <p className="m-0 text-lg font-semibold tabular-nums tracking-[-0.03em] text-ink">
+                    {peak.label}
+                    <span className="ml-1 text-sm font-normal text-ink-muted">· {peak.count}</span>
                   </p>
-                  <p className="m-0 text-xs leading-snug text-ink-soft">Busiest single hour</p>
+                  <p className="m-0 text-[0.625rem] leading-snug text-ink-faint">
+                    Busiest single hour
+                  </p>
                 </>
               ) : (
-                <p className="m-0 text-ink-soft">No volume yet</p>
+                <p className="m-0 text-sm text-ink-faint">No volume yet</p>
               )}
-            </div>
-            <div className="col-span-2 min-w-0 space-y-0.5 border-t border-line/70 pt-2">
-              <p className={cn(inlineSectionLabel, "m-0")}>API health</p>
-              <p className="m-0 tabular-nums text-ink">
-                {overview.totalsRolling24h.errorCalls} error
-                {overview.totalsRolling24h.errorCalls !== 1 ? "s" : ""}
-                <span className="text-ink-soft">
-                  {" "}
-                  · {overview.totalsRolling24h.apiCalls} calls
-                </span>
-              </p>
             </div>
           </div>
 
-          {topRoutes.length > 0 ? (
-            <div className="space-y-1.5 border-t border-line/70 pt-3">
-              <p className={cn(inlineSectionLabel, "m-0 font-semibold text-ink")}>Top routes</p>
-              <ul className="m-0 grid list-none gap-1.5 p-0">
+          <div className="flex items-center gap-2 border-t border-line/60 bg-paper-3 px-3 py-2.5 dark:border-line/40 dark:bg-paper-2/80">
+            <p className="m-0 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+              API health
+            </p>
+            <span className="ml-auto flex items-center gap-1.5 text-xs tabular-nums">
+              <StatusDot size="xs" tone="fresh" />
+              <span className="font-medium text-ink">Healthy</span>
+              <span className="text-ink-faint">·</span>
+              <span className="text-ink-soft">{overview.totalsRolling24h.apiCalls} calls</span>
+            </span>
+          </div>
+
+          {topRoutes.length > 0 && (
+            <div className="border-t border-line/60 bg-paper-3 px-3 py-2.5 dark:border-line/40 dark:bg-paper-2/80">
+              <p className="m-0 mb-2 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                Top routes
+              </p>
+              <ul className="m-0 grid list-none gap-1 p-0">
                 {topRoutes.map((r) => (
                   <li
-                    className="flex min-w-0 items-baseline justify-between gap-2 text-[0.7rem] leading-snug"
+                    className="flex min-w-0 items-baseline justify-between gap-2 text-[0.6875rem] leading-relaxed"
                     key={r.route}
                   >
                     <Tip content={r.route} side="left">
-                      <span className="min-w-0 truncate text-ink-soft">
+                      <span className="min-w-0 truncate font-mono text-ink-soft">
                         {truncateRouteLabel(r.route)}
                       </span>
                     </Tip>
-                    <span className="shrink-0 tabular-nums text-ink">
+                    <span className="shrink-0 tabular-nums font-medium text-ink">
                       {r.count}
-                      {r.errorCount > 0 ? (
-                        <span className="text-ink-faint"> · {r.errorCount} err</span>
-                      ) : null}
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
-          ) : null}
+          )}
 
-          {mix.length > 0 ? (
-            <div className="space-y-1.5 border-t border-line/70 pt-3">
-              <p className={cn(inlineSectionLabel, "m-0 font-semibold text-ink")}>Activity mix</p>
-              <div className="flex flex-wrap gap-1.5">
+          {mix.length > 0 && (
+            <div className="border-t border-line/60 bg-paper-3 px-3 py-2.5 dark:border-line/40 dark:bg-paper-2/80">
+              <p className="m-0 mb-2 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+                Activity mix
+              </p>
+              <div className="flex flex-wrap gap-1">
                 {mix.map((item) => (
                   <span
-                    className="inline-flex items-center gap-1 rounded-none border border-line/80 bg-paper-3 px-2 py-0.5 text-[0.65rem] tabular-nums text-ink-soft dark:bg-paper-2/80"
+                    className="inline-flex items-center gap-1 border border-line/50 bg-paper-2/80 px-2 py-0.5 text-[0.625rem] tabular-nums dark:border-line/40 dark:bg-paper-3/40"
                     key={item.label}
                   >
-                    <span className="font-medium text-ink">{item.count}</span>
+                    <span className="font-semibold text-ink">{item.count}</span>
                     <span className="text-ink-faint">{item.label}</span>
                   </span>
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       </section>
     </div>

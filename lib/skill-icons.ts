@@ -314,8 +314,8 @@ export type PlatformDocIcon = {
 export const PLATFORM_DOC_ICONS: Record<string, PlatformDocIcon> = {
   cursor: { src: "/brands/cursor.svg", alt: "Cursor" },
   claude: { src: "/brands/anthropic.svg", alt: "Anthropic / Claude" },
-  codex:  { src: "/brands/openai.png", alt: "OpenAI / Codex" },
-  agents: { src: "/brands/cursor.svg", alt: "AGENTS.md" },
+  codex:  { src: "/brands/openai.svg", alt: "OpenAI / Codex" },
+  agents: { src: `${SI}/github`, alt: "GitHub / AGENTS.md" },
 };
 
 export function getPlatformDocIcon(key: string): PlatformDocIcon | null {

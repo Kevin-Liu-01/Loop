@@ -34,6 +34,7 @@ import type {
   AgentProviderPreset,
   ConversationMessage,
   ConversationMessageMetadata,
+  ConversationMessagePart,
   ImportedMcpDocument,
   SkillRecord,
 } from "@/lib/types";
@@ -341,10 +342,71 @@ export function SandboxShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
+  const titleGeneratedRef = useRef(false);
+
+  function serializeMessages(
+    msgs: typeof messages,
+  ): Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    parts?: ConversationMessagePart[];
+    createdAt: string;
+    metadata?: ConversationMessageMetadata;
+  }> {
+    return msgs.map((m) => {
+      const rawParts = (m.parts ?? []) as Array<{
+        type?: string;
+        text?: string;
+        toolInvocation?: {
+          toolName: string;
+          args: Record<string, unknown>;
+          result?: Record<string, unknown>;
+          state: string;
+        };
+      }>;
+
+      const richParts: ConversationMessagePart[] = rawParts
+        .map((p): ConversationMessagePart | null => {
+          if (p.type === "text" && p.text) {
+            return { type: "text", text: p.text };
+          }
+          if (p.type === "tool-invocation" && p.toolInvocation) {
+            return {
+              type: "tool-invocation",
+              toolInvocation: {
+                toolName: p.toolInvocation.toolName,
+                args: p.toolInvocation.args,
+                result: p.toolInvocation.result,
+                state: p.toolInvocation.state,
+              },
+            };
+          }
+          return null;
+        })
+        .filter((p): p is ConversationMessagePart => p !== null);
+
+      return {
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: extractTextFromParts(rawParts),
+        parts: richParts.length > 0 ? richParts : undefined,
+        createdAt:
+          (m as unknown as { createdAt?: Date }).createdAt?.toISOString() ??
+          new Date().toISOString(),
+        metadata:
+          (m as unknown as { metadata?: ConversationMessageMetadata })
+            .metadata ?? undefined,
+      };
+    });
+  }
+
   async function doSave() {
     const msgs = messagesRef.current;
+    const serialized = serializeMessages(msgs);
+
     const firstUserMsg = msgs.find((m) => m.role === "user");
-    const title = firstUserMsg
+    const placeholderTitle = firstUserMsg
       ? extractTextFromParts(
           (firstUserMsg.parts ?? []) as Array<{
             type?: string;
@@ -353,19 +415,7 @@ export function SandboxShell({
         ).slice(0, 100)
       : "Untitled session";
 
-    const serialized = msgs.map((m) => ({
-      id: m.id,
-      role: m.role as "user" | "assistant",
-      content: extractTextFromParts(
-        (m.parts ?? []) as Array<{ type?: string; text?: string }>,
-      ),
-      createdAt:
-        (m as unknown as { createdAt?: Date }).createdAt?.toISOString() ??
-        new Date().toISOString(),
-      metadata:
-        (m as unknown as { metadata?: ConversationMessageMetadata }).metadata ??
-        undefined,
-    }));
+    const isFirstSave = !conversationIdRef.current;
 
     try {
       const res = await fetch("/api/conversations", {
@@ -374,7 +424,7 @@ export function SandboxShell({
         body: JSON.stringify({
           id: conversationIdRef.current,
           channel: "sandbox",
-          title,
+          title: placeholderTitle,
           messages: serialized,
           model: configRef.current.model,
           providerId: configRef.current.providerId,
@@ -385,8 +435,49 @@ export function SandboxShell({
         setConversationId(data.id);
       }
       setSidebarVersion((v) => v + 1);
+
+      if (isFirstSave && data.id && !titleGeneratedRef.current) {
+        titleGeneratedRef.current = true;
+        generateAndUpdateTitle(data.id, serialized);
+      }
     } catch {
       /* best effort */
+    }
+  }
+
+  async function generateAndUpdateTitle(
+    convoId: string,
+    serialized: Array<{ role: string; content: string }>,
+  ) {
+    try {
+      const titleRes = await fetch("/api/conversations/title", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          messages: serialized.slice(0, 6).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+      const titleData = (await titleRes.json()) as { title?: string };
+      if (!titleData.title) return;
+
+      await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: convoId,
+          channel: "sandbox",
+          title: titleData.title,
+          messages: serializeMessages(messagesRef.current),
+          model: configRef.current.model,
+          providerId: configRef.current.providerId,
+        }),
+      });
+      setSidebarVersion((v) => v + 1);
+    } catch {
+      /* best effort – placeholder title is fine */
     }
   }
 
@@ -516,6 +607,7 @@ export function SandboxShell({
     setViewConvo(null);
     setConversationId(null);
     setChatKey(String(Date.now()));
+    titleGeneratedRef.current = false;
     if (sandboxIdRef.current) stopSandbox();
   }
 
@@ -556,8 +648,8 @@ export function SandboxShell({
       {sidebarOpen && (
         <aside
           className={cn(
-            "flex h-full min-h-0 w-[260px] shrink-0 flex-col overflow-hidden border-r border-line/50 bg-paper-2/40 backdrop-blur-md dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)] max-sm:shadow-[4px_0_24px_-4px_rgba(0,0,0,0.12)]",
+            "flex h-full min-h-0 w-[260px] shrink-0 flex-col overflow-hidden border-r border-line bg-paper-2/40 dark:bg-paper-2/20",
+            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)]",
           )}
         >
           <SandboxSidebar
@@ -570,8 +662,7 @@ export function SandboxShell({
       )}
 
       {/* ── Center: toolbar + chat + composer ── */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {/* Toolbar */}
+      <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
         <SandboxToolbar
           config={config}
           presets={presets}
@@ -590,25 +681,20 @@ export function SandboxShell({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth">
             {showEmptyHero ? (
-              <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center sm:py-12">
-                {/* Glow backdrop */}
-                <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                  <div className="absolute left-1/2 top-1/3 h-[480px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/[0.03] blur-[100px]" />
-                </div>
-
-                <div className="relative grid max-w-lg gap-6">
+              <div className="flex h-full flex-col items-center justify-center px-4 py-8 text-center sm:px-6 sm:py-12">
+                <div className="grid max-w-lg gap-6">
                   {/* Icon */}
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-line/60 bg-paper-3 shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_8px_40px_-8px_rgba(232,101,10,0.08),0_24px_80px_-16px_rgba(0,0,0,0.04)] ring-1 ring-ink/[0.02] dark:border-line/40 dark:bg-paper-3/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_8px_40px_-8px_rgba(232,101,10,0.12)] dark:ring-white/[0.04]">
-                    <TerminalIcon className="h-7 w-7 text-accent/70" />
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center border border-line bg-paper-3">
+                    <TerminalIcon className="h-5 w-5 text-accent" />
                   </div>
 
                   {/* Title + description */}
                   <div className="grid gap-2.5">
-                    <h2 className="m-0 font-serif text-2xl font-medium tracking-[-0.04em] text-balance text-ink sm:text-3xl">
+                    <h2 className="m-0 font-serif text-2xl font-medium tracking-[-0.03em] text-balance text-ink sm:text-3xl">
                       Sandbox
                     </h2>
-                    <p className="m-0 mx-auto max-w-[42ch] text-pretty text-sm leading-relaxed text-ink-soft">
-                      Run code, tools, and MCP servers in an isolated VM.
+                    <p className="m-0 mx-auto max-w-[42ch] text-pretty text-sm leading-relaxed text-ink-muted">
+                      Run code, tools, and MCP servers in an isolated VM.{"\n"}
                       A session spins up when you send your first message.
                     </p>
                   </div>
@@ -620,14 +706,14 @@ export function SandboxShell({
                       return (
                         <button
                           key={suggestion.text}
-                          className="group grid gap-2 rounded-xl border border-line/50 bg-paper-3/60 p-3 text-left shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all duration-200 hover:border-accent/25 hover:bg-paper-3 hover:shadow-[0_4px_16px_-4px_rgba(232,101,10,0.08)] dark:bg-paper-2/40 dark:hover:bg-paper-3/30"
+                          className="group grid gap-2 border border-line bg-paper-3/80 p-3 text-left transition-colors hover:border-line-strong hover:bg-paper-3 dark:bg-paper-2/40 dark:hover:bg-paper-3/30"
                           onClick={() => setInput(suggestion.text)}
                           type="button"
                         >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-line/40 bg-paper-2/60 transition-colors group-hover:border-accent/20 group-hover:bg-accent/[0.06] dark:bg-paper-2/80">
-                            <Icon className="h-3.5 w-3.5 text-ink-faint transition-colors group-hover:text-accent/70" />
+                          <div className="flex h-7 w-7 items-center justify-center border border-line bg-paper-2/60 transition-colors group-hover:border-accent/30 group-hover:bg-accent/[0.06] dark:bg-paper-2/80">
+                            <Icon className="h-3.5 w-3.5 text-ink-faint transition-colors group-hover:text-accent" />
                           </div>
-                          <span className="text-[0.75rem] leading-snug text-ink-soft transition-colors group-hover:text-ink">
+                          <span className="text-[0.8125rem] leading-snug text-ink-soft transition-colors group-hover:text-ink">
                             {suggestion.text}
                           </span>
                         </button>
@@ -637,18 +723,17 @@ export function SandboxShell({
                 </div>
               </div>
             ) : (
-              <div className="mx-auto grid w-full max-w-3xl gap-5 px-4 py-8 sm:px-6">
-
+              <div className="mx-auto grid w-full max-w-3xl gap-6 px-4 py-6 sm:px-5">
                 {viewConvo && (
                   <>
-                    <div className="flex items-center gap-3 rounded-xl border border-line/60 bg-paper-3/80 px-4 py-3 shadow-sm dark:bg-paper-3/50">
-                      <ClockIcon className="h-4 w-4 shrink-0 text-ink-faint" />
+                    <div className="flex items-center gap-3 border border-line bg-paper-3/60 px-4 py-2.5 dark:bg-paper-3/30">
+                      <ClockIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
                       <div className="min-w-0 flex-1">
-                        <span className="text-sm font-medium text-ink">
+                        <span className="text-[0.8125rem] font-medium text-ink">
                           {viewConvo.title || "Untitled session"}
                         </span>
-                        <span className="ml-2 text-[0.65rem] font-medium uppercase tracking-wider text-ink-faint">
-                          Read-only
+                        <span className="ml-2 text-[0.5625rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          read-only
                         </span>
                       </div>
                       <Button
@@ -663,6 +748,7 @@ export function SandboxShell({
                       <SavedMessage
                         key={m.id}
                         content={m.content}
+                        parts={m.parts}
                         createdAt={m.createdAt}
                         metadata={m.metadata}
                         role={m.role}
@@ -687,13 +773,13 @@ export function SandboxShell({
                   ))}
 
                 {isBusy && isActive && (
-                  <div className="flex items-center gap-3 py-2 pl-11">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent [animation-delay:150ms]" />
-                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent [animation-delay:300ms]" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="inline-block h-1 w-1 animate-pulse bg-accent" />
+                      <span className="inline-block h-1 w-1 animate-pulse bg-accent [animation-delay:150ms]" />
+                      <span className="inline-block h-1 w-1 animate-pulse bg-accent [animation-delay:300ms]" />
                     </div>
-                    <span className="text-xs font-medium text-ink-faint">
+                    <span className="text-[0.6875rem] font-medium text-ink-faint">
                       {sandboxState === "creating"
                         ? "Starting sandbox…"
                         : "Agent is thinking…"}
@@ -710,9 +796,9 @@ export function SandboxShell({
         {/* Composer + status */}
         <div
           className={cn(
-            "shrink-0 border-t border-line/60",
+            "shrink-0 border-t border-line",
             "bg-paper-3/70 backdrop-blur-xl dark:bg-paper-2/50",
-            "px-4 sm:px-6",
+            "px-4 sm:px-5",
             "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5",
           )}
         >
@@ -732,16 +818,15 @@ export function SandboxShell({
             <div className="relative">
               <div
                 className={cn(
-                  "overflow-hidden rounded-2xl border border-line/80 bg-paper-3 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)] transition-shadow duration-200",
-                  "has-[:focus]:border-accent/30 has-[:focus]:shadow-[0_0_0_3px_rgba(232,101,10,0.06),0_4px_20px_-4px_rgba(0,0,0,0.08)]",
-                  "dark:border-line/60 dark:bg-paper-3/80 dark:shadow-[0_2px_12px_-2px_rgba(0,0,0,0.2)]",
-                  "dark:has-[:focus]:border-accent/25 dark:has-[:focus]:shadow-[0_0_0_3px_rgba(232,101,10,0.08),0_4px_20px_-4px_rgba(0,0,0,0.3)]",
+                  "overflow-hidden border border-line bg-paper-3 transition-all duration-150",
+                  "has-[:focus]:border-accent/40 has-[:focus]:ring-2 has-[:focus]:ring-accent/10",
+                  "dark:bg-paper-3/80",
                 )}
               >
                 <textarea
                   ref={textareaRef}
                   className={cn(
-                    "w-full resize-none bg-transparent px-3.5 py-2.5 pr-12 text-sm leading-relaxed text-ink outline-none",
+                    "w-full resize-none bg-transparent px-3 py-2.5 pr-12 text-sm leading-relaxed text-ink outline-none",
                     "placeholder:text-ink-faint/70",
                   )}
                   disabled={isBusy}
@@ -758,9 +843,9 @@ export function SandboxShell({
                 <div className="absolute bottom-2 right-2.5">
                   <button
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
+                      "flex h-7 w-7 items-center justify-center transition-colors",
                       input.trim() && !isBusy
-                        ? "bg-accent text-white shadow-[0_2px_8px_-2px_rgba(232,101,10,0.3)] hover:bg-accent-hover hover:shadow-[0_4px_12px_-2px_rgba(232,101,10,0.4)]"
+                        ? "bg-accent text-white hover:bg-accent-hover"
                         : "bg-paper-2/80 text-ink-faint dark:bg-paper-2",
                     )}
                     disabled={!input.trim() || isBusy}
@@ -776,7 +861,7 @@ export function SandboxShell({
 
             {/* Mobile inspector toggle */}
             <div className="flex items-center justify-between sm:hidden">
-              <span className="text-[0.6rem] font-medium uppercase tracking-wider text-ink-faint">
+              <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint">
                 VM Inspector
               </span>
               <Button
@@ -790,7 +875,7 @@ export function SandboxShell({
             </div>
 
             {authError && (
-              <div className="rounded-xl border border-danger/20 bg-danger/[0.04] p-4 dark:bg-danger/[0.06]">
+              <div className="border border-danger/20 bg-danger/[0.04] p-4 dark:bg-danger/[0.06]">
                 <p className="m-0 mb-3 text-sm font-medium text-danger">
                   {authError.message}
                 </p>
@@ -814,8 +899,8 @@ export function SandboxShell({
       {inspectorOpen && (
         <aside
           className={cn(
-            "flex h-full min-h-0 w-[320px] shrink-0 flex-col overflow-hidden border-l border-line/50 bg-paper-2/40 backdrop-blur-md dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,92vw)] max-sm:shadow-[-4px_0_24px_-4px_rgba(0,0,0,0.12)]",
+            "flex h-full min-h-0 w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-paper-2/40 dark:bg-paper-2/20",
+            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,92vw)]",
           )}
         >
           <SandboxInspector

@@ -7,11 +7,11 @@ import remarkGfm from "remark-gfm";
 import Image from "next/image";
 
 import { CopyButton } from "@/components/copy-button";
-import { ChevronDownIcon, CodeIcon, FileCodeIcon } from "@/components/frontier-icons";
+import { CodeIcon, FileCodeIcon } from "@/components/frontier-icons";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
-import { AGENT_DOC_FILENAMES } from "@/lib/types";
 
 type SkillAgentDocsPanelProps = {
   agentDocs?: AgentDocs;
@@ -21,13 +21,13 @@ type SkillAgentDocsPanelProps = {
 
 const KNOWN_DOC_LABELS: Record<string, string> = {
   agents: "AGENTS.md",
-  cursor: "cursor.md",
-  claude: "claude.md",
-  codex: "codex.md",
+  cursor: "CURSOR.md",
+  claude: "CLAUDE.md",
+  codex: "CODEX.md",
 };
 
 function docLabel(key: string): string {
-  return KNOWN_DOC_LABELS[key] ?? `${key}.md`;
+  return KNOWN_DOC_LABELS[key] ?? `${key.toUpperCase()}.md`;
 }
 
 function PlatformDocTabIcon({ docKey }: { docKey: string }) {
@@ -59,31 +59,27 @@ export function SkillAgentDocsPanel({ agentDocs, skillSlug, skillHref }: SkillAg
   const activeContent = agentDocs?.[activeTab] ?? "";
 
   return (
-    <section className="border-t border-line pt-8" id="agent-docs">
-      <details className="group" open>
-        <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-          <FileCodeIcon className="h-4 w-4 text-ink-soft" />
-          <h2 className="m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink">
-            Agent docs
-          </h2>
-          <span className="text-xs font-normal tabular-nums text-ink-faint">
-            {entries.length} attached
-          </span>
-          <ChevronDownIcon className="ml-auto h-3.5 w-3.5 text-ink-faint transition-transform group-open:rotate-180" />
-        </summary>
+    <section className="grid gap-4 border-t border-line pt-8" id="agent-docs">
+      <SectionHeading
+        icon={<FileCodeIcon />}
+        title="Agent docs"
+        count={entries.length}
+        countLabel="attached"
+      />
 
-        <div className="mt-4 overflow-hidden rounded-none border border-line">
-          <div className="flex border-b border-line bg-paper-3/60 dark:bg-paper-2/30">
+      <div className="overflow-hidden rounded-none border border-line bg-paper-3/92">
+        <div className="flex items-center justify-between border-b border-line bg-paper-2/60 dark:bg-paper-2/30">
+          <div className="flex min-w-0 overflow-x-auto">
             {entries.map(([key]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setActiveTab(key)}
                 className={cn(
-                  "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors",
+                  "flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-medium transition-colors",
                   activeTab === key
-                    ? "border-accent text-accent"
-                    : "border-transparent text-ink-soft hover:text-ink"
+                    ? "border-accent bg-paper-3/80 text-accent dark:bg-paper-3/40"
+                    : "border-transparent text-ink-soft hover:bg-paper-3/50 hover:text-ink dark:hover:bg-paper-3/20"
                 )}
               >
                 <PlatformDocTabIcon docKey={key} />
@@ -91,32 +87,30 @@ export function SkillAgentDocsPanel({ agentDocs, skillSlug, skillHref }: SkillAg
               </button>
             ))}
           </div>
-
-          <div className="relative">
-            <div className="absolute right-3 top-3 z-10">
-              <CopyButton
-                className="text-xs"
-                iconSize="sm"
-                label="Copy"
-                size="sm"
-                usageEvent={{
-                  kind: "copy_agent_doc",
-                  label: `Copied ${docLabel(activeTab)}`,
-                  path: skillHref,
-                  skillSlug,
-                }}
-                value={activeContent}
-                variant="soft"
-              />
-            </div>
-            <div className="markdown-shell p-5 sm:p-6">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {activeContent}
-              </ReactMarkdown>
-            </div>
+          <div className="shrink-0 px-3">
+            <CopyButton
+              className="text-xs"
+              iconSize="sm"
+              label="Copy"
+              size="sm"
+              usageEvent={{
+                kind: "copy_agent_doc",
+                label: `Copied ${docLabel(activeTab)}`,
+                path: skillHref,
+                skillSlug,
+              }}
+              value={activeContent}
+              variant="soft"
+            />
           </div>
         </div>
-      </details>
+
+        <div className="markdown-shell markdown-shell--agent-doc p-5 sm:p-6">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {activeContent}
+          </ReactMarkdown>
+        </div>
+      </div>
     </section>
   );
 }

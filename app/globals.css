@@ -15,6 +15,7 @@
   --color-paper-3: #ffffff;
   --color-ink: #0a0a0a;
   --color-ink-soft: #636363;
+  --color-ink-muted: #8a8a8a;
   --color-ink-faint: #a0a0a0;
   --color-line: #e2e2e2;
   --color-line-strong: #d0d0d0;
@@ -73,6 +74,7 @@ html[data-theme="light"] {
   --color-paper-3: #ffffff;
   --color-ink: #0a0a0a;
   --color-ink-soft: #636363;
+  --color-ink-muted: #8a8a8a;
   --color-ink-faint: #a0a0a0;
   --color-line: #e2e2e2;
   --color-line-strong: #d0d0d0;
@@ -105,6 +107,7 @@ html[data-theme="dark"] {
   --color-paper-3: #1a1a1a;
   --color-ink: #e8e8e8;
   --color-ink-soft: #a0a0a0;
+  --color-ink-muted: #707070;
   --color-ink-faint: #525252;
   --color-line: #232323;
   --color-line-strong: #303030;
@@ -155,6 +158,14 @@ html[data-theme="dark"] {
 
 *::-webkit-scrollbar-thumb:hover {
   background: var(--color-line-strong);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 html {
@@ -404,7 +415,7 @@ svg {
 }
 
 .markdown-shell img {
-  @apply my-4 max-w-full rounded-lg;
+  @apply my-4 max-w-full rounded-none;
   border: 1px solid var(--color-line);
 }
 
@@ -425,7 +436,7 @@ svg {
 .markdown-shell pre {
   @apply my-4 overflow-auto p-4;
   border: 1px solid var(--color-line);
-  border-radius: 18px;
+  border-radius: 0;
   background: var(--color-paper-3);
   color: var(--color-ink);
 }
@@ -463,7 +474,7 @@ svg {
    ================================================================ */
 
 .diff-viewer {
-  @apply grid gap-0 overflow-hidden rounded-xl border;
+  @apply grid gap-0 overflow-hidden rounded-none border;
   border-color: var(--color-line);
   background: var(--color-paper-3);
 }
@@ -647,7 +658,7 @@ html[data-theme="dark"] .diff-viewer__word--removed {
    ================================================================ */
 
 .skeleton {
-  @apply relative overflow-hidden rounded-2xl;
+  @apply relative overflow-hidden rounded-none;
   background: linear-gradient(
     90deg,
     rgba(128, 128, 128, 0.04) 0%,
@@ -672,7 +683,7 @@ html[data-theme="dark"] .diff-viewer__word--removed {
    ================================================================ */
 
 .signal-scene {
-  @apply relative min-h-[520px] overflow-hidden rounded-2xl;
+  @apply relative min-h-[520px] overflow-hidden rounded-none;
   background: linear-gradient(180deg, var(--color-paper-3), var(--color-paper));
 }
 
@@ -742,7 +753,7 @@ html[data-theme="dark"] .diff-viewer__word--removed {
 .signal-scene__core span:nth-child(3) { transform: translateZ(48px); }
 
 .signal-scene__node {
-  @apply absolute grid min-w-[148px] gap-1.5 overflow-hidden rounded-2xl border p-4;
+  @apply absolute grid min-w-[148px] gap-1.5 overflow-hidden rounded-none border p-4;
   border-color: var(--color-line);
   background: color-mix(in srgb, var(--color-paper-3) 80%, transparent);
 }
@@ -783,7 +794,7 @@ html[data-theme="dark"] .diff-viewer__word--removed {
 }
 
 .chat-message {
-  @apply max-w-[88%] rounded-2xl border p-4 leading-7;
+  @apply rounded-none border px-3 py-2 text-[0.8125rem] leading-relaxed;
   border-color: var(--color-line);
 }
 
@@ -792,16 +803,66 @@ html[data-theme="dark"] .diff-viewer__word--removed {
 }
 
 .chat-message--user {
-  @apply ml-auto;
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: white;
 }
 
-/* Markdown inside assistant chat bubbles — compact variant of .markdown-shell */
+.chat-bubble {
+  @apply relative max-w-[85%] rounded-none px-3 py-2 text-[0.8125rem] leading-relaxed;
+}
+
+.chat-bubble--assistant {
+  border: 1px solid var(--color-line);
+  background: var(--color-paper-3);
+  color: var(--color-ink);
+}
+
+.chat-bubble--assistant::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -6px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid var(--color-line);
+}
+
+.chat-bubble--assistant::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -5px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid var(--color-paper-3);
+}
+
+.chat-bubble--user {
+  background: var(--color-accent);
+  color: white;
+}
+
+.chat-bubble--user::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: -6px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--color-accent);
+}
+
+/* Markdown inside chat messages — compact variant of .markdown-shell */
 .chat-markdown {
-  @apply grid gap-2.5;
-  font-size: 0.9rem;
+  @apply grid gap-2;
+  font-size: 0.875rem;
   line-height: 1.65;
 }
 
@@ -865,7 +926,7 @@ html[data-theme="dark"] .diff-viewer__word--removed {
 }
 
 .chat-markdown pre {
-  @apply my-1 overflow-auto rounded-xl p-3;
+  @apply my-1 overflow-auto rounded-none p-3;
   border: 1px solid var(--color-line);
   background: var(--color-paper-2);
 }

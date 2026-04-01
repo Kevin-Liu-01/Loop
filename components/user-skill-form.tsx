@@ -43,8 +43,8 @@ type FormState = {
 };
 
 const VISIBILITY_OPTIONS = [
-  { value: "private", label: "Private \u00b7 only you can see it" },
-  { value: "public", label: "Public \u00b7 visible in catalog" },
+  { value: "private", label: "Private \u2013 only you can see it" },
+  { value: "public", label: "Public \u2013 visible in catalog" },
 ];
 
 const STORAGE_KEY = "loop.user-skill-draft";

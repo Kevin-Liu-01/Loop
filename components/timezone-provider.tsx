@@ -1,10 +1,18 @@
 "use client";
 
+import { createContext, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 const COOKIE_NAME = "loop_tz";
 const MAX_AGE_SEC = 60 * 60 * 24 * 400;
+
+export type TimezoneContextValue = {
+  timeZone: string;
+  setTimeZone: (iana: string) => void;
+  browserTimeZone: string;
+};
+
+export const TimezoneContext = createContext<TimezoneContextValue | null>(null);
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -21,32 +29,29 @@ function isValidIanaTimeZone(tz: string): boolean {
   }
 }
 
-export type UseTimezoneResult = {
-  /** Effective zone after cookie + server resolution. */
-  timeZone: string;
-  /** Zone used for the last server render (from overview). */
-  serverTimeZone: string;
-  /** Persist cookie and refresh RSC. */
-  setTimeZone: (iana: string) => void;
-  /** `Intl` default for this browser profile. */
-  browserTimeZone: string;
-};
+function getBrowserTimeZone(): string {
+  return typeof Intl !== "undefined"
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone
+    : "UTC";
+}
 
-/**
- * Keeps `loop_tz` in sync with UI and triggers `router.refresh()` so server
- * usage windows recompute in the chosen IANA zone.
- */
-export function useTimezone(serverTimeZone: string): UseTimezoneResult {
+export function TimezoneProvider({
+  serverTimeZone,
+  children,
+}: {
+  serverTimeZone: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [clientTz, setClientTz] = useState<string | null>(null);
+  const browserTimeZone = getBrowserTimeZone();
 
   useEffect(() => {
-    const c = readCookie(COOKIE_NAME);
-    if (c && isValidIanaTimeZone(c)) setClientTz(c);
+    const cookie = readCookie(COOKIE_NAME);
+    if (cookie && isValidIanaTimeZone(cookie)) {
+      setClientTz(cookie);
+    }
   }, []);
-
-  const browserTimeZone =
-    typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
 
   const timeZone = clientTz ?? serverTimeZone;
 
@@ -57,13 +62,12 @@ export function useTimezone(serverTimeZone: string): UseTimezoneResult {
       setClientTz(iana);
       router.refresh();
     },
-    [router]
+    [router],
   );
 
-  return {
-    timeZone,
-    serverTimeZone,
-    setTimeZone,
-    browserTimeZone,
-  };
+  return (
+    <TimezoneContext value={{ timeZone, setTimeZone, browserTimeZone }}>
+      {children}
+    </TimezoneContext>
+  );
 }

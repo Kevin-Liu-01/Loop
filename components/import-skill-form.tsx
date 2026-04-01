@@ -20,6 +20,7 @@ export function ImportSkillForm({ onSuccess }: { onSuccess?: () => void } = {}) 
     event.preventDefault();
     setError(null);
     setMessage(null);
+    onSuccess?.();
 
     startTransition(async () => {
       const importResponse = await fetch("/api/imports", {
@@ -65,7 +66,6 @@ export function ImportSkillForm({ onSuccess }: { onSuccess?: () => void } = {}) 
         return;
       }
 
-      onSuccess?.();
       router.push(trackPayload.href);
       router.refresh();
     });

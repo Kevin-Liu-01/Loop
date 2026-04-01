@@ -7,6 +7,7 @@ import { SkillInline } from "@/components/skill-inline";
 import { Badge } from "@/components/ui/badge";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { Panel } from "@/components/ui/panel";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 import type { LoopRunRecord, SkillRecord } from "@/lib/types";
@@ -32,6 +33,7 @@ function runStatusLabel(run?: LoopRunRecord): { label: string; color: "green" | 
 }
 
 export function SettingsSkillsOverview({ skills, latestRuns }: SettingsSkillsOverviewProps) {
+  const { timeZone } = useAppTimezone();
   const [sortKey, setSortKey] = useState<SortKey>("updated");
   const [filter, setFilter] = useState("");
 
@@ -148,7 +150,7 @@ export function SettingsSkillsOverview({ skills, latestRuns }: SettingsSkillsOve
               </div>
 
               <span className="hidden text-xs tabular-nums text-ink-soft sm:block">
-                {latestRun ? formatRelativeDate(latestRun.finishedAt) : "–"}
+                {latestRun ? formatRelativeDate(latestRun.finishedAt, timeZone) : "–"}
               </span>
 
               <div className="flex gap-2">

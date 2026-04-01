@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ClockIcon, MessageIcon } from "@/components/frontier-icons";
 import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
 import { Tip } from "@/components/ui/tip";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 import type { ConversationChannel } from "@/lib/types";
@@ -27,6 +28,7 @@ type ConversationHistoryProps = {
 };
 
 export function ConversationHistory({ channel, onSelect, className }: ConversationHistoryProps) {
+  const { timeZone } = useAppTimezone();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -66,7 +68,7 @@ export function ConversationHistory({ channel, onSelect, className }: Conversati
             conversations.map((c) => (
               <button
                 key={c.id}
-                className="group grid gap-0.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors hover:border-line-strong hover:bg-paper-3"
+                className="group grid gap-0.5 border border-line px-3 py-2.5 text-left transition-colors hover:border-line-strong hover:bg-paper-3"
                 onClick={() => onSelect(c.id)}
                 type="button"
               >
@@ -77,7 +79,7 @@ export function ConversationHistory({ channel, onSelect, className }: Conversati
                 <span className="flex items-center gap-2 text-[0.65rem] tabular-nums text-ink-faint">
                   <span>{c.messageCount} messages</span>
                   <span aria-hidden>&middot;</span>
-                  <span>{formatRelativeDate(c.updatedAt)}</span>
+                  <span>{formatRelativeDate(c.updatedAt, timeZone)}</span>
                 </span>
               </button>
             ))

@@ -5,6 +5,7 @@ import { McpDetailPage } from "@/components/mcp-detail-page";
 import { getMcpRecordByName } from "@/lib/content";
 import { parseVersionSegment } from "@/lib/format";
 import { buildMcpMetadata } from "@/lib/seo";
+import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 
 type VersionedMcpPageProps = {
   params: Promise<{
@@ -31,11 +32,14 @@ export default async function VersionedMcpPage({ params }: VersionedMcpPageProps
     notFound();
   }
 
-  const mcp = await getMcpRecordByName(decodedName, versionNumber);
+  const [mcp, timeZone] = await Promise.all([
+    getMcpRecordByName(decodedName, versionNumber),
+    getUsageTimeZoneFromCookie(),
+  ]);
 
   if (!mcp) {
     notFound();
   }
 
-  return <McpDetailPage mcp={mcp} />;
+  return <McpDetailPage mcp={mcp} timeZone={timeZone} />;
 }

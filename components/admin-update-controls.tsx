@@ -8,6 +8,8 @@ import { Badge, EyebrowPill } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FieldGroup, textFieldBase } from "@/components/ui/field";
 import { Panel } from "@/components/ui/panel";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
+import { formatDateTime } from "@/lib/format";
 
 type RefreshResponse = {
   error?: string;
@@ -22,6 +24,7 @@ type AdminUpdateControlsProps = {
 };
 
 export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: AdminUpdateControlsProps) {
+  const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [email, setEmail] = useState(currentAdminEmail ?? primaryAdminEmail);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -72,7 +75,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
         return;
       }
 
-      const generatedAt = payload.generatedAt ? new Date(payload.generatedAt).toLocaleString() : "just now";
+      const generatedAt = payload.generatedAt ? formatDateTime(payload.generatedAt, timeZone) : "just now";
       setStatusMessage(
         `Refresh finished at ${generatedAt}. ${payload.skills ?? 0} skills and ${payload.dailyBriefs ?? 0} briefs updated.`
       );

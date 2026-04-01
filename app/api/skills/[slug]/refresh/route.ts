@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { updateSkill } from "@/lib/db/skills";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { runTrackedUserSkillUpdate } from "@/lib/refresh";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
 import { getManualUpdateCooldown, isAutomationImminent } from "@/lib/skill-limits";
@@ -133,6 +135,12 @@ export async function POST(
             });
 
             await saveUserSkillDocuments([cycle.nextSkill]);
+
+            const researchProfile = buildResearchProfile({
+              title: cycle.nextSkill.title,
+              sources: cycle.nextSkill.sources,
+            });
+            await updateSkill(slug, { researchProfile }).catch(() => {});
 
             try {
               await recordLoopRun(cycle.loopRun);

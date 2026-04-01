@@ -5,8 +5,10 @@ import { useState } from "react";
 import Image from "next/image";
 
 import { AutomationIcon, GlobeIcon } from "@/components/frontier-icons";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { EXTERNAL_SKILL_SOURCES, type ExternalSkillSource } from "@/lib/external-skill-sources";
+import { formatShortDate } from "@/lib/format";
 import { getNextWeeklyImportRunUtc } from "@/lib/weekly-import-schedule";
 
 function formatRelativeDate(date: Date): string {
@@ -23,6 +25,7 @@ type ImportSourcesListProps = {
 };
 
 export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
+  const { timeZone } = useAppTimezone();
   const [running, setRunning] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
 
@@ -57,7 +60,7 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
           </span>
         </div>
         <span className="shrink-0 text-[0.6875rem] tabular-nums text-ink-faint">
-          {nextImport.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+          {formatShortDate(nextImport, timeZone)}
         </span>
       </div>
 

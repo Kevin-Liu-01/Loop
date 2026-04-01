@@ -15,6 +15,25 @@ export type SettingsSectionMeta = {
 };
 
 export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> = {
+  preferences: {
+    heading: "Preferences",
+    lead:
+      "Configure how Loop displays information to you. These settings are stored locally in your browser and apply across all pages.",
+    beforePrimary: [
+      {
+        title: "Time zone",
+        body:
+          "All timestamps in the app — relative dates, activity logs, automation schedules — are displayed in your chosen time zone. By default Loop uses your browser's detected zone; change it here if you prefer a different one.",
+      },
+    ],
+    afterPrimary: [
+      {
+        title: "How preferences are stored",
+        body:
+          "Preferences are saved as browser cookies so they persist across sessions and are available to both client and server rendering. Clearing cookies resets preferences to their defaults.",
+      },
+    ],
+  },
   skills: {
     heading: "Your skills",
     lead:

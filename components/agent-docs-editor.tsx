@@ -45,16 +45,16 @@ type AgentDocsEditorProps = {
 
 const PREDEFINED_OPTIONS: { key: AgentDocKey; label: string; description: string }[] = [
   { key: "agents", label: "AGENTS.md", description: "General agent instructions" },
-  { key: "cursor", label: "cursor.md", description: "Cursor-specific rules" },
-  { key: "claude", label: "claude.md", description: "Claude Code instructions" },
-  { key: "codex", label: "codex.md", description: "OpenAI Codex config" },
+  { key: "cursor", label: "CURSOR.md", description: "Cursor-specific rules" },
+  { key: "claude", label: "CLAUDE.md", description: "Claude Code instructions" },
+  { key: "codex", label: "CODEX.md", description: "OpenAI Codex config" },
 ];
 
 const PREDEFINED_KEYS = new Set<string>(PREDEFINED_OPTIONS.map((o) => o.key));
 
 function docLabel(key: string): string {
   if (key in AGENT_DOC_FILENAMES) return AGENT_DOC_FILENAMES[key as AgentDocKey];
-  return `${key}.md`;
+  return `${key.toUpperCase()}.md`;
 }
 
 export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDocsEditorProps) {
@@ -74,7 +74,7 @@ export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDo
   function addDoc(key: string) {
     const label = key in AGENT_DOC_FILENAMES
       ? AGENT_DOC_FILENAMES[key as AgentDocKey]
-      : `${key}.md`;
+      : `${key.toUpperCase()}.md`;
     onChange({ ...value, [key]: `# ${label}\n\n` });
   }
 
@@ -218,7 +218,7 @@ export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDo
 
   return (
     <details
-      className="grid gap-4 rounded-2xl border border-line bg-paper-3 p-4"
+      className="grid gap-4 border border-line bg-paper-3 p-4 dark:bg-paper-2/60"
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
       open={open}
     >

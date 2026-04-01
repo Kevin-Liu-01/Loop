@@ -22,10 +22,13 @@ import {
 import { findSkillFiles, parseSkill, CODEX_ROOT } from "@/lib/content";
 import { slugify } from "@/lib/markdown";
 import { getMcpIcon, getSkillIcon } from "@/lib/skill-icons";
+import {
+  buildResearchProfile,
+  buildQualityScore as buildSharedQualityScore,
+} from "@/lib/research-profile";
 import type {
   ImportedMcpDocument,
   SkillRecord,
-  SkillResearchProfile,
   SkillUpstreamRecord,
 } from "@/lib/types";
 
@@ -51,68 +54,21 @@ function buildFeaturedRank(slug: string): number {
   return FEATURED_SKILL_ORDER.length - index;
 }
 
-function buildQualityScore(skill: SkillRecord, upstreams: SkillUpstreamRecord[]): number {
-  if (QUALITY_SCORE_OVERRIDES[skill.slug]) {
-    return QUALITY_SCORE_OVERRIDES[skill.slug] ?? 80;
-  }
-
-  const officialSources = (skill.sources ?? []).filter((source) => source.trust === "official" || source.trust === "standards").length;
-  const discoverSources = (skill.sources ?? []).filter((source) => source.mode === "discover" || source.mode === "search").length;
-
-  return Math.min(
-    97,
-    70 +
-      upstreams.length * 4 +
-      officialSources * 3 +
-      discoverSources * 2 +
-      Math.min((skill.sources ?? []).length, 6)
+function buildQualityScoreForSeed(skill: SkillRecord, upstreams: SkillUpstreamRecord[]): number {
+  return buildSharedQualityScore(
+    skill.sources ?? [],
+    upstreams,
+    QUALITY_SCORE_OVERRIDES[skill.slug]
   );
 }
 
-function buildResearchProfile(skill: SkillRecord, upstreams: SkillUpstreamRecord[]): SkillResearchProfile {
-  const sources = skill.sources ?? [];
-  const discoveryQueries = Array.from(
-    new Set(
-      sources.flatMap((source) => source.searchQueries ?? [])
-    )
-  ).slice(0, 8);
-
-  const officialCount = sources.filter((source) => source.trust === "official" || source.trust === "standards").length;
-  const discoveryCount = sources.filter((source) => source.mode === "discover" || source.mode === "search").length;
-
-  return {
-    summary:
-      upstreams.length > 0
-        ? `${skill.title} now combines ${sources.length} tracked sources with ${upstreams.length} trusted upstream skill packs. Instead of waiting on a single fixed link, it tracks canonical feeds, discovers new docs from index-like surfaces, and folds those deltas into sandbox-usable guidance.`
-        : `${skill.title} now treats its source set as a research system: canonical feeds for concrete deltas, index-like sources for discovery, and query hints for ranking.`,
-    process: [
-      {
-        title: "Track canonical signals",
-        detail: `Monitor ${Math.max(sources.length - discoveryCount, 0)} feed-like sources for release notes, changelog entries, and durable upstream deltas.`,
-      },
-      {
-        title: "Discover net-new docs and leads",
-        detail: `Scan ${discoveryCount} discovery-oriented sources such as docs indexes and sitemaps, then rank extracted links against explicit query hints instead of trusting nav order.`,
-      },
-      {
-        title: "Transplant from trusted upstreams",
-        detail:
-          upstreams.length > 0
-            ? `Fold implementation patterns from ${upstreams.map((upstream) => upstream.title).join(", ")} so the skill inherits a real operating model instead of boilerplate prose.`
-            : "Keep the skill grounded in trusted source deltas even when there is no direct upstream skill pack to transplant from.",
-      },
-      {
-        title: "Keep the sandbox honest",
-        detail: "Ship prompts, MCP recommendations, and automation language that can actually be executed in Loop's sandbox instead of abstract advice theater.",
-      },
-    ],
-    discoveryQueries,
-    featuredReason:
-      FEATURED_REASON_OVERRIDES[skill.slug] ??
-      (officialCount >= 2
-        ? `${skill.title} has unusually strong source quality and broad utility, so it deserves prominent placement.`
-        : undefined),
-  };
+function buildResearchProfileForSeed(skill: SkillRecord, upstreams: SkillUpstreamRecord[]) {
+  const profile = buildResearchProfile(skill, upstreams);
+  const override = FEATURED_REASON_OVERRIDES[skill.slug];
+  if (override) {
+    profile.featuredReason = override;
+  }
+  return profile;
 }
 
 function buildDiscoverySection(skill: SkillRecord): string {
@@ -379,7 +335,7 @@ async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
       sources: sourceConfig?.sources ?? existing.sources,
       automation: sourceConfig?.automation ?? existing.automation,
     };
-    const researchProfile = buildResearchProfile(draft, upstreamEntries);
+    const researchProfile = buildResearchProfileForSeed(draft, upstreamEntries);
 
     await updateSkill(existing.slug, {
       title: draft.title,
@@ -390,7 +346,7 @@ async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
       automation: draft.automation,
       featured: buildFeaturedRank(existing.slug) > 0 || existing.featured,
       featuredRank: buildFeaturedRank(existing.slug),
-      qualityScore: buildQualityScore(draft, upstreamEntries),
+      qualityScore: buildQualityScoreForSeed(draft, upstreamEntries),
       researchProfile,
       iconUrl: skillIcon.kind === "url" ? skillIcon.url : existing.iconUrl,
     });

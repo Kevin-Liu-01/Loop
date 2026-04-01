@@ -73,13 +73,7 @@ function AuthorAvatar({
   );
 }
 
-function VerifiedTag({
-  label,
-  compact,
-}: {
-  label?: string;
-  compact: boolean;
-}) {
+function VerifiedTag({ compact }: { compact: boolean }) {
   return (
     <span
       className={cn(
@@ -88,7 +82,7 @@ function VerifiedTag({
       )}
     >
       <BadgeCheckIcon className={cn("shrink-0", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
-      <span>{label || "Verified"}</span>
+      <span>Verified</span>
     </span>
   );
 }
@@ -116,7 +110,7 @@ export function SkillAuthorBadge({
       <AuthorAvatar author={author} compact name={name} iconUrl={iconUrl} />
       <span className="font-medium text-ink">{name}</span>
       {author?.verified ? (
-        <VerifiedTag compact label={author.badgeLabel} />
+        <VerifiedTag compact />
       ) : null}
     </span>
   ) : (
@@ -131,7 +125,7 @@ export function SkillAuthorBadge({
       <AuthorAvatar author={author} compact={false} name={name} iconUrl={iconUrl} />
       <span className="font-medium text-ink">{name}</span>
       {author?.verified ? (
-        <VerifiedTag compact={false} label={author.badgeLabel} />
+        <VerifiedTag compact={false} />
       ) : null}
     </span>
   );

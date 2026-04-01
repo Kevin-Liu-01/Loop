@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { CheckIcon, ClipboardIcon } from "@/components/frontier-icons";
+import { CheckIcon, ClipboardIcon, LinkIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
@@ -21,6 +21,8 @@ type CopyButtonProps = {
   className?: string;
   /** Match compact row actions (e.g. skill header) – same icon size as sm LinkButton + Play icon */
   iconSize?: "sm" | "md";
+  /** Which icon to show: "clipboard" (default) or "link". */
+  iconType?: "clipboard" | "link";
   usageEvent?: {
     kind: Exclude<UsageEventKind, "api_call">;
     label: string;
@@ -45,6 +47,7 @@ export function CopyButton({
   size,
   className,
   iconSize = "md",
+  iconType = "clipboard",
   usageEvent,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
@@ -59,6 +62,7 @@ export function CopyButton({
   }
 
   const ic = iconSizeClass[iconSize];
+  const DefaultIcon = iconType === "link" ? LinkIcon : ClipboardIcon;
 
   if (iconOnly) {
     return (
@@ -71,7 +75,7 @@ export function CopyButton({
             type="button"
             variant={variant ?? "soft"}
           >
-            {copied ? <CheckIcon className={ic} /> : <ClipboardIcon className={ic} />}
+            {copied ? <CheckIcon className={ic} /> : <DefaultIcon className={ic} />}
           </Button>
         </TooltipTrigger>
         <TooltipContent>{copied ? "Copied!" : label}</TooltipContent>
@@ -88,7 +92,7 @@ export function CopyButton({
         type="button"
         variant={variant ?? "primary"}
       >
-        {copied ? <CheckIcon className={ic} /> : <ClipboardIcon className={ic} />}
+        {copied ? <CheckIcon className={ic} /> : <DefaultIcon className={ic} />}
         <span>{copied ? "Copied!" : label}</span>
       </Button>
     );
@@ -102,7 +106,7 @@ export function CopyButton({
       type="button"
       variant={variant ?? "soft"}
     >
-      {copied ? <CheckIcon className={ic} /> : <ClipboardIcon className={ic} />}
+      {copied ? <CheckIcon className={ic} /> : <DefaultIcon className={ic} />}
       <span>{copied ? "Copied" : label}</span>
     </Button>
   );

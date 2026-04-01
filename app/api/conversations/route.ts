@@ -28,6 +28,19 @@ const messageMetadataSchema = z.object({
     .optional()
 });
 
+const messagePartSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({
+    type: z.literal("tool-invocation"),
+    toolInvocation: z.object({
+      toolName: z.string(),
+      args: z.record(z.unknown()),
+      result: z.record(z.unknown()).optional(),
+      state: z.string(),
+    }),
+  }),
+]);
+
 const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   channel: z.enum(["copilot", "agent-studio", "sandbox"]),
@@ -37,12 +50,13 @@ const upsertSchema = z.object({
       id: z.string(),
       role: z.enum(["user", "assistant", "system"]),
       content: z.string(),
+      parts: z.array(messagePartSchema).optional(),
       createdAt: z.string(),
-      metadata: messageMetadataSchema.optional()
+      metadata: messageMetadataSchema.optional(),
     })
   ),
   model: z.string().optional(),
-  providerId: z.string().optional()
+  providerId: z.string().optional(),
 });
 
 export async function GET(request: Request) {

@@ -140,3 +140,50 @@ export const ChevronLeftIcon = wrapIcon(ChevronLeft);
 export const AutomationIcon = wrapIcon(History);
 export const TrashIcon = wrapIcon(Trash2);
 export const XIcon = wrapIcon(X);
+
+/* ── Brand icons (no Lucide equivalent) ── */
+
+type SvgIconProps = React.SVGProps<SVGSVGElement> & { title?: string };
+
+export function NodeIcon({ title, className, ...props }: SvgIconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      {...props}
+    >
+      <path d="M12 2 L22 7.5 L22 16.5 L12 22 L2 16.5 L2 7.5 Z" />
+      <path d="M12 22 L12 12" />
+      <path d="M2 7.5 L12 12 L22 7.5" />
+    </svg>
+  );
+}
+
+export function PythonIcon({ title, className, ...props }: SvgIconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      {...props}
+    >
+      <path d="M12 2C8 2 8 4 8 5v2h4v1H6c-2 0-4 1.5-4 5s2 5 4 5h2v-2.5c0-2 1.5-3.5 3.5-3.5H16c1.5 0 2.5-1 2.5-2.5V5c0-1.5-1.5-3-3-3h-3.5Z" />
+      <path d="M12 22c4 0 4-2 4-3v-2h-4v-1h6c2 0 4-1.5 4-5s-2-5-4-5h-2v2.5c0 2-1.5 3.5-3.5 3.5H8c-1.5 0-2.5 1-2.5 2.5V19c0 1.5 1.5 3 3 3h3.5Z" />
+      <circle cx="10" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="18.5" r="0.75" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

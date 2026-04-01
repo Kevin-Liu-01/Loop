@@ -22,26 +22,58 @@ export function buildMcpVersionHref(name: string, version: number): string {
   return `/mcps/${name}/${buildVersionLabel(version)}`;
 }
 
-export function formatDate(value: string): string {
+export function formatDate(value: string, timeZone?: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
+    ...(timeZone && { timeZone }),
   }).format(new Date(value));
 }
 
-export function formatTime(value: string): string {
+export function formatTime(value: string, timeZone?: string): string {
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
-    minute: "2-digit"
+    minute: "2-digit",
+    ...(timeZone && { timeZone }),
   }).format(new Date(value));
 }
 
-export function formatDateTime(value: string): string {
-  return `${formatDate(value)} · ${formatTime(value)}`;
+export function formatDateTime(value: string, timeZone?: string): string {
+  return `${formatDate(value, timeZone)} · ${formatTime(value, timeZone)}`;
 }
 
-export function formatRelativeDate(value: string): string {
+export function formatMonthYear(value: string | Date, timeZone?: string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+    ...(timeZone && { timeZone }),
+  }).format(d);
+}
+
+export function formatFullDate(value: string | Date, timeZone?: string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    ...(timeZone && { timeZone }),
+  }).format(d);
+}
+
+export function formatShortDate(value: string | Date, timeZone?: string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(timeZone && { timeZone }),
+  }).format(d);
+}
+
+export function formatRelativeDate(value: string, timeZone?: string): string {
   const now = Date.now();
   const then = +new Date(value);
   const diffMs = now - then;
@@ -53,7 +85,7 @@ export function formatRelativeDate(value: string): string {
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return formatDate(value);
+  return formatDate(value, timeZone);
 }
 
 export { formatScheduleLabel } from "@/lib/schedule";

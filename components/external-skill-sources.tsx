@@ -96,6 +96,7 @@ export function ExternalSkillSources({ onSuccess }: { onSuccess?: () => void } =
     (skill: DiscoveredSkill, source?: { name: string; iconUrl: string }) => {
       setImportingSlug(skill.slug);
       setMessage(null);
+      onSuccess?.();
 
       const op = startTrackedOp({
         kind: "skill-import",
@@ -146,7 +147,6 @@ export function ExternalSkillSources({ onSuccess }: { onSuccess?: () => void } =
 
         if (trackPayload.href) {
           op.complete(`Imported ${skill.slug}`);
-          onSuccess?.();
           router.push(trackPayload.href);
           router.refresh();
         } else {
@@ -156,7 +156,7 @@ export function ExternalSkillSources({ onSuccess }: { onSuccess?: () => void } =
         }
       });
     },
-    [router, startTrackedOp]
+    [onSuccess, router, startTrackedOp]
   );
 
   if (loading) {

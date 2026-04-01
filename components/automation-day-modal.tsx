@@ -13,7 +13,9 @@ import { AutomationIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { StatusDot } from "@/components/ui/status-dot";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
+import { formatFullDate } from "@/lib/format";
 import { formatNextRun } from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
@@ -32,12 +34,6 @@ type AutomationDayModalProps = {
   skillMap?: Map<string, SkillRecord>;
 };
 
-const dayTitleFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
 
 function AutomationRunIcon({
   skill,
@@ -65,7 +61,8 @@ function AutomationRunIcon({
 }
 
 export function AutomationDayModal({ open, onClose, date, entries, onEditAutomation, skillMap }: AutomationDayModalProps) {
-  const title = date ? dayTitleFormatter.format(date) : "";
+  const { timeZone } = useAppTimezone();
+  const title = date ? formatFullDate(date, timeZone) : "";
   const isClickable = typeof onEditAutomation === "function";
   const activeCount = entries.filter(({ automation }) => automation.status === "ACTIVE").length;
 

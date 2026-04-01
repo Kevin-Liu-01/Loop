@@ -1,5 +1,7 @@
+import { SearchIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { formatTagLabel } from "@/lib/tag-utils";
 import type { SkillRecord } from "@/lib/types";
 
@@ -30,9 +32,7 @@ export function SkillResearchPanel({ skill }: SkillResearchPanelProps) {
 
   return (
     <section className="grid gap-5 border-t border-line pt-8" id="research">
-      <h2 className="m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink">
-        Research engine
-      </h2>
+      <SectionHeading icon={<SearchIcon />} title="Research engine" />
 
       <Panel compact square>
         <div className="grid gap-4">

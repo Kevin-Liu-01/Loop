@@ -6,8 +6,10 @@ import { createPortal } from "react-dom";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
+  NodeIcon,
   PanelLeftIcon,
   PanelRightIcon,
+  PythonIcon,
   SparkIcon,
 } from "@/components/frontier-icons";
 import { SkillIcon, McpIcon } from "@/components/ui/skill-icon";
@@ -17,10 +19,12 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import {
+  sandboxHeaderHeight,
   sandboxToolbarControl,
   sandboxToolbarLabel,
   sandboxContextCard,
   sandboxContextCardActive,
+  sandboxEyebrow,
 } from "@/lib/sandbox-ui";
 import type {
   AgentProviderPreset,
@@ -31,8 +35,16 @@ import type {
 type SandboxRuntime = "node24" | "python3.13";
 
 const RUNTIME_OPTIONS = [
-  { value: "node24", label: "Node.js 24" },
-  { value: "python3.13", label: "Python 3.13" },
+  {
+    value: "node24",
+    label: "Node.js 24",
+    icon: <NodeIcon className="h-3.5 w-3.5 text-ink-faint" />,
+  },
+  {
+    value: "python3.13",
+    label: "Python 3.13",
+    icon: <PythonIcon className="h-3.5 w-3.5 text-ink-faint" />,
+  },
 ];
 
 export type SandboxToolbarConfig = {
@@ -76,8 +88,8 @@ function PanelToggle({
     <Tip content={label} side="bottom">
       <button
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-faint transition-all duration-200 hover:bg-paper-3/80 hover:text-ink",
-          active && "bg-paper-3/60 text-ink shadow-sm ring-1 ring-line/40",
+          "flex h-7 w-7 shrink-0 items-center justify-center text-ink-faint transition-colors hover:bg-paper-2/80 hover:text-ink",
+          active && "bg-paper-3 text-ink ring-1 ring-line",
         )}
         onClick={onClick}
         type="button"
@@ -100,9 +112,7 @@ function ContextSectionHeader({
 }) {
   return (
     <div className="flex items-baseline gap-2 pb-2">
-      <h3 className="m-0 text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
-        {label}
-      </h3>
+      <h3 className={cn("m-0", sandboxEyebrow)}>{label}</h3>
       <span className="text-[0.5rem] tabular-nums text-ink-faint/60">
         {count > 0 ? (
           <>
@@ -171,9 +181,13 @@ export function SandboxToolbar({
   }, [contextOpen, closeDropdown]);
 
   return (
-    <div className="relative shrink-0 border-b border-line/60 bg-paper-2/30 backdrop-blur-sm dark:bg-paper-2/15">
-      {/* Row: panel toggles + runtime/provider/model */}
-      <div className="flex flex-wrap text-xs items-center gap-x-3 gap-y-1.5 px-3 py-2 sm:px-4">
+    <div className="relative shrink-0 border-b border-line bg-paper-2/30 dark:bg-paper-2/15">
+      <div
+        className={cn(
+          sandboxHeaderHeight,
+          "flex items-center gap-x-2.5 overflow-x-auto px-3 text-xs scrollbar-none sm:px-4",
+        )}
+      >
         <PanelToggle
           active={sidebarOpen}
           onClick={onToggleSidebar}
@@ -182,13 +196,18 @@ export function SandboxToolbar({
           <PanelLeftIcon className="h-3.5 w-3.5" />
         </PanelToggle>
 
-        <Separator orientation="vertical" className="hidden h-3.5 opacity-30 sm:block" />
+        <Separator
+          orientation="vertical"
+          className="hidden h-3.5 opacity-30 sm:block"
+        />
 
         <Tip content="Sandbox execution environment" side="bottom">
           <div className="flex items-center gap-1.5">
-            <span className={sandboxToolbarLabel}>Runtime</span>
+            <span className={cn(sandboxToolbarLabel, "hidden @[640px]:inline")}>
+              Runtime
+            </span>
             <Select
-              className={cn(sandboxToolbarControl, "min-h-0 w-auto rounded-lg py-1")}
+              className={cn(sandboxToolbarControl, "min-h-0 w-auto py-1")}
               onChange={(v) => onUpdateConfig("runtime", v as SandboxRuntime)}
               options={RUNTIME_OPTIONS}
               value={config.runtime}
@@ -198,9 +217,11 @@ export function SandboxToolbar({
 
         <Tip content="AI gateway or custom provider" side="bottom">
           <div className="flex items-center gap-1.5">
-            <span className={sandboxToolbarLabel}>Provider</span>
+            <span className={cn(sandboxToolbarLabel, "hidden @[640px]:inline")}>
+              Provider
+            </span>
             <Select
-              className={cn(sandboxToolbarControl, "min-h-0 min-w-[7.5rem] w-auto rounded-lg py-1")}
+              className={cn(sandboxToolbarControl, "min-h-0 w-auto min-w-[7.5rem] py-1")}
               onChange={(v) => {
                 const preset = presets.find((p) => p.id === v);
                 onUpdateConfig("providerId", v);
@@ -216,13 +237,12 @@ export function SandboxToolbar({
         </Tip>
 
         <Tip content="Gateway model ID – type or pick from suggestions" side="bottom">
-          <label className="flex min-w-0 flex-1 items-center gap-1.5 sm:max-w-[min(100%,16rem)] sm:flex-initial">
-            <span className={sandboxToolbarLabel}>Model</span>
+          <label className="flex min-w-0 items-center gap-1.5">
+            <span className={cn(sandboxToolbarLabel, "hidden @[640px]:inline")}>
+              Model
+            </span>
             <input
-              className={cn(
-                sandboxToolbarControl,
-                "min-w-0 flex-1 sm:w-48",
-              )}
+              className={cn(sandboxToolbarControl, "min-w-0 w-28 @[640px]:w-40")}
               onChange={(e) => onUpdateConfig("model", e.target.value)}
               placeholder={selectedPreset?.defaultModel}
               value={config.model}
@@ -230,25 +250,25 @@ export function SandboxToolbar({
           </label>
         </Tip>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             ref={triggerRef}
             className={cn(
-              "flex h-6 items-center gap-1.5 rounded-lg px-2 text-[0.6rem] font-medium text-ink-faint transition-all duration-200",
-              "border border-transparent hover:border-line/60 hover:bg-paper-3/60 hover:text-ink",
-              contextOpen && "border-accent/30 bg-accent/[0.06] text-accent shadow-sm",
+              "flex h-7 items-center gap-1.5 px-2 text-[0.625rem] font-medium text-ink-faint transition-colors",
+              "border border-transparent hover:border-line hover:bg-paper-3 hover:text-ink",
+              contextOpen && "border-accent/30 bg-accent/[0.06] text-accent",
             )}
             onClick={() => setContextOpen((p) => !p)}
             type="button"
             aria-expanded={contextOpen}
           >
             {totalSelected > 0 && (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/12 px-1 text-[0.5rem] font-semibold tabular-nums text-accent">
+              <span className="inline-flex h-4 min-w-4 items-center justify-center bg-accent/12 px-1 text-[0.5rem] font-semibold tabular-nums text-accent">
                 {totalSelected}
               </span>
             )}
             <SparkIcon className="h-3 w-3" />
-            Context
+            <span className="hidden @[640px]:inline">Context</span>
             {contextOpen ? (
               <ChevronUpIcon className="h-3 w-3 opacity-50" />
             ) : (
@@ -256,7 +276,10 @@ export function SandboxToolbar({
             )}
           </button>
 
-          <Separator orientation="vertical" className="hidden h-3.5 opacity-30 sm:block" />
+          <Separator
+            orientation="vertical"
+            className="hidden h-3.5 opacity-30 sm:block"
+          />
 
           <PanelToggle
             active={inspectorOpen}
@@ -268,7 +291,7 @@ export function SandboxToolbar({
         </div>
       </div>
 
-      {/* Floating context dropdown – portaled to body so overflow:hidden parents can't clip it */}
+      {/* Floating context dropdown */}
       {contextOpen &&
         createPortal(
           <ContextDropdown
@@ -321,7 +344,7 @@ function ContextDropdown({
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
       setPos({
-        top: rect.bottom + 6,
+        top: rect.bottom + 4,
         right: window.innerWidth - rect.right,
       });
     }
@@ -349,8 +372,8 @@ function ContextDropdown({
         className={cn(
           "fixed z-[9999] w-[min(560px,calc(100vw-2rem))]",
           "origin-top-right animate-in fade-in slide-in-from-top-1 duration-150",
-          "overflow-hidden rounded-xl border border-line/60 bg-paper-3/95 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] backdrop-blur-xl",
-          "dark:border-line/40 dark:bg-paper-3/90 dark:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.4)]",
+          "overflow-hidden border border-line bg-paper-3/95 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.12)] backdrop-blur-xl",
+          "dark:bg-paper-3/90 dark:shadow-[0_8px_40px_-8px_rgba(0,0,0,0.4)]",
         )}
         style={{ top: pos.top, right: pos.right }}
       >
@@ -379,14 +402,14 @@ function ContextDropdown({
                     size={15}
                     className="shrink-0"
                   />
-                  <span className="min-w-0 text-xs truncate">{skill.title}</span>
+                  <span className="min-w-0 truncate text-xs">{skill.title}</span>
                 </button>
               );
             })}
           </div>
 
           {executableMcps.length > 0 && (
-            <div className="mt-3 border-t border-line/25 pt-3">
+            <div className="mt-3 border-t border-line pt-3">
               <ContextSectionHeader
                 label="MCPs"
                 count={selectedMcpCount}
@@ -412,8 +435,8 @@ function ContextDropdown({
                         size={15}
                         className="shrink-0"
                       />
-                      <span className="min-w-0 text-xs truncate">{mcp.name}</span>
-                      <span className="ml-auto shrink-0 rounded-md bg-paper-2/80 px-1.5 py-0.5 text-[0.55rem] font-medium text-ink-faint ring-1 ring-line/30 dark:bg-paper-2">
+                      <span className="min-w-0 truncate text-xs">{mcp.name}</span>
+                      <span className="ml-auto shrink-0 bg-paper-2/80 px-1.5 py-0.5 text-[0.55rem] font-medium text-ink-faint ring-1 ring-line dark:bg-paper-2">
                         {mcp.transport}
                       </span>
                     </button>

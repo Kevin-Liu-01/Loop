@@ -23,6 +23,7 @@ type McpDetailSidebarProps = {
   envKeyCount: number;
   tags: string[];
   versions: VersionReference[];
+  timeZone?: string;
 };
 
 export function McpDetailSidebar({
@@ -35,7 +36,8 @@ export function McpDetailSidebar({
   transport,
   envKeyCount,
   tags,
-  versions
+  timeZone,
+  versions,
 }: McpDetailSidebarProps) {
   const isRunnable = supportsSandboxMcp({ transport, sandboxSupported });
 
@@ -115,6 +117,7 @@ export function McpDetailSidebar({
         currentVersion={currentVersion}
         hrefBuilder={buildMcpVersionHref}
         slug={mcpName}
+        timeZone={timeZone}
         versions={versions}
       />
 

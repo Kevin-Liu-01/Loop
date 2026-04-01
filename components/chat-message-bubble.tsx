@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { BotIcon, UserIcon } from "@/components/frontier-icons";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 
@@ -14,7 +15,14 @@ type ChatMessageBubbleProps = {
   createdAt?: Date | string;
 };
 
-function RelativeTimestamp({ date, className }: { date: string; className?: string }) {
+function RelativeTimestamp({
+  date,
+  className,
+}: {
+  date: string;
+  className?: string;
+}) {
+  const { timeZone } = useAppTimezone();
   const [, tick] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
@@ -25,12 +33,16 @@ function RelativeTimestamp({ date, className }: { date: string; className?: stri
 
   return (
     <time dateTime={date} suppressHydrationWarning className={className}>
-      {formatRelativeDate(date)}
+      {formatRelativeDate(date, timeZone)}
     </time>
   );
 }
 
-export function ChatMessageBubble({ role, text, createdAt }: ChatMessageBubbleProps) {
+export function ChatMessageBubble({
+  role,
+  text,
+  createdAt,
+}: ChatMessageBubbleProps) {
   const isUser = role === "user";
   const timestamp = createdAt
     ? typeof createdAt === "string"
@@ -42,16 +54,21 @@ export function ChatMessageBubble({ role, text, createdAt }: ChatMessageBubblePr
     <div
       className={cn(
         "chat-message",
-        isUser ? "chat-message--user" : "chat-message--assistant"
+        isUser ? "chat-message--user" : "chat-message--assistant",
       )}
     >
       <div className="mb-1.5 flex items-center gap-1.5">
         {isUser ? (
-          <UserIcon className="h-3.5 w-3.5 text-ink-faint" />
+          <UserIcon className="h-3.5 w-3.5 text-white/60" />
         ) : (
           <BotIcon className="h-3.5 w-3.5 text-accent/60" />
         )}
-        <span className="text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
+        <span
+          className={cn(
+            "text-[0.625rem] font-semibold uppercase tracking-[0.08em]",
+            isUser ? "text-white/70" : "text-ink-faint",
+          )}
+        >
           {isUser ? "You" : "Loop"}
         </span>
       </div>
@@ -66,7 +83,10 @@ export function ChatMessageBubble({ role, text, createdAt }: ChatMessageBubblePr
       {timestamp ? (
         <RelativeTimestamp
           date={timestamp}
-          className="mt-2 block text-[0.65rem] tabular-nums opacity-40"
+          className={cn(
+            "mt-2 block text-[0.625rem] tabular-nums",
+            isUser ? "text-white/40" : "opacity-40",
+          )}
         />
       ) : null}
     </div>

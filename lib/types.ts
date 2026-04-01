@@ -133,9 +133,9 @@ export type AgentDocKey = "codex" | "cursor" | "claude" | "agents";
 export type AgentDocs = Partial<Record<AgentDocKey, string>> & Record<string, string | undefined>;
 
 export const AGENT_DOC_FILENAMES: Record<AgentDocKey, string> = {
-  codex: "codex.md",
-  cursor: "cursor.md",
-  claude: "claude.md",
+  codex: "CODEX.md",
+  cursor: "CURSOR.md",
+  claude: "CLAUDE.md",
   agents: "AGENTS.md"
 };
 
@@ -734,10 +734,23 @@ export type ConversationMessageMetadata = {
   };
 };
 
+export type ConversationMessagePart =
+  | { type: "text"; text: string }
+  | {
+      type: "tool-invocation";
+      toolInvocation: {
+        toolName: string;
+        args: Record<string, unknown>;
+        result?: Record<string, unknown>;
+        state: string;
+      };
+    };
+
 export type ConversationMessage = {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  parts?: ConversationMessagePart[];
   createdAt: string;
   metadata?: ConversationMessageMetadata;
 };

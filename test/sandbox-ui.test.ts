@@ -11,7 +11,7 @@ import {
 
 describe("sandbox-ui tokens", () => {
   it("exports toolbar class strings", () => {
-    assert.ok(sandboxToolbarControl.includes("rounded-lg"));
+    assert.ok(sandboxToolbarControl.includes("rounded-none"));
     assert.ok(sandboxToolbarLabel.includes("uppercase"));
   });
 
@@ -21,7 +21,7 @@ describe("sandbox-ui tokens", () => {
   });
 
   it("exports context card tokens", () => {
-    assert.ok(sandboxContextCard.includes("rounded-lg"));
+    assert.ok(sandboxContextCard.includes("rounded-none"));
     assert.ok(sandboxContextCard.includes("border"));
     assert.ok(sandboxContextCardActive.includes("accent"));
   });

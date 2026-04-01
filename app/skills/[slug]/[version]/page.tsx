@@ -11,6 +11,7 @@ import { hasUserPurchasedSkill } from "@/lib/purchases";
 import { getLoopSnapshot } from "@/lib/refresh";
 import { buildSkillMetadata } from "@/lib/seo";
 import { canSessionEditSkill, canViewPrivateSkill } from "@/lib/skill-authoring";
+import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { listLoopRuns, listUsageEvents } from "@/lib/system-state";
 import { buildSkillUsageSummary } from "@/lib/usage";
 
@@ -38,13 +39,14 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const [session, snapshot, skill, previousSkill, loopRuns, usageEvents] = await Promise.all([
+  const [session, snapshot, skill, previousSkill, loopRuns, usageEvents, timeZone] = await Promise.all([
     getSessionUser(),
     getLoopSnapshot(),
     getSkillRecordBySlug(slug, versionNumber),
     versionNumber > 1 ? getSkillRecordBySlug(slug, versionNumber - 1) : Promise.resolve(null),
     listLoopRuns(),
-    listUsageEvents()
+    listUsageEvents(),
+    getUsageTimeZoneFromCookie(),
   ]);
 
   if (!skill) {
@@ -78,6 +80,7 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
       previousSkill={previousSkill}
       purchased={purchased || canEdit}
       skill={{ ...skill, upstreams }}
+      timeZone={timeZone}
       usage={usage}
     />
   );

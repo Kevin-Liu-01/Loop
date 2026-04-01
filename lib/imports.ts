@@ -12,6 +12,7 @@ import {
   upsertMcp as dbUpsertMcp
 } from "@/lib/db/mcps";
 import { resolveAuthorIdForUrl } from "@/lib/source-authors";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { buildVersionLabel, buildSkillVersionHref } from "@/lib/format";
 import { createExcerpt, slugify, stableHash } from "@/lib/markdown";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
@@ -825,6 +826,12 @@ export async function importRemoteSkill(
   const authorId = resolvedAuthorId || undefined;
 
   const hasAgentDocs = Object.keys(agentDocs).length > 0;
+  const canonicalSource = buildImportedSource({
+    ...draft.versions[0],
+    canonicalUrl: draft.canonicalUrl,
+  });
+  const sources = [canonicalSource];
+  const researchProfile = buildResearchProfile({ title: draft.title, sources });
 
   await dbCreateSkill({
     slug: draft.slug,
@@ -837,6 +844,8 @@ export async function importRemoteSkill(
     tags: draft.tags,
     ownerName,
     authorId,
+    sources,
+    researchProfile,
     sourceUrl: draft.sourceUrl,
     canonicalUrl: draft.canonicalUrl,
     syncEnabled: draft.syncEnabled,
@@ -852,6 +861,8 @@ export async function importRemoteSkill(
       tags: draft.tags,
       ownerName,
       authorId,
+      sources,
+      researchProfile,
       sourceUrl: draft.sourceUrl,
       canonicalUrl: draft.canonicalUrl,
       syncEnabled: draft.syncEnabled,

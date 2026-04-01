@@ -7,15 +7,12 @@ import { CopyButton } from "@/components/copy-button";
 import { DownloadSkillButton } from "@/components/download-skill-button";
 import {
   BotIcon,
-  ChevronDownIcon,
   CodeIcon,
   UserIcon,
 } from "@/components/frontier-icons";
 import { Select } from "@/components/ui/select";
-import { FileTree, type FileTreeEntry } from "@/components/ui/file-tree";
 import { Panel } from "@/components/ui/panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
-import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
 
@@ -28,8 +25,6 @@ type SkillInstallPanelProps = {
   downloadFilename: string;
   agentDocs?: AgentDocs;
 };
-
-const sectionH2 = "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
 
 const PLATFORM_LABELS: Record<string, string> = {
   cursor: "Cursor",
@@ -61,44 +56,50 @@ const PLATFORM_STEPS: Record<string, string[]> = {
   ],
 };
 
-function buildAgentFileTree(agentDocs?: AgentDocs): FileTreeEntry[] {
-  const children: FileTreeEntry[] = [
-    { name: "SKILL.md", type: "file", icon: "markdown" },
-  ];
+const LOGO_MONO = "shrink-0 brightness-0 dark:invert";
 
-  if (agentDocs) {
-    for (const key of Object.keys(agentDocs)) {
-      const content = agentDocs[key];
-      if (content && content.trim().length > 0) {
-        const filename =
-          key === "agents" ? "AGENTS.md" :
-          key === "cursor" ? "cursor.md" :
-          key === "claude" ? "claude.md" :
-          key === "codex" ? "codex.md" :
-          `${key}.md`;
-        children.push({ name: filename, type: "file", icon: "markdown" });
-      }
-    }
-  }
-
-  return children;
-}
-
-function PlatformIcon({ platformKey }: { platformKey: string }) {
+function PlatformIcon({ platformKey, size = 14 }: { platformKey: string; size?: number }) {
   const brand = getPlatformDocIcon(platformKey);
   if (brand) {
     return (
       <Image
         src={brand.src}
         alt={brand.alt}
-        width={14}
-        height={14}
-        className="shrink-0 dark:invert"
+        width={size}
+        height={size}
+        className={LOGO_MONO}
         unoptimized
       />
     );
   }
   return <CodeIcon className="h-3.5 w-3.5" />;
+}
+
+function PlatformLogoRow({ agentDocs }: { agentDocs?: AgentDocs }) {
+  const platforms = agentDocs
+    ? Object.keys(agentDocs).filter((k) => k !== "agents" && agentDocs[k]?.trim())
+    : [];
+  if (platforms.length === 0) return <BotIcon className="h-3.5 w-3.5" />;
+
+  return (
+    <span className="flex items-center -space-x-1">
+      {platforms.map((key) => {
+        const brand = getPlatformDocIcon(key);
+        if (!brand) return null;
+        return (
+          <Image
+            key={key}
+            src={brand.src}
+            alt={brand.alt}
+            width={14}
+            height={14}
+            className={`rounded-full ring-1 ring-paper-1 ${LOGO_MONO}`}
+            unoptimized
+          />
+        );
+      })}
+    </span>
+  );
 }
 
 function AgentTab({
@@ -190,7 +191,11 @@ function HumanTab({
         <Select
           className="min-h-0 rounded-none bg-paper-3/60 px-4 py-2.5 text-sm font-medium dark:bg-paper-2/30"
           onChange={setActivePlatform}
-          options={platformKeys.map((key) => ({ value: key, label: PLATFORM_LABELS[key] ?? key }))}
+          options={platformKeys.map((key) => ({
+            value: key,
+            label: PLATFORM_LABELS[key] ?? key,
+            icon: <PlatformIcon platformKey={key} />,
+          }))}
           value={activePlatform}
         />
       )}
@@ -251,67 +256,39 @@ export function SkillInstallPanel({
   downloadFilename,
   agentDocs,
 }: SkillInstallPanelProps) {
-  const fileTreeEntries = buildAgentFileTree(agentDocs);
-
   return (
-    <section className="border-t border-line pt-8" id="install">
-      <details className="group" open>
-        <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-          <CodeIcon className="h-4 w-4 text-ink-soft" />
-          <h2 className={sectionH2}>Installation</h2>
-          <ChevronDownIcon className="ml-auto h-3.5 w-3.5 text-ink-faint transition-transform group-open:rotate-180" />
-        </summary>
+    <Panel compact square className="grid gap-4">
+      <Tabs defaultValue="agent">
+        <TabsList className="w-full">
+          <TabsTrigger className="flex-1 gap-1.5" value="agent">
+            <PlatformLogoRow agentDocs={agentDocs} />
+            I&apos;m an Agent
+          </TabsTrigger>
+          <TabsTrigger className="flex-1 gap-1.5" value="human">
+            <UserIcon className="h-3.5 w-3.5" />
+            I&apos;m a Human
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="mt-4 grid gap-6">
-          <Panel compact square>
-            <Tabs defaultValue="agent">
-              <TabsList className="w-full">
-                <TabsTrigger className="flex-1 gap-1.5" value="agent">
-                  <BotIcon className="h-3.5 w-3.5" />
-                  I&apos;m an Agent
-                </TabsTrigger>
-                <TabsTrigger className="flex-1 gap-1.5" value="human">
-                  <UserIcon className="h-3.5 w-3.5" />
-                  I&apos;m a Human
-                </TabsTrigger>
-              </TabsList>
+        <TabsContent value="agent">
+          <AgentTab
+            agentPrompt={agentPrompt}
+            skillHref={skillHref}
+            slug={slug}
+          />
+        </TabsContent>
 
-              <TabsContent value="agent">
-                <AgentTab
-                  agentPrompt={agentPrompt}
-                  skillHref={skillHref}
-                  slug={slug}
-                />
-              </TabsContent>
-
-              <TabsContent value="human">
-                <HumanTab
-                  agentDocs={agentDocs}
-                  body={body}
-                  downloadFilename={downloadFilename}
-                  rawUrl={rawUrl}
-                  skillHref={skillHref}
-                  slug={slug}
-                />
-              </TabsContent>
-            </Tabs>
-          </Panel>
-
-          {fileTreeEntries.length > 0 && (
-            <div className="grid gap-3">
-              <div className="flex items-center justify-between">
-                <h3 className="m-0 text-sm font-semibold tracking-tight text-ink">
-                  File Tree
-                </h3>
-                <span className="text-xs tabular-nums text-ink-faint">
-                  {fileTreeEntries.length} {fileTreeEntries.length === 1 ? "file" : "files"}
-                </span>
-              </div>
-              <FileTree entries={fileTreeEntries} />
-            </div>
-          )}
-        </div>
-      </details>
-    </section>
+        <TabsContent value="human">
+          <HumanTab
+            agentDocs={agentDocs}
+            body={body}
+            downloadFilename={downloadFilename}
+            rawUrl={rawUrl}
+            skillHref={skillHref}
+            slug={slug}
+          />
+        </TabsContent>
+      </Tabs>
+    </Panel>
   );
 }

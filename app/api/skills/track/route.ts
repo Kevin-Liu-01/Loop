@@ -4,8 +4,10 @@ import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillCatalogue } from "@/lib/content";
+import { updateSkill } from "@/lib/db/skills";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
-import { addTrackedSkillFromRecord, buildUserSkillRecord } from "@/lib/user-skills";
+import { addTrackedSkillFromRecord, buildUserSkillRecord, normalizeSource } from "@/lib/user-skills";
 
 const bodySchema = z.object({
   slug: z.string().min(1)
@@ -40,12 +42,18 @@ export async function POST(request: Request) {
 
         const skillSources = skill.sources ?? [];
         const hasOwnSources = skillSources.length > 0;
-        const category = base.categories.find((entry) => entry.slug === skill.category);
         const sourcesToTrack = hasOwnSources
           ? skillSources
-          : (category?.sources ?? []);
+          : skill.path && skill.path.startsWith("http")
+            ? [normalizeSource(skill.path, skill.category)]
+            : [];
         const tracked = await addTrackedSkillFromRecord(skill, sourcesToTrack);
         const record = buildUserSkillRecord(tracked);
+
+        const researchProfile = buildResearchProfile(
+          { title: tracked.title, sources: tracked.sources },
+        );
+        await updateSkill(tracked.slug, { researchProfile }).catch(() => {});
 
         revalidatePath("/");
         revalidatePath("/admin");

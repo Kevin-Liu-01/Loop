@@ -13,7 +13,7 @@ insert into skill_authors (
   'https://github.com/anthropics/skills',
   true,
   true,
-  'Official',
+  'Verified',
   jsonb_build_object('kind', 'provider', 'sourceId', 'anthropic-skills')
 )
 on conflict (slug) do update set
@@ -38,7 +38,7 @@ insert into skill_authors (
   'https://github.com/openai/skills',
   true,
   true,
-  'Official',
+  'Verified',
   jsonb_build_object('kind', 'provider', 'sourceId', 'openai-skills')
 )
 on conflict (slug) do update set

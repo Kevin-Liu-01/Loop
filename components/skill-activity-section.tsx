@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
@@ -21,8 +21,11 @@ import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { LinkButton } from "@/components/ui/link-button";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { Tip } from "@/components/ui/tip";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
+import { formatDateTime } from "@/lib/format";
 import { countMonthlyRuns, formatNextRun } from "@/lib/schedule";
 import type {
   AutomationSummary,
@@ -68,7 +71,7 @@ function MetricCard({
           : "border-line bg-paper-3/90 dark:bg-paper-2/40",
       )}
     >
-      <span className="flex items-center gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
+      <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
         {icon}
         {label}
       </span>
@@ -115,8 +118,8 @@ function formatDuration(startedAt: string, finishedAt: string): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-const statBox = "grid gap-1 rounded-2xl border border-line bg-paper-3 p-4";
-const statLabel = "text-xs font-medium uppercase tracking-[0.08em] text-ink-soft";
+const statBox = "grid gap-1 rounded-none border border-line bg-paper-3 p-4";
+const statLabel = "text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft";
 const statValue = "text-sm font-semibold tracking-[-0.03em]";
 
 function RunMetadataBar({
@@ -172,7 +175,7 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
     "bg-line-strong";
 
   return (
-    <article className="grid gap-1.5 rounded-xl border border-line bg-paper-3 px-4 py-3">
+    <article className="grid gap-1.5 rounded-none border border-line bg-paper-3 px-4 py-3">
       <div className="flex items-center gap-3">
         <span className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)} />
         <strong className="text-sm text-ink">{source.label}</strong>
@@ -208,7 +211,7 @@ function StepLog({ messages }: { messages: string[] }) {
           className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-t border-line py-3 first:border-t-0 first:pt-0"
           key={`${message}-${index}`}
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-paper-3 text-ink-soft [&>svg]:h-3.5 [&>svg]:w-3.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-none border border-line bg-paper-3 text-ink-soft [&>svg]:h-3.5 [&>svg]:w-3.5">
             <AutomationIcon />
           </div>
           <div className="grid gap-0.5 pt-1">
@@ -233,8 +236,16 @@ export function SkillActivitySection({
   canManage = false,
   sources = [],
 }: SkillActivitySectionProps) {
+  const { timeZone } = useAppTimezone();
   const [editOpen, setEditOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setModalOpen(true);
+    window.addEventListener("open-run-log", handler);
+    return () => window.removeEventListener("open-run-log", handler);
+  }, []);
+
   const isTracked = origin === "user";
   const isActive = automation?.status === "ACTIVE";
   const now = useMemo(() => new Date(), []);
@@ -269,9 +280,7 @@ export function SkillActivitySection({
   if (!isTracked) {
     return (
       <section className="grid gap-5 border-t border-line pt-8" id="activity">
-        <h2 className="m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink">
-          Activity
-        </h2>
+        <SectionHeading icon={<AutomationIcon />} title="Activity" />
         <Panel className="overflow-hidden">
           <div className="dither-gradient-orange -mx-6 -mt-6 mb-1 px-6 pb-5 pt-6">
             <PanelHead className="items-start">
@@ -324,9 +333,7 @@ export function SkillActivitySection({
   return (
     <>
       <section className="grid gap-6 border-t border-line pt-8" id="activity">
-        <h2 className="m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink">
-          Activity
-        </h2>
+        <SectionHeading icon={<AutomationIcon />} title="Activity" />
 
         {/* --- Inline setup when no automation exists --- */}
         {!automation && canManage ? (
@@ -417,7 +424,7 @@ export function SkillActivitySection({
               <div className="flex items-center gap-2">
                 {latestRun ? (
                   <Tip content="When this run completed" side="bottom">
-                    <span><Badge color="neutral">{new Date(latestRun.finishedAt).toLocaleString()}</Badge></span>
+                    <span><Badge color="neutral">{formatDateTime(latestRun.finishedAt, timeZone)}</Badge></span>
                   </Tip>
                 ) : null}
                 <Button onClick={() => setModalOpen(true)} size="sm" type="button" variant="soft">
@@ -437,7 +444,7 @@ export function SkillActivitySection({
             {runError ? <p className="m-0 text-sm text-danger">{runError}</p> : null}
 
             {latestRun && latestRun.status === "success" ? (
-              <div className="grid gap-2 rounded-xl border border-line bg-paper-3 p-4">
+              <div className="grid gap-2 rounded-none border border-line bg-paper-3 p-4">
                 <strong className="text-sm text-ink">
                   {latestRun.bodyChanged
                     ? `Revision: ${latestRun.nextVersionLabel}`

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 
 import { CheckIcon, RefreshIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
+import { formatDateTime } from "@/lib/format";
 
 type RefreshResponse = {
   error?: string;
@@ -34,6 +36,7 @@ function ResultTile({ label, value }: { label: string; value: string | number })
 }
 
 export function RefreshControls() {
+  const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<RefreshResult | null>(null);
@@ -54,8 +57,8 @@ export function RefreshControls() {
 
       setResult({
         generatedAt: payload.generatedAt
-          ? new Date(payload.generatedAt).toLocaleString()
-          : new Date().toLocaleString(),
+          ? formatDateTime(payload.generatedAt, timeZone)
+          : formatDateTime(new Date().toISOString(), timeZone),
         skills: payload.skills ?? 0,
         dailyBriefs: payload.dailyBriefs ?? 0,
       });

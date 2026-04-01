@@ -10,11 +10,13 @@ import { ActiveOperationsProvider } from "@/components/active-operations-provide
 import { CommandPalette } from "@/components/command-palette";
 import { NewSkillModal } from "@/components/new-skill-modal";
 import { SeoJsonLd } from "@/components/seo-json-ld";
+import { TimezoneProvider } from "@/components/timezone-provider";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
 import "@/app/globals.css";
 import { clerkAppearance } from "@/lib/clerk-theme";
 import { buildMcpVersionHref } from "@/lib/format";
 import { getLoopSnapshot } from "@/lib/refresh";
+import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImageUrls,
@@ -59,6 +61,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const serverTimeZone = await getUsageTimeZoneFromCookie();
+
   let paletteItems: { label: string; href: string; section: string; hint: string }[] = [];
   let snapshotCategories: Awaited<ReturnType<typeof getLoopSnapshot>>["categories"] = [];
 
@@ -113,13 +117,15 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <TooltipProvider delayDuration={300}>
-              <ActiveOperationsProvider>
-                <CommandPalette items={paletteItems} />
-                <NewSkillModal categories={snapshotCategories} />
-                {children}
-              </ActiveOperationsProvider>
-            </TooltipProvider>
+            <TimezoneProvider serverTimeZone={serverTimeZone}>
+              <TooltipProvider delayDuration={300}>
+                <ActiveOperationsProvider>
+                  <CommandPalette items={paletteItems} />
+                  <NewSkillModal categories={snapshotCategories} />
+                  {children}
+                </ActiveOperationsProvider>
+              </TooltipProvider>
+            </TimezoneProvider>
           </ThemeProvider>
           <Analytics />
           <SpeedInsights />

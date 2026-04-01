@@ -30,7 +30,7 @@ export function StatTile({
         "relative grid overflow-hidden border border-line",
         compact
           ? cn(
-              "gap-0.5 rounded-none bg-paper-2/40 p-2.5 dark:bg-black/30",
+              "gap-0.5 rounded-none bg-paper-3 p-2.5 dark:bg-paper-2/90",
               delta ? "pb-7" : "pb-6"
             )
           : "gap-1 rounded-none p-4",
@@ -39,7 +39,7 @@ export function StatTile({
     >
       <small
         className={cn(
-          "font-medium uppercase tracking-[0.08em] text-ink-soft",
+          "font-semibold uppercase tracking-[0.08em] text-ink-soft",
           compact ? "text-[0.62rem] leading-tight" : "text-[0.72rem]"
         )}
       >

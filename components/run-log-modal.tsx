@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { DiffViewer } from "@/components/diff-viewer";
-import { AutomationIcon } from "@/components/frontier-icons";
+import { AutomationIcon, ClockIcon, CpuIcon, SearchIcon, SparkIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/shadcn/dialog";
 import { ScrollArea } from "@/components/ui/shadcn/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
+import { formatTime } from "@/lib/format";
 import type {
   AgentReasoningStep,
   DiffLine,
-  LoopRunRecord,
   LoopUpdateResult,
   LoopUpdateSourceLog
 } from "@/lib/types";
@@ -41,9 +42,9 @@ type RunLogModalProps = {
 };
 
 const statBox = "grid gap-1 border border-line bg-paper-3 p-3";
-const statLabel = "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
+const statLabel = "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
 const statValue = "text-sm font-semibold tracking-[-0.03em]";
-const sectionLabel = "text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft";
+const sectionLabel = "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
 
 function formatDuration(startedAt: string, finishedAt: string): string {
   const ms = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
@@ -53,6 +54,67 @@ function formatDuration(startedAt: string, finishedAt: string): string {
 
 function toolDisplayName(name: string): string {
   return name.replace(/_/g, " ");
+}
+
+function MetadataBar({
+  trigger,
+  editorModel,
+  startedAt,
+  finishedAt,
+  status,
+  sourceLogs,
+}: {
+  trigger: string;
+  editorModel: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  status: "success" | "error" | "running";
+  sourceLogs: LoopUpdateSourceLog[];
+}) {
+  const totalSignals = sourceLogs.reduce((acc, s) => acc + s.itemCount, 0);
+  const sourcesDone = sourceLogs.filter((s) => s.status === "done").length;
+
+  return (
+    <div className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>trigger</small>
+        <strong className={statValue}>{trigger}</strong>
+      </div>
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>editor</small>
+        <strong className={cn(statValue, "truncate")}>{editorModel ?? "pending"}</strong>
+      </div>
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>duration</small>
+        <strong className={statValue}>
+          {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : "running..."}
+        </strong>
+      </div>
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>status</small>
+        <strong
+          className={cn(
+            statValue,
+            status === "error" && "text-danger",
+            status === "running" && "text-warning",
+            status === "success" && "text-success"
+          )}
+        >
+          {status}
+        </strong>
+      </div>
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>sources</small>
+        <strong className={statValue}>
+          {sourcesDone}/{sourceLogs.length} complete
+        </strong>
+      </div>
+      <div className="grid gap-1 bg-paper-3 p-3">
+        <small className={statLabel}>signals</small>
+        <strong className={statValue}>{totalSignals} captured</strong>
+      </div>
+    </div>
+  );
 }
 
 function StepTimeline({
@@ -127,7 +189,9 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
       <div className="flex items-center gap-3">
         <span className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)} />
         <strong className="text-sm text-ink">{source.label}</strong>
-        <span className="ml-auto text-xs text-ink-faint">{source.status}</span>
+        <span className="ml-auto text-xs tabular-nums text-ink-faint">
+          {source.itemCount} signal{source.itemCount === 1 ? "" : "s"} · {source.status}
+        </span>
       </div>
       {source.note ? (
         <p className="m-0 text-sm text-ink-soft">{source.note}</p>
@@ -158,7 +222,7 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
 }
 
 
-function StepDetail({ step }: { step: AgentReasoningStep }) {
+function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: string }) {
   return (
     <div className="grid gap-4">
       <div className="flex items-center gap-2">
@@ -169,8 +233,8 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
           Step {step.index + 1}
           {step.toolCall ? ` – ${toolDisplayName(step.toolCall.name)}` : " – Reasoning"}
         </span>
-        <span className="ml-auto text-[0.65rem] text-ink-muted">
-          {new Date(step.timestamp).toLocaleTimeString()}
+        <span className="ml-auto text-[0.65rem] tabular-nums text-ink-muted">
+          {formatTime(step.timestamp, timeZone)}
         </span>
       </div>
 
@@ -194,7 +258,7 @@ function StepDetail({ step }: { step: AgentReasoningStep }) {
               <summary className="cursor-pointer text-xs font-medium text-ink-soft hover:text-ink [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-1">
                   Arguments
-                  <span className="text-ink-muted transition-transform group-open:rotate-90">▶</span>
+                  <span className="text-ink-muted transition-transform group-open:rotate-90">&#9654;</span>
                 </span>
               </summary>
               <pre className="mt-2 max-h-60 overflow-auto bg-paper p-3 font-mono text-xs text-ink-soft">
@@ -248,114 +312,6 @@ function LegacyStepView({ messages, diffLines }: { messages: string[]; diffLines
   );
 }
 
-function ResultSummary({
-  result,
-  error
-}: {
-  result: LoopUpdateResult | null;
-  error: string | null;
-}) {
-  if (!result && !error) {
-    return (
-      <div className="border border-line bg-paper-3 p-4">
-        <p className="m-0 text-sm text-ink-soft">
-          No structured result yet. Open the steps tab for the raw trace.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-3 border border-line bg-paper-3 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <strong className="text-sm text-ink">
-          {result
-            ? result.changed
-              ? `New revision: ${result.nextVersionLabel}`
-              : "No material changes"
-            : "Run error"}
-        </strong>
-        {result?.changedSections?.length ? <Badge color="blue">{result.changedSections.length} sections</Badge> : null}
-      </div>
-
-      {result?.summary ? <p className="m-0 text-sm text-ink-soft">{result.summary}</p> : null}
-      {result?.whatChanged ? <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p> : null}
-
-      {result?.changedSections?.length ? (
-        <div className="flex flex-wrap gap-1.5">
-          {result.changedSections.map((section) => (
-            <span
-              className="rounded-none border border-line bg-paper px-2 py-0.5 text-[0.7rem] font-medium text-ink-soft"
-              key={section}
-            >
-              {section}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
-      {error ? (
-        <p className="m-0 border border-danger/20 bg-danger/5 p-3 text-sm text-danger">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function StepOverview({
-  isLive,
-  messages,
-  reasoningSteps
-}: {
-  isLive: boolean;
-  messages: string[];
-  reasoningSteps: AgentReasoningStep[];
-}) {
-  if (reasoningSteps.length > 0) {
-    return (
-      <div className="grid gap-2">
-        {reasoningSteps.slice(-5).map((step) => (
-          <article
-            className="grid gap-1 rounded-none border border-line bg-paper-3 px-3 py-2"
-            key={`${step.index}-${step.timestamp}`}
-          >
-            <div className="flex items-center gap-2 text-xs text-ink-faint">
-              <span className="font-semibold text-ink">Step {step.index + 1}</span>
-              <span>{step.toolCall ? toolDisplayName(step.toolCall.name) : "Reasoning"}</span>
-              <span className="ml-auto">{new Date(step.timestamp).toLocaleTimeString()}</span>
-            </div>
-            <p className="m-0 line-clamp-3 text-sm text-ink-soft">
-              {step.reasoning || step.toolResult || "Waiting for more detail."}
-            </p>
-          </article>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-2">
-      {messages.map((message, index) => (
-        <article
-          className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-none border border-line bg-paper-3 px-3 py-2"
-          key={`${message}-${index}`}
-        >
-          <span
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-sm border border-line bg-paper text-[0.65rem] font-semibold text-ink-muted",
-              isLive && index === messages.length - 1 && "animate-pulse"
-            )}
-          >
-            {index + 1}
-          </span>
-          <p className="m-0 pt-0.5 text-sm text-ink-soft">{message}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 export function RunLogModal({
   open,
   onClose,
@@ -372,9 +328,14 @@ export function RunLogModal({
   diffLines,
   error
 }: RunLogModalProps) {
+  const { timeZone } = useAppTimezone();
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
   const hasReasoningSteps = reasoningSteps.length > 0;
   const selectedStep = reasoningSteps[selectedStepIndex] ?? null;
+  const totalSignals = sourceLogs.reduce((acc, s) => acc + s.itemCount, 0);
+  const totalSteps = hasReasoningSteps ? reasoningSteps.length : messages.length;
+  const addedCount = diffLines.filter((l) => l.type === "added").length;
+  const removedCount = diffLines.filter((l) => l.type === "removed").length;
 
   useEffect(() => {
     if (selectedStepIndex >= reasoningSteps.length) {
@@ -384,98 +345,72 @@ export function RunLogModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="6xl">
+      <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="4xl">
         <DialogHeader>
-          <DialogTitle>Run log</DialogTitle>
-          <DialogDescription>
-            Trace, sources, diffs, and agent steps for this execution.
-          </DialogDescription>
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-line bg-paper-3 text-ink-soft [&>svg]:h-4 [&>svg]:w-4">
+              <AutomationIcon />
+            </span>
+            <div className="grid gap-0.5">
+              <DialogTitle>Run log</DialogTitle>
+              <DialogDescription>
+                Trace, sources, diffs, and agent steps for this execution.
+              </DialogDescription>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge color={status === "error" ? "red" : status === "running" ? "amber" : "green"}>
+              {status}
+            </Badge>
+            <Badge color="neutral">
+              <ClockIcon className="mr-1 h-3 w-3" />
+              {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : "running..."}
+            </Badge>
+            <Badge color="blue">
+              <SearchIcon className="mr-1 h-3 w-3" />
+              {sourceLogs.length} source{sourceLogs.length === 1 ? "" : "s"}
+            </Badge>
+            <Badge color="teal">
+              <SparkIcon className="mr-1 h-3 w-3" />
+              {totalSignals} signal{totalSignals === 1 ? "" : "s"}
+            </Badge>
+            <Badge color="neutral">
+              <CpuIcon className="mr-1 h-3 w-3" />
+              {totalSteps} step{totalSteps === 1 ? "" : "s"}
+            </Badge>
+          </div>
         </DialogHeader>
         <ScrollArea className="min-h-0 flex-1">
         <div className="px-6 py-5">
         <div className="grid gap-6">
-          {/* Metadata bar */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className={statBox}>
-              <small className={statLabel}>trigger</small>
-              <strong className={statValue}>{trigger}</strong>
-            </div>
-            <div className={statBox}>
-              <small className={statLabel}>editor</small>
-              <strong className={statValue}>{editorModel ?? "pending"}</strong>
-            </div>
-            <div className={statBox}>
-              <small className={statLabel}>duration</small>
-              <strong className={statValue}>
-                {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : "running..."}
-              </strong>
-            </div>
-            <div className={statBox}>
-              <small className={statLabel}>status</small>
-              <strong
-                className={cn(
-                  statValue,
-                  status === "error" && "text-danger",
-                  status === "running" && "text-warning"
-                )}
-              >
-                {status}
-              </strong>
-            </div>
-          </div>
+          <MetadataBar
+            editorModel={editorModel}
+            finishedAt={finishedAt}
+            sourceLogs={sourceLogs}
+            startedAt={startedAt}
+            status={status}
+            trigger={trigger}
+          />
 
-          <Tabs className="grid gap-4" defaultValue="overview">
+          <Tabs className="grid gap-4" defaultValue="steps">
             <TabsList className="w-fit">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="sources">Sources</TabsTrigger>
-              <TabsTrigger value="steps">Steps</TabsTrigger>
-              <TabsTrigger value="diff">Diff</TabsTrigger>
+              <TabsTrigger value="steps">
+                Steps
+                {totalSteps > 0 ? <span className="ml-1 tabular-nums text-ink-faint">({totalSteps})</span> : null}
+              </TabsTrigger>
+              <TabsTrigger value="diff">
+                Diff
+                {diffLines.length > 0 ? (
+                  <span className="ml-1 tabular-nums text-ink-faint">
+                    (+{addedCount} −{removedCount})
+                  </span>
+                ) : null}
+              </TabsTrigger>
+              <TabsTrigger value="sources">
+                Sources
+                {sourceLogs.length > 0 ? <span className="ml-1 tabular-nums text-ink-faint">({sourceLogs.length})</span> : null}
+              </TabsTrigger>
             </TabsList>
-
-            <TabsContent className="grid gap-5" value="overview">
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
-                <div className="grid gap-5">
-                  <ResultSummary error={error} result={result} />
-                  {diffLines.length > 0 ? (
-                    <DiffViewer compact label="Diff preview" lines={diffLines} maxHeight={280} />
-                  ) : null}
-                </div>
-
-                <div className="grid content-start gap-5">
-                  <div>
-                    <h3 className={cn(sectionLabel, "mb-2")}>Recent steps</h3>
-                    <StepOverview isLive={isLive} messages={messages} reasoningSteps={reasoningSteps} />
-                  </div>
-
-                  {sourceLogs.length > 0 ? (
-                    <div>
-                      <h3 className={cn(sectionLabel, "mb-2")}>
-                        Source signals ({sourceLogs.length})
-                      </h3>
-                      <div className="grid gap-2">
-                        {sourceLogs.slice(0, 3).map((source) => (
-                          <SourceCardFull key={source.id} source={source} />
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent className="grid gap-4" value="sources">
-              {sourceLogs.length > 0 ? (
-                <div className="grid gap-2">
-                  {sourceLogs.map((source) => (
-                    <SourceCardFull key={source.id} source={source} />
-                  ))}
-                </div>
-              ) : (
-                <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
-                  No source logs were recorded for this run.
-                </div>
-              )}
-            </TabsContent>
 
             <TabsContent className="grid gap-4" value="steps">
               {hasReasoningSteps ? (
@@ -489,7 +424,7 @@ export function RunLogModal({
 
                   <div className="grid content-start gap-5">
                     {selectedStep ? (
-                      <StepDetail step={selectedStep} />
+                      <StepDetail step={selectedStep} timeZone={timeZone} />
                     ) : (
                       <p className="text-sm text-ink-soft">Select a step to view details.</p>
                     )}
@@ -506,6 +441,20 @@ export function RunLogModal({
               ) : (
                 <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
                   No diff was produced for this run.
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent className="grid gap-4" value="sources">
+              {sourceLogs.length > 0 ? (
+                <div className="grid gap-2">
+                  {sourceLogs.map((source) => (
+                    <SourceCardFull key={source.id} source={source} />
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
+                  No source logs were recorded for this run.
                 </div>
               )}
             </TabsContent>

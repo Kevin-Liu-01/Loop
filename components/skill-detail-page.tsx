@@ -9,10 +9,10 @@ import { DeleteSkillButton } from "@/components/delete-skill-button";
 import { DownloadSkillButton } from "@/components/download-skill-button";
 import { ForkSkillButton } from "@/components/fork-skill-button";
 import { ExpandableContent } from "@/components/expandable-content";
-import { PlayIcon } from "@/components/frontier-icons";
+import { FileCodeIcon, GlobeIcon, PlayIcon } from "@/components/frontier-icons";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { ShareButton } from "@/components/share-button";
 import { SkillAgentDocsPanel } from "@/components/skill-agent-docs-panel";
-import { SkillInstallPanel } from "@/components/skill-install-panel";
 import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { SkillAuthorStudio } from "@/components/skill-author-studio";
 import { SkillActivitySection } from "@/components/skill-activity-section";
@@ -25,8 +25,6 @@ import { UsageBeacon } from "@/components/usage-beacon";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { Panel } from "@/components/ui/panel";
-import { SimpleList, SimpleListBody, SimpleListItem } from "@/components/ui/simple-list";
 import { VersionSwitcher } from "@/components/version-switcher";
 import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
 import { formatRelativeDate } from "@/lib/format";
@@ -42,7 +40,6 @@ import type { SkillUsageSummary } from "@/lib/usage";
 import type { CategoryBrief, LoopRunRecord, SkillRecord } from "@/lib/types";
 
 const SITE_URL = getSiteUrlString();
-const sectionH2 = "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
 
 type SkillDetailPageProps = {
   skill: SkillRecord;
@@ -53,6 +50,7 @@ type SkillDetailPageProps = {
   purchased?: boolean;
   canEdit?: boolean;
   isSignedIn?: boolean;
+  timeZone?: string;
 };
 
 function formatPrice(amount: number, currency: string): string {
@@ -68,6 +66,7 @@ export function SkillDetailPage({
   purchased = false,
   canEdit = false,
   isSignedIn = false,
+  timeZone,
 }: SkillDetailPageProps) {
   const isPaid = skill.price && skill.price.amount > 0;
   const priceLabel = isPaid ? formatPrice(skill.price!.amount, skill.price!.currency) : null;
@@ -107,7 +106,6 @@ export function SkillDetailPage({
 
   const sectionTabs: SectionTab[] = [
     ...(canEdit ? [{ id: "author-studio", label: "Studio" }] : []),
-    { id: "install", label: "Install" },
     { id: "content", label: "Content" },
     { id: "agent-docs", label: "Agent docs" },
     { id: "activity", label: "Activity" },
@@ -172,7 +170,7 @@ export function SkillDetailPage({
             <div className="flex flex-wrap items-center gap-3">
               <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
               <span className="text-xs tabular-nums text-ink-faint">
-                {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt)}
+                {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt, timeZone)}
               </span>
             </div>
 
@@ -219,6 +217,7 @@ export function SkillDetailPage({
               />
               <CopyButton
                 className="text-xs"
+                iconType="link"
                 iconSize="sm"
                 label="Copy link"
                 size="sm"
@@ -258,19 +257,13 @@ export function SkillDetailPage({
                 </section>
               ) : null}
 
-              <SkillInstallPanel
-                agentDocs={skill.agentDocs}
-                agentPrompt={primaryAgentPrompt}
-                body={skill.body}
-                downloadFilename={downloadFilename}
-                rawUrl={rawUrl}
-                skillHref={skill.href}
-                slug={skill.slug}
-              />
-
               {/* Skill body */}
-              <section aria-label="Skill content" id="content">
-                <div className="overflow-hidden rounded-none border border-line bg-paper-2/50 dark:bg-paper-2/25">
+              <section aria-label="Skill content" className="grid gap-4" id="content">
+                <SectionHeading
+                  icon={<FileCodeIcon />}
+                  title="Content"
+                />
+                <div className="overflow-hidden rounded-none border border-line bg-paper-3/92">
                   <ExpandableContent maxHeight={600}>
                     <div className="markdown-shell p-5 sm:p-6">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -305,44 +298,46 @@ export function SkillDetailPage({
 
               {/* Sources list */}
               {trackedSources.length > 0 ? (
-                <section className="border-t border-line pt-8" id="sources">
-                  <h2 className={sectionH2}>Sources</h2>
-                  <Panel compact square className="mt-4">
-                    <SimpleList tight>
-                      {trackedSources.map((ref) =>
-                        "url" in ref ? (
-                          <a
-                            className="grid grid-cols-1 border-t border-line bg-transparent py-3 first:border-t-0 first:pt-0 transition-colors hover:bg-transparent"
-                            href={ref.url}
-                            key={ref.url}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            <SimpleListBody>
-                              <strong className="text-ink">{ref.label}</strong>
-                              <p className="m-0 text-sm text-ink-soft">
-                                {[
-                                  ref.tags.join(" · ") || ref.kind,
-                                  ref.mode ? `Mode: ${ref.mode}` : null,
-                                  ref.trust ? `Trust: ${ref.trust}` : null,
-                                  ref.parser ? `Parser: ${ref.parser}` : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
-                            </SimpleListBody>
-                          </a>
-                        ) : (
-                          <SimpleListItem className="grid-cols-1" key={ref.path}>
-                            <SimpleListBody>
-                              <strong className="text-ink">{ref.title}</strong>
-                              <p className="m-0 text-sm text-ink-soft">{ref.excerpt}</p>
-                            </SimpleListBody>
-                          </SimpleListItem>
-                        )
-                      )}
-                    </SimpleList>
-                  </Panel>
+                <section className="grid gap-4 border-t border-line pt-8" id="sources">
+                  <SectionHeading
+                    icon={<GlobeIcon />}
+                    title="Sources"
+                    count={trackedSources.length}
+                    countLabel="tracked"
+                  />
+                  <div className="grid gap-0 overflow-hidden border border-line">
+                    {trackedSources.map((ref) =>
+                      "url" in ref ? (
+                        <a
+                          className="group flex items-center justify-between gap-4 border-t border-line/60 bg-paper-3/92 px-4 py-3 transition-colors first:border-t-0 hover:bg-paper-2/50 dark:border-line/40 dark:bg-paper-2/40 dark:hover:bg-paper-3/40"
+                          href={ref.url}
+                          key={ref.url}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <div className="min-w-0">
+                            <p className="m-0 text-[0.8125rem] font-semibold text-ink group-hover:text-accent">
+                              {ref.label}
+                            </p>
+                            <p className="m-0 mt-0.5 text-[0.6875rem] text-ink-faint">
+                              {ref.tags.join(" · ") || ref.kind}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
+                            Open ↗
+                          </span>
+                        </a>
+                      ) : (
+                        <div
+                          className="border-t border-line/60 bg-paper-3/92 px-4 py-3 first:border-t-0 dark:border-line/40 dark:bg-paper-2/40"
+                          key={ref.path}
+                        >
+                          <p className="m-0 text-[0.8125rem] font-semibold text-ink">{ref.title}</p>
+                          <p className="m-0 mt-0.5 text-[0.6875rem] text-ink-faint">{ref.excerpt}</p>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </section>
               ) : null}
             </div>
@@ -356,16 +351,21 @@ export function SkillDetailPage({
             )}
           >
             <SkillDetailSidebar
+              agentDocs={skill.agentDocs}
               agentPrompt={primaryAgentPrompt}
               automations={attachedAutomations}
+              body={skill.body}
               currentVersion={skill.version}
               diffLines={diffLines}
+              downloadFilename={downloadFilename}
               latestRun={latestRun}
               latestUpdate={latestUpdate}
               rawDiffLength={rawDiff.length}
+              rawUrl={rawUrl}
               skillHref={skill.href}
               skills={[skill]}
               slug={skill.slug}
+              timeZone={timeZone}
               updates={skill.updates}
               usage={usage}
               versions={skill.availableVersions}

@@ -10,6 +10,11 @@ import {
   CheckIcon,
   TerminalIcon,
   FileCodeIcon,
+  FileIcon,
+  GlobeIcon,
+  SearchIcon,
+  PackageIcon,
+  ZapIcon,
 } from "@/components/frontier-icons";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
@@ -37,9 +42,52 @@ const TOOL_META: Record<
     label: "Run command",
     verb: "Running command",
   },
-  writeFile: { icon: FileCodeIcon, label: "Write file", verb: "Writing file" },
-  readFile: { icon: FileCodeIcon, label: "Read file", verb: "Reading file" },
+  writeFile: {
+    icon: FileCodeIcon,
+    label: "Write file",
+    verb: "Writing file",
+  },
+  readFile: { icon: FileIcon, label: "Read file", verb: "Reading file" },
+  listFiles: {
+    icon: FileIcon,
+    label: "List files",
+    verb: "Listing files",
+  },
+  searchFiles: {
+    icon: SearchIcon,
+    label: "Search files",
+    verb: "Searching files",
+  },
+  installPackage: {
+    icon: PackageIcon,
+    label: "Install package",
+    verb: "Installing package",
+  },
+  fetchUrl: { icon: GlobeIcon, label: "Fetch URL", verb: "Fetching URL" },
+  httpRequest: {
+    icon: GlobeIcon,
+    label: "HTTP request",
+    verb: "Sending request",
+  },
 };
+
+function fallbackMeta(toolName: string): {
+  icon: typeof CodeIcon;
+  label: string;
+  verb: string;
+} {
+  if (toolName.startsWith("mcp_")) {
+    const cleaned = toolName
+      .replace(/^mcp_/, "")
+      .replace(/_/g, " ");
+    return { icon: ZapIcon, label: cleaned, verb: cleaned };
+  }
+  return {
+    icon: TerminalIcon,
+    label: toolName.replace(/_/g, " "),
+    verb: `Running ${toolName.replace(/_/g, " ")}`,
+  };
+}
 
 function formatOutput(output: Record<string, unknown>): string {
   const parts: string[] = [];
@@ -51,6 +99,9 @@ function formatOutput(output: Record<string, unknown>): string {
   }
   if (typeof output.content === "string" && output.content) {
     parts.push(output.content);
+  }
+  if (typeof output.text === "string" && output.text) {
+    parts.push(output.text);
   }
   if ("exitCode" in output) {
     parts.push(`exit ${output.exitCode}`);
@@ -69,8 +120,9 @@ function formatSummary(
 ): string {
   if (toolName === "executeCode") {
     const code = typeof input.code === "string" ? input.code : "";
+    const lang = typeof input.language === "string" ? `[${input.language}] ` : "";
     const line = code.split("\n")[0] ?? "";
-    return line.length > 50 ? line.slice(0, 50) + "…" : line;
+    return lang + (line.length > 60 ? line.slice(0, 60) + "…" : line);
   }
   if (toolName === "runCommand") {
     const cmd = input.command ?? "";
@@ -83,6 +135,14 @@ function formatSummary(
   ) {
     return input.path;
   }
+  if (toolName === "fetchUrl" || toolName === "httpRequest") {
+    const url = input.url ?? input.endpoint ?? "";
+    const method = typeof input.method === "string" ? `${input.method} ` : "";
+    return `${method}${url}`;
+  }
+  if (typeof input.query === "string") return input.query;
+  if (typeof input.name === "string") return input.name;
+  if (typeof input.path === "string") return input.path;
   return "";
 }
 
@@ -117,23 +177,24 @@ function StatusIndicator({
   if (state === "result") {
     const ok = exitCode === undefined || exitCode === 0;
     return (
-      <Tip content={ok ? "Completed successfully" : `Failed with exit code ${exitCode}`} side="top">
-        {ok ? (
-          <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-success/15">
-            <CheckIcon className="h-3 w-3 text-success" />
-          </span>
-        ) : (
-          <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-danger/15">
-            <span className="h-2 w-2 rounded-full bg-danger" />
-          </span>
+      <span
+        className={cn(
+          "flex h-[18px] w-[18px] shrink-0 items-center justify-center",
+          ok ? "text-success" : "text-danger",
         )}
-      </Tip>
+      >
+        {ok ? (
+          <CheckIcon className="h-3 w-3" />
+        ) : (
+          <span className="h-1.5 w-1.5 bg-danger" />
+        )}
+      </span>
     );
   }
   return (
-    <Tip content="Executing…" side="top">
-      <span className="inline-block h-4 w-4 animate-spin rounded-full border-[1.5px] border-accent/20 border-t-accent" />
-    </Tip>
+    <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center">
+      <span className="inline-block h-3 w-3 animate-spin border-[1.5px] border-accent/20 border-t-accent" />
+    </span>
   );
 }
 
@@ -151,26 +212,21 @@ function CopyButton({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <Tip content={copied ? "Copied!" : "Copy output"} side="left">
+    <Tip content={copied ? "Copied!" : "Copy"} side="left">
       <button
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-faint/50 opacity-0 transition-all group-hover/block:opacity-100 hover:bg-paper-3/60 hover:text-ink-soft"
+        className="flex h-5 w-5 shrink-0 items-center justify-center text-ink-faint/40 opacity-0 transition-all group-hover/block:opacity-100 hover:text-ink-soft"
         onClick={handleCopy}
         type="button"
         aria-label="Copy output"
       >
         {copied ? (
-          <CheckIcon className="h-3 w-3 text-success" />
+          <CheckIcon className="h-2.5 w-2.5 text-success" />
         ) : (
-          <CopyIcon className="h-3 w-3" />
+          <CopyIcon className="h-2.5 w-2.5" />
         )}
       </button>
     </Tip>
   );
-}
-
-function languageBadge(input: Record<string, unknown>): string | null {
-  if (typeof input.language === "string") return input.language;
-  return null;
 }
 
 export function SandboxToolBlock({
@@ -180,37 +236,34 @@ export function SandboxToolBlock({
   state = "result",
 }: ToolBlockProps) {
   const isRunning = state !== "result";
-  const [open, setOpen] = useState(true);
-  const meta = TOOL_META[toolName] ?? {
-    icon: TerminalIcon,
-    label: toolName,
-    verb: `Running ${toolName}`,
-  };
+  const [open, setOpen] = useState(false);
+  const meta = TOOL_META[toolName] ?? fallbackMeta(toolName);
   const Icon = meta.icon;
   const exitCode =
     output && "exitCode" in output ? (output.exitCode as number) : undefined;
   const hasError =
     state === "result" && exitCode !== undefined && exitCode !== 0;
   const summary = formatSummary(toolName, input);
-  const lang = languageBadge(input);
+  const lang =
+    typeof input.language === "string" ? input.language : null;
   const outputText = output ? formatOutput(output) : "";
 
   return (
     <div
       className={cn(
-        "group/block my-2.5 overflow-hidden rounded-xl border transition-all duration-200",
+        "group/block overflow-hidden border transition-colors",
         isRunning
-          ? "border-accent/20 shadow-[0_0_0_1px_rgba(232,101,10,0.04)]"
+          ? "border-accent/20 bg-accent/[0.02]"
           : hasError
-            ? "border-danger/20 shadow-[0_0_0_1px_rgba(185,28,28,0.04)]"
-            : "border-line/50 shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.1)]",
+            ? "border-danger/20"
+            : "border-line",
       )}
     >
-      {/* Header bar */}
+      {/* Header */}
       <button
         className={cn(
-          "flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-xs transition-colors",
-          "bg-paper-2/50 hover:bg-paper-2/80 dark:bg-paper-2/60 dark:hover:bg-paper-2/80",
+          "flex w-full items-center gap-2 px-3 py-2 text-left text-[0.75rem] transition-colors",
+          "bg-paper-2/40 hover:bg-paper-2/70 dark:bg-paper-2/50 dark:hover:bg-paper-2/70",
         )}
         onClick={() => setOpen((p) => !p)}
         type="button"
@@ -221,59 +274,55 @@ export function SandboxToolBlock({
           {isRunning ? meta.verb : meta.label}
         </span>
         {lang && (
-          <Tip content={`Language: ${lang}`} side="top">
-            <span className="rounded-md bg-paper-3/80 px-1.5 py-0.5 text-[0.55rem] font-medium text-ink-faint ring-1 ring-line/30 dark:bg-paper-3/40">
-              {lang}
-            </span>
-          </Tip>
+          <span className="bg-paper-3/80 px-1.5 py-px text-[0.5625rem] font-medium text-ink-faint ring-1 ring-line dark:bg-paper-3/40">
+            {lang}
+          </span>
         )}
         {summary && (
-          <span className="min-w-0 flex-1 truncate text-[0.65rem] text-ink-faint/70">
+          <span className="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-ink-faint/60">
             {summary}
           </span>
         )}
         {exitCode !== undefined && (
-          <Tip content={exitCode === 0 ? "Process exited cleanly" : "Non-zero exit – check stderr"} side="top">
-            <span
-              className={cn(
-                "ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[0.55rem] font-semibold tabular-nums",
-                exitCode === 0
-                  ? "bg-success/10 text-success"
-                  : "bg-danger/10 text-danger",
-              )}
-            >
-              exit {exitCode}
-            </span>
-          </Tip>
+          <span
+            className={cn(
+              "ml-auto shrink-0 px-1.5 py-px font-mono text-[0.5625rem] font-semibold tabular-nums",
+              exitCode === 0
+                ? "bg-success/10 text-success"
+                : "bg-danger/10 text-danger",
+            )}
+          >
+            exit {exitCode}
+          </span>
         )}
         {open ? (
-          <ChevronDownIcon className="h-3 w-3 shrink-0 text-ink-faint/50" />
+          <ChevronDownIcon className="h-3 w-3 shrink-0 text-ink-faint/40" />
         ) : (
-          <ChevronRightIcon className="h-3 w-3 shrink-0 text-ink-faint/50" />
+          <ChevronRightIcon className="h-3 w-3 shrink-0 text-ink-faint/40" />
         )}
       </button>
 
       {open && (
-        <div className="grid gap-0 border-t border-line/30">
+        <div className="grid gap-0 border-t border-line/60">
           {/* Input */}
           <div className="relative">
-            <pre className="max-h-52 overflow-auto px-3.5 py-2.5 font-mono text-[0.7rem] leading-relaxed text-ink-soft">
+            <pre className="max-h-48 overflow-auto px-3 py-2 font-mono text-[0.7rem] leading-relaxed text-ink-soft">
               {formatInput(toolName, input)}
             </pre>
           </div>
 
           {/* Output */}
           {output && (
-            <div className="relative border-t border-line/30 bg-paper-2/30 dark:bg-paper-2/20">
+            <div className="relative border-t border-line/60 bg-paper-2/25 dark:bg-paper-2/15">
               <pre
                 className={cn(
-                  "max-h-52 overflow-auto px-3.5 py-2.5 pr-10 font-mono text-[0.7rem] leading-relaxed",
+                  "max-h-48 overflow-auto px-3 py-2 pr-8 font-mono text-[0.7rem] leading-relaxed",
                   hasError ? "text-danger" : "text-ink",
                 )}
               >
                 {outputText}
               </pre>
-              <div className="absolute right-2 top-2">
+              <div className="absolute right-1.5 top-1.5">
                 <CopyButton text={outputText} />
               </div>
             </div>

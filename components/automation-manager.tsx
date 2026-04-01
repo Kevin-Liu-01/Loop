@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/shadcn/dialog";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { StatusDot } from "@/components/ui/status-dot";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { CADENCE_ALL_OPTIONS, STATUS_OPTIONS } from "@/lib/automation-constants";
+import { formatMonthYear } from "@/lib/format";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
 import type { AutomationSummary, SkillRecord, UserSkillCadence } from "@/lib/types";
 
@@ -35,6 +37,7 @@ type AutomationManagerProps = {
 };
 
 export function AutomationManager({ automations, skills, manageableSkillSlugs }: AutomationManagerProps) {
+  const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -106,7 +109,7 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
                     Monthly schedule
                   </span>
                   <p className="mt-1 text-sm text-ink-faint">
-                    {now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                    {formatMonthYear(now, timeZone)}
                   </p>
                 </div>
               </PanelHead>

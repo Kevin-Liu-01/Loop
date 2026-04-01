@@ -13,7 +13,7 @@ export default async function SettingsHealthPage() {
 
   return (
     <SettingsSectionPage sectionId="health">
-      <SystemObservabilityPanel overview={usageOverview} />
+      <SystemObservabilityPanel overview={usageOverview} timeZone={timeZone} />
     </SettingsSectionPage>
   );
 }

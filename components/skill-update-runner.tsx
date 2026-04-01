@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { useTrackedLoopUpdate } from "@/hooks/use-tracked-loop-update";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
+import { formatDateTime } from "@/lib/format";
 import { formatNextRun } from "@/lib/schedule";
 import { applySourceUpdate } from "@/lib/stream-loop-update";
 import type {
@@ -233,6 +235,7 @@ export function SkillUpdateRunner({
   latestRun,
   canManage = false
 }: SkillUpdateRunnerProps) {
+  const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [isRunning, startTransition] = useTransition();
   const [messages, setMessages] = useState<string[]>([]);
@@ -443,7 +446,7 @@ export function SkillUpdateRunner({
                 </Tip>
               ) : latestRun ? (
                 <Tip content="When this run completed" side="bottom">
-                  <span><Badge color="neutral">{new Date(latestRun.finishedAt).toLocaleString()}</Badge></span>
+                  <span><Badge color="neutral">{formatDateTime(latestRun.finishedAt, timeZone)}</Badge></span>
                 </Tip>
               ) : null}
               <Button

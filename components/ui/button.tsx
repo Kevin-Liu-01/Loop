@@ -23,7 +23,7 @@ export const buttonSizes: Record<ButtonSize, string> = {
   default: "h-11 min-h-11 rounded-none px-4 text-sm",
   sm: "h-9 min-h-9 rounded-none px-3 text-xs",
   icon: "size-9 shrink-0 rounded-none p-0",
-  "icon-sm": "size-9 shrink-0 rounded-none p-0"
+  "icon-sm": "size-7 shrink-0 rounded-none p-0"
 };
 
 type ButtonProps = {

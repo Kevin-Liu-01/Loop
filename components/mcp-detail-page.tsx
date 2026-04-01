@@ -28,6 +28,7 @@ const metaValue = "text-sm font-semibold tracking-[-0.03em] text-ink";
 
 type McpDetailPageProps = {
   mcp: ImportedMcpDocument;
+  timeZone?: string;
 };
 
 function buildAvailableVersions(mcp: ImportedMcpDocument): VersionReference[] {
@@ -98,7 +99,7 @@ function formatInstallStrategy(strategy?: ImportedMcpDocument["installStrategy"]
   }
 }
 
-export function McpDetailPage({ mcp }: McpDetailPageProps) {
+export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
   const isRunnable = supportsSandboxMcp(mcp);
   const href = buildMcpVersionHref(mcp.name, mcp.version);
   const versions = buildAvailableVersions(mcp);
@@ -172,7 +173,7 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
 
             <p className="m-0 text-xs leading-normal text-ink-soft tabular-nums">
               {mcp.envKeys.length} env key{mcp.envKeys.length !== 1 ? "s" : ""}
-              {" · "}Updated {formatRelativeDate(mcp.updatedAt)}
+              {" · "}Updated {formatRelativeDate(mcp.updatedAt, timeZone)}
             </p>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -263,6 +264,7 @@ export function McpDetailPage({ mcp }: McpDetailPageProps) {
               sandboxSupported={mcp.sandboxSupported}
               manifestUrl={mcp.manifestUrl}
               docsHref={docsHref}
+              timeZone={timeZone}
               transport={mcp.transport}
               envKeyCount={mcp.envKeys.length}
               tags={mcp.tags}

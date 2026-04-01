@@ -11,15 +11,18 @@ import {
   SimpleListMeta,
   SimpleListRow
 } from "@/components/ui/simple-list";
+import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelativeDate } from "@/lib/format";
 import { formatUsageEvent, type SkillUsageSummary, type UsageOverview } from "@/lib/usage";
 
 type SystemObservabilityPanelProps = {
   overview: UsageOverview;
+  timeZone?: string;
 };
 
 type SkillObservabilityPanelProps = {
   usage: SkillUsageSummary;
+  timeZone?: string;
 };
 
 function formatEventDetail(details?: string) {
@@ -56,7 +59,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelProps) {
+export function SystemObservabilityPanel({ overview, timeZone }: SystemObservabilityPanelProps) {
   const viewsSpark = overview.timeSeries.map((b) => b.views);
   const interactionsSpark = overview.timeSeries.map((b) => b.interactions);
   const apiSpark = overview.timeSeries.map((b) => b.api);
@@ -86,7 +89,7 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
     <div className="grid gap-5">
       <div className="grid gap-0 rounded-none border border-line bg-paper-3/92">
         <div className="flex items-center gap-3 border-b border-line p-5 sm:p-6">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-paper-2 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-none border border-line bg-paper-2 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
             <PulseIcon className="h-4.5 w-4.5 text-ink-soft" />
           </span>
           <div>
@@ -154,7 +157,7 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
                 <SimpleListBody>
                   <SimpleListRow>
                     <strong>{formatUsageEvent(event)}</strong>
-                    <span>{formatDateTime(event.at)}</span>
+                    <span>{formatDateTime(event.at, timeZone)}</span>
                   </SimpleListRow>
                   <SimpleListMeta>
                     <span>{event.kind}</span>
@@ -175,68 +178,75 @@ export function SystemObservabilityPanel({ overview }: SystemObservabilityPanelP
   );
 }
 
-export function SkillObservabilityPanel({ usage }: SkillObservabilityPanelProps) {
+const metaLabel = "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
+const metaValue = "text-sm font-semibold tracking-[-0.03em]";
+
+export function SkillObservabilityPanel({ usage, timeZone }: SkillObservabilityPanelProps) {
   const hasAnyActivity =
     usage.pageViews + usage.copies + usage.saves + usage.refreshes + usage.apiCalls > 0;
-
-  const dc = usage.dailyCounts ?? [];
-  const viewsSpark = dc.map((d) => d.views);
-  const copiesSpark = dc.map((d) => d.copies);
-  const savesSpark = dc.map((d) => d.saves);
-  const refreshesSpark = dc.map((d) => d.refreshes);
-  const apiSpark = dc.map((d) => d.apiCalls);
+  const hasEvents = usage.recentEvents.length > 0;
 
   return (
-    <div className="grid gap-4 rounded-none border border-line bg-paper-3/92 p-4 sm:p-5">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="m-0 font-serif text-lg font-medium tracking-[-0.02em] text-ink">
-          Usage stats
-        </h2>
+    <section className="grid gap-0 overflow-hidden border border-line bg-paper-3 dark:bg-paper-2/60">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
+        <span className={cn(metaLabel, "flex items-center gap-1.5")}>
+          <PulseIcon className="h-3 w-3" />
+          Usage
+        </span>
         {usage.lastSeenAt && (
-          <span className="text-[0.625rem] text-ink-faint">
-            {formatRelativeDate(usage.lastSeenAt)}
+          <span className="text-[0.625rem] tabular-nums text-ink-faint">
+            {formatRelativeDate(usage.lastSeenAt, timeZone)}
           </span>
         )}
       </div>
 
+      {/* Stats */}
       {hasAnyActivity ? (
-        <div className="grid grid-cols-2 gap-px overflow-hidden border border-line bg-line/60 dark:bg-line/40">
-          <StatTile label="views" size="compact" sparkData={viewsSpark} value={usage.pageViews} />
-          <StatTile label="copies" size="compact" sparkData={copiesSpark} value={usage.copies} />
-          <StatTile label="saves" size="compact" sparkData={savesSpark} value={usage.saves} />
-          <StatTile label="refreshes" size="compact" sparkData={refreshesSpark} value={usage.refreshes} />
-          <StatTile className="col-span-2" label="api calls" size="compact" sparkData={apiSpark} value={usage.apiCalls} />
+        <div className="grid grid-cols-2 gap-px border-t border-line/60 bg-line/50 dark:border-line/40 dark:bg-line/30">
+          <SidebarMetaCell label="views" value={usage.pageViews} />
+          <SidebarMetaCell label="copies" value={usage.copies} />
+          <SidebarMetaCell label="refreshes" value={usage.refreshes} />
+          <SidebarMetaCell label="saves" value={usage.saves} />
+          <SidebarMetaCell className="col-span-2" label="api calls" value={usage.apiCalls} />
         </div>
       ) : (
-        <div className="rounded-none border border-line/70 px-4 py-5 text-center text-xs text-ink-faint dark:border-line/50">
+        <div className="border-t border-line/60 px-3 py-3 text-center text-[0.6875rem] text-ink-faint dark:border-line/40">
           No usage recorded yet
         </div>
       )}
 
-      {usage.recentEvents.length > 0 && (
-        <SubCard title="Latest usage">
-          <SimpleList tight>
+      {/* Recent events */}
+      {hasEvents && (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-t border-line/60 px-3 py-2 transition-colors hover:bg-paper-2/40 dark:border-line/40 dark:hover:bg-paper-3/40 [&::-webkit-details-marker]:hidden">
+            <span className={metaLabel}>Recent activity</span>
+            <span className="text-[0.5rem] text-ink-faint transition-transform group-open:rotate-90">▶</span>
+          </summary>
+          <div className="grid gap-0 border-t border-line/40 dark:border-line/30">
             {usage.recentEvents.map((event) => (
-              <SimpleListItem key={event.id}>
-                <SimpleListIcon>
-                  <PulseIcon />
-                </SimpleListIcon>
-                <SimpleListBody>
-                  <SimpleListRow>
-                    <strong>{formatUsageEvent(event)}</strong>
-                    <span>{formatRelativeDate(event.at)}</span>
-                  </SimpleListRow>
-                  <SimpleListMeta>
-                    <span>{event.kind}</span>
-                    {event.status ? <span>{event.status}</span> : null}
-                    {typeof event.durationMs === "number" ? <span>{event.durationMs} ms</span> : null}
-                  </SimpleListMeta>
-                </SimpleListBody>
-              </SimpleListItem>
+              <div
+                className="flex items-center justify-between gap-2 px-3 py-1.5 text-[0.6875rem]"
+                key={event.id}
+              >
+                <span className="min-w-0 truncate text-ink-soft">{formatUsageEvent(event)}</span>
+                <span className="shrink-0 tabular-nums text-ink-faint">
+                  {formatRelativeDate(event.at, timeZone)}
+                </span>
+              </div>
             ))}
-          </SimpleList>
-        </SubCard>
+          </div>
+        </details>
       )}
+    </section>
+  );
+}
+
+function SidebarMetaCell({ label, value, className }: { label: string; value: string | number; className?: string }) {
+  return (
+    <div className={cn("grid gap-0.5 bg-paper-3 px-3 py-2 dark:bg-paper-2/60", className)}>
+      <small className={metaLabel}>{label}</small>
+      <strong className={metaValue}>{value}</strong>
     </div>
   );
 }

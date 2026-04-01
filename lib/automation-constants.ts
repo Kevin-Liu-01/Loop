@@ -78,7 +78,7 @@ export function isValidCronSlotHour(hour: number): boolean {
 
 export const PREFERRED_HOUR_SELECT_OPTIONS = CRON_SLOTS.map((slot) => ({
   value: String(slot.hour),
-  label: `${slot.label} \u00b7 ${slot.description}`,
+  label: `${slot.label} \u2013 ${slot.description}`,
   disabled: slot.hour !== CRON_DAILY_HOUR,
   badge: slot.hour !== CRON_DAILY_HOUR ? "Coming soon" : undefined,
 }));

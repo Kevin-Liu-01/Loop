@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { Select } from "@/components/ui/select";
 import { useUsageComparisonOptional } from "@/components/usage-comparison-context";
-import { useTimezone } from "@/hooks/use-timezone";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import {
   USAGE_COMPARISON_LABELS,
   USAGE_COMPARISON_MODES,
@@ -21,7 +21,7 @@ export function ActivityUsageToolbar({ overview }: { overview: UsageOverview }) 
   const ctx = useUsageComparisonOptional();
   const mode = ctx?.mode ?? "yesterday_same_time";
   const setMode = ctx?.setMode;
-  const { timeZone, setTimeZone, browserTimeZone } = useTimezone(overview.timeZone);
+  const { timeZone, setTimeZone, browserTimeZone } = useAppTimezone();
 
   const zoneOptions = useMemo(() => {
     const set = new Set<string>([...SUGGESTED_TIME_ZONES]);

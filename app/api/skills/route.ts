@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillCatalogue, getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { updateSkill } from "@/lib/db/skills";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
 import { canCreateSkill } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
@@ -87,6 +89,12 @@ export async function POST(request: Request) {
         });
         const createdRecord = buildUserSkillRecord(created);
 
+        const researchProfile = buildResearchProfile({
+          title: created.title,
+          sources: created.sources,
+        });
+        await updateSkill(created.slug, { researchProfile }).catch(() => {});
+
         revalidatePath("/");
         revalidatePath("/skills/new");
         revalidatePath(`/categories/${created.category}`);
@@ -150,6 +158,12 @@ export async function PATCH(request: Request) {
         const result = updateUserSkillDocument(skillRecordToUserDoc(current), payload);
         if (result.changed) {
           await saveUserSkillDocuments([result.skill]);
+
+          const researchProfile = buildResearchProfile({
+            title: result.skill.title,
+            sources: result.skill.sources,
+          });
+          await updateSkill(result.skill.slug, { researchProfile }).catch(() => {});
         }
 
         const record = buildUserSkillRecord(result.skill);

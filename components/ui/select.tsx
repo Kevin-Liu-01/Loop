@@ -17,6 +17,7 @@ export type SelectOption = {
   label: string;
   disabled?: boolean;
   badge?: string;
+  icon?: React.ReactNode;
 };
 
 type SelectProps = {
@@ -45,22 +46,26 @@ export function Select({
       <DropdownMenuTrigger asChild disabled={disabled}>
         <button
           className={cn(
-            "flex w-full items-center justify-between gap-2 text-left outline-none",
-            "min-h-[52px] rounded-[14px] border border-line bg-paper-3 px-4 py-4 text-ink transition-all duration-200",
-            "focus:border-accent/30 focus:shadow-[0_0_0_4px_rgba(232,101,10,0.08)]",
+            "flex w-full items-center justify-between gap-2 text-left text-sm outline-none",
+            "min-h-9 rounded-none border border-line bg-paper-3 px-3 py-2 text-ink transition-[border-color,box-shadow] duration-150",
+            "hover:border-ink-faint/35 focus:border-accent/40 focus:shadow-[0_0_0_3px_rgba(232,101,10,0.06)]",
+            "dark:bg-paper-2/60",
             disabled && "cursor-not-allowed opacity-50",
             className,
           )}
           type="button"
         >
-          <span className="min-w-0 truncate">{selected?.label ?? placeholder}</span>
+          <span className="flex min-w-0 items-center gap-2 truncate">
+            {selected?.icon}
+            {selected?.label ?? placeholder}
+          </span>
           <ChevronDownIcon className="h-4 w-4 shrink-0 text-ink-faint" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
         className={cn(
-          "max-h-[min(50vh,320px)] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto",
+          "max-h-[min(50vh,320px)] min-w-[var(--radix-dropdown-menu-trigger-width)] w-max max-w-[min(90vw,400px)] overflow-y-auto",
           contentClassName,
         )}
       >
@@ -73,7 +78,10 @@ export function Select({
               className={cn(option.disabled && "opacity-50")}
             >
               <span className="flex w-full items-center justify-between gap-2">
-                <span>{option.label}</span>
+                <span className="flex items-center gap-2">
+                  {option.icon}
+                  {option.label}
+                </span>
                 {option.badge && (
                   <span className="shrink-0 rounded-full bg-paper-3 px-2 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wider text-ink-faint">
                     {option.badge}

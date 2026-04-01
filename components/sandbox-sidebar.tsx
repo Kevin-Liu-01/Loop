@@ -8,8 +8,10 @@ import {
   TerminalIcon,
 } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
+import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
+import { sandboxHeaderHeight, sandboxHeaderBase, sandboxEyebrow } from "@/lib/sandbox-ui";
 
 type ConversationSummary = {
   id: string;
@@ -33,10 +35,11 @@ export function SandboxSidebar({
   onSelect,
   onNew,
   version,
-  className
+  className,
 }: SandboxSidebarProps) {
+  const { timeZone } = useAppTimezone();
   const [conversations, setConversations] = useState<ConversationSummary[]>(
-    []
+    [],
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,82 +59,96 @@ export function SandboxSidebar({
   return (
     <div className={cn("flex h-full min-h-0 min-w-0 flex-col", className)}>
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-line/40 px-4 py-3.5 sm:px-5">
+      <div className={cn(sandboxHeaderBase, sandboxHeaderHeight, "justify-between")}>
         <div className="flex items-center gap-2.5">
-          <TerminalIcon className="h-3.5 w-3.5 text-accent/60" />
-          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
-            Sessions
-          </span>
+          <TerminalIcon className="h-3.5 w-3.5 text-accent" />
+          <span className={sandboxEyebrow}>Sessions</span>
         </div>
         <Button
           onClick={onNew}
           size="icon-sm"
           variant="ghost"
           aria-label="New session"
-          className="h-7 w-7"
         >
           <PlusIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
 
+      {/* New session */}
+      <div className="shrink-0 border-b border-line px-3 py-2.5">
+        <button
+          className="flex w-full items-center gap-2 border border-dashed border-line px-3 py-2 text-left text-xs font-medium text-ink-faint transition-colors hover:border-accent/40 hover:text-accent"
+          onClick={onNew}
+          type="button"
+        >
+          <PlusIcon className="h-3.5 w-3.5" />
+          New session
+        </button>
+      </div>
+
       {/* Conversation list */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pb-3 pt-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLoading ? (
-          <div className="grid gap-1.5 p-1.5">
+          <div className="grid gap-0">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[52px] animate-pulse rounded-xl bg-paper-2/40"
+                className="h-[52px] animate-pulse border-b border-line/60 bg-paper-2/30"
               />
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          <div className="flex flex-col items-center gap-3.5 px-4 py-12 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-line/40 bg-paper-3/60 shadow-sm dark:bg-paper-2/60">
-              <MessageIcon className="h-4.5 w-4.5 text-ink-faint/60" />
+          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+            <div className="flex h-8 w-8 items-center justify-center border border-line bg-paper-3">
+              <MessageIcon className="h-4 w-4 text-ink-faint/60" />
             </div>
             <div className="grid gap-1">
-              <p className="text-[0.75rem] font-medium text-ink-faint">
+              <p className="text-xs font-medium text-ink-faint">
                 No sessions yet
               </p>
-              <p className="text-[0.65rem] leading-relaxed text-ink-faint/60">
+              <p className="text-[0.6875rem] leading-relaxed text-ink-faint/60">
                 Start a conversation to see it here.
               </p>
             </div>
           </div>
         ) : (
-          <div className="grid gap-0.5">
+          <div className="grid gap-0">
             {conversations.map((c) => {
               const isActive = c.id === currentId;
               return (
                 <button
                   key={c.id}
                   className={cn(
-                    "group grid gap-1.5 rounded-xl px-3 py-3 text-left transition-all duration-150",
+                    "group relative flex w-full items-start gap-2.5 border-b border-line/60 px-4 py-3 text-left transition-colors",
                     isActive
-                      ? "bg-accent/[0.07] shadow-[inset_0_0_0_1px_rgba(232,101,10,0.12)]"
-                      : "hover:bg-paper-3/50 dark:hover:bg-paper-2/60",
+                      ? "bg-accent/[0.06]"
+                      : "hover:bg-paper-2/50",
                   )}
                   onClick={() => onSelect(c.id)}
                   type="button"
                 >
-                  <span
-                    className={cn(
-                      "truncate text-[0.8rem] font-medium leading-snug",
-                      isActive
-                        ? "text-accent"
-                        : "text-ink group-hover:text-ink",
-                    )}
-                  >
-                    {c.title || "Untitled session"}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[0.6rem] tabular-nums text-ink-faint/70">
-                    <span>{c.messageCount} msgs</span>
-                    <span aria-hidden className="opacity-30">
-                      ·
+                  {isActive && (
+                    <span className="absolute inset-y-0 left-0 w-[2px] bg-accent" />
+                  )}
+
+                  <div className="grid min-w-0 flex-1 gap-1">
+                    <span
+                      className={cn(
+                        "truncate text-sm font-medium leading-snug",
+                        isActive
+                          ? "text-accent"
+                          : "text-ink group-hover:text-ink",
+                      )}
+                    >
+                      {c.title || "Untitled session"}
                     </span>
-                    <span>{formatRelativeDate(c.updatedAt)}</span>
-                  </span>
+                    <div className="flex items-center gap-1.5 text-[0.6875rem] tabular-nums text-ink-faint">
+                      <MessageIcon className="h-3 w-3" />
+                      <span>{c.messageCount}</span>
+                      <span className="text-line-strong">·</span>
+                      <span>{formatRelativeDate(c.updatedAt, timeZone)}</span>
+                    </div>
+                  </div>
                 </button>
               );
             })}

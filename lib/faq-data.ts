@@ -114,12 +114,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is a verified author?",
         answer:
-          "A verified author is a publisher with a confirmed identity in Loop's skill_authors system. Verified authors display a checkmark badge on every skill they publish. The badge label varies – 'Official' for first-party providers like Anthropic and OpenAI, and 'Verified' for trusted community sources like Cursor Directory.",
+          "A verified author is a publisher with a confirmed identity in Loop's skill_authors system. Verified authors display a checkmark badge labeled 'Verified' on every skill they publish.",
       },
       {
         question: "Which providers are verified?",
         answer:
-          "Loop ships with five verified provider authors. Anthropic and OpenAI are marked as Official (first-party providers). Cursor Directory, Awesome Agent Skills, and Awesome MCP Servers are marked as Verified (trusted community sources). Skills imported from any of these sources automatically receive verified author attribution.",
+          "Loop ships with five verified provider authors: Anthropic, OpenAI, Cursor Directory, Awesome Agent Skills, and Awesome MCP Servers. All display a 'Verified' checkmark badge. Skills imported from any of these sources automatically receive verified author attribution.",
       },
       {
         question: "How does author verification work for imported skills?",

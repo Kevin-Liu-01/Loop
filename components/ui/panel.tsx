@@ -20,7 +20,7 @@ export function Panel({ compact, square, className, children, ...rest }: PanelPr
         "grid border border-line bg-paper-3/92",
         square
           ? cn("rounded-none gap-4", compact ? "p-4" : "p-5 sm:p-6")
-          : cn("gap-5 rounded-2xl", compact ? "p-5" : "p-6"),
+          : cn("gap-5 rounded-none", compact ? "p-5" : "p-6"),
         className
       )}
       {...rest}
