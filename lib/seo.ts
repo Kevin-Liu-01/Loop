@@ -19,10 +19,22 @@ export const LOGO_ICON_PATH = "/icon.svg";
 
 /**
  * Public site origin with no trailing slash.
+ * Checks NEXT_PUBLIC_SITE_URL, then Vercel-provided env vars, then localhost.
  */
 export function getSiteUrlString(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (raw) return raw.replace(/\/+$/, "");
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : undefined,
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : undefined,
+  ];
+  for (const raw of candidates) {
+    const trimmed = raw?.trim();
+    if (trimmed) return trimmed.replace(/\/+$/, "");
+  }
   return "http://localhost:3000";
 }
 
@@ -44,19 +56,19 @@ export function buildOgImageUrl(params?: {
   category?: string;
 }): string {
   if (!params?.title && !params?.description && !params?.category) {
-    return buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString();
+    return DEFAULT_OG_IMAGE_PATH;
   }
-  const url = buildSiteUrl("/og");
+  const url = new URL("/og", "https://n");
   if (params?.title) url.searchParams.set("title", params.title);
   if (params?.description) url.searchParams.set("description", params.description);
   if (params?.category) url.searchParams.set("category", params.category);
-  return url.toString();
+  return `${url.pathname}${url.search}`;
 }
 
 export function buildDefaultOpenGraphImages(): NonNullable<Metadata["openGraph"]>["images"] {
   return [
     {
-      url: buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString(),
+      url: DEFAULT_OG_IMAGE_PATH,
       width: OG_WIDTH,
       height: OG_HEIGHT,
       alt: `${SITE_NAME} — operator desk for self-updating agent skills`,
@@ -65,7 +77,7 @@ export function buildDefaultOpenGraphImages(): NonNullable<Metadata["openGraph"]
 }
 
 export function buildDefaultTwitterImageUrls(): string[] {
-  return [buildSiteUrl(DEFAULT_OG_IMAGE_PATH).toString()];
+  return [DEFAULT_OG_IMAGE_PATH];
 }
 
 export function buildRootKeywords(): string[] {
