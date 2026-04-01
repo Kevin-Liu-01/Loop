@@ -49,7 +49,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootPage() {
-  const { userId } = await auth();
+  let userId: string | null = null;
+  try {
+    ({ userId } = await auth());
+  } catch {
+    // Bots and crawlers that bypass middleware can't resolve auth —
+    // treat them as signed-out so the landing page (with OG tags) renders.
+  }
 
   if (userId) {
     return <AuthenticatedDashboard />;
