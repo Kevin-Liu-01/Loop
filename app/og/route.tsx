@@ -13,13 +13,17 @@ export const runtime = "edge";
 
 const SCREENSHOT_PATH = "/images/og.png";
 
-const interRegular = fetch(
-  new URL("./Inter-Regular.ttf", import.meta.url),
+const neueMontBook = fetch(
+  new URL("./NeueMontreal-Book.ttf", import.meta.url),
 ).then((res) => res.arrayBuffer());
 
-const interBold = fetch(new URL("./Inter-Bold.ttf", import.meta.url)).then(
-  (res) => res.arrayBuffer(),
-);
+const neueMontMedium = fetch(
+  new URL("./NeueMontreal-Medium.ttf", import.meta.url),
+).then((res) => res.arrayBuffer());
+
+const neueMontBold = fetch(
+  new URL("./NeueMontreal-Bold.ttf", import.meta.url),
+).then((res) => res.arrayBuffer());
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -31,7 +35,11 @@ export async function GET(request: NextRequest) {
   const origin = new URL(request.url).origin;
   const screenshotUrl = `${origin}${SCREENSHOT_PATH}`;
 
-  const [regularFont, boldFont] = await Promise.all([interRegular, interBold]);
+  const [bookFont, mediumFont, boldFont] = await Promise.all([
+    neueMontBook,
+    neueMontMedium,
+    neueMontBold,
+  ]);
 
   return new ImageResponse(
     (
@@ -46,8 +54,9 @@ export async function GET(request: NextRequest) {
       width: OG_WIDTH,
       height: OG_HEIGHT,
       fonts: [
-        { name: "Inter", data: regularFont, style: "normal", weight: 400 },
-        { name: "Inter", data: boldFont, style: "normal", weight: 700 },
+        { name: "Neue Montreal", data: bookFont, style: "normal", weight: 400 },
+        { name: "Neue Montreal", data: mediumFont, style: "normal", weight: 500 },
+        { name: "Neue Montreal", data: boldFont, style: "normal", weight: 700 },
       ],
       headers: {
         "Cache-Control":
@@ -86,7 +95,7 @@ function OgCard({
         overflow: "hidden",
         background:
           "linear-gradient(145deg, #0a0a09 0%, #1a0f0a 35%, #3d1f10 70%, #4a2618 100%)",
-        fontFamily: "Inter",
+        fontFamily: "Neue Montreal",
       }}
     >
       {/* Warm radial glow from bottom-left */}
