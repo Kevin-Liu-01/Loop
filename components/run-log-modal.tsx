@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DiffViewer } from "@/components/diff-viewer";
 import { AutomationIcon, ClockIcon, CpuIcon, SearchIcon, SparkIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { RunMetadataBar } from "@/components/ui/run-metadata-bar";
 import {
   Dialog,
@@ -306,14 +307,19 @@ export function RunLogModal({
   const removedCount = diffLines.filter((l) => l.type === "removed").length;
 
   useEffect(() => {
-    if (selectedStepIndex >= reasoningSteps.length) {
+    if (isLive && reasoningSteps.length > 0) {
+      setSelectedStepIndex(reasoningSteps.length - 1);
+    } else if (selectedStepIndex >= reasoningSteps.length) {
       setSelectedStepIndex(Math.max(reasoningSteps.length - 1, 0));
     }
-  }, [reasoningSteps, selectedStepIndex]);
+  }, [reasoningSteps, selectedStepIndex, isLive]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="4xl">
+        {isLive && (
+          <ProgressBar rounded={false} size="sm" status="active" />
+        )}
         <DialogHeader>
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-line bg-paper-3 text-ink-soft [&>svg]:h-4 [&>svg]:w-4">

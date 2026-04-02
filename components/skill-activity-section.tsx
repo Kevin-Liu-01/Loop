@@ -211,6 +211,7 @@ export function SkillActivitySection({
     setLiveMessages(["Queued agent update."]);
     setLiveSourceLogs([]);
     setLiveReasoningSteps([]);
+    setModalOpen(true);
 
     startTransition(async () => {
       try {
@@ -277,10 +278,20 @@ export function SkillActivitySection({
   }, [slug, origin, router, startTransition, runTrackedUpdate]);
 
   useEffect(() => {
-    const handler = () => setModalOpen(true);
-    window.addEventListener("open-run-log", handler);
-    return () => window.removeEventListener("open-run-log", handler);
+    const openHandler = () => setModalOpen(true);
+    window.addEventListener("open-run-log", openHandler);
+    return () => window.removeEventListener("open-run-log", openHandler);
   }, []);
+
+  useEffect(() => {
+    const triggerHandler = () => {
+      if (canManage && sourceCount > 0 && !isRunning) {
+        handleRunUpdate();
+      }
+    };
+    window.addEventListener("loop:trigger-refresh", triggerHandler);
+    return () => window.removeEventListener("loop:trigger-refresh", triggerHandler);
+  }, [canManage, sourceCount, isRunning, handleRunUpdate]);
 
   const isTracked = origin === "user";
   const isActive = automation?.status === "ACTIVE";

@@ -22,7 +22,7 @@ import { cn } from "@/lib/cn";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import { CADENCE_ALL_OPTIONS, DAY_OF_WEEK_OPTIONS, DEFAULT_PREFERRED_DAY, DEFAULT_PREFERRED_HOUR, PREFERRED_HOUR_SELECT_OPTIONS } from "@/lib/automation-constants";
 import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
-import type { AgentDocs, LoopUpdateStreamEvent, SkillRecord } from "@/lib/types";
+import type { AgentDocs, SkillRecord } from "@/lib/types";
 
 const BODY_MAX_CHARS = 24_000;
 
@@ -136,7 +136,6 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
   const [state, setState] = useState<AuthorStudioState>(() => buildInitialState(skill));
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [runMessage, setRunMessage] = useState<string | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(skill.iconUrl ?? null);
   const [isPending, startTransition] = useTransition();
@@ -147,7 +146,6 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     setIconPreview(skill.iconUrl ?? null);
     setError(null);
     setNotice(null);
-    setRunMessage(null);
   }, [
     skill.slug,
     skill.title,
@@ -254,71 +252,10 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     };
   }
 
-  async function consumeNdjsonStream(body: ReadableStream<Uint8Array>) {
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
 
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-
-      buffer += decoder.decode(chunk.value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        if (!line.trim()) continue;
-
-        const event = JSON.parse(line) as LoopUpdateStreamEvent;
-        if (event.type === "analysis") {
-          setRunMessage(event.message);
-        } else if (event.type === "source") {
-          setRunMessage(`${event.source.label}: ${event.source.note ?? event.source.status}`);
-        } else if (event.type === "complete") {
-          router.push(event.result.href);
-          router.refresh();
-          return;
-        } else if (event.type === "error") {
-          setError(event.message);
-          setRunMessage(null);
-          return;
-        }
-      }
-    }
-  }
-
-  async function save(refreshAfter: boolean) {
+  async function save(): Promise<boolean> {
     setError(null);
     setNotice(null);
-
-    if (refreshAfter) {
-      setRunMessage("Saving edits and running refresh.");
-
-      try {
-        await uploadIcon();
-      } catch (uploadError) {
-        setError(uploadError instanceof Error ? uploadError.message : "Unable to upload the icon.");
-        setRunMessage(null);
-        return;
-      }
-
-      const response = await fetch(`/api/skills/${encodeURIComponent(skill.slug)}/refresh`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(buildFormPayload())
-      });
-
-      if (!response.ok || !response.body) {
-        const failedPayload = (await response.json().catch(() => ({}))) as { error?: string };
-        setError(failedPayload.error ?? "Unable to start the refresh.");
-        setRunMessage(null);
-        return;
-      }
-
-      await consumeNdjsonStream(response.body);
-      return;
-    }
 
     const response = await fetch(`/api/skills/${encodeURIComponent(skill.slug)}`, {
       method: "PATCH",
@@ -335,14 +272,14 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
 
     if (!response.ok || !payload.href || !payload.slug) {
       setError(payload.error ?? "Unable to save the skill.");
-      return;
+      return false;
     }
 
     try {
       await uploadIcon();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Unable to upload the icon.");
-      return;
+      return false;
     }
 
     const wroteBranding = iconFile !== null;
@@ -355,18 +292,22 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     );
     router.push(payload.href);
     router.refresh();
+    return true;
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     startTransition(async () => {
-      await save(false);
+      await save();
     });
   }
 
   function handleSaveAndRefresh() {
     startTransition(async () => {
-      await save(true);
+      const ok = await save();
+      if (ok) {
+        window.dispatchEvent(new Event("loop:trigger-refresh"));
+      }
     });
   }
 
@@ -433,9 +374,8 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
       </div>
 
       {/* ── Feedback ── */}
-      {(runMessage || notice || error) && (
+      {(notice || error) && (
         <div className="grid gap-0 border-b border-line/60">
-          {runMessage && <FeedbackBar variant="progress">{runMessage}</FeedbackBar>}
           {notice && <FeedbackBar variant="success">{notice}</FeedbackBar>}
           {error && <FeedbackBar variant="error">{error}</FeedbackBar>}
         </div>
