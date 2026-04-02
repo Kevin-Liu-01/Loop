@@ -325,9 +325,16 @@ export async function synthesizeSkillUpdate(
   const modelId = getGatewayEditorModelId(preferredModel);
   const editorModel = getGatewayModelForSkill(preferredModel);
   if (!editorModel) {
-    console.warn(
-      `[refresh:synthesize] FALLBACK – no gateway model (modelId: ${modelId}, preferred: ${preferredModel ?? "none"}, ` +
-      `AI_GATEWAY_API_KEY set: ${!!process.env.AI_GATEWAY_API_KEY}) – returning heuristic draft for "${skill.title}"`
+    const keyPresent = !!process.env.AI_GATEWAY_API_KEY;
+    const keyLen = process.env.AI_GATEWAY_API_KEY?.length ?? 0;
+    console.error(
+      `[refresh:synthesize] FALLBACK – getGatewayModelForSkill returned null\n` +
+      `  skill: "${skill.title}" (${skill.slug})\n` +
+      `  modelId: ${modelId}\n` +
+      `  preferredModel: ${preferredModel ?? "none"}\n` +
+      `  AI_GATEWAY_API_KEY present: ${keyPresent} (length: ${keyLen})\n` +
+      `  LOOP_MODEL env: ${process.env.LOOP_MODEL ?? "(unset)"}\n` +
+      `  NODE_ENV: ${process.env.NODE_ENV}`
     );
     return fallbackDraft;
   }

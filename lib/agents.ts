@@ -17,7 +17,7 @@ export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
     apiKeyEnvVar: "AI_GATEWAY_API_KEY",
     docsUrl: "https://vercel.com/docs/ai-gateway",
     supportsModelListing: true,
-    defaultModel: "openai/gpt-5.4-mini"
+    defaultModel: "openai/gpt-5-mini"
   },
   {
     id: "openai",
@@ -26,7 +26,7 @@ export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
     apiKeyEnvVar: "OPENAI_API_KEY",
     baseURL: "https://api.openai.com/v1",
     docsUrl: "https://platform.openai.com/docs/models",
-    defaultModel: "gpt-5.4-mini"
+    defaultModel: "gpt-5-mini"
   },
   {
     id: "openrouter",
@@ -208,7 +208,7 @@ export function buildAgentContext(snapshot: LoopSnapshot, input: AgentRunInput):
   ].join("\n");
 }
 
-const GATEWAY_EDITOR_MODEL = process.env.LOOP_MODEL ?? "openai/gpt-5.4-mini";
+const GATEWAY_EDITOR_MODEL = process.env.LOOP_MODEL ?? "openai/gpt-5-mini";
 
 let _gatewayKeyWarnedOnce = false;
 
@@ -235,16 +235,22 @@ export function getGatewayModelForSkill(preferredModel?: string): LanguageModel 
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   const modelId = preferredModel || GATEWAY_EDITOR_MODEL;
   if (!apiKey) {
-    if (!_gatewayKeyWarnedOnce) {
-      console.warn(`[agents] AI_GATEWAY_API_KEY not set – cannot create model "${modelId}"`);
-      _gatewayKeyWarnedOnce = true;
-    }
+    console.error(
+      `[agents] AI_GATEWAY_API_KEY is MISSING in process.env – cannot create model "${modelId}". ` +
+      `Env keys available: ${Object.keys(process.env).filter(k => k.includes("AI") || k.includes("GATEWAY") || k.includes("LOOP")).join(", ") || "(none matching)"}`
+    );
     return null;
   }
-  const provider = createGateway({ apiKey });
-  const model = provider(modelId);
-  console.info(`[agents] Resolved skill model: ${modelId} (preferred: ${preferredModel ?? "none"}, key: ${apiKey.slice(0, 6)}…)`);
-  return model;
+  try {
+    const provider = createGateway({ apiKey });
+    const model = provider(modelId);
+    console.info(`[agents] Resolved skill model: ${modelId} (preferred: ${preferredModel ?? "none"}, key: ${apiKey.slice(0, 6)}…)`);
+    return model;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[agents] createGateway or provider() threw for model "${modelId}": ${msg}`);
+    return null;
+  }
 }
 
 export async function listGatewayModels(): Promise<Array<{ id: string; name: string; provider: string }>> {

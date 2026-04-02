@@ -64,7 +64,7 @@ function defaultConfig(
   return {
     runtime: "node24",
     providerId: preset?.id ?? "gateway",
-    model: preset?.defaultModel ?? "openai/gpt-5.4-mini",
+    model: preset?.defaultModel ?? "openai/gpt-5-mini",
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
     selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : [],
     selectedMcpIds: initialMcpId ? [initialMcpId] : [],

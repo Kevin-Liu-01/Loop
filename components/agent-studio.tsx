@@ -60,7 +60,7 @@ function createInitialConfig(presets: AgentProviderPreset[]): StudioConfig {
   return {
     agentName: "Loop operator",
     providerId: preset?.id ?? "gateway",
-    model: preset?.defaultModel ?? "openai/gpt-5.4-mini",
+    model: preset?.defaultModel ?? "openai/gpt-5-mini",
     compatibleBaseUrl: preset?.baseURL ?? "",
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
     headersJson: "{}",
