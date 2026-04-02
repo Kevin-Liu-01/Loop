@@ -11,14 +11,45 @@ import {
 
 export const runtime = "edge";
 
+const SCREENSHOT_PATH = "/images/og.png";
+
+async function fetchScreenshotDataUrl(
+  origin: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${origin}${SCREENSHOT_PATH}`);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return `data:image/png;base64,${btoa(binary)}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const title = searchParams.get("title") || SEO_DEFAULT_TITLE;
-  const description = searchParams.get("description") || SEO_DEFAULT_DESCRIPTION;
+  const description =
+    searchParams.get("description") || SEO_DEFAULT_DESCRIPTION;
   const category = searchParams.get("category") || null;
 
+  const origin = new URL(request.url).origin;
+  const screenshotSrc = await fetchScreenshotDataUrl(origin);
+
   return new ImageResponse(
-    <OgCard title={title} description={description} category={category} />,
+    (
+      <OgCard
+        title={title}
+        description={description}
+        category={category}
+        screenshotSrc={screenshotSrc}
+      />
+    ),
     {
       width: OG_WIDTH,
       height: OG_HEIGHT,
@@ -35,13 +66,20 @@ type OgCardProps = {
   title: string;
   description: string;
   category: string | null;
+  screenshotSrc: string | null;
 };
 
-function OgCard({ title, description, category }: OgCardProps) {
+function OgCard({
+  title,
+  description,
+  category,
+  screenshotSrc,
+}: OgCardProps) {
   const displayTitle = title.length > 80 ? `${title.slice(0, 77)}...` : title;
   const displayDesc =
     description.length > 140 ? `${description.slice(0, 137)}...` : description;
-  const titleSize = displayTitle.length > 50 ? 46 : 56;
+  const hasScreenshot = !!screenshotSrc;
+  const titleSize = displayTitle.length > 50 ? 40 : hasScreenshot ? 48 : 56;
 
   return (
     <div
@@ -60,27 +98,29 @@ function OgCard({ title, description, category }: OgCardProps) {
           position: "absolute",
           bottom: "-120px",
           left: "-80px",
-          width: "800px",
-          height: "600px",
+          width: "700px",
+          height: "500px",
           borderRadius: "50%",
           background:
             "radial-gradient(ellipse at center, rgba(232, 101, 10, 0.10) 0%, transparent 70%)",
         }}
       />
 
-      {/* Cool radial glow from top-right */}
-      <div
-        style={{
-          position: "absolute",
-          top: "-200px",
-          right: "-100px",
-          width: "600px",
-          height: "500px",
-          borderRadius: "50%",
-          background:
-            "radial-gradient(ellipse at center, rgba(232, 101, 10, 0.04) 0%, transparent 70%)",
-        }}
-      />
+      {/* Glow behind screenshot area */}
+      {hasScreenshot && (
+        <div
+          style={{
+            position: "absolute",
+            top: "40px",
+            right: "40px",
+            width: "560px",
+            height: "400px",
+            borderRadius: "20px",
+            background:
+              "radial-gradient(ellipse at center, rgba(232, 101, 10, 0.06) 0%, transparent 70%)",
+          }}
+        />
+      )}
 
       {/* Right accent stripe */}
       <div
@@ -88,152 +128,188 @@ function OgCard({ title, description, category }: OgCardProps) {
           position: "absolute",
           top: "0",
           right: "0",
-          width: "5px",
+          width: "4px",
           height: "100%",
           background:
             "linear-gradient(to bottom, #e8650a 0%, rgba(232, 101, 10, 0.3) 60%, transparent 100%)",
         }}
       />
 
-      {/* Subtle horizontal rule */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "80px",
-          left: "56px",
-          right: "56px",
-          height: "1px",
-          background:
-            "linear-gradient(to right, rgba(255,255,255,0.06), rgba(255,255,255,0.03), transparent)",
-        }}
-      />
-
-      {/* Content layer */}
+      {/* Content: two-column layout */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "48px 56px",
           width: "100%",
+          height: "100%",
           position: "relative",
         }}
       >
-        {/* Header: Logo + site name */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <GearIcon />
-          <span
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "rgba(255, 255, 255, 0.40)",
-            }}
-          >
-            {SITE_NAME}
-          </span>
-        </div>
-
-        {/* Main: category + title + description */}
+        {/* Left column: text content */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "16px",
-            maxWidth: "940px",
+            justifyContent: "space-between",
+            padding: "48px 0 48px 56px",
+            width: hasScreenshot ? "520px" : "100%",
+            flexShrink: 0,
           }}
         >
-          {category && (
-            <div style={{ display: "flex", alignItems: "center" }}>
+          {/* Header */}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "14px" }}
+          >
+            <GearIcon />
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "rgba(255, 255, 255, 0.40)",
+              }}
+            >
+              {SITE_NAME}
+            </span>
+          </div>
+
+          {/* Title + description */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+            }}
+          >
+            {category && (
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    color: "#e8650a",
+                    borderLeft: "3px solid #e8650a",
+                    paddingLeft: "10px",
+                  }}
+                >
+                  {category}
+                </div>
+              </div>
+            )}
+
+            <h1
+              style={{
+                fontSize: titleSize,
+                fontWeight: 700,
+                lineHeight: 1.08,
+                letterSpacing: "-0.035em",
+                margin: 0,
+                color: "#f0f0f0",
+              }}
+            >
+              {displayTitle}
+            </h1>
+
+            <p
+              style={{
+                fontSize: hasScreenshot ? 18 : 20,
+                lineHeight: 1.55,
+                color: "rgba(255, 255, 255, 0.38)",
+                margin: 0,
+              }}
+            >
+              {displayDesc}
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                letterSpacing: "0.03em",
+                color: "rgba(255, 255, 255, 0.22)",
+              }}
+            >
+              loooooop.vercel.app
+            </span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
               <div
                 style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "#e8650a",
-                  borderLeft: "3px solid #e8650a",
-                  paddingLeft: "10px",
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: "#e8650a",
                 }}
-              >
-                {category}
-              </div>
+              />
+              <div
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: "rgba(232, 101, 10, 0.5)",
+                }}
+              />
+              <div
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: "rgba(232, 101, 10, 0.2)",
+                }}
+              />
             </div>
-          )}
-
-          <h1
-            style={{
-              fontSize: titleSize,
-              fontWeight: 700,
-              lineHeight: 1.08,
-              letterSpacing: "-0.035em",
-              margin: 0,
-              color: "#f0f0f0",
-            }}
-          >
-            {displayTitle}
-          </h1>
-
-          <p
-            style={{
-              fontSize: 20,
-              lineHeight: 1.55,
-              color: "rgba(255, 255, 255, 0.40)",
-              margin: 0,
-              maxWidth: "760px",
-            }}
-          >
-            {displayDesc}
-          </p>
-        </div>
-
-        {/* Footer: domain + dot accent */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: "0.03em",
-              color: "rgba(255, 255, 255, 0.22)",
-            }}
-          >
-            loooooop.vercel.app
-          </span>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <div
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: "50%",
-                background: "#e8650a",
-              }}
-            />
-            <div
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: "50%",
-                background: "rgba(232, 101, 10, 0.5)",
-              }}
-            />
-            <div
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: "50%",
-                background: "rgba(232, 101, 10, 0.2)",
-              }}
-            />
           </div>
         </div>
+
+        {/* Right column: screenshot */}
+        {hasScreenshot && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              flex: 1,
+              padding: "36px 40px 36px 0",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                position: "relative",
+                borderRadius: "12px",
+                overflow: "hidden",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshotSrc!}
+                width={600}
+                height={350}
+                style={{
+                  objectFit: "cover",
+                  objectPosition: "top left",
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
