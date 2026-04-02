@@ -19,9 +19,14 @@ import {
 } from "@/components/ui/shadcn/sheet";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
 
+function openNewSkillModal() {
+  window.dispatchEvent(new Event("loop:open-new-skill"));
+}
+
 export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [brandHover, setBrandHover] = useState(false);
+  const handleNew = onNewSkill ?? openNewSkillModal;
 
   return (
     <>
@@ -56,17 +61,17 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
           </kbd>
         </Button>
 
-        {onNewSkill ? (
+        <Show when="signed-in">
           <Button
             className="max-sm:hidden"
-            onClick={onNewSkill}
+            onClick={handleNew}
             size="sm"
             type="button"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             New
           </Button>
-        ) : null}
+        </Show>
 
         <div className="flex items-center gap-2 max-sm:hidden">
           <Tooltip>
@@ -121,11 +126,11 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <nav className="grid gap-2">
-            {onNewSkill ? (
+            <Show when="signed-in">
               <Button
                 className="w-full justify-start"
                 onClick={() => {
-                  onNewSkill();
+                  handleNew();
                   setMobileOpen(false);
                 }}
                 size="sm"
@@ -134,7 +139,7 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
                 <PlusIcon className="h-3.5 w-3.5" />
                 New skill
               </Button>
-            ) : null}
+            </Show>
             <LinkButton className="w-full justify-start" href="/sandbox" size="sm" variant="soft">
               <TerminalIcon className="h-4 w-4" />
               Sandbox

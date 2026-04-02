@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
@@ -21,20 +22,26 @@ import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { LinkButton } from "@/components/ui/link-button";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { RunMetadataBar } from "@/components/ui/run-metadata-bar";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Tip } from "@/components/ui/tip";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
+import { useTrackedLoopUpdate } from "@/hooks/use-tracked-loop-update";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import { buildLoopRunResult } from "@/lib/loop-updates";
 import { countMonthlyRuns, formatNextRun } from "@/lib/schedule";
+import { applySourceUpdate } from "@/lib/stream-loop-update";
 import type {
+  AgentReasoningStep,
   AutomationSummary,
   CategorySlug,
   DiffLine,
   LoopRunRecord,
+  LoopUpdateResult,
   LoopUpdateSourceLog,
+  LoopUpdateTarget,
   SkillOrigin,
   SkillRecord,
   SourceDefinition,
@@ -184,8 +191,90 @@ export function SkillActivitySection({
   sources = [],
 }: SkillActivitySectionProps) {
   const { timeZone } = useAppTimezone();
+  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const [isRunning, startTransition] = useTransition();
+  const [liveMessages, setLiveMessages] = useState<string[]>([]);
+  const [liveSourceLogs, setLiveSourceLogs] = useState<LoopUpdateSourceLog[]>([]);
+  const [liveReasoningSteps, setLiveReasoningSteps] = useState<AgentReasoningStep[]>([]);
+  const [liveResult, setLiveResult] = useState<LoopUpdateResult | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const { run: runTrackedUpdate } = useTrackedLoopUpdate();
+
+  const hasLiveState = liveMessages.length > 0 || liveResult !== null || liveError !== null;
+
+  const handleRunUpdate = useCallback(() => {
+    setLiveError(null);
+    setLiveResult(null);
+    setLiveMessages(["Queued agent update."]);
+    setLiveSourceLogs([]);
+    setLiveReasoningSteps([]);
+
+    startTransition(async () => {
+      try {
+        await runTrackedUpdate({
+          slug,
+          origin,
+          label: slug,
+          href: `/skills/${slug}`,
+          trigger: "manual",
+          callbacks: {
+            onStart(loop: LoopUpdateTarget) {
+              setLiveMessages((prev) => [
+                ...prev,
+                `Started agent run across ${loop.sources.length} tracked sources.`,
+              ]);
+              setLiveSourceLogs(
+                loop.sources.map((s) => ({
+                  ...s,
+                  status: "pending",
+                  itemCount: 0,
+                  items: [],
+                  note: "Queued for scan.",
+                })),
+              );
+            },
+            onSource(source: LoopUpdateSourceLog) {
+              setLiveSourceLogs((prev) => applySourceUpdate(prev, source));
+              setLiveMessages((prev) => [
+                ...prev,
+                `${source.label}: ${source.note ?? source.status}.`,
+              ]);
+            },
+            onMessage(message: string) {
+              setLiveMessages((prev) => [...prev, message]);
+            },
+            onReasoningStep(step: AgentReasoningStep) {
+              setLiveReasoningSteps((prev) => [...prev, step]);
+            },
+            onComplete(completeResult: LoopUpdateResult, completeSources: LoopUpdateSourceLog[]) {
+              setLiveResult(completeResult);
+              setLiveSourceLogs(completeSources);
+              setLiveMessages((prev) => [
+                ...prev,
+                completeResult.changed
+                  ? `${completeResult.nextVersionLabel} is live.`
+                  : "No material diff landed.",
+              ]);
+              setLiveError(null);
+              router.refresh();
+            },
+            onError(message: string) {
+              setLiveError(message);
+              setLiveMessages((prev) => [...prev, message]);
+            },
+          },
+        });
+      } catch (caughtError) {
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Manual update failed.";
+        setLiveError(message);
+        setLiveMessages((prev) => [...prev, message]);
+      }
+    });
+  }, [slug, origin, router, startTransition, runTrackedUpdate]);
 
   useEffect(() => {
     const handler = () => setModalOpen(true);
@@ -195,6 +284,7 @@ export function SkillActivitySection({
 
   const isTracked = origin === "user";
   const isActive = automation?.status === "ACTIVE";
+  const canRun = canManage && sourceCount > 0 && !isRunning;
   const now = useMemo(() => new Date(), []);
 
   const skillMap = useMemo(
@@ -207,16 +297,26 @@ export function SkillActivitySection({
   const nextRun = automation ? formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay) : "On demand";
   const scheduleLabel = automation?.schedule?.trim() || "Manual only";
 
-  const runMessages = latestRun?.messages ?? [];
-  const runSourceLogs = latestRun?.sources ?? [];
-  const runReasoningSteps = latestRun?.reasoningSteps ?? [];
-  const runError = latestRun?.errorMessage ?? null;
-  const runDiffLines: DiffLine[] = latestRun?.diffLines ?? [];
-  const runTrigger = latestRun ? formatTriggerLabel(latestRun.trigger) : "–";
-  const runEditorModel = latestRun?.editorModel ?? null;
-  const runStatus: "success" | "error" | "running" =
-    runError ? "error" : latestRun?.status ?? "success";
-  const runResult = useMemo(() => buildLoopRunResult(latestRun), [latestRun]);
+  const runMessages = hasLiveState ? liveMessages : latestRun?.messages ?? [];
+  const runSourceLogs = hasLiveState ? liveSourceLogs : latestRun?.sources ?? [];
+  const runReasoningSteps = hasLiveState ? liveReasoningSteps : latestRun?.reasoningSteps ?? [];
+  const runError = hasLiveState ? liveError : latestRun?.errorMessage ?? null;
+  const runDiffLines: DiffLine[] = hasLiveState
+    ? (liveResult?.diffLines ?? [])
+    : latestRun?.diffLines ?? [];
+  const runTrigger = hasLiveState
+    ? "Manual"
+    : latestRun ? formatTriggerLabel(latestRun.trigger) : "–";
+  const runEditorModel = liveResult?.editorModel ?? latestRun?.editorModel ?? null;
+  const runStatus: "success" | "error" | "running" = isRunning
+    ? "running"
+    : runError
+      ? "error"
+      : liveResult
+        ? "success"
+        : latestRun?.status ?? "success";
+  const historicalResult = useMemo(() => buildLoopRunResult(latestRun), [latestRun]);
+  const runResult = liveResult ?? historicalResult;
   const latestOutcomeLabel = latestRun
     ? latestRun.status === "error"
       ? "Needs attention"
@@ -308,15 +408,26 @@ export function SkillActivitySection({
                   </h3>
                   <p className="m-0 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
                     {canManage
-                      ? "Schedule, traces, and diffs for this skill. Trigger new runs from Studio above."
+                      ? "Schedule, traces, and diffs for this skill."
                       : "Automation status and run history. Only the owner can trigger runs or edit the schedule."}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {canManage ? (
-                    <Button onClick={() => setEditOpen(true)} size="sm" type="button">
+                    <Button
+                      disabled={!canRun}
+                      onClick={handleRunUpdate}
+                      size="sm"
+                      type="button"
+                    >
+                      <RefreshIcon className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+                      {isRunning ? "Running..." : "Run update now"}
+                    </Button>
+                  ) : null}
+                  {canManage ? (
+                    <Button onClick={() => setEditOpen(true)} size="sm" type="button" variant="soft">
                       <SettingsIcon className="h-3.5 w-3.5" />
-                      Edit automation
+                      Edit
                     </Button>
                   ) : null}
                   <LinkButton href="/settings/automations" size="sm" variant="soft">
@@ -362,15 +473,47 @@ export function SkillActivitySection({
         {/* --- Latest run trace --- */}
         {runMessages.length > 0 || runSourceLogs.length > 0 ? (
           <Panel compact className="overflow-hidden">
+            {isRunning && (
+              <ProgressBar
+                className="-mx-6 -mt-6 mb-4"
+                rounded={false}
+                size="sm"
+                status="active"
+              />
+            )}
+            {!isRunning && runStatus === "success" && hasLiveState && (
+              <ProgressBar
+                className="-mx-6 -mt-6 mb-4"
+                progress={100}
+                rounded={false}
+                size="sm"
+                status="done"
+              />
+            )}
+            {!isRunning && runStatus === "error" && hasLiveState && (
+              <ProgressBar
+                className="-mx-6 -mt-6 mb-4"
+                progress={100}
+                rounded={false}
+                size="sm"
+                status="error"
+              />
+            )}
             <PanelHead>
               <div>
-                <h3 className="m-0 text-lg font-semibold tracking-tight text-ink">Latest refresh trace</h3>
+                <h3 className="m-0 text-lg font-semibold tracking-tight text-ink">
+                  {isRunning ? "Live refresh trace" : "Latest refresh trace"}
+                </h3>
                 <p className="m-0 text-sm text-ink-soft">
                   Reasoning steps, source results, and the diff that landed.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {latestRun ? (
+                {isRunning ? (
+                  <Tip content="Results are streaming in real time" side="bottom">
+                    <span><Badge color="blue">streaming</Badge></span>
+                  </Tip>
+                ) : latestRun ? (
                   <Tip content="When this run completed" side="bottom">
                     <span><Badge color="neutral">{formatDateTime(latestRun.finishedAt, timeZone)}</Badge></span>
                   </Tip>
@@ -382,11 +525,11 @@ export function SkillActivitySection({
             </PanelHead>
 
             <RunMetadataBar
-              addedSourceCount={latestRun?.addedSources?.length}
+              addedSourceCount={liveResult?.addedSources?.length ?? latestRun?.addedSources?.length}
               editorModel={runEditorModel}
-              finishedAt={latestRun?.finishedAt ?? null}
-              searchesUsed={latestRun?.searchesUsed}
-              startedAt={latestRun?.startedAt ?? null}
+              finishedAt={hasLiveState ? null : latestRun?.finishedAt ?? null}
+              searchesUsed={liveResult?.searchesUsed ?? latestRun?.searchesUsed}
+              startedAt={hasLiveState ? null : latestRun?.startedAt ?? null}
               status={runStatus}
               trigger={runTrigger}
               variant="compact"
@@ -446,7 +589,23 @@ export function SkillActivitySection({
             ) : null}
           </Panel>
         ) : latestRun === undefined || latestRun === null ? (
-          <EmptyCard>No update runs yet. Trigger one from Studio or wait for automation.</EmptyCard>
+          <EmptyCard>
+            <span>No update runs yet.</span>
+            {canManage && sourceCount > 0 ? (
+              <Button
+                className="mt-3"
+                disabled={!canRun}
+                onClick={handleRunUpdate}
+                size="sm"
+                type="button"
+              >
+                <RefreshIcon className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+                {isRunning ? "Running..." : "Run first update"}
+              </Button>
+            ) : (
+              <span className="mt-1 block text-xs text-ink-faint">Add sources and set up automation to get started.</span>
+            )}
+          </EmptyCard>
         ) : null}
       </section>
 
@@ -454,15 +613,15 @@ export function SkillActivitySection({
         diffLines={runDiffLines}
         editorModel={runEditorModel}
         error={runError}
-        finishedAt={latestRun?.finishedAt ?? null}
-        isLive={false}
+        finishedAt={hasLiveState ? null : latestRun?.finishedAt ?? null}
+        isLive={isRunning}
         messages={runMessages}
         onClose={() => setModalOpen(false)}
         open={modalOpen}
         reasoningSteps={runReasoningSteps}
         result={runResult}
         sourceLogs={runSourceLogs}
-        startedAt={latestRun?.startedAt ?? null}
+        startedAt={hasLiveState ? null : latestRun?.startedAt ?? null}
         status={runStatus}
         trigger={runTrigger}
       />
