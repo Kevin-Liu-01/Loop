@@ -25,6 +25,7 @@ interface PageMeta {
   title: string;
   description: string;
   ogImagePath: string;
+  ogImageAlt: string;
   ogType: string;
   canonicalPath: string;
 }
@@ -43,6 +44,7 @@ function resolvePageMeta(pathname: string): PageMeta {
       title: `${name} · ${SITE_NAME}`,
       description: `Skill details for ${name} on ${SITE_NAME}.`,
       ogImagePath: `/og?title=${encodeURIComponent(name)}&category=Skill`,
+      ogImageAlt: name,
       ogType: "article",
       canonicalPath: pathname,
     };
@@ -55,6 +57,7 @@ function resolvePageMeta(pathname: string): PageMeta {
       title: `${name} · ${SITE_NAME}`,
       description: `MCP server details for ${name} on ${SITE_NAME}.`,
       ogImagePath: `/og?title=${encodeURIComponent(name)}&category=MCP`,
+      ogImageAlt: name,
       ogType: "article",
       canonicalPath: pathname,
     };
@@ -65,6 +68,7 @@ function resolvePageMeta(pathname: string): PageMeta {
       title: `FAQ · ${SITE_NAME}`,
       description: DEFAULT_DESCRIPTION,
       ogImagePath: STATIC_OG_IMAGE_PATH,
+      ogImageAlt: `${SITE_NAME} - operator desk for self-updating agent skills`,
       ogType: "website",
       canonicalPath: "/faq",
     };
@@ -74,6 +78,7 @@ function resolvePageMeta(pathname: string): PageMeta {
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     ogImagePath: STATIC_OG_IMAGE_PATH,
+    ogImageAlt: `${SITE_NAME} - operator desk for self-updating agent skills`,
     ogType: "website",
     canonicalPath: "/",
   };
@@ -113,6 +118,7 @@ export function buildBotResponse(req: NextRequest): Response {
 <meta property="og:image:width" content="${OG_WIDTH}" />
 <meta property="og:image:height" content="${OG_HEIGHT}" />
 <meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content="${esc(meta.ogImageAlt)}" />
 <meta property="og:type" content="${meta.ogType}" />
 <meta property="og:site_name" content="${esc(SITE_NAME)}" />
 <meta property="og:locale" content="en_US" />
@@ -120,6 +126,7 @@ export function buildBotResponse(req: NextRequest): Response {
 <meta name="twitter:title" content="${esc(meta.title)}" />
 <meta name="twitter:description" content="${esc(meta.description)}" />
 <meta name="twitter:image" content="${esc(image)}" />
+<meta name="twitter:image:alt" content="${esc(meta.ogImageAlt)}" />
 <link rel="icon" href="/icon.svg" />
 </head>
 <body></body>
