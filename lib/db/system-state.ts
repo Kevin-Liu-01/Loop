@@ -13,38 +13,49 @@ import type {
 
 export async function recordLoopRun(entry: LoopRunRecord): Promise<void> {
   const db = getServerSupabase();
-  const { error } = await db.from("loop_runs").upsert(
-    {
-      id: entry.id,
-      skill_slug: entry.slug,
-      title: entry.title,
-      origin: entry.origin,
-      trigger: entry.trigger,
-      status: entry.status,
-      started_at: entry.startedAt,
-      finished_at: entry.finishedAt,
-      previous_version_label: entry.previousVersionLabel ?? null,
-      next_version_label: entry.nextVersionLabel ?? null,
-      href: entry.href ?? null,
-      summary: entry.summary ?? null,
-      what_changed: entry.whatChanged ?? null,
-      body_changed: entry.bodyChanged ?? null,
-      changed_sections: entry.changedSections,
-      editor_model: entry.editorModel ?? null,
-      source_count: entry.sourceCount,
-      signal_count: entry.signalCount,
-      messages: entry.messages,
-      sources: entry.sources,
-      diff_lines: entry.diffLines,
-      reasoning_steps: entry.reasoningSteps ?? null,
-      error_message: entry.errorMessage ?? null,
-      searches_used: entry.searchesUsed ?? null,
-      added_sources: entry.addedSources ?? null
-    } as never,
-    { onConflict: "id" }
-  );
+  const baseRow = {
+    id: entry.id,
+    skill_slug: entry.slug,
+    title: entry.title,
+    origin: entry.origin,
+    trigger: entry.trigger,
+    status: entry.status,
+    started_at: entry.startedAt,
+    finished_at: entry.finishedAt,
+    previous_version_label: entry.previousVersionLabel ?? null,
+    next_version_label: entry.nextVersionLabel ?? null,
+    href: entry.href ?? null,
+    summary: entry.summary ?? null,
+    what_changed: entry.whatChanged ?? null,
+    body_changed: entry.bodyChanged ?? null,
+    changed_sections: entry.changedSections,
+    editor_model: entry.editorModel ?? null,
+    source_count: entry.sourceCount,
+    signal_count: entry.signalCount,
+    messages: entry.messages,
+    sources: entry.sources,
+    diff_lines: entry.diffLines,
+    reasoning_steps: entry.reasoningSteps ?? null,
+    error_message: entry.errorMessage ?? null,
+  };
 
-  if (error) throw new Error(`recordLoopRun failed: ${error.message}`);
+  const fullRow = {
+    ...baseRow,
+    searches_used: entry.searchesUsed ?? null,
+    added_sources: entry.addedSources ?? null,
+  };
+
+  const { error } = await db.from("loop_runs").upsert(fullRow as never, { onConflict: "id" });
+
+  if (error) {
+    if (error.message.includes("added_sources") || error.message.includes("searches_used")) {
+      console.warn("[db] loop_runs missing new columns – retrying without searches_used/added_sources (run migration 017)");
+      const { error: retryError } = await db.from("loop_runs").upsert(baseRow as never, { onConflict: "id" });
+      if (retryError) throw new Error(`recordLoopRun failed: ${retryError.message}`);
+      return;
+    }
+    throw new Error(`recordLoopRun failed: ${error.message}`);
+  }
 }
 
 export async function listLoopRuns(options?: {

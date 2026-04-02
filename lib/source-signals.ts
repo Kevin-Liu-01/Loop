@@ -4,7 +4,12 @@ import type { DailySignal, SourceDefinition } from "@/lib/types";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
-  attributeNamePrefix: ""
+  attributeNamePrefix: "",
+  htmlEntities: true,
+  processEntities: {
+    enabled: true,
+    maxTotalExpansions: 5000,
+  },
 });
 
 const MAX_FEED_ITEMS = 12;

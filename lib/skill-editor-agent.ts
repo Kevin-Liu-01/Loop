@@ -330,33 +330,49 @@ export async function runSkillEditorAgent(
   console.info(`[agent] Calling generateText for "${skill.title}"…`);
   const generateStartMs = Date.now();
 
-  const response = await generateText({
-    model,
-    system: buildSystemPrompt(skill, sourceLogs, searchBudgetMax),
-    prompt: [
-      `${sourceLogs.length} tracked sources delivered ${signals.length} signal(s).`,
-      `Web search budget: ${searchBudgetMax} (minimum ${MIN_SEARCH_REQUIRED}).`,
-      "",
-      "Execute the workflow: gather → research → discover → plan → revise → finalize.",
-      `Start by calling analyze_signals for each source, then read_current_skill, then begin your research phase with at least ${MIN_SEARCH_REQUIRED} web searches before deciding any edits.`,
-    ].join("\n"),
-    tools,
-    stopWhen: stepCountIs(MAX_AGENT_STEPS)
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let response: { steps: any[] } | null = null;
+  let agentError: string | null = null;
+
+  try {
+    response = await generateText({
+      model,
+      system: buildSystemPrompt(skill, sourceLogs, searchBudgetMax),
+      prompt: [
+        `${sourceLogs.length} tracked sources delivered ${signals.length} signal(s).`,
+        `Web search budget: ${searchBudgetMax} (minimum ${MIN_SEARCH_REQUIRED}).`,
+        "",
+        "Execute the workflow: gather → research → discover → plan → revise → finalize.",
+        `Start by calling analyze_signals for each source, then read_current_skill, then begin your research phase with at least ${MIN_SEARCH_REQUIRED} web searches before deciding any edits.`,
+      ].join("\n"),
+      tools,
+      stopWhen: stepCountIs(MAX_AGENT_STEPS)
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const elapsedMs = Date.now() - generateStartMs;
+    agentError = msg;
+    console.error(
+      `[agent] generateText CRASHED for "${skill.title}" after ${(elapsedMs / 1000).toFixed(1)}s: ${msg}\n` +
+      `  state at crash: revised=${revisionState.revised}, searches=${searchBudget.used}, addedSources=${sourceCollector.sources.length}`
+    );
+  }
 
   const generateElapsedMs = Date.now() - generateStartMs;
 
-  const toolCallSummary = response.steps.flatMap((s) => s.toolCalls ?? [])
-    .reduce<Record<string, number>>((acc, tc) => { acc[tc.toolName] = (acc[tc.toolName] ?? 0) + 1; return acc; }, {});
+  if (response) {
+    const toolCallSummary = response.steps.flatMap((s) => s.toolCalls ?? [])
+      .reduce<Record<string, number>>((acc, tc) => { acc[tc.toolName] = (acc[tc.toolName] ?? 0) + 1; return acc; }, {});
 
-  console.info(
-    `[agent] generateText complete for "${skill.title}" in ${(generateElapsedMs / 1000).toFixed(1)}s – ` +
-    `steps: ${response.steps.length}, toolCalls: ${JSON.stringify(toolCallSummary)}, ` +
-    `searches: ${searchBudget.used}/${searchBudgetMax}, ` +
-    `revised: ${revisionState.revised}, finalized: ${revisionState.finalized}`
-  );
+    console.info(
+      `[agent] generateText complete for "${skill.title}" in ${(generateElapsedMs / 1000).toFixed(1)}s – ` +
+      `steps: ${response.steps.length}, toolCalls: ${JSON.stringify(toolCallSummary)}, ` +
+      `searches: ${searchBudget.used}/${searchBudgetMax}, ` +
+      `revised: ${revisionState.revised}, finalized: ${revisionState.finalized}`
+    );
+  }
 
-  const reasoningSteps = extractStepsFromResponse(response, skill);
+  const reasoningSteps = response ? extractStepsFromResponse(response, skill) : [];
 
   if (onStep) {
     for (const step of reasoningSteps) {
@@ -367,20 +383,26 @@ export async function runSkillEditorAgent(
   const topItems = signals.slice(0, 4);
   const addedSources = sourceCollector.sources;
   const searchesUsed = searchBudget.used;
+  const errorSuffix = agentError ? ` (agent error: ${agentError.slice(0, 200)})` : "";
 
   if (!revisionState.revised) {
     const totalElapsedMs = Date.now() - agentStartMs;
     console.warn(
       `[agent] NO REVISION for "${skill.title}" after ${(totalElapsedMs / 1000).toFixed(1)}s – ` +
       `agent did not call revise_skill. searches: ${searchesUsed}, ` +
-      `finalized: ${revisionState.finalized}, steps: ${reasoningSteps.length}`
+      `finalized: ${revisionState.finalized}, steps: ${reasoningSteps.length}` +
+      (agentError ? `, error: ${agentError.slice(0, 120)}` : "")
     );
     return {
       update: {
         generatedAt,
-        summary: `${skill.title} was reviewed by the editor agent but no revision was applied.`,
-        whatChanged: "The agent analyzed signals but did not call revise_skill.",
-        experiments: ["Review the skill body for stale sections.", "Add a higher-signal source.", "Re-run after new signals arrive."],
+        summary: agentError
+          ? `${skill.title} agent run was interrupted: ${agentError.slice(0, 180)}`
+          : `${skill.title} was reviewed by the editor agent but no revision was applied.`,
+        whatChanged: agentError
+          ? `Agent crashed mid-run after ${searchesUsed} search(es).${errorSuffix}`
+          : "The agent analyzed signals but did not call revise_skill.",
+        experiments: ["Re-run after the issue is resolved.", "Add a higher-signal source.", "Check gateway credits or rate limits."],
         items: topItems,
         bodyChanged: false,
         changedSections: [],
@@ -411,7 +433,7 @@ export async function runSkillEditorAgent(
   return {
     update: {
       generatedAt,
-      summary: revisionState.summary || `${skill.title} was reviewed by the editor agent.`,
+      summary: (revisionState.summary || `${skill.title} was reviewed by the editor agent.`) + errorSuffix,
       whatChanged: revisionState.whatChanged || "The agent applied a revision with no detailed changelog.",
       experiments: revisionState.experiments.length > 0
         ? revisionState.experiments
