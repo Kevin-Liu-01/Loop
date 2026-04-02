@@ -6,13 +6,77 @@ const DEFAULT_DESCRIPTION =
   "Loop turns your agent playbooks, updates, and source scans into a living operator desk that stays current.";
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
-const OG_IMAGE_PATH = "/og.png";
+const STATIC_OG_IMAGE_PATH = "/og.png";
 
 export const SOCIAL_BOT_RE =
   /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Applebot|Pinterestbot/i;
 
+const BOT_BYPASS_PREFIXES = ["/api/", "/trpc/", "/sign-in", "/sign-up"];
+
 export function isSocialBot(req: NextRequest): boolean {
   return SOCIAL_BOT_RE.test(req.headers.get("user-agent") ?? "");
+}
+
+export function shouldServeBotHtml(pathname: string): boolean {
+  return !BOT_BYPASS_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+interface PageMeta {
+  title: string;
+  description: string;
+  ogImagePath: string;
+  ogType: string;
+  canonicalPath: string;
+}
+
+function slugToTitle(slug: string): string {
+  return decodeURIComponent(slug)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function resolvePageMeta(pathname: string): PageMeta {
+  const skillMatch = pathname.match(/^\/skills\/([^/]+)(?:\/[^/]+)?$/);
+  if (skillMatch) {
+    const name = slugToTitle(skillMatch[1]);
+    return {
+      title: `${name} · ${SITE_NAME}`,
+      description: `Skill details for ${name} on ${SITE_NAME}.`,
+      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=Skill`,
+      ogType: "article",
+      canonicalPath: pathname,
+    };
+  }
+
+  const mcpMatch = pathname.match(/^\/mcps\/([^/]+)(?:\/[^/]+)?$/);
+  if (mcpMatch) {
+    const name = decodeURIComponent(mcpMatch[1]);
+    return {
+      title: `${name} · ${SITE_NAME}`,
+      description: `MCP server details for ${name} on ${SITE_NAME}.`,
+      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=MCP`,
+      ogType: "article",
+      canonicalPath: pathname,
+    };
+  }
+
+  if (pathname === "/faq") {
+    return {
+      title: `FAQ · ${SITE_NAME}`,
+      description: DEFAULT_DESCRIPTION,
+      ogImagePath: STATIC_OG_IMAGE_PATH,
+      ogType: "website",
+      canonicalPath: "/faq",
+    };
+  }
+
+  return {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    ogImagePath: STATIC_OG_IMAGE_PATH,
+    ogType: "website",
+    canonicalPath: "/",
+  };
 }
 
 function getSiteOrigin(): string {
@@ -30,40 +94,46 @@ function getSiteOrigin(): string {
   return "http://localhost:3000";
 }
 
-export function buildRootBotResponse(): Response {
+export function buildBotResponse(req: NextRequest): Response {
   const origin = getSiteOrigin();
-  const image = `${origin}${OG_IMAGE_PATH}`;
+  const meta = resolvePageMeta(req.nextUrl.pathname);
+  const image = `${origin}${meta.ogImagePath}`;
+  const url = `${origin}${meta.canonicalPath}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>${esc(DEFAULT_TITLE)}</title>
-<meta name="description" content="${esc(DEFAULT_DESCRIPTION)}" />
-<meta property="og:title" content="${esc(DEFAULT_TITLE)}" />
-<meta property="og:description" content="${esc(DEFAULT_DESCRIPTION)}" />
-<meta property="og:url" content="${esc(origin)}" />
+<title>${esc(meta.title)}</title>
+<meta name="description" content="${esc(meta.description)}" />
+<meta property="og:title" content="${esc(meta.title)}" />
+<meta property="og:description" content="${esc(meta.description)}" />
+<meta property="og:url" content="${esc(url)}" />
 <meta property="og:image" content="${esc(image)}" />
 <meta property="og:image:width" content="${OG_WIDTH}" />
 <meta property="og:image:height" content="${OG_HEIGHT}" />
 <meta property="og:image:type" content="image/png" />
-<meta property="og:type" content="website" />
+<meta property="og:type" content="${meta.ogType}" />
 <meta property="og:site_name" content="${esc(SITE_NAME)}" />
 <meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="${esc(DEFAULT_TITLE)}" />
-<meta name="twitter:description" content="${esc(DEFAULT_DESCRIPTION)}" />
+<meta name="twitter:title" content="${esc(meta.title)}" />
+<meta name="twitter:description" content="${esc(meta.description)}" />
 <meta name="twitter:image" content="${esc(image)}" />
 <link rel="icon" href="/icon.svg" />
 </head>
 <body></body>
 </html>`;
 
-  return new Response(html, {
+  const body = new TextEncoder().encode(html);
+
+  return new Response(body, {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
+      "Content-Length": String(body.byteLength),
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      Vary: "User-Agent",
     },
   });
 }
