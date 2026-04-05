@@ -2,20 +2,10 @@ import assert from "node:assert/strict";
 import { describe, mock, test } from "node:test";
 
 import { buildAddSourceTool, type AddedSourceCollector } from "@/lib/agent-tools/add-source";
-import {
-  BROWSER_COMMAND_TIMEOUT_MS,
-  BROWSER_SESSION_PREFIX,
-  DEFAULT_SEARCH_BUDGET,
-  MAX_ADDED_SOURCES_PER_RUN,
-} from "@/lib/agent-tools/constants";
+import { DEFAULT_SEARCH_BUDGET, MAX_ADDED_SOURCES_PER_RUN } from "@/lib/agent-tools/constants";
 import { fetchPageContent } from "@/lib/agent-tools/fetch-page";
 import type { SearchBudget } from "@/lib/agent-tools/types";
 import { buildWebSearchTool } from "@/lib/agent-tools/web-search";
-import {
-  createSessionId,
-  overrideBrowserAvailable,
-  resetBrowserAvailableCache,
-} from "@/lib/agent-tools/browser";
 import type { CategorySlug, SourceDefinition } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -182,12 +172,11 @@ describe("buildAddSourceTool", () => {
 });
 
 // ---------------------------------------------------------------------------
-// fetch_page tool (HTTP fallback path)
+// fetch_page tool
 // ---------------------------------------------------------------------------
 
 describe("fetchPageContent", () => {
-  test("strips HTML and extracts title and text via HTTP fallback", async () => {
-    overrideBrowserAvailable(false);
+  test("strips HTML and extracts title and text", async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = mock.fn(async () =>
       new Response(
@@ -210,12 +199,10 @@ describe("fetchPageContent", () => {
       assert.ok(!result.content.includes("Skip footer"));
     } finally {
       globalThis.fetch = originalFetch;
-      overrideBrowserAvailable(null);
     }
   });
 
   test("returns error for non-200 response", async () => {
-    overrideBrowserAvailable(false);
     const originalFetch = globalThis.fetch;
     globalThis.fetch = mock.fn(async () =>
       new Response("Not Found", { status: 404, statusText: "Not Found" })
@@ -228,12 +215,10 @@ describe("fetchPageContent", () => {
       assert.ok(result.error.includes("404"));
     } finally {
       globalThis.fetch = originalFetch;
-      overrideBrowserAvailable(null);
     }
   });
 
   test("truncates content to maxChars", async () => {
-    overrideBrowserAvailable(false);
     const originalFetch = globalThis.fetch;
     const longBody = `<html><head><title>Long</title></head><body>${"x".repeat(10000)}</body></html>`;
     globalThis.fetch = mock.fn(async () =>
@@ -247,7 +232,6 @@ describe("fetchPageContent", () => {
       assert.ok(result.content.length <= 500);
     } finally {
       globalThis.fetch = originalFetch;
-      overrideBrowserAvailable(null);
     }
   });
 });
@@ -273,26 +257,7 @@ describe("buildWebSearchTool budget enforcement", () => {
   });
 
   test("default budget matches constant", () => {
-    assert.equal(DEFAULT_SEARCH_BUDGET, 8);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// browser.ts utilities
-// ---------------------------------------------------------------------------
-
-describe("browser utilities", () => {
-  test("createSessionId returns prefixed unique IDs", () => {
-    const id1 = createSessionId();
-    const id2 = createSessionId();
-    assert.ok(id1.startsWith(BROWSER_SESSION_PREFIX));
-    assert.ok(id2.startsWith(BROWSER_SESSION_PREFIX));
-    assert.notEqual(id1, id2);
-  });
-
-  test("browser constants are reasonable", () => {
-    assert.ok(BROWSER_COMMAND_TIMEOUT_MS >= 10_000);
-    assert.ok(BROWSER_SESSION_PREFIX.length > 0);
+    assert.equal(DEFAULT_SEARCH_BUDGET, 5);
   });
 });
 
