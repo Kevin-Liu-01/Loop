@@ -5,3 +5,10 @@ export const SEARCH_MAX_TOKENS = 25_000;
 export const FETCH_PAGE_TIMEOUT_MS = 10_000;
 export const FETCH_PAGE_MAX_CHARS = 4000;
 export const MAX_ADDED_SOURCES_PER_RUN = 5;
+
+export const BROWSER_COMMAND_TIMEOUT_MS = 30_000;
+export const BROWSER_SESSION_PREFIX = "loop-";
+export const BROWSER_MAX_OUTPUT = 50_000;
+export const BROWSER_SEARCH_MAX_RESULTS = 8;
+export const BROWSER_SNAPSHOT_DEPTH = 4;
+export const BROWSER_NETWORKIDLE_TIMEOUT_MS = 15_000;
