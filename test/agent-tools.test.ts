@@ -172,11 +172,13 @@ describe("buildAddSourceTool", () => {
 });
 
 // ---------------------------------------------------------------------------
-// fetch_page tool
+// fetch_page tool (HTTP fallback — no FIRECRAWL_API_KEY in test env)
 // ---------------------------------------------------------------------------
 
 describe("fetchPageContent", () => {
   test("strips HTML and extracts title and text", async () => {
+    const originalKey = process.env.FIRECRAWL_API_KEY;
+    delete process.env.FIRECRAWL_API_KEY;
     const originalFetch = globalThis.fetch;
     globalThis.fetch = mock.fn(async () =>
       new Response(
@@ -199,10 +201,13 @@ describe("fetchPageContent", () => {
       assert.ok(!result.content.includes("Skip footer"));
     } finally {
       globalThis.fetch = originalFetch;
+      if (originalKey) process.env.FIRECRAWL_API_KEY = originalKey;
     }
   });
 
   test("returns error for non-200 response", async () => {
+    const originalKey = process.env.FIRECRAWL_API_KEY;
+    delete process.env.FIRECRAWL_API_KEY;
     const originalFetch = globalThis.fetch;
     globalThis.fetch = mock.fn(async () =>
       new Response("Not Found", { status: 404, statusText: "Not Found" })
@@ -215,10 +220,13 @@ describe("fetchPageContent", () => {
       assert.ok(result.error.includes("404"));
     } finally {
       globalThis.fetch = originalFetch;
+      if (originalKey) process.env.FIRECRAWL_API_KEY = originalKey;
     }
   });
 
   test("truncates content to maxChars", async () => {
+    const originalKey = process.env.FIRECRAWL_API_KEY;
+    delete process.env.FIRECRAWL_API_KEY;
     const originalFetch = globalThis.fetch;
     const longBody = `<html><head><title>Long</title></head><body>${"x".repeat(10000)}</body></html>`;
     globalThis.fetch = mock.fn(async () =>
@@ -232,6 +240,7 @@ describe("fetchPageContent", () => {
       assert.ok(result.content.length <= 500);
     } finally {
       globalThis.fetch = originalFetch;
+      if (originalKey) process.env.FIRECRAWL_API_KEY = originalKey;
     }
   });
 });
@@ -257,7 +266,7 @@ describe("buildWebSearchTool budget enforcement", () => {
   });
 
   test("default budget matches constant", () => {
-    assert.equal(DEFAULT_SEARCH_BUDGET, 5);
+    assert.equal(DEFAULT_SEARCH_BUDGET, 4);
   });
 });
 

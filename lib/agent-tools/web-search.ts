@@ -1,60 +1,29 @@
-import { gateway, generateText, stepCountIs, tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 
-import { SEARCH_MAX_RESULTS, SEARCH_MAX_TOKENS } from "@/lib/agent-tools/constants";
-import type { SearchBudget, SearchRecency, WebSearchResult, WebSearchToolOutput } from "@/lib/agent-tools/types";
+import { SEARCH_MAX_RESULTS } from "@/lib/agent-tools/constants";
+import { firecrawlSearch } from "@/lib/agent-tools/firecrawl";
+import type { SearchBudget, WebSearchResult, WebSearchToolOutput } from "@/lib/agent-tools/types";
 
-function buildSearchModel() {
-  return gateway("openai/gpt-5-mini");
-}
+async function executeSearch(query: string): Promise<WebSearchResult[]> {
+  const response = await firecrawlSearch(query, SEARCH_MAX_RESULTS);
 
-function extractSourceUrl(source: { sourceType: string; url?: string; id?: string }): string {
-  if ("url" in source && typeof source.url === "string") return source.url;
-  if ("id" in source && typeof source.id === "string" && source.id.startsWith("http")) return source.id;
-  return "";
-}
-
-async function executeSearch(query: string, recency?: SearchRecency): Promise<WebSearchResult[]> {
-  const result = await generateText({
-    model: buildSearchModel(),
-    prompt: `Search: ${query}\n\nReturn the most relevant and recent results. Prioritize primary sources (official docs, changelogs, RFCs, maintainer posts) over aggregators and secondary commentary.`,
-    tools: {
-      perplexity_search: gateway.tools.perplexitySearch({
-        maxResults: SEARCH_MAX_RESULTS,
-        maxTokens: SEARCH_MAX_TOKENS,
-        searchRecencyFilter: recency,
-      }),
-    },
-    stopWhen: stepCountIs(2),
-  });
-
-  const searchResults: WebSearchResult[] = [];
-  if (result.sources && result.sources.length > 0) {
-    for (const source of result.sources) {
-      const url = extractSourceUrl(source as { sourceType: string; url?: string; id?: string });
-      searchResults.push({
-        title: source.title ?? (url || "Untitled"),
-        url,
-        snippet: "",
-      });
-    }
+  if (!response.success) {
+    throw new Error(response.error ?? "Firecrawl search returned unsuccessful response");
   }
 
-  if (result.text) {
-    searchResults.push({
-      title: "Search summary",
-      url: "",
-      snippet: result.text.slice(0, 2000),
-    });
-  }
-
-  return searchResults;
+  const webResults = response.data?.web ?? [];
+  return webResults.map((r) => ({
+    title: r.title,
+    url: r.url,
+    snippet: r.description,
+  }));
 }
 
 export function buildWebSearchTool(budget: SearchBudget) {
   return tool({
     description:
-      "Search the web for live information. Returns a list of results with titles, URLs, and a synthesized summary. " +
+      "Search the web for live information. Returns a list of results with titles, URLs, and snippets. " +
       "Use aggressively: search for recent changes, verify claims, find primary sources, discover adjacent topics. " +
       "Chain multiple searches — start broad, then narrow on specifics. Budget is limited so make queries specific and targeted.",
     inputSchema: z.object({
@@ -67,17 +36,17 @@ export function buildWebSearchTool(budget: SearchBudget) {
     execute: async ({ query, recency }): Promise<WebSearchToolOutput> => {
       if (budget.used >= budget.max) {
         console.warn(`[tool:web_search] Budget exhausted (${budget.max}/${budget.max}) – rejecting query: "${query}"`);
-        return {
-          error: `Search budget exhausted (${budget.max}/${budget.max} used). Work with what you have.`,
-        };
+        return { error: `Search budget exhausted (${budget.max}/${budget.max} used). Work with what you have.` };
       }
       budget.used++;
       const searchIndex = budget.used;
-      console.info(`[tool:web_search] #${searchIndex}/${budget.max} query: "${query}" (recency: ${recency ?? "any"})`);
+
+      const searchQuery = recency ? `${query} (past ${recency})` : query;
+      console.info(`[tool:web_search] #${searchIndex}/${budget.max} query: "${searchQuery}" (recency: ${recency ?? "any"})`);
       const startMs = Date.now();
 
       try {
-        const results = await executeSearch(query, recency);
+        const results = await executeSearch(searchQuery);
         const elapsedMs = Date.now() - startMs;
         console.info(`[tool:web_search] #${searchIndex} returned ${results.length} results in ${elapsedMs}ms – remaining: ${budget.max - budget.used}`);
         return { results, budgetRemaining: budget.max - budget.used };

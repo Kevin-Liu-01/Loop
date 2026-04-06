@@ -183,6 +183,11 @@ export const FAQ_SECTIONS: FaqSection[] = [
           "Yes. Paused automations keep their configuration but won't dispatch. Use pause when iterating on prompts or when an external API quota is tight. Disabling an automation sets enabled to false – you can re-enable it any time without losing your configuration.",
       },
       {
+        question: "How does the agent research pipeline work?",
+        answer:
+          "Each automation run executes a research-first agent. The agent gathers signals from tracked sources, then searches the web using Firecrawl (up to 4 searches per run by default), fetches full page content as clean markdown, and finally revises the skill body. The agent has a dynamic step budget calculated from the number of sources and search budget, with 5 steps reserved for the revision phase so research never crowds out the actual skill update.",
+      },
+      {
         question: "Do automations require a paid plan?",
         answer:
           "Yes. Creating or editing automations requires the Operator plan ($19/mo). This keeps scheduled compute and storage tied to a paid workspace and reduces abuse of long-running agent jobs.",
@@ -278,7 +283,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What AI providers are supported?",
         answer:
-          "Loop supports OpenAI, Vercel AI Gateway, OpenRouter, Groq, and Together AI. You can configure provider API keys through environment variables and select your preferred provider and model from the Sandbox sidebar.",
+          "Loop supports Vercel AI Gateway, OpenAI, OpenRouter, Groq, Together AI, and Ollama (local). You can configure provider API keys through environment variables and select your preferred provider and model from the Sandbox sidebar. Ollama runs locally against http://127.0.0.1:11434 and requires no API key.",
       },
       {
         question: "Is the Sandbox safe to run untrusted code in?",
@@ -348,6 +353,11 @@ export const FAQ_SECTIONS: FaqSection[] = [
           "The activity dashboard is accessible from the catalog home page. It combines usage overview tiles and charts with two tabs: an automations tab showing the automation calendar with color-coded run dates, and an imports tab listing recent imports with source attribution and trust tier badges.",
       },
       {
+        question: "What are daily briefs?",
+        answer:
+          "Daily briefs are short AI-generated summaries of recent signals, grouped by category. Loop synthesizes them during refresh runs and stores them alongside the skill snapshot. Briefs are injected into agent system context so the agent has up-to-date situational awareness without re-reading every source. You can see active briefs in the system state.",
+      },
+      {
         question: "Is usage data used for billing?",
         answer:
           "No. The health view is designed for spotting spikes, regressions, or noisy endpoints. It is not billing-grade metering. Billing is handled entirely through Stripe subscriptions.",
@@ -397,17 +407,17 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What tech stack does Loop use?",
         answer:
-          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. It uses Clerk for authentication, Supabase (Postgres) for all persistence, Stripe for billing and payouts, Vercel for hosting (Sandbox, Analytics, Speed Insights), Resend for transactional email, and the Vercel AI SDK for agent interactions.",
+          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. It uses Clerk for authentication, Supabase (Postgres) for all persistence, Stripe for billing and payouts, Vercel for hosting (Sandbox, Analytics, Speed Insights), Resend for transactional email, Vercel AI SDK v5 for agent interactions, and Firecrawl for web research (search and page scraping).",
       },
       {
         question: "Can I self-host Loop?",
         answer:
-          "Loop is designed for Vercel but runs locally without Vercel services. For a deploy you need Supabase credentials, Clerk API keys, NEXT_PUBLIC_SITE_URL, CRON_SECRET, AI provider keys for refresh and agent runs, Resend API key for emails, and Stripe keys if billing is enabled.",
+          "Loop is designed for Vercel but runs locally without Vercel services. For a deploy you need Supabase credentials, Clerk API keys, NEXT_PUBLIC_SITE_URL, CRON_SECRET, AI_GATEWAY_API_KEY (or direct provider keys) for agent runs, FIRECRAWL_API_KEY for web research, Resend API key for emails, and Stripe keys if billing is enabled.",
       },
       {
         question: "What AI models power automations?",
         answer:
-          "The automation pipeline uses the model configured in LOOP_MODEL by default (an OpenAI model). Operator subscribers can choose a preferred model per automation (GPT-4o, GPT-4o Mini, Claude Sonnet 4, Claude Haiku 3.5). You can also configure OpenRouter, Groq, Together AI, or any OpenAI-compatible endpoint.",
+          "Automations route through Vercel AI Gateway. The default model is openai/gpt-5-mini (configurable via the LOOP_MODEL environment variable). Operator subscribers can choose a preferred model per automation from the dropdown: GPT-4o, GPT-4o Mini, Claude Sonnet 4, or Claude Haiku 3.5. The Sandbox supports additional providers (OpenAI direct, OpenRouter, Groq, Together AI, Ollama) but automations always use the gateway.",
       },
       {
         question: "What is the raw skill URL API?",
@@ -418,6 +428,11 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: "What is the skill icon API?",
         answer:
           "Each skill exposes a /api/skills/{slug}/icon endpoint that returns the resolved icon URL. Loop resolves icons through a priority chain: explicit icon URL, verified author logo, brand inference from the owner name, and finally a Lucide category fallback. MCP servers have a similar endpoint at /api/mcps/{name}/icon.",
+      },
+      {
+        question: "What is the Agent Studio?",
+        answer:
+          "The Agent Studio is the configuration interface for agent runs. It lets you select an AI provider and model, attach skills from your catalog, attach MCP servers, and review the assembled system context (skills, MCPs, daily briefs) before starting a conversation. The Agent Studio is accessible from the Sandbox.",
       },
       {
         question: "What is the command palette?",

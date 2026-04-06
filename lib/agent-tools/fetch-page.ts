@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 
 import { FETCH_PAGE_MAX_CHARS, FETCH_PAGE_TIMEOUT_MS } from "@/lib/agent-tools/constants";
+import { firecrawlScrape } from "@/lib/agent-tools/firecrawl";
 import type { FetchPageToolOutput } from "@/lib/agent-tools/types";
 
 function stripHtmlToText(html: string): string {
@@ -27,29 +28,53 @@ function extractTitle(html: string): string {
   return match?.[1]?.trim() ?? "Untitled";
 }
 
+async function fetchWithFirecrawl(url: string, maxChars: number): Promise<FetchPageToolOutput> {
+  const response = await firecrawlScrape(url);
+
+  if (!response.success) {
+    throw new Error(response.error ?? "Firecrawl scrape returned unsuccessful response");
+  }
+
+  const markdown = response.data?.markdown ?? "";
+  const title = response.data?.metadata?.title ?? "Untitled";
+  const content = markdown.slice(0, maxChars);
+
+  return { url, title, content, contentLength: content.length };
+}
+
+async function fetchWithHttp(url: string, timeoutMs: number, maxChars: number): Promise<FetchPageToolOutput> {
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": "LoopBot/0.1 (+https://loop.local)",
+      accept: "text/html, application/xhtml+xml, text/plain, */*",
+    },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  if (!response.ok) {
+    return { error: `HTTP ${response.status} ${response.statusText}` };
+  }
+
+  const raw = await response.text();
+  const title = extractTitle(raw);
+  const content = stripHtmlToText(raw).slice(0, maxChars);
+  return { url, title, content, contentLength: content.length };
+}
+
 export async function fetchPageContent(
   url: string,
   timeoutMs = FETCH_PAGE_TIMEOUT_MS,
   maxChars = FETCH_PAGE_MAX_CHARS
 ): Promise<FetchPageToolOutput> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "user-agent": "LoopBot/0.1 (+https://loop.local)",
-        accept: "text/html, application/xhtml+xml, text/plain, */*",
-      },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-
-    if (!response.ok) {
-      return { error: `HTTP ${response.status} ${response.statusText}` };
+    if (process.env.FIRECRAWL_API_KEY) {
+      try {
+        return await fetchWithFirecrawl(url, maxChars);
+      } catch (err) {
+        console.warn(`[fetch_page] Firecrawl scrape failed, falling back to HTTP: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
-
-    const raw = await response.text();
-    const title = extractTitle(raw);
-    const content = stripHtmlToText(raw).slice(0, maxChars);
-
-    return { url, title, content, contentLength: content.length };
+    return await fetchWithHttp(url, timeoutMs, maxChars);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Fetch failed";
     return { error: `Failed to fetch ${url}: ${message}` };
@@ -59,7 +84,7 @@ export async function fetchPageContent(
 export function buildFetchPageTool() {
   return tool({
     description:
-      "Fetch a URL and return its readable text content (HTML stripped, nav/footer removed). " +
+      "Fetch a URL and return its content as clean markdown. Handles JavaScript-rendered pages, anti-bot protection, and dynamic content. " +
       "Use after web_search surfaces a promising link — read the full page to extract specific details like version numbers, API changes, code examples, or migration steps before citing them in the revision.",
     inputSchema: z.object({
       url: z.string().url().describe("Full URL to fetch — must be publicly accessible"),

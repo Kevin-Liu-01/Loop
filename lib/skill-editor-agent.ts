@@ -21,9 +21,15 @@ const MAX_REASONING_CHARS = 2000;
 const MAX_TOOL_RESULT_CHARS = 2000;
 const MAX_SEARCH_RESULT_CHARS = 4000;
 const MAX_DIFF_LINES_PER_STEP = 80;
-const MAX_AGENT_STEPS = 18;
+const REVISION_RESERVE_STEPS = 5;
 
 const LARGE_OUTPUT_TOOLS = new Set(["web_search", "fetch_page"]);
+
+function computeMaxSteps(sourceCount: number, searchBudget: number): number {
+  const gatherSteps = sourceCount + 1;
+  const researchSteps = searchBudget * 2;
+  return gatherSteps + researchSteps + REVISION_RESERVE_STEPS;
+}
 
 export type SkillRevisionDraft = {
   update: SkillUpdateEntry;
@@ -54,7 +60,8 @@ type MutableRevisionState = {
 function buildSystemPrompt(
   skill: UserSkillDocument,
   sourceLogs: LoopUpdateSourceLog[],
-  searchBudgetMax: number
+  searchBudgetMax: number,
+  maxSteps: number
 ): string {
   const sourceList = sourceLogs
     .map((s) => {
@@ -77,6 +84,13 @@ function buildSystemPrompt(
     "",
     `Budget: ${searchBudgetMax} web searches. You MUST use at least ${MIN_SEARCH_REQUIRED}.`,
     "Do NOT skip searching even when signals look complete — there is always more to learn.",
+    "",
+    "## Step budget",
+    "",
+    `You have ${maxSteps} total tool-call steps. Each tool call (analyze_signals, web_search, fetch_page, revise_skill, finalize) costs 1 step.`,
+    `You MUST reserve at least ${REVISION_RESERVE_STEPS} steps for the revision phase (plan → revise_skill → finalize).`,
+    "If you exhaust all steps without calling revise_skill, the ENTIRE run produces NO output — all research is wasted.",
+    "Count your steps as you go. When you are within 5 steps of the limit, STOP researching and proceed to revision immediately.",
     "",
     "What to search for:",
     "- Breaking changes, new releases, or version bumps since the skill was last updated.",
@@ -311,10 +325,12 @@ export async function runSkillEditorAgent(
     finalized: false
   };
 
+  const maxSteps = computeMaxSteps(sourceLogs.length, searchBudgetMax);
+
   console.info(
     `[agent] BEGIN "${skill.title}" – model: ${modelLabel}, ` +
     `signals: ${signals.length}, sources: ${sourceLogs.length}, ` +
-    `searchBudget: ${searchBudgetMax}, maxSteps: ${MAX_AGENT_STEPS}`
+    `searchBudget: ${searchBudgetMax}, maxSteps: ${maxSteps}`
   );
 
   const tools = {
@@ -337,16 +353,17 @@ export async function runSkillEditorAgent(
   try {
     response = await generateText({
       model,
-      system: buildSystemPrompt(skill, sourceLogs, searchBudgetMax),
+      system: buildSystemPrompt(skill, sourceLogs, searchBudgetMax, maxSteps),
       prompt: [
         `${sourceLogs.length} tracked sources delivered ${signals.length} signal(s).`,
-        `Web search budget: ${searchBudgetMax} (minimum ${MIN_SEARCH_REQUIRED}).`,
+        `Web search budget: ${searchBudgetMax} (minimum ${MIN_SEARCH_REQUIRED}). Step limit: ${maxSteps}.`,
         "",
         "Execute the workflow: gather → research → discover → plan → revise → finalize.",
         `Start by calling analyze_signals for each source, then read_current_skill, then begin your research phase with at least ${MIN_SEARCH_REQUIRED} web searches before deciding any edits.`,
+        `CRITICAL: You MUST call revise_skill and finalize before running out of steps. Reserve at least ${REVISION_RESERVE_STEPS} steps for this.`,
       ].join("\n"),
       tools,
-      stopWhen: stepCountIs(MAX_AGENT_STEPS)
+      stopWhen: stepCountIs(maxSteps)
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
