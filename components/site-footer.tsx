@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Github } from "lucide-react";
+
+const GITHUB_REPO_URL = "https://github.com/Kevin-Liu-01/loop";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -25,6 +28,15 @@ export function SiteFooter() {
           <Link className="text-ink-soft transition-colors hover:text-ink" href="/faq">
             FAQ
           </Link>
+          <a
+            className="text-ink-soft transition-colors hover:text-ink"
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub repository"
+          >
+            <Github className="size-3.5" />
+          </a>
         </nav>
       </div>
     </footer>
