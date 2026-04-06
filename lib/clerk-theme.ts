@@ -38,7 +38,7 @@ export const clerkAppearance = {
     userButtonPopoverFooter: "hidden",
     badge: "bg-[#e8650a]/10 text-[#e8650a] border-[#e8650a]/20",
 
-    modalBackdrop: "bg-black/60 backdrop-blur-sm",
+    modalBackdrop: "!bg-black/60 backdrop-blur-sm",
     modalContent: "border border-[var(--color-line)] bg-[var(--color-paper)] shadow-2xl rounded-xl",
     cardBox: "bg-[var(--color-paper)]",
     navbar: "bg-[var(--color-paper)]",
