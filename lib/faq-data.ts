@@ -58,7 +58,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Can I create my own skills?",
         answer:
-          "Yes. Free accounts can create up to 2 skills. Operator subscribers ($19/mo) get unlimited skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model.",
+          "Yes. Free accounts can create 1 skill. Operator subscribers ($19/mo) get unlimited skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model.",
       },
       {
         question: "What happens when I fork a skill?",
@@ -299,12 +299,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How much does Loop cost?",
         answer:
-          "Loop has two tiers. Free ($0) lets you browse the catalog, create up to 2 skills, and explore the Sandbox. Operator ($19/mo) unlocks unlimited skills, AI-powered automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
+          "Loop has two tiers. Free ($0) lets you browse the catalog, create 1 skill, and explore the Sandbox. Operator ($19/mo) unlocks unlimited skills, AI-powered automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
       },
       {
         question: "What's included in the free tier?",
         answer:
-          "Free gives you full catalog access, search, skill detail views, the Sandbox, and up to 2 skills. You can fork public skills, download skill markdown, and use the raw URL API. Automations, model selection, custom import sources, and marketplace pricing require Operator.",
+          "Free gives you full catalog access, search, skill detail views, the Sandbox, and 1 skill. You can fork public skills, download skill markdown, and use the raw URL API. Automations, model selection, custom import sources, and marketplace pricing require Operator.",
       },
       {
         question: "What does the Operator plan include?",

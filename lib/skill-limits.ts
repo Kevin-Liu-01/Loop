@@ -1,9 +1,10 @@
 import { getUserSubscription } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { countUserSkills } from "@/lib/db/skills";
 import { listLoopRuns } from "@/lib/system-state";
 import type { SkillAutomationState, UserSkillCadence } from "@/lib/types";
 
-export const FREE_SKILL_LIMIT = 2;
+export const FREE_SKILL_LIMIT = 1;
 
 export const MANUAL_UPDATE_COOLDOWN_MS = 15 * 60 * 1000;
 
@@ -18,13 +19,14 @@ function cadenceIntervalMs(cadence: UserSkillCadence): number | null {
 }
 
 export async function canCreateSkill(
-  clerkUserId: string
+  clerkUserId: string,
+  email?: string
 ): Promise<{ allowed: boolean; currentCount: number; limit: number; isOperator: boolean }> {
   const [currentCount, subscription] = await Promise.all([
     countUserSkills(clerkUserId),
     getUserSubscription(clerkUserId),
   ]);
-  const isOperator = subscription !== null;
+  const isOperator = subscription !== null || (email ? isAdminEmail(email) : false);
   const limit = FREE_SKILL_LIMIT;
   const allowed = isOperator || currentCount < limit;
   return { allowed, currentCount, limit, isOperator };

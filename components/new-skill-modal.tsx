@@ -41,13 +41,13 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
         <DialogHeader>
           <DialogTitle>New skill</DialogTitle>
           <DialogDescription>
-            Import from a URL or draft a custom skill. Operators can manage both in one place.
+            Discover, import, or create a skill. Free accounts get 1 skill; Operators get unlimited.
           </DialogDescription>
         </DialogHeader>
         {!isSignedIn ? (
           <div className="grid gap-4 px-6 py-8 text-center">
             <p className="text-sm text-ink-soft">
-              Sign in with an Operator subscription to create or import skills.
+              Sign in to create or import skills. Your first skill is free.
             </p>
             <SignInButton mode="modal">
               <Button type="button">Sign in</Button>

@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 
+import { isAdminEmail } from "@/lib/admin";
 import { listSubscriptions } from "@/lib/system-state";
 import type { StripeSubscriptionRecord } from "@/lib/types";
 
@@ -53,10 +54,20 @@ export async function getUserSubscription(
 export async function requireActiveSubscription(): Promise<SessionUser & { subscription: StripeSubscriptionRecord }> {
   const session = await requireAuth();
   const subscription = await getUserSubscription(session.userId);
-  if (!subscription) {
+  if (!subscription && !isAdminEmail(session.email)) {
     throw new AuthError("An active Operator subscription is required.", 403);
   }
-  return { ...session, subscription };
+  const fallback: StripeSubscriptionRecord = {
+    id: "admin-bypass",
+    customerId: "admin-bypass",
+    clerkUserId: session.userId,
+    customerEmail: session.email,
+    planSlug: "operator",
+    status: "active",
+    cancelAtPeriodEnd: false,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ...session, subscription: subscription ?? fallback };
 }
 
 export async function requireConnectedAccount(): Promise<SessionUser & { stripeConnectAccountId: string }> {

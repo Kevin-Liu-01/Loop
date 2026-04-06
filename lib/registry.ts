@@ -290,12 +290,12 @@ export const SKILL_OVERRIDES: Partial<
 export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     slug: "free",
-    title: "Free Signal",
+    title: "Free",
     priceLabel: "$0",
     interval: "forever",
     ctaLabel: "Reading now",
-    description: "Daily briefs, public skills, RSS feed, and the full editorial front page.",
-    features: ["Public skills", "Daily briefs", "RSS feed", "Category browsing"]
+    description: "Browse the catalog, create 1 skill, and explore the Sandbox.",
+    features: ["1 skill", "Catalog access", "Sandbox", "Skill downloads"]
   },
   {
     slug: "operator",
@@ -303,12 +303,12 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     priceLabel: "$19",
     interval: "per month",
     ctaLabel: "Unlock operator tools",
-    description: "Private in-house skills, copilot answers, premium categories, and member-only prompts.",
+    description: "Unlimited skills, AI automations, custom imports, marketplace pricing, and payouts.",
     features: [
-      "AI skill copilot",
-      "Private skill packs",
-      "Prompt library",
-      "Priority refresh cadence"
+      "Unlimited skills",
+      "AI-powered automations",
+      "Custom import sources",
+      "Marketplace pricing & payouts"
     ]
   }
 ];

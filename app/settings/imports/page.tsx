@@ -6,12 +6,12 @@ import {
   DownloadIcon,
   GlobeIcon,
 } from "@/components/frontier-icons";
+import { OperatorGate } from "@/components/operator-gate";
 import { SettingsSectionPage } from "@/components/settings-section-page";
 import { SettingsImportsCustomSourceForm } from "@/components/settings-imports-custom-source-form";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { getUserSubscription } from "@/lib/auth";
-import { cn } from "@/lib/cn";
 import { EXTERNAL_SKILL_SOURCES } from "@/lib/external-skill-sources";
 import { getNextWeeklyImportRunUtc } from "@/lib/weekly-import-schedule";
 
@@ -137,12 +137,7 @@ export default async function SettingsImportsPage() {
           </div>
         </Panel>
 
-        <Panel
-          className={cn(
-            !isOperator && "relative overflow-hidden",
-            !isOperator && "after:pointer-events-none after:absolute after:inset-0 after:bg-paper/55 after:backdrop-blur-[0.5px] dark:after:bg-paper/40"
-          )}
-        >
+        <Panel>
           <PanelHead>
             <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3">
               <div className="min-w-0">
@@ -153,17 +148,16 @@ export default async function SettingsImportsPage() {
                   Register another GitHub repository and skills directory for the weekly import job.
                 </p>
               </div>
-              {!isOperator ? (
-                <span title="Subscribe to the Operator plan to add custom import sources">
-                  <Badge color="orange" className="shrink-0">Upgrade to Operator</Badge>
-                </span>
-              ) : null}
             </div>
           </PanelHead>
 
-          <div className="relative z-[1] grid gap-4">
-            <SettingsImportsCustomSourceForm isOperator={isOperator} />
-          </div>
+          {isOperator ? (
+            <div className="grid gap-4">
+              <SettingsImportsCustomSourceForm isOperator={isOperator} />
+            </div>
+          ) : (
+            <OperatorGate message="Upgrade to Operator to register custom import sources." />
+          )}
         </Panel>
       </div>
     </SettingsSectionPage>

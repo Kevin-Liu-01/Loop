@@ -19,6 +19,7 @@ export default async function SettingsSubscriptionPage() {
         hasSubscription={subscription !== null}
         planSlug={subscription?.planSlug ?? null}
         status={subscription?.status ?? null}
+        customerId={subscription?.customerId ?? null}
       />
     </SettingsSectionPage>
   );

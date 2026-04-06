@@ -125,3 +125,7 @@ export function getAdminEmailFromCookieHeader(cookieHeader: string | null, now =
 export function getAuthorizedAdminEmail(request: Request, now = Date.now()): string | null {
   return getAdminEmailFromCookieHeader(request.headers.get("cookie"), now);
 }
+
+export function isAdminEmail(email: string): boolean {
+  return getAdminEmails().includes(normalizeAdminEmail(email));
+}

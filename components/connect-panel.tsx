@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 
-import { CheckIcon, LinkIcon, WalletIcon } from "@/components/frontier-icons";
+import { CheckIcon, LinkIcon } from "@/components/frontier-icons";
+import { OperatorGate } from "@/components/operator-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tip } from "@/components/ui/tip";
-import { cn } from "@/lib/cn";
 
 type ConnectPanelProps = {
   hasSubscription: boolean;
@@ -44,22 +44,7 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
 
   if (!hasSubscription) {
     return (
-      <div className="grid gap-0 rounded-none border border-line bg-paper-3/92">
-        <div className="flex items-center gap-3 border-b border-line p-5 sm:p-6">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-paper-2 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
-            <WalletIcon className="h-4.5 w-4.5 text-ink-soft" />
-          </span>
-          <div>
-            <p className="m-0 text-sm font-semibold tracking-tight text-ink">Payouts unavailable</p>
-            <p className="m-0 text-xs text-ink-faint">Requires Operator subscription</p>
-          </div>
-        </div>
-        <div className="p-5 sm:p-6">
-          <p className="m-0 max-w-[48ch] text-sm leading-relaxed text-ink-muted">
-            Subscribe to Operator first, then connect your Stripe account here to receive payments for your skills.
-          </p>
-        </div>
-      </div>
+      <OperatorGate message="Upgrade to Operator to connect your Stripe account and receive payouts." />
     );
   }
 

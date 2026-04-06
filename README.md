@@ -301,8 +301,8 @@ These scripts are idempotent and safe to re-run.
 - `POST /api/chat` — sandbox chat
 - `POST /api/usage` — record usage events
 - `GET  /api/models` — list available AI models
-- `POST /api/billing/checkout` — Stripe checkout session
-- `POST /api/billing/portal` — Stripe customer portal
+- `GET /api/billing/checkout` — Stripe checkout session
+- `GET /api/billing/portal` — Stripe customer portal
 - `POST /api/stripe/webhook` — Stripe webhook handler
 
 ## Deployment

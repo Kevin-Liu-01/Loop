@@ -95,7 +95,7 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
       {
         title: "What Operator unlocks",
         body:
-          "Create and publish skills, attach automations, set marketplace pricing, and use the full operator workflow. Without an active subscription, catalog browsing still works, but authoring and payouts stay gated.",
+          "Unlimited skills, AI-powered automations, custom import sources, marketplace pricing, and Stripe Connect payouts. Free accounts can create 1 skill and browse the full catalog.",
       },
       {
         title: "Checkout & receipts",

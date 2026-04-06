@@ -25,11 +25,11 @@ export async function POST(request: Request) {
         const sessionAuthor = await findSkillAuthorForSession(session);
         const { slug: sourceSlug } = bodySchema.parse(await request.json());
 
-        const limits = await canCreateSkill(session.userId);
+        const limits = await canCreateSkill(session.userId, session.email);
         if (!limits.allowed) {
           return Response.json(
             {
-              error: `Free accounts can create up to ${limits.limit} skills. Upgrade to Operator to create more.`,
+              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
               currentCount: limits.currentCount,
               limit: limits.limit,
               isOperator: limits.isOperator,
