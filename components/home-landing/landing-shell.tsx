@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
-import { ArrowRightIcon, AutomationIcon } from "@/components/frontier-icons";
+import { ArrowRightIcon, AutomationIcon, GITHUB_REPO_URL, GitHubIcon } from "@/components/frontier-icons";
 import { GrainShader } from "@/components/home-landing/grain-shader";
 import { HeroDiffField } from "@/components/home-landing/hero-diff-field";
 import { LoopLogo } from "@/components/loop-logo";
@@ -451,6 +451,15 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             <Link className="text-ink-faint transition-colors hover:text-ink" href="#mcps">MCPs</Link>
             <Link className="text-ink-faint transition-colors hover:text-ink" href="/faq">FAQ</Link>
             <Link className="text-ink-faint transition-colors hover:text-ink" href="/sign-in">Sign in</Link>
+            <a
+              className="text-ink-faint transition-colors hover:text-ink"
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub repository"
+            >
+              <GitHubIcon className="size-3" />
+            </a>
           </nav>
         </div>
       </footer>
