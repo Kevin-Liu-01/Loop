@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { SETTINGS_BASE_PATH, SETTINGS_NAV_ITEMS, settingsPath } from "@/lib/settings-nav";
+import {
+  SETTINGS_BASE_PATH,
+  SETTINGS_NAV_ITEMS,
+  settingsPath,
+} from "@/lib/settings-nav";
 
 describe("SETTINGS_NAV_ITEMS", () => {
   it("has unique ids aligned with route segments", () => {
@@ -29,7 +33,10 @@ describe("SETTINGS_NAV_ITEMS", () => {
 
 describe("settingsPath", () => {
   it("builds paths under the settings base", () => {
-    assert.equal(settingsPath("subscription"), `${SETTINGS_BASE_PATH}/subscription`);
+    assert.equal(
+      settingsPath("subscription"),
+      `${SETTINGS_BASE_PATH}/subscription`
+    );
     assert.equal(settingsPath("health"), `${SETTINGS_BASE_PATH}/health`);
   });
 });

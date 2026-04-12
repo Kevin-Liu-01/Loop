@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Renderer, Program, Mesh, Triangle } from "ogl";
+import { useEffect, useRef } from "react";
 
 const VERTEX = /* glsl */ `
   attribute vec2 position;
@@ -54,12 +54,12 @@ const FRAGMENT = /* glsl */ `
   }
 `;
 
-type GrainShaderProps = {
+interface GrainShaderProps {
   className?: string;
-};
+}
 
 function getThemeLight(): number {
-  return document.documentElement.getAttribute("data-theme") === "light" ? 1.0 : 0.0;
+  return document.documentElement.dataset.theme === "light" ? 1 : 0;
 }
 
 export function GrainShader({ className }: GrainShaderProps) {
@@ -69,37 +69,43 @@ export function GrainShader({ className }: GrainShaderProps) {
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const isMobile = window.innerWidth < 768;
-    const dpr = isMobile ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5);
+    const dpr = isMobile
+      ? Math.min(window.devicePixelRatio, 1)
+      : Math.min(window.devicePixelRatio, 1.5);
 
     const light = getThemeLight();
 
-    const renderer = new Renderer({ dpr, alpha: false });
+    const renderer = new Renderer({ alpha: false, dpr });
     rendererRef.current = renderer;
-    const gl = renderer.gl;
-    const clearR = light === 1.0 ? 0.96 : 0.031;
-    const clearG = light === 1.0 ? 0.96 : 0.031;
-    const clearB = light === 1.0 ? 0.96 : 0.039;
+    const { gl } = renderer;
+    const clearR = light === 1 ? 0.96 : 0.031;
+    const clearG = light === 1 ? 0.96 : 0.031;
+    const clearB = light === 1 ? 0.96 : 0.039;
     gl.clearColor(clearR, clearG, clearB, 1);
-    container.appendChild(gl.canvas);
+    container.append(gl.canvas);
 
     const geometry = new Triangle(gl);
     const program = new Program(gl, {
-      vertex: VERTEX,
       fragment: FRAGMENT,
       uniforms: {
-        uTime: { value: 0 },
-        uResolution: { value: [gl.canvas.width, gl.canvas.height] },
         uLight: { value: light },
+        uResolution: { value: [gl.canvas.width, gl.canvas.height] },
+        uTime: { value: 0 },
       },
+      vertex: VERTEX,
     });
     programRef.current = program;
     const mesh = new Mesh(gl, { geometry, program });
 
     function resize() {
-      if (!container) return;
+      if (!container) {
+        return;
+      }
       const w = container.clientWidth;
       const h = container.clientHeight;
       renderer.setSize(w, h);
@@ -113,13 +119,16 @@ export function GrainShader({ className }: GrainShaderProps) {
     const observer = new MutationObserver(() => {
       const val = getThemeLight();
       program.uniforms.uLight.value = val;
-      const cr = val === 1.0 ? 0.96 : 0.031;
-      const cg = val === 1.0 ? 0.96 : 0.031;
-      const cb = val === 1.0 ? 0.96 : 0.039;
+      const cr = val === 1 ? 0.96 : 0.031;
+      const cg = val === 1 ? 0.96 : 0.031;
+      const cb = val === 1 ? 0.96 : 0.039;
       gl.clearColor(cr, cg, cb, 1);
       renderer.render({ scene: mesh });
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    observer.observe(document.documentElement, {
+      attributeFilter: ["data-theme"],
+      attributes: true,
+    });
 
     program.uniforms.uTime.value = 0;
     renderer.render({ scene: mesh });
@@ -138,7 +147,7 @@ export function GrainShader({ className }: GrainShaderProps) {
     <div
       ref={containerRef}
       className={className}
-      style={{ position: "absolute", inset: 0, zIndex: 0 }}
+      style={{ inset: 0, position: "absolute", zIndex: 0 }}
       aria-hidden
     />
   );

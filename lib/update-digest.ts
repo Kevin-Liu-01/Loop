@@ -14,7 +14,7 @@ export function buildUpdateDigest(update?: SkillUpdateEntry | null): string {
     `Summary: ${update.summary}`,
     `What changed: ${update.whatChanged}`,
     `Body changed: ${update.bodyChanged ? "yes" : "no"}`,
-    `Editor: ${update.editorModel ?? "unknown"}`
+    `Editor: ${update.editorModel ?? "unknown"}`,
   ];
 
   if (update.changedSections && update.changedSections.length > 0) {

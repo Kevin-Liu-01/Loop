@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   buildVsYesterdayStrings,
@@ -20,13 +20,16 @@ test("formatVsYesterdayLatency handles zero baseline with current", () => {
 });
 
 test("formatVsYesterdayLatency handles zero current with baseline", () => {
-  assert.equal(formatVsYesterdayLatency(0, 120), "-100% avg vs y'day same time");
+  assert.equal(
+    formatVsYesterdayLatency(0, 120),
+    "-100% avg vs y'day same time"
+  );
 });
 
 test("buildVsYesterdayStrings aggregates fields", () => {
   const s = buildVsYesterdayStrings(
-    { pageViews: 10, interactions: 2, apiCalls: 4, avgApiDurationMs: 100 },
-    { pageViews: 5, interactions: 2, apiCalls: 4, avgApiDurationMs: 50 }
+    { apiCalls: 4, avgApiDurationMs: 100, interactions: 2, pageViews: 10 },
+    { apiCalls: 4, avgApiDurationMs: 50, interactions: 2, pageViews: 5 }
   );
   assert.equal(s.pageViews, "+100% vs y'day same time");
   assert.equal(s.interactions, "Flat vs y'day same time");

@@ -7,23 +7,31 @@ import { parseVersionSegment } from "@/lib/format";
 import { buildMcpMetadata } from "@/lib/seo";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 
-type VersionedMcpPageProps = {
+interface VersionedMcpPageProps {
   params: Promise<{
     name: string;
     version: string;
   }>;
-};
+}
 
-export async function generateMetadata({ params }: VersionedMcpPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: VersionedMcpPageProps): Promise<Metadata> {
   const { name, version } = await params;
   const versionNumber = parseVersionSegment(version);
-  if (!versionNumber) return {};
+  if (!versionNumber) {
+    return {};
+  }
   const mcp = await getMcpRecordByName(decodeURIComponent(name), versionNumber);
-  if (!mcp) return {};
+  if (!mcp) {
+    return {};
+  }
   return buildMcpMetadata(mcp);
 }
 
-export default async function VersionedMcpPage({ params }: VersionedMcpPageProps) {
+export default async function VersionedMcpPage({
+  params,
+}: VersionedMcpPageProps) {
   const { name, version } = await params;
   const decodedName = decodeURIComponent(name);
   const versionNumber = parseVersionSegment(version);

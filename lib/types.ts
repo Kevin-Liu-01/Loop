@@ -39,17 +39,32 @@ export type UserSkillAutomationStatus = "active" | "paused";
 export type AgentProviderKind = "gateway" | "openai" | "compatible";
 export type ImportedMcpTransport = "stdio" | "http" | "sse" | "ws" | "unknown";
 export type LoopUpdateTargetOrigin = "user" | "remote";
-export type McpInstallStrategy = "npx" | "uvx" | "binary" | "remote-http" | "manual";
-export type McpAuthType = "none" | "oauth" | "api-key" | "pat" | "session" | "mixed";
-export type McpVerificationStatus = "verified" | "partial" | "unverified" | "broken";
+export type McpInstallStrategy =
+  | "npx"
+  | "uvx"
+  | "binary"
+  | "remote-http"
+  | "manual";
+export type McpAuthType =
+  | "none"
+  | "oauth"
+  | "api-key"
+  | "pat"
+  | "session"
+  | "mixed";
+export type McpVerificationStatus =
+  | "verified"
+  | "partial"
+  | "unverified"
+  | "broken";
 
-export type VersionReference = {
+export interface VersionReference {
   version: number;
   label: string;
   updatedAt: string;
-};
+}
 
-export type SourceDefinition = {
+export interface SourceDefinition {
   id: string;
   label: string;
   url: string;
@@ -62,33 +77,37 @@ export type SourceDefinition = {
   searchQueries?: string[];
   rationale?: string;
   signalHints?: string[];
-};
+}
 
-export type SkillResearchProfile = {
+export interface SkillResearchProfile {
   summary: string;
-  process: Array<{
+  process: {
     title: string;
     detail: string;
-  }>;
+  }[];
   discoveryQueries?: string[];
   featuredReason?: string;
-};
+}
 
-export type TrustedSkillSourceRecord = {
+export interface TrustedSkillSourceRecord {
   id: string;
   slug: string;
   name: string;
   trustTier: SourceTrustTier;
-  sourceType: "official-docs" | "official-repo" | "vendor-docs" | "community-curated";
+  sourceType:
+    | "official-docs"
+    | "official-repo"
+    | "vendor-docs"
+    | "community-curated";
   homepageUrl: string;
   repoUrl?: string;
   logoUrl?: string;
   discoveryMode: SourceMode;
   searchQueries: string[];
   tags: string[];
-};
+}
 
-export type SkillUpstreamRecord = {
+export interface SkillUpstreamRecord {
   slug: string;
   title: string;
   description: string;
@@ -99,9 +118,9 @@ export type SkillUpstreamRecord = {
   logoUrl?: string;
   tags: string[];
   body: string;
-};
+}
 
-export type SkillAuthorRecord = {
+export interface SkillAuthorRecord {
   id: string;
   slug: string;
   displayName: string;
@@ -113,9 +132,9 @@ export type SkillAuthorRecord = {
   verified: boolean;
   isOfficial: boolean;
   badgeLabel: string;
-};
+}
 
-export type CategoryDefinition = {
+export interface CategoryDefinition {
   slug: CategorySlug;
   title: string;
   strapline: string;
@@ -126,41 +145,42 @@ export type CategoryDefinition = {
   status: CategoryStatus;
   keywords: string[];
   sources: SourceDefinition[];
-};
+}
 
 export type AgentDocKey = "codex" | "cursor" | "claude" | "agents";
 
-export type AgentDocs = Partial<Record<AgentDocKey, string>> & Record<string, string | undefined>;
+export type AgentDocs = Partial<Record<AgentDocKey, string>> &
+  Record<string, string | undefined>;
 
 export const AGENT_DOC_FILENAMES: Record<AgentDocKey, string> = {
+  agents: "AGENTS.md",
+  claude: "CLAUDE.md",
   codex: "CODEX.md",
   cursor: "CURSOR.md",
-  claude: "CLAUDE.md",
-  agents: "AGENTS.md"
 };
 
-export type SkillHeading = {
+export interface SkillHeading {
   depth: number;
   title: string;
   anchor: string;
-};
+}
 
-export type ReferenceDoc = {
+export interface ReferenceDoc {
   slug: string;
   title: string;
   path: string;
   excerpt: string;
-};
+}
 
-export type AgentPrompt = {
+export interface AgentPrompt {
   provider: string;
   displayName: string;
   shortDescription: string;
   defaultPrompt: string;
   path: string;
-};
+}
 
-export type AutomationSummary = {
+export interface AutomationSummary {
   id: string;
   name: string;
   prompt: string;
@@ -174,14 +194,14 @@ export type AutomationSummary = {
   preferredModel?: string;
   preferredHour?: number;
   preferredDay?: number;
-};
+}
 
-export type SkillPrice = {
+export interface SkillPrice {
   amount: number;
   currency: string;
-};
+}
 
-export type SkillRecord = {
+export interface SkillRecord {
   slug: string;
   title: string;
   description: string;
@@ -220,18 +240,18 @@ export type SkillRecord = {
   syncEnabled?: boolean;
   upstreams?: SkillUpstreamRecord[];
   forkedFromSlug?: string;
-};
+}
 
-export type DailySignal = {
+export interface DailySignal {
   title: string;
   url: string;
   source: string;
   publishedAt: string;
   summary: string;
   tags: string[];
-};
+}
 
-export type SkillAutomationState = {
+export interface SkillAutomationState {
   enabled: boolean;
   cadence: UserSkillCadence;
   status: UserSkillAutomationStatus;
@@ -244,9 +264,9 @@ export type SkillAutomationState = {
   preferredDay?: number;
   /** Max web searches the editor agent may perform per refresh (default 5). */
   searchBudget?: number;
-};
+}
 
-export type SkillUpdateEntry = {
+export interface SkillUpdateEntry {
   generatedAt: string;
   summary: string;
   whatChanged: string;
@@ -259,9 +279,9 @@ export type SkillUpdateEntry = {
   addedSources?: SourceDefinition[];
   /** Number of web searches the agent performed in this refresh. */
   searchesUsed?: number;
-};
+}
 
-export type LoopUpdateTarget = {
+export interface LoopUpdateTarget {
   slug: string;
   title: string;
   category: CategorySlug;
@@ -279,7 +299,7 @@ export type LoopUpdateTarget = {
   lastChangedSections?: string[];
   lastBodyChanged?: boolean;
   lastEditorModel?: string;
-  sources: Array<{
+  sources: {
     id: string;
     label: string;
     url: string;
@@ -289,26 +309,26 @@ export type LoopUpdateTarget = {
     trust?: SourceTrustTier;
     parser?: SourceParser;
     searchQueries?: string[];
-  }>;
-};
+  }[];
+}
 
-export type DiffLine = {
+export interface DiffLine {
   type: "context" | "added" | "removed";
   value: string;
   leftNumber?: number;
   rightNumber?: number;
-};
+}
 
-export type AgentReasoningStep = {
+export interface AgentReasoningStep {
   index: number;
   reasoning: string;
   toolCall?: { name: string; args: Record<string, unknown> };
   toolResult?: string;
   diffLines?: DiffLine[];
   timestamp: string;
-};
+}
 
-export type LoopUpdateSourceLog = {
+export interface LoopUpdateSourceLog {
   id: string;
   label: string;
   url: string;
@@ -324,9 +344,9 @@ export type LoopUpdateSourceLog = {
   note?: string;
   reasoning?: string;
   discoveredCount?: number;
-};
+}
 
-export type LoopUpdateResult = {
+export interface LoopUpdateResult {
   slug: string;
   title: string;
   origin: LoopUpdateTargetOrigin;
@@ -346,9 +366,9 @@ export type LoopUpdateResult = {
   reasoningSteps?: AgentReasoningStep[];
   searchesUsed?: number;
   addedSources?: SourceDefinition[];
-};
+}
 
-export type LoopRunRecord = {
+export interface LoopRunRecord {
   id: string;
   slug: string;
   title: string;
@@ -376,7 +396,7 @@ export type LoopRunRecord = {
   searchesUsed?: number;
   /** Sources the agent discovered and auto-added during this loop run. */
   addedSources?: SourceDefinition[];
-};
+}
 
 export type LoopUpdateStreamEvent =
   | {
@@ -405,7 +425,7 @@ export type LoopUpdateStreamEvent =
       message: string;
     };
 
-export type UserSkillDocument = {
+export interface UserSkillDocument {
   slug: string;
   title: string;
   description: string;
@@ -424,14 +444,14 @@ export type UserSkillDocument = {
   agentDocs?: AgentDocs;
   price?: SkillPrice | null;
   creatorClerkUserId?: string;
-};
+}
 
-export type UserSkillStore = {
+export interface UserSkillStore {
   version: 2;
   skills: UserSkillDocument[];
-};
+}
 
-export type UserSkillVersion = {
+export interface UserSkillVersion {
   version: number;
   updatedAt: string;
   title: string;
@@ -446,9 +466,9 @@ export type UserSkillVersion = {
   updates: SkillUpdateEntry[];
   agentDocs?: AgentDocs;
   price?: SkillPrice | null;
-};
+}
 
-export type ImportedSkillDocument = {
+export interface ImportedSkillDocument {
   slug: string;
   title: string;
   description: string;
@@ -467,9 +487,9 @@ export type ImportedSkillDocument = {
   version: number;
   versions: ImportedSkillVersion[];
   agentDocs?: AgentDocs;
-};
+}
 
-export type ImportedMcpDocument = {
+export interface ImportedMcpDocument {
   id: string;
   name: string;
   description: string;
@@ -499,15 +519,15 @@ export type ImportedMcpDocument = {
   sandboxSupported?: boolean;
   sandboxNotes?: string;
   normalizedConfig?: Record<string, unknown>;
-};
+}
 
-export type ImportedResourceStore = {
+export interface ImportedResourceStore {
   version: 2;
   skills: ImportedSkillDocument[];
   mcps: ImportedMcpDocument[];
-};
+}
 
-export type ImportedSkillVersion = {
+export interface ImportedSkillVersion {
   version: number;
   updatedAt: string;
   title: string;
@@ -523,9 +543,9 @@ export type ImportedSkillVersion = {
   syncEnabled: boolean;
   lastSyncedAt?: string;
   agentDocs?: AgentDocs;
-};
+}
 
-export type ImportedMcpVersion = {
+export interface ImportedMcpVersion {
   version: number;
   updatedAt: string;
   description: string;
@@ -548,9 +568,9 @@ export type ImportedMcpVersion = {
   sandboxSupported?: boolean;
   sandboxNotes?: string;
   normalizedConfig?: Record<string, unknown>;
-};
+}
 
-export type AgentProviderPreset = {
+export interface AgentProviderPreset {
   id: string;
   label: string;
   kind: AgentProviderKind;
@@ -559,9 +579,9 @@ export type AgentProviderPreset = {
   docsUrl?: string;
   supportsModelListing?: boolean;
   defaultModel: string;
-};
+}
 
-export type CategoryBrief = {
+export interface CategoryBrief {
   slug: CategorySlug;
   title: string;
   summary: string;
@@ -569,9 +589,9 @@ export type CategoryBrief = {
   experiments: string[];
   items: DailySignal[];
   generatedAt: string;
-};
+}
 
-export type MembershipPlan = {
+export interface MembershipPlan {
   slug: string;
   title: string;
   priceLabel: string;
@@ -579,11 +599,11 @@ export type MembershipPlan = {
   ctaLabel: string;
   description: string;
   features: string[];
-};
+}
 
 export type SearchDocumentKind = "skill" | "category" | "brief" | "mcp";
 
-export type SearchDocument = {
+export interface SearchDocument {
   id: string;
   kind: SearchDocumentKind;
   title: string;
@@ -594,20 +614,20 @@ export type SearchDocument = {
   updatedAt: string;
   origin?: SkillOrigin | "system";
   versionLabel?: string;
-};
+}
 
 export type SearchHit = SearchDocument & {
   score: number;
 };
 
-export type SearchIndex = {
+export interface SearchIndex {
   version: 1;
   generatedAt: string;
   documents: SearchDocument[];
-  tokens: Record<string, Array<{ id: string; score: number }>>;
-};
+  tokens: Record<string, { id: string; score: number }[]>;
+}
 
-export type RefreshRunRecord = {
+export interface RefreshRunRecord {
   id: string;
   status: "success" | "error";
   startedAt: string;
@@ -626,9 +646,9 @@ export type RefreshRunRecord = {
   dailyBriefCount?: number;
   dispatchedSkillCount?: number;
   errorMessage?: string;
-};
+}
 
-export type BillingEventRecord = {
+export interface BillingEventRecord {
   id: string;
   type: string;
   createdAt: string;
@@ -640,9 +660,9 @@ export type BillingEventRecord = {
   status?: string;
   amount?: number;
   currency?: string;
-};
+}
 
-export type StripeSubscriptionRecord = {
+export interface StripeSubscriptionRecord {
   id: string;
   customerId: string;
   clerkUserId?: string;
@@ -654,7 +674,7 @@ export type StripeSubscriptionRecord = {
   checkoutCompletedAt?: string;
   updatedAt: string;
   latestInvoiceId?: string;
-};
+}
 
 export type UsageEventKind =
   | "page_view"
@@ -674,7 +694,7 @@ export type UsageEventKind =
 
 export type UsageEventSource = "ui" | "api";
 
-export type UsageEventRecord = {
+export interface UsageEventRecord {
   id: string;
   at: string;
   kind: UsageEventKind;
@@ -689,18 +709,18 @@ export type UsageEventRecord = {
   skillSlug?: string;
   categorySlug?: CategorySlug;
   details?: string;
-};
+}
 
-export type SystemStateStore = {
+export interface SystemStateStore {
   version: 3;
   refreshRuns: RefreshRunRecord[];
   loopRuns: LoopRunRecord[];
   billingEvents: BillingEventRecord[];
   subscriptions: StripeSubscriptionRecord[];
   usageEvents: UsageEventRecord[];
-};
+}
 
-export type LoopSnapshot = {
+export interface LoopSnapshot {
   generatedAt: string;
   generatedFrom: "local-scan" | "remote-refresh";
   categories: CategoryDefinition[];
@@ -710,9 +730,9 @@ export type LoopSnapshot = {
   dailyBriefs: CategoryBrief[];
   plans: MembershipPlan[];
   remoteSnapshotUrl?: string;
-};
+}
 
-export type SkillPurchaseRecord = {
+export interface SkillPurchaseRecord {
   id: string;
   clerkUserId: string;
   skillSlug: string;
@@ -720,31 +740,31 @@ export type SkillPurchaseRecord = {
   amount: number;
   currency: string;
   purchasedAt: string;
-};
+}
 
 export type ConversationChannel = "copilot" | "agent-studio" | "sandbox";
 
-export type SkillAttachment = {
+export interface SkillAttachment {
   slug: string;
   title: string;
   versionLabel: string;
   iconUrl?: string;
-};
+}
 
-export type McpAttachment = {
+export interface McpAttachment {
   id: string;
   name: string;
   transport: ImportedMcpTransport;
   iconUrl?: string;
   sandboxSupported?: boolean;
-};
+}
 
-export type ConversationMessageMetadata = {
+export interface ConversationMessageMetadata {
   attachments?: {
     skills: SkillAttachment[];
     mcps: McpAttachment[];
   };
-};
+}
 
 export type ConversationMessagePart =
   | { type: "text"; text: string }
@@ -758,16 +778,16 @@ export type ConversationMessagePart =
       };
     };
 
-export type ConversationMessage = {
+export interface ConversationMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
   parts?: ConversationMessagePart[];
   createdAt: string;
   metadata?: ConversationMessageMetadata;
-};
+}
 
-export type ConversationRecord = {
+export interface ConversationRecord {
   id: string;
   clerkUserId: string;
   channel: ConversationChannel;
@@ -777,4 +797,4 @@ export type ConversationRecord = {
   providerId?: string;
   createdAt: string;
   updatedAt: string;
-};
+}

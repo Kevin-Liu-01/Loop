@@ -1,13 +1,13 @@
 import { cn } from "@/lib/cn";
 
-type SectionHeadingProps = {
+interface SectionHeadingProps {
   icon?: React.ReactNode;
   title: string;
   count?: number | string;
   countLabel?: string;
   action?: React.ReactNode;
   className?: string;
-};
+}
 
 export function SectionHeading({
   icon,
@@ -28,7 +28,7 @@ export function SectionHeading({
         <h2 className="m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink">
           {title}
         </h2>
-        {count != null && (
+        {count !== null && (
           <span className="text-xs tabular-nums text-ink-faint">
             {count}
             {countLabel ? ` ${countLabel}` : ""}

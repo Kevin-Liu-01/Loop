@@ -7,41 +7,46 @@ import { BuySkillButton } from "@/components/buy-skill-button";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteSkillButton } from "@/components/delete-skill-button";
 import { DownloadSkillButton } from "@/components/download-skill-button";
-import { ForkSkillButton } from "@/components/fork-skill-button";
 import { ExpandableContent } from "@/components/expandable-content";
+import { ForkSkillButton } from "@/components/fork-skill-button";
 import { FileCodeIcon, GlobeIcon, PlayIcon } from "@/components/frontier-icons";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { ShareButton } from "@/components/share-button";
+import { SiteHeader } from "@/components/site-header";
+import { SkillActivitySection } from "@/components/skill-activity-section";
 import { SkillAgentDocsPanel } from "@/components/skill-agent-docs-panel";
 import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { SkillAuthorStudio } from "@/components/skill-author-studio";
-import { SkillActivitySection } from "@/components/skill-activity-section";
-import { SkillVisibilityToggle } from "@/components/skill-visibility-toggle";
-import { SkillResearchPanel } from "@/components/skill-research-panel";
-import { SiteHeader } from "@/components/site-header";
 import { SkillDetailSidebar } from "@/components/skill-detail-sidebar";
+import { SkillResearchPanel } from "@/components/skill-research-panel";
+import { SkillSectionNav } from "@/components/skill-section-nav";
+import type { SectionTab } from "@/components/skill-section-nav";
+import { SkillVisibilityToggle } from "@/components/skill-visibility-toggle";
 import { TrackSkillButton } from "@/components/track-skill-button";
-import { UsageBeacon } from "@/components/usage-beacon";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
-import { VersionSwitcher } from "@/components/version-switcher";
-import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
-import { formatRelativeDate } from "@/lib/format";
-import { cn } from "@/lib/cn";
-import { pageInsetPadX } from "@/lib/ui-layout";
-import { diffMultilineText } from "@/lib/text-diff";
-import { buildUpdateDigest } from "@/lib/update-digest";
-import { SkillSectionNav, type SectionTab } from "@/components/skill-section-nav";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { SkillIcon } from "@/components/ui/skill-icon";
+import { UsageBeacon } from "@/components/usage-beacon";
+import { VersionSwitcher } from "@/components/version-switcher";
+import { cn } from "@/lib/cn";
+import { formatRelativeDate } from "@/lib/format";
 import { getSiteUrlString } from "@/lib/seo";
-import { formatTagLabel, getTagColorForCategory, getTagColorForOrigin } from "@/lib/tag-utils";
-import type { SkillUsageSummary } from "@/lib/usage";
+import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
+import {
+  formatTagLabel,
+  getTagColorForCategory,
+  getTagColorForOrigin,
+} from "@/lib/tag-utils";
+import { diffMultilineText } from "@/lib/text-diff";
 import type { CategoryBrief, LoopRunRecord, SkillRecord } from "@/lib/types";
+import { pageInsetPadX } from "@/lib/ui-layout";
+import { buildUpdateDigest } from "@/lib/update-digest";
+import type { SkillUsageSummary } from "@/lib/usage";
 
 const SITE_URL = getSiteUrlString();
 
-type SkillDetailPageProps = {
+interface SkillDetailPageProps {
   skill: SkillRecord;
   brief?: CategoryBrief;
   previousSkill?: SkillRecord | null;
@@ -51,10 +56,12 @@ type SkillDetailPageProps = {
   canEdit?: boolean;
   isSignedIn?: boolean;
   timeZone?: string;
-};
+}
 
 function formatPrice(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount / 100);
+  return new Intl.NumberFormat("en-US", { currency, style: "currency" }).format(
+    amount / 100
+  );
 }
 
 export function SkillDetailPage({
@@ -69,13 +76,16 @@ export function SkillDetailPage({
   timeZone,
 }: SkillDetailPageProps) {
   const isPaid = skill.price && skill.price.amount > 0;
-  const priceLabel = isPaid ? formatPrice(skill.price!.amount, skill.price!.currency) : null;
+  const priceLabel = isPaid
+    ? formatPrice(skill.price!.amount, skill.price!.currency)
+    : null;
   const rawUrl = `${SITE_URL}/api/skills/${skill.slug}/raw`;
-  const rawUrlVersioned = skill.version > 1 ? `${rawUrl}?v=${skill.version}` : rawUrl;
+  const rawUrlVersioned =
+    skill.version > 1 ? `${rawUrl}?v=${skill.version}` : rawUrl;
   const primaryAgentPrompt = `Use the skill at ${rawUrl}`;
   const downloadFilename = `${skill.slug}-v${skill.version}.md`;
   const trackedSources =
-    skill.origin === "user" ? skill.sources ?? [] : skill.references;
+    skill.origin === "user" ? (skill.sources ?? []) : skill.references;
   const attachedAutomations = buildSkillAutomationSummaries(skill);
   const primaryAutomation = attachedAutomations[0];
   const latestUpdate = skill.updates?.[0];
@@ -105,7 +115,7 @@ export function SkillDetailPage({
   const diffLines = rawDiff.length > 80 ? rawDiff.slice(0, 80) : rawDiff;
 
   const hasAgentDocs = Object.values(skill.agentDocs ?? {}).some(
-    (content) => typeof content === "string" && content.trim().length > 0,
+    (content) => typeof content === "string" && content.trim().length > 0
   );
   const hasResearch =
     !!skill.researchProfile ||
@@ -133,7 +143,9 @@ export function SkillDetailPage({
       />
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
         {/* ── Header ── */}
-        <div className={cn("shrink-0 border-b border-line py-4", pageInsetPadX)}>
+        <div
+          className={cn("shrink-0 border-b border-line py-4", pageInsetPadX)}
+        >
           <header className="grid gap-4">
             <Link
               className="w-fit text-xs font-medium text-ink-faint transition-colors hover:text-ink"
@@ -143,10 +155,18 @@ export function SkillDetailPage({
             </Link>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Badge color={getTagColorForCategory(skill.category)}>{formatTagLabel(skill.category)}</Badge>
-              <Badge color={getTagColorForOrigin(skill.origin)}>{formatTagLabel(skill.origin)}</Badge>
+              <Badge color={getTagColorForCategory(skill.category)}>
+                {formatTagLabel(skill.category)}
+              </Badge>
+              <Badge color={getTagColorForOrigin(skill.origin)}>
+                {formatTagLabel(skill.origin)}
+              </Badge>
               <Badge color="neutral">{skill.versionLabel}</Badge>
-              {priceLabel ? <Badge color="green">{priceLabel}</Badge> : <Badge color="neutral">Free</Badge>}
+              {priceLabel ? (
+                <Badge color="green">{priceLabel}</Badge>
+              ) : (
+                <Badge color="neutral">Free</Badge>
+              )}
               <SkillVisibilityToggle
                 canEdit={canEdit}
                 currentVisibility={skill.visibility}
@@ -158,7 +178,12 @@ export function SkillDetailPage({
             </div>
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-              <SkillIcon className="rounded-lg" iconUrl={skill.iconUrl} size={36} slug={skill.slug} />
+              <SkillIcon
+                className="rounded-lg"
+                iconUrl={skill.iconUrl}
+                size={36}
+                slug={skill.slug}
+              />
               <h1 className="m-0 font-serif text-2xl font-medium tracking-[-0.03em] text-ink wrap-break-word">
                 {skill.title}
               </h1>
@@ -176,9 +201,14 @@ export function SkillDetailPage({
               {skill.description}
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <SkillAuthorBadge author={skill.author} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
+              <SkillAuthorBadge
+                author={skill.author}
+                ownerName={skill.ownerName}
+                iconUrl={skill.iconUrl}
+              />
               <span className="text-xs tabular-nums text-ink-faint">
-                {trackedSources.length} sources · Updated {formatRelativeDate(skill.updatedAt, timeZone)}
+                {trackedSources.length} sources · Updated{" "}
+                {formatRelativeDate(skill.updatedAt, timeZone)}
               </span>
             </div>
 
@@ -214,11 +244,11 @@ export function SkillDetailPage({
                 label="Copy prompt"
                 size="sm"
                 usageEvent={{
+                  categorySlug: skill.category,
                   kind: "copy_prompt",
                   label: "Copied prompt",
                   path: skill.href,
                   skillSlug: skill.slug,
-                  categorySlug: skill.category,
                 }}
                 value={primaryAgentPrompt}
                 variant="soft"
@@ -230,16 +260,19 @@ export function SkillDetailPage({
                 label="Copy link"
                 size="sm"
                 usageEvent={{
+                  categorySlug: skill.category,
                   kind: "copy_url",
                   label: "Copied raw skill link",
                   path: skill.href,
                   skillSlug: skill.slug,
-                  categorySlug: skill.category,
                 }}
                 value={rawUrlVersioned}
                 variant="soft"
               />
-              <DownloadSkillButton body={skill.body} filename={downloadFilename} />
+              <DownloadSkillButton
+                body={skill.body}
+                filename={downloadFilename}
+              />
               {!canEdit && (
                 <ForkSkillButton label="Fork to my skills" slug={skill.slug} />
               )}
@@ -266,11 +299,12 @@ export function SkillDetailPage({
               ) : null}
 
               {/* Skill body */}
-              <section aria-label="Skill content" className="grid gap-4" id="content">
-                <SectionHeading
-                  icon={<FileCodeIcon />}
-                  title="Content"
-                />
+              <section
+                aria-label="Skill content"
+                className="grid gap-4"
+                id="content"
+              >
+                <SectionHeading icon={<FileCodeIcon />} title="Content" />
                 <div className="overflow-hidden rounded-none border border-line bg-paper-3/92">
                   <ExpandableContent maxHeight={600}>
                     <div className="markdown-shell p-5 sm:p-6">
@@ -306,7 +340,10 @@ export function SkillDetailPage({
 
               {/* Sources list */}
               {trackedSources.length > 0 ? (
-                <section className="grid gap-4 border-t border-line pt-8" id="sources">
+                <section
+                  className="grid gap-4 border-t border-line pt-8"
+                  id="sources"
+                >
                   <SectionHeading
                     icon={<GlobeIcon />}
                     title="Sources"
@@ -340,8 +377,12 @@ export function SkillDetailPage({
                           className="border-t border-line/60 bg-paper-3/92 px-4 py-3 first:border-t-0 dark:border-line/40 dark:bg-paper-2/40"
                           key={ref.path}
                         >
-                          <p className="m-0 text-[0.8125rem] font-semibold text-ink">{ref.title}</p>
-                          <p className="m-0 mt-0.5 text-[0.6875rem] text-ink-faint">{ref.excerpt}</p>
+                          <p className="m-0 text-[0.8125rem] font-semibold text-ink">
+                            {ref.title}
+                          </p>
+                          <p className="m-0 mt-0.5 text-[0.6875rem] text-ink-faint">
+                            {ref.excerpt}
+                          </p>
                         </div>
                       )
                     )}

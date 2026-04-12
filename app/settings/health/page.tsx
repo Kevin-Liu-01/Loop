@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function SettingsHealthPage() {
   const timeZone = await getUsageTimeZoneFromCookie();
   const { systemState } = await getSystemSnapshot({ timeZone });
-  const usageOverview = buildUsageOverview(systemState.usageEvents, { timeZone });
+  const usageOverview = buildUsageOverview(systemState.usageEvents, {
+    timeZone,
+  });
 
   return (
     <SettingsSectionPage sectionId="health">

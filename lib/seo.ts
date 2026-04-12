@@ -27,13 +27,13 @@ export function getSiteUrlString(): string {
     process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : undefined,
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : undefined,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   ];
   for (const raw of candidates) {
     const trimmed = raw?.trim();
-    if (trimmed) return trimmed.replace(/\/+$/, "");
+    if (trimmed) {
+      return trimmed.replace(/\/+$/, "");
+    }
   }
   return "http://localhost:3000";
 }
@@ -59,20 +59,28 @@ export function buildOgImageUrl(params?: {
     return DEFAULT_OG_IMAGE_PATH;
   }
   const url = new URL("/og", "https://n");
-  if (params?.title) url.searchParams.set("title", params.title);
-  if (params?.description) url.searchParams.set("description", params.description);
-  if (params?.category) url.searchParams.set("category", params.category);
+  if (params?.title) {
+    url.searchParams.set("title", params.title);
+  }
+  if (params?.description) {
+    url.searchParams.set("description", params.description);
+  }
+  if (params?.category) {
+    url.searchParams.set("category", params.category);
+  }
   return `${url.pathname}${url.search}`;
 }
 
-export function buildDefaultOpenGraphImages(): NonNullable<Metadata["openGraph"]>["images"] {
+export function buildDefaultOpenGraphImages(): NonNullable<
+  Metadata["openGraph"]
+>["images"] {
   return [
     {
-      url: DEFAULT_OG_IMAGE_PATH,
-      type: "image/png",
-      width: OG_WIDTH,
-      height: OG_HEIGHT,
       alt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      height: OG_HEIGHT,
+      type: "image/png",
+      url: DEFAULT_OG_IMAGE_PATH,
+      width: OG_WIDTH,
     },
   ];
 }
@@ -92,13 +100,15 @@ export function buildRootKeywords(): string[] {
     "automation",
     "operator desk",
   ];
-  return Array.from(new Set([...fromCategories, ...fixed]));
+  return [...new Set([...fromCategories, ...fixed])];
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
   const out = { ...value };
   for (const key of Object.keys(out)) {
-    if (out[key as keyof T] === undefined) delete out[key as keyof T];
+    if (out[key as keyof T] === undefined) {
+      delete out[key as keyof T];
+    }
   }
   return out;
 }
@@ -114,65 +124,89 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
   const indexable = skill.visibility === "public";
 
   const ogImageUrl = buildOgImageUrl({
-    title: skill.title,
-    description,
     category: skill.category,
+    description,
+    title: skill.title,
   });
-  const ogImages = [{ url: ogImageUrl, type: "image/png", width: OG_WIDTH, height: OG_HEIGHT, alt: skill.title }];
+  const ogImages = [
+    {
+      alt: skill.title,
+      height: OG_HEIGHT,
+      type: "image/png",
+      url: ogImageUrl,
+      width: OG_WIDTH,
+    },
+  ];
 
   return {
-    title,
-    description,
-    keywords: Array.from(new Set([skill.category, ...skill.tags].filter(Boolean))),
     alternates: { canonical },
-    robots: indexable ? undefined : { index: false, follow: false },
+    description,
+    keywords: [...new Set([skill.category, ...skill.tags].filter(Boolean))],
     openGraph: {
-      title,
       description,
+      images: ogImages,
+      siteName: SITE_NAME,
+      title,
       type: "article",
       url: canonical,
-      siteName: SITE_NAME,
-      images: ogImages,
     },
+    robots: indexable ? undefined : { follow: false, index: false },
+    title,
     twitter: {
       card: "summary_large_image",
-      title,
       description,
       images: [ogImageUrl],
+      title,
     },
   };
 }
 
 export function buildMcpMetadata(mcp: ImportedMcpDocument): Metadata {
-  const canonical = buildSiteUrl(buildMcpVersionHref(mcp.name, mcp.version)).toString();
+  const canonical = buildSiteUrl(
+    buildMcpVersionHref(mcp.name, mcp.version)
+  ).toString();
   const title = `${mcp.name} · ${SITE_NAME}`;
-  const description = (mcp.description?.trim() || SEO_DEFAULT_DESCRIPTION).slice(0, 320);
+  const description = (
+    mcp.description?.trim() || SEO_DEFAULT_DESCRIPTION
+  ).slice(0, 320);
 
   const ogImageUrl = buildOgImageUrl({
-    title: mcp.name,
-    description,
     category: "MCP",
+    description,
+    title: mcp.name,
   });
-  const ogImages = [{ url: ogImageUrl, type: "image/png", width: OG_WIDTH, height: OG_HEIGHT, alt: mcp.name }];
+  const ogImages = [
+    {
+      alt: mcp.name,
+      height: OG_HEIGHT,
+      type: "image/png",
+      url: ogImageUrl,
+      width: OG_WIDTH,
+    },
+  ];
 
   return {
-    title,
-    description,
-    keywords: Array.from(new Set(["MCP", "Model Context Protocol", ...mcp.tags].filter(Boolean))),
     alternates: { canonical },
+    description,
+    keywords: [
+      ...new Set(
+        ["MCP", "Model Context Protocol", ...mcp.tags].filter(Boolean)
+      ),
+    ],
     openGraph: {
-      title,
       description,
+      images: ogImages,
+      siteName: SITE_NAME,
+      title,
       type: "article",
       url: canonical,
-      siteName: SITE_NAME,
-      images: ogImages,
     },
+    title,
     twitter: {
       card: "summary_large_image",
-      title,
       description,
       images: [ogImageUrl],
+      title,
     },
   };
 }
@@ -181,34 +215,35 @@ export function buildSkillJsonLd(skill: SkillRecord): Record<string, unknown> {
   return stripUndefined({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: skill.title,
-    description: skill.description || skill.excerpt || SEO_DEFAULT_DESCRIPTION,
-    url: buildSiteUrl(skill.href).toString(),
     applicationCategory: "DeveloperApplication",
-    operatingSystem: "Any",
+    description: skill.description || skill.excerpt || SEO_DEFAULT_DESCRIPTION,
     keywords: skill.tags.join(", "),
-    offers:
-      skill.price
-        ? {
-            "@type": "Offer",
-            price: skill.price.amount,
-            priceCurrency: skill.price.currency,
-          }
-        : undefined,
+    name: skill.title,
+    offers: skill.price
+      ? {
+          "@type": "Offer",
+          price: skill.price.amount,
+          priceCurrency: skill.price.currency,
+        }
+      : undefined,
+    operatingSystem: "Any",
+    url: buildSiteUrl(skill.href).toString(),
   });
 }
 
-export function buildMcpJsonLd(mcp: ImportedMcpDocument): Record<string, unknown> {
+export function buildMcpJsonLd(
+  mcp: ImportedMcpDocument
+): Record<string, unknown> {
   return stripUndefined({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: mcp.name,
-    description: mcp.description || SEO_DEFAULT_DESCRIPTION,
-    url: buildSiteUrl(buildMcpVersionHref(mcp.name, mcp.version)).toString(),
     applicationCategory: "DeveloperApplication",
     applicationSubCategory: "Model Context Protocol server",
-    operatingSystem: "Any",
+    description: mcp.description || SEO_DEFAULT_DESCRIPTION,
     keywords: mcp.tags.join(", "),
+    name: mcp.name,
+    operatingSystem: "Any",
+    url: buildSiteUrl(buildMcpVersionHref(mcp.name, mcp.version)).toString(),
   });
 }
 
@@ -216,9 +251,9 @@ export function buildOrganizationJsonLd(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: SITE_NAME,
-    url: buildSiteUrl("/").toString(),
     description: SEO_DEFAULT_DESCRIPTION,
     logo: buildSiteUrl(LOGO_ICON_PATH).toString(),
+    name: SITE_NAME,
+    url: buildSiteUrl("/").toString(),
   };
 }

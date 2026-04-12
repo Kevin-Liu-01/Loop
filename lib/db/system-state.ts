@@ -4,7 +4,7 @@ import type {
   LoopRunRecord,
   RefreshRunRecord,
   StripeSubscriptionRecord,
-  UsageEventRecord
+  UsageEventRecord,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -14,44 +14,55 @@ import type {
 export async function recordLoopRun(entry: LoopRunRecord): Promise<void> {
   const db = getServerSupabase();
   const baseRow = {
-    id: entry.id,
-    skill_slug: entry.slug,
-    title: entry.title,
-    origin: entry.origin,
-    trigger: entry.trigger,
-    status: entry.status,
-    started_at: entry.startedAt,
-    finished_at: entry.finishedAt,
-    previous_version_label: entry.previousVersionLabel ?? null,
-    next_version_label: entry.nextVersionLabel ?? null,
-    href: entry.href ?? null,
-    summary: entry.summary ?? null,
-    what_changed: entry.whatChanged ?? null,
     body_changed: entry.bodyChanged ?? null,
     changed_sections: entry.changedSections,
-    editor_model: entry.editorModel ?? null,
-    source_count: entry.sourceCount,
-    signal_count: entry.signalCount,
-    messages: entry.messages,
-    sources: entry.sources,
     diff_lines: entry.diffLines,
-    reasoning_steps: entry.reasoningSteps ?? null,
+    editor_model: entry.editorModel ?? null,
     error_message: entry.errorMessage ?? null,
+    finished_at: entry.finishedAt,
+    href: entry.href ?? null,
+    id: entry.id,
+    messages: entry.messages,
+    next_version_label: entry.nextVersionLabel ?? null,
+    origin: entry.origin,
+    previous_version_label: entry.previousVersionLabel ?? null,
+    reasoning_steps: entry.reasoningSteps ?? null,
+    signal_count: entry.signalCount,
+    skill_slug: entry.slug,
+    source_count: entry.sourceCount,
+    sources: entry.sources,
+    started_at: entry.startedAt,
+    status: entry.status,
+    summary: entry.summary ?? null,
+    title: entry.title,
+    trigger: entry.trigger,
+    what_changed: entry.whatChanged ?? null,
   };
 
   const fullRow = {
     ...baseRow,
-    searches_used: entry.searchesUsed ?? null,
     added_sources: entry.addedSources ?? null,
+    searches_used: entry.searchesUsed ?? null,
   };
 
-  const { error } = await db.from("loop_runs").upsert(fullRow as never, { onConflict: "id" });
+  const { error } = await db
+    .from("loop_runs")
+    .upsert(fullRow as never, { onConflict: "id" });
 
   if (error) {
-    if (error.message.includes("added_sources") || error.message.includes("searches_used")) {
-      console.warn("[db] loop_runs missing new columns – retrying without searches_used/added_sources (run migration 017)");
-      const { error: retryError } = await db.from("loop_runs").upsert(baseRow as never, { onConflict: "id" });
-      if (retryError) throw new Error(`recordLoopRun failed: ${retryError.message}`);
+    if (
+      error.message.includes("added_sources") ||
+      error.message.includes("searches_used")
+    ) {
+      console.warn(
+        "[db] loop_runs missing new columns – retrying without searches_used/added_sources (run migration 017)"
+      );
+      const { error: retryError } = await db
+        .from("loop_runs")
+        .upsert(baseRow as never, { onConflict: "id" });
+      if (retryError) {
+        throw new Error(`recordLoopRun failed: ${retryError.message}`);
+      }
       return;
     }
     throw new Error(`recordLoopRun failed: ${error.message}`);
@@ -63,7 +74,10 @@ export async function listLoopRuns(options?: {
   limit?: number;
 }): Promise<LoopRunRecord[]> {
   const db = getServerSupabase();
-  let query = db.from("loop_runs").select("*").order("started_at", { ascending: false });
+  let query = db
+    .from("loop_runs")
+    .select("*")
+    .order("started_at", { ascending: false });
 
   if (options?.skillSlug) {
     query = query.eq("skill_slug", options.skillSlug);
@@ -73,36 +87,43 @@ export async function listLoopRuns(options?: {
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(`listLoopRuns failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listLoopRuns failed: ${error.message}`);
+  }
 
   return (data ?? []).map((row) => {
-    const r = row as typeof row & { searches_used?: number | null; added_sources?: unknown };
+    const r = row as typeof row & {
+      searches_used?: number | null;
+      added_sources?: unknown;
+    };
     return {
-      id: r.id,
-      slug: r.skill_slug,
-      title: r.title,
-      origin: r.origin as LoopRunRecord["origin"],
-      trigger: r.trigger as LoopRunRecord["trigger"],
-      status: r.status as LoopRunRecord["status"],
-      startedAt: r.started_at,
-      finishedAt: r.finished_at,
-      previousVersionLabel: r.previous_version_label ?? undefined,
-      nextVersionLabel: r.next_version_label ?? undefined,
-      href: r.href ?? undefined,
-      summary: r.summary ?? undefined,
-      whatChanged: r.what_changed ?? undefined,
+      addedSources: (r.added_sources ??
+        undefined) as LoopRunRecord["addedSources"],
       bodyChanged: r.body_changed ?? undefined,
       changedSections: r.changed_sections,
-      editorModel: r.editor_model ?? undefined,
-      sourceCount: r.source_count,
-      signalCount: r.signal_count,
-      messages: r.messages,
-      sources: r.sources as LoopRunRecord["sources"],
       diffLines: r.diff_lines as LoopRunRecord["diffLines"],
-      reasoningSteps: (r.reasoning_steps ?? undefined) as LoopRunRecord["reasoningSteps"],
+      editorModel: r.editor_model ?? undefined,
       errorMessage: r.error_message ?? undefined,
+      finishedAt: r.finished_at,
+      href: r.href ?? undefined,
+      id: r.id,
+      messages: r.messages,
+      nextVersionLabel: r.next_version_label ?? undefined,
+      origin: r.origin as LoopRunRecord["origin"],
+      previousVersionLabel: r.previous_version_label ?? undefined,
+      reasoningSteps: (r.reasoning_steps ??
+        undefined) as LoopRunRecord["reasoningSteps"],
       searchesUsed: r.searches_used ?? undefined,
-      addedSources: (r.added_sources ?? undefined) as LoopRunRecord["addedSources"]
+      signalCount: r.signal_count,
+      slug: r.skill_slug,
+      sourceCount: r.source_count,
+      sources: r.sources as LoopRunRecord["sources"],
+      startedAt: r.started_at,
+      status: r.status as LoopRunRecord["status"],
+      summary: r.summary ?? undefined,
+      title: r.title,
+      trigger: r.trigger as LoopRunRecord["trigger"],
+      whatChanged: r.what_changed ?? undefined,
     };
   });
 }
@@ -115,28 +136,30 @@ export async function recordRefreshRun(entry: RefreshRunRecord): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("refresh_runs").upsert(
     {
-      id: entry.id,
-      status: entry.status,
-      started_at: entry.startedAt,
-      finished_at: entry.finishedAt,
-      generated_at: entry.generatedAt ?? null,
-      generated_from: entry.generatedFrom ?? null,
-      write_local: entry.writeLocal,
-      upload_blob: entry.uploadBlob,
-      refresh_category_signals: entry.refreshCategorySignals,
-      refresh_user_skills: entry.refreshUserSkills,
-      refresh_imported_skills: entry.refreshImportedSkills,
-      focus_skill_slugs: entry.focusSkillSlugs,
-      focus_imported_skill_slugs: entry.focusImportedSkillSlugs,
-      skill_count: entry.skillCount ?? null,
       category_count: entry.categoryCount ?? null,
       daily_brief_count: entry.dailyBriefCount ?? null,
-      error_message: entry.errorMessage ?? null
+      error_message: entry.errorMessage ?? null,
+      finished_at: entry.finishedAt,
+      focus_imported_skill_slugs: entry.focusImportedSkillSlugs,
+      focus_skill_slugs: entry.focusSkillSlugs,
+      generated_at: entry.generatedAt ?? null,
+      generated_from: entry.generatedFrom ?? null,
+      id: entry.id,
+      refresh_category_signals: entry.refreshCategorySignals,
+      refresh_imported_skills: entry.refreshImportedSkills,
+      refresh_user_skills: entry.refreshUserSkills,
+      skill_count: entry.skillCount ?? null,
+      started_at: entry.startedAt,
+      status: entry.status,
+      upload_blob: entry.uploadBlob,
+      write_local: entry.writeLocal,
     } as never,
     { onConflict: "id" }
   );
 
-  if (error) throw new Error(`recordRefreshRun failed: ${error.message}`);
+  if (error) {
+    throw new Error(`recordRefreshRun failed: ${error.message}`);
+  }
 }
 
 export async function listRefreshRuns(limit = 40): Promise<RefreshRunRecord[]> {
@@ -147,26 +170,29 @@ export async function listRefreshRuns(limit = 40): Promise<RefreshRunRecord[]> {
     .order("started_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(`listRefreshRuns failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listRefreshRuns failed: ${error.message}`);
+  }
 
   return (data ?? []).map((row) => ({
-    id: row.id,
-    status: row.status as RefreshRunRecord["status"],
-    startedAt: row.started_at,
-    finishedAt: row.finished_at,
-    generatedAt: row.generated_at ?? undefined,
-    generatedFrom: (row.generated_from ?? undefined) as RefreshRunRecord["generatedFrom"],
-    writeLocal: row.write_local,
-    uploadBlob: row.upload_blob,
-    refreshCategorySignals: row.refresh_category_signals,
-    refreshUserSkills: row.refresh_user_skills,
-    refreshImportedSkills: row.refresh_imported_skills,
-    focusSkillSlugs: row.focus_skill_slugs,
-    focusImportedSkillSlugs: row.focus_imported_skill_slugs,
-    skillCount: row.skill_count ?? undefined,
     categoryCount: row.category_count ?? undefined,
     dailyBriefCount: row.daily_brief_count ?? undefined,
-    errorMessage: row.error_message ?? undefined
+    errorMessage: row.error_message ?? undefined,
+    finishedAt: row.finished_at,
+    focusImportedSkillSlugs: row.focus_imported_skill_slugs,
+    focusSkillSlugs: row.focus_skill_slugs,
+    generatedAt: row.generated_at ?? undefined,
+    generatedFrom: (row.generated_from ??
+      undefined) as RefreshRunRecord["generatedFrom"],
+    id: row.id,
+    refreshCategorySignals: row.refresh_category_signals,
+    refreshImportedSkills: row.refresh_imported_skills,
+    refreshUserSkills: row.refresh_user_skills,
+    skillCount: row.skill_count ?? undefined,
+    startedAt: row.started_at,
+    status: row.status as RefreshRunRecord["status"],
+    uploadBlob: row.upload_blob,
+    writeLocal: row.write_local,
   }));
 }
 
@@ -177,45 +203,50 @@ export async function listRefreshRuns(limit = 40): Promise<RefreshRunRecord[]> {
 export async function recordUsageEvent(entry: UsageEventRecord): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("usage_events").insert({
-    id: entry.id,
     at: entry.at,
+    category_slug: entry.categorySlug ?? null,
+    details: entry.details ?? null,
+    duration_ms: entry.durationMs ?? null,
+    id: entry.id,
     kind: entry.kind,
-    source: entry.source,
     label: entry.label,
+    method: entry.method ?? null,
+    ok: entry.ok ?? null,
     path: entry.path ?? null,
     route: entry.route ?? null,
-    method: entry.method ?? null,
-    status: entry.status ?? null,
-    duration_ms: entry.durationMs ?? null,
-    ok: entry.ok ?? null,
     skill_slug: entry.skillSlug ?? null,
-    category_slug: entry.categorySlug ?? null,
-    details: entry.details ?? null
+    source: entry.source,
+    status: entry.status ?? null,
   } as never);
 
-  if (error) throw new Error(`recordUsageEvent failed: ${error.message}`);
+  if (error) {
+    throw new Error(`recordUsageEvent failed: ${error.message}`);
+  }
 }
 
 function mapUsageEventRow(row: Record<string, unknown>): UsageEventRecord {
   return {
-    id: row.id as string,
     at: row.at as string,
+    categorySlug: (row.category_slug ??
+      undefined) as UsageEventRecord["categorySlug"],
+    details: (row.details ?? undefined) as string | undefined,
+    durationMs: (row.duration_ms ?? undefined) as number | undefined,
+    id: row.id as string,
     kind: row.kind as UsageEventRecord["kind"],
-    source: row.source as UsageEventRecord["source"],
     label: row.label as string,
+    method: (row.method ?? undefined) as string | undefined,
+    ok: (row.ok ?? undefined) as boolean | undefined,
     path: (row.path ?? undefined) as string | undefined,
     route: (row.route ?? undefined) as string | undefined,
-    method: (row.method ?? undefined) as string | undefined,
-    status: (row.status ?? undefined) as number | undefined,
-    durationMs: (row.duration_ms ?? undefined) as number | undefined,
-    ok: (row.ok ?? undefined) as boolean | undefined,
     skillSlug: (row.skill_slug ?? undefined) as string | undefined,
-    categorySlug: (row.category_slug ?? undefined) as UsageEventRecord["categorySlug"],
-    details: (row.details ?? undefined) as string | undefined
+    source: row.source as UsageEventRecord["source"],
+    status: (row.status ?? undefined) as number | undefined,
   };
 }
 
-export async function listUsageEvents(limit = 100): Promise<UsageEventRecord[]> {
+export async function listUsageEvents(
+  limit = 100
+): Promise<UsageEventRecord[]> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("usage_events")
@@ -223,9 +254,13 @@ export async function listUsageEvents(limit = 100): Promise<UsageEventRecord[]> 
     .order("at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(`listUsageEvents failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listUsageEvents failed: ${error.message}`);
+  }
 
-  return (data ?? []).map((row) => mapUsageEventRow(row as Record<string, unknown>));
+  return (data ?? []).map((row) =>
+    mapUsageEventRow(row as Record<string, unknown>)
+  );
 }
 
 /** Events with `at >= sinceIso`, newest first (for calendar-bounded overview windows). */
@@ -241,61 +276,73 @@ export async function listUsageEventsSince(
     .order("at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(`listUsageEventsSince failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listUsageEventsSince failed: ${error.message}`);
+  }
 
-  return (data ?? []).map((row) => mapUsageEventRow(row as Record<string, unknown>));
+  return (data ?? []).map((row) =>
+    mapUsageEventRow(row as Record<string, unknown>)
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Billing events
 // ---------------------------------------------------------------------------
 
-export async function recordBillingEvent(entry: BillingEventRecord): Promise<void> {
+export async function recordBillingEvent(
+  entry: BillingEventRecord
+): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("billing_events").upsert(
     {
-      id: entry.id,
-      type: entry.type,
+      amount: entry.amount ?? null,
       created_at: entry.createdAt,
-      livemode: entry.livemode,
-      customer_id: entry.customerId ?? null,
+      currency: entry.currency ?? null,
       customer_email: entry.customerEmail ?? null,
-      subscription_id: entry.subscriptionId ?? null,
+      customer_id: entry.customerId ?? null,
+      id: entry.id,
+      livemode: entry.livemode,
       plan_slug: entry.planSlug ?? null,
       status: entry.status ?? null,
-      amount: entry.amount ?? null,
-      currency: entry.currency ?? null
+      subscription_id: entry.subscriptionId ?? null,
+      type: entry.type,
     } as never,
     { onConflict: "id" }
   );
 
-  if (error) throw new Error(`recordBillingEvent failed: ${error.message}`);
+  if (error) {
+    throw new Error(`recordBillingEvent failed: ${error.message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Subscriptions
 // ---------------------------------------------------------------------------
 
-export async function upsertSubscription(entry: StripeSubscriptionRecord): Promise<void> {
+export async function upsertSubscription(
+  entry: StripeSubscriptionRecord
+): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("subscriptions").upsert(
     {
-      id: entry.id,
-      customer_id: entry.customerId,
+      cancel_at_period_end: entry.cancelAtPeriodEnd,
+      checkout_completed_at: entry.checkoutCompletedAt ?? null,
       clerk_user_id: entry.clerkUserId ?? null,
+      current_period_end: entry.currentPeriodEnd ?? null,
       customer_email: entry.customerEmail ?? null,
+      customer_id: entry.customerId,
+      id: entry.id,
+      latest_invoice_id: entry.latestInvoiceId ?? null,
       plan_slug: entry.planSlug ?? null,
       status: entry.status,
-      cancel_at_period_end: entry.cancelAtPeriodEnd,
-      current_period_end: entry.currentPeriodEnd ?? null,
-      checkout_completed_at: entry.checkoutCompletedAt ?? null,
       updated_at: entry.updatedAt,
-      latest_invoice_id: entry.latestInvoiceId ?? null
     } as never,
     { onConflict: "id" }
   );
 
-  if (error) throw new Error(`upsertSubscription failed: ${error.message}`);
+  if (error) {
+    throw new Error(`upsertSubscription failed: ${error.message}`);
+  }
 }
 
 export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {
@@ -305,19 +352,21 @@ export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {
     .select("*")
     .order("updated_at", { ascending: false });
 
-  if (error) throw new Error(`listSubscriptions failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listSubscriptions failed: ${error.message}`);
+  }
 
   return (data ?? []).map((row) => ({
-    id: row.id,
-    customerId: row.customer_id,
+    cancelAtPeriodEnd: row.cancel_at_period_end,
+    checkoutCompletedAt: row.checkout_completed_at ?? undefined,
     clerkUserId: row.clerk_user_id ?? undefined,
+    currentPeriodEnd: row.current_period_end ?? undefined,
     customerEmail: row.customer_email ?? undefined,
+    customerId: row.customer_id,
+    id: row.id,
+    latestInvoiceId: row.latest_invoice_id ?? undefined,
     planSlug: row.plan_slug ?? undefined,
     status: row.status,
-    cancelAtPeriodEnd: row.cancel_at_period_end,
-    currentPeriodEnd: row.current_period_end ?? undefined,
-    checkoutCompletedAt: row.checkout_completed_at ?? undefined,
     updatedAt: row.updated_at,
-    latestInvoiceId: row.latest_invoice_id ?? undefined
   }));
 }

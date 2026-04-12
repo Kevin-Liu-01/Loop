@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type { CategorySlug } from "@/lib/types";
 
-type SkillInlineProps = {
+interface SkillInlineProps {
   slug: string;
   title: string;
   iconUrl?: string | null;
@@ -16,11 +16,11 @@ type SkillInlineProps = {
   /** "sm" for legend rows, sidebar, day modal; "md" for cards, settings rows, modal headers */
   size?: "sm" | "md";
   className?: string;
-};
+}
 
 const SIZES = {
-  sm: { icon: 16, text: "text-xs", badge: "sm" as const },
-  md: { icon: 24, text: "text-sm", badge: "sm" as const },
+  md: { badge: "sm" as const, icon: 24, text: "text-sm" },
+  sm: { badge: "sm" as const, icon: 16, text: "text-xs" },
 } as const;
 
 export function SkillInline({

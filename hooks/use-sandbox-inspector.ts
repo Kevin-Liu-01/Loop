@@ -4,26 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SandboxInspectResponse } from "@/lib/sandbox-inspect-types";
 
-const POLL_INTERVAL_MS = 5_000;
+const POLL_INTERVAL_MS = 5000;
 
-type UseSandboxInspectorResult = {
+interface UseSandboxInspectorResult {
   data: SandboxInspectResponse | null;
   isLoading: boolean;
   error: string | null;
   refresh: () => void;
   browsePath: (path: string) => void;
   currentPath: string;
-};
+}
 
 async function fetchInspect(
   sandboxId: string,
   runtime: string,
-  path?: string,
+  path?: string
 ): Promise<SandboxInspectResponse> {
   const res = await fetch("/api/sandbox/inspect", {
-    method: "POST",
+    body: JSON.stringify({ path, runtime, sandboxId }),
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sandboxId, runtime, path }),
+    method: "POST",
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -35,7 +35,7 @@ async function fetchInspect(
 export function useSandboxInspector(
   sandboxId: string | null,
   runtime: string,
-  enabled: boolean,
+  enabled: boolean
 ): UseSandboxInspectorResult {
   const [data, setData] = useState<SandboxInspectResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,18 +45,24 @@ export function useSandboxInspector(
   const mountedRef = useRef(true);
 
   const doFetch = useCallback(async () => {
-    if (!sandboxId) return;
+    if (!sandboxId) {
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
       const result = await fetchInspect(sandboxId, runtime, currentPath);
-      if (mountedRef.current) setData(result);
-    } catch (err) {
       if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : "Inspect failed");
+        setData(result);
+      }
+    } catch (error) {
+      if (mountedRef.current) {
+        setError(error instanceof Error ? error.message : "Inspect failed");
       }
     } finally {
-      if (mountedRef.current) setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [sandboxId, runtime, currentPath]);
 
@@ -96,5 +102,5 @@ export function useSandboxInspector(
     setCurrentPath(path);
   }, []);
 
-  return { data, isLoading, error, refresh, browsePath, currentPath };
+  return { browsePath, currentPath, data, error, isLoading, refresh };
 }

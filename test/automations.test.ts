@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { formatScheduleLabel, countMonthlyRuns, isScheduledOnDate, formatNextRun, getNextRunDate } from "@/lib/schedule";
+import {
+  formatScheduleLabel,
+  countMonthlyRuns,
+  isScheduledOnDate,
+  formatNextRun,
+  getNextRunDate,
+} from "@/lib/schedule";
 
 // ---------------------------------------------------------------------------
 // Schedule label
@@ -97,9 +103,12 @@ test("getNextRunDate for weekly lands on the correct day", () => {
 // ---------------------------------------------------------------------------
 
 test("all skill source configs have at least 4 sources", async () => {
-  const { SKILL_SOURCE_CONFIGS } = await import("@/lib/db/seed-data/skill-sources");
+  const { SKILL_SOURCE_CONFIGS } =
+    await import("@/lib/db/seed-data/skill-sources");
 
-  const underSourced = SKILL_SOURCE_CONFIGS.filter((cfg) => cfg.sources.length < 4);
+  const underSourced = SKILL_SOURCE_CONFIGS.filter(
+    (cfg) => cfg.sources.length < 4
+  );
   assert.equal(
     underSourced.length,
     0,
@@ -108,10 +117,13 @@ test("all skill source configs have at least 4 sources", async () => {
 });
 
 test("all skill source configs have non-empty actionable prompts", async () => {
-  const { SKILL_SOURCE_CONFIGS } = await import("@/lib/db/seed-data/skill-sources");
+  const { SKILL_SOURCE_CONFIGS } =
+    await import("@/lib/db/seed-data/skill-sources");
 
   const generic = SKILL_SOURCE_CONFIGS.filter(
-    (cfg) => cfg.automation.prompt.length < 50 || /^Refresh \w+ skill\.$/.test(cfg.automation.prompt)
+    (cfg) =>
+      cfg.automation.prompt.length < 50 ||
+      /^Refresh \w+ skill\.$/.test(cfg.automation.prompt)
   );
   assert.equal(
     generic.length,

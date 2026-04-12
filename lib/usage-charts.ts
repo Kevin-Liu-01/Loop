@@ -1,31 +1,39 @@
 import type { UsageEventRecord } from "@/lib/types";
 
-export type TimeSeriesBucket = {
+export interface TimeSeriesBucket {
   bucket: string;
   label: string;
   total: number;
   api: number;
   views: number;
   interactions: number;
-};
+}
 
-export type LatencyBucket = {
+export interface LatencyBucket {
   bucket: string;
   label: string;
   avgMs: number;
   maxMs: number;
-};
+}
 
 function formatHourLabel(date: Date): string {
   const h = date.getHours();
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
+  if (h === 0) {
+    return "12 AM";
+  }
+  if (h < 12) {
+    return `${h} AM`;
+  }
+  if (h === 12) {
+    return "12 PM";
+  }
   return `${h - 12} PM`;
 }
 
 function averageOf(values: number[]): number {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   return Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
 }
 
@@ -55,12 +63,12 @@ export function bucketEventsByHour(
     const views = matches.filter((e) => e.kind === "page_view").length;
 
     buckets.push({
+      api,
       bucket: start.toISOString(),
+      interactions: matches.length - api - views,
       label: formatHourLabel(start),
       total: matches.length,
-      api,
       views,
-      interactions: matches.length - api - views,
     });
   }
 
@@ -95,9 +103,9 @@ export function bucketLatencyByHour(
     const durations = matches.map((e) => e.durationMs!);
 
     buckets.push({
+      avgMs: averageOf(durations),
       bucket: start.toISOString(),
       label: formatHourLabel(start),
-      avgMs: averageOf(durations),
       maxMs: durations.length > 0 ? Math.max(...durations) : 0,
     });
   }

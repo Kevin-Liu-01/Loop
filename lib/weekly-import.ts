@@ -1,14 +1,15 @@
 import matter from "gray-matter";
 
 import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
+import { githubAvatar } from "@/lib/brand-icons";
+import { getSkillBySlug, createSkill } from "@/lib/db/skills";
 import {
   EXTERNAL_SKILL_SOURCES,
   getContentsUrl,
   getRawUrl,
-  type ExternalSkillSource,
 } from "@/lib/external-skill-sources";
+import type { ExternalSkillSource } from "@/lib/external-skill-sources";
 import { createExcerpt, slugify } from "@/lib/markdown";
-import { getSkillBySlug, createSkill } from "@/lib/db/skills";
 import { prefetchSourceAuthorIds } from "@/lib/source-authors";
 import type {
   AgentDocKey,
@@ -19,44 +20,51 @@ import type {
 } from "@/lib/types";
 import { AGENT_DOC_FILENAMES } from "@/lib/types";
 import { normalizeSource, normalizeTags } from "@/lib/user-skills";
-import { githubAvatar } from "@/lib/brand-icons";
 
-export type WeeklyImportResult = {
+export interface WeeklyImportResult {
   imported: ImportedSkillSummary[];
   skipped: string[];
-  errors: Array<{ slug: string; error: string }>;
-};
+  errors: { slug: string; error: string }[];
+}
 
-export type ImportedSkillSummary = {
+export interface ImportedSkillSummary {
   slug: string;
   title: string;
   category: CategorySlug;
   sourceId: string;
   sourceName: string;
   description: string;
-};
+}
 
-type GitHubItem = {
+interface GitHubItem {
   name: string;
   path: string;
   type: "file" | "dir";
-};
+}
 
-const CATEGORY_INFERENCE: Array<{ pattern: RegExp; category: CategorySlug }> = [
-  { pattern: /frontend|react|next|vue|css|tailwind|animation|three/i, category: "frontend" },
-  { pattern: /seo|crawl|schema|geo|sitemap/i, category: "seo-geo" },
-  { pattern: /social|linkedin|twitter|post|audience/i, category: "social" },
-  { pattern: /security|auth|threat|abuse/i, category: "security" },
-  { pattern: /linear|github|ci|workflow|automation|ops/i, category: "ops" },
-  { pattern: /agent|a2a|mcp|orchestration|tool/i, category: "a2a" },
-  { pattern: /docker|container|kubernetes|oci/i, category: "containers" },
-  { pattern: /infra|cloud|serverless|edge|deploy|database/i, category: "infra" },
+const CATEGORY_INFERENCE: { pattern: RegExp; category: CategorySlug }[] = [
+  {
+    category: "frontend",
+    pattern: /frontend|react|next|vue|css|tailwind|animation|three/i,
+  },
+  { category: "seo-geo", pattern: /seo|crawl|schema|geo|sitemap/i },
+  { category: "social", pattern: /social|linkedin|twitter|post|audience/i },
+  { category: "security", pattern: /security|auth|threat|abuse/i },
+  { category: "ops", pattern: /linear|github|ci|workflow|automation|ops/i },
+  { category: "a2a", pattern: /agent|a2a|mcp|orchestration|tool/i },
+  { category: "containers", pattern: /docker|container|kubernetes|oci/i },
+  {
+    category: "infra",
+    pattern: /infra|cloud|serverless|edge|deploy|database/i,
+  },
 ];
 
 function inferCategory(slug: string, content: string): CategorySlug {
   const haystack = `${slug} ${content}`.toLowerCase();
   for (const rule of CATEGORY_INFERENCE) {
-    if (rule.pattern.test(haystack)) return rule.category;
+    if (rule.pattern.test(haystack)) {
+      return rule.category;
+    }
   }
   return "frontend";
 }
@@ -64,7 +72,9 @@ function inferCategory(slug: string, content: string): CategorySlug {
 async function fetchText(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     return res.text();
   } catch {
     return null;
@@ -76,18 +86,23 @@ async function fetchAgentDocs(
   skillPath: string
 ): Promise<AgentDocs> {
   const docs: AgentDocs = {};
-  const entries = Object.entries(AGENT_DOC_FILENAMES) as [AgentDocKey, string][];
+  const entries = Object.entries(AGENT_DOC_FILENAMES) as [
+    AgentDocKey,
+    string,
+  ][];
 
   const results = await Promise.all(
     entries.map(async ([key, filename]) => {
       const url = getRawUrl(source, `${skillPath}/${filename}`);
       const content = await fetchText(url);
-      return content ? { key, content: content.trim() } : null;
+      return content ? { content: content.trim(), key } : null;
     })
   );
 
   for (const result of results) {
-    if (result) docs[result.key] = result.content;
+    if (result) {
+      docs[result.key] = result.content;
+    }
   }
 
   return docs;
@@ -96,12 +111,12 @@ async function fetchAgentDocs(
 async function discoverFromReadmeLinks(
   source: ExternalSkillSource,
   result: WeeklyImportResult,
-  authorId?: string,
+  authorId?: string
 ): Promise<void> {
   const readmeUrl = getRawUrl(source, "README.md");
   const readme = await fetchText(readmeUrl);
   if (!readme) {
-    result.errors.push({ slug: source.id, error: "Could not fetch README.md" });
+    result.errors.push({ error: "Could not fetch README.md", slug: source.id });
     return;
   }
 
@@ -110,8 +125,12 @@ async function discoverFromReadmeLinks(
   let match: RegExpExecArray | null;
   while ((match = linkPattern.exec(readme)) !== null) {
     const url = match[2];
-    if (url.includes("/tree/") || url.includes("/blob/")) continue;
-    if (url.split("/").filter(Boolean).length < 4) continue;
+    if (url.includes("/tree/") || url.includes("/blob/")) {
+      continue;
+    }
+    if (url.split("/").filter(Boolean).length < 4) {
+      continue;
+    }
     candidates.push({ label: match[1], url });
   }
 
@@ -120,11 +139,17 @@ async function discoverFromReadmeLinks(
     await Promise.all(
       candidates.slice(i, i + CONCURRENCY).map(async (candidate) => {
         try {
-          const parts = new URL(candidate.url).pathname.split("/").filter(Boolean);
-          if (parts.length < 2) return;
+          const parts = new URL(candidate.url).pathname
+            .split("/")
+            .filter(Boolean);
+          if (parts.length < 2) {
+            return;
+          }
           const [org, repo] = parts;
           const slug = slugify(repo);
-          if (!slug) return;
+          if (!slug) {
+            return;
+          }
 
           const existing = await getSkillBySlug(slug);
           if (existing) {
@@ -142,50 +167,58 @@ async function discoverFromReadmeLinks(
           const { data, content } = matter(raw);
           const title =
             content.match(/^#\s+(.+)$/m)?.[1]?.trim() ??
-            slug.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
-          const description = String(data.description ?? createExcerpt(content, 160));
+            slug
+              .split("-")
+              .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+              .join(" ");
+          const description = String(
+            data.description ?? createExcerpt(content, 160)
+          );
           const category = inferCategory(slug, `${description}\n${content}`);
 
           await createSkill({
-            slug,
-            title,
-            description,
-            category,
+            authorId,
+            automation: {
+              cadence: "weekly",
+              enabled: true,
+              prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
+              status: "active",
+            },
             body: content.trim(),
-            visibility: "public",
+            category,
+            description,
+            iconUrl: githubAvatar(org),
             origin: "remote",
+            ownerName: candidate.label,
+            slug,
+            sources: [normalizeSource(candidate.url, category)],
             tags: normalizeTags([
               category,
               source.trustTier,
               "community",
               ...((data.tags as string[]) ?? []),
             ]),
-            ownerName: candidate.label,
-            authorId,
-            sources: [normalizeSource(candidate.url, category)],
-            automation: {
-              enabled: true,
-              cadence: "weekly",
-              status: "active",
-              prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
-            },
+            title,
             updates: [],
-            iconUrl: githubAvatar(org),
             version: 1,
+            visibility: "public",
           });
 
           result.imported.push({
-            slug,
-            title,
             category,
+            description,
+            slug,
             sourceId: source.id,
             sourceName: source.name,
-            description,
+            title,
           });
-        } catch (err) {
+        } catch (error) {
           result.errors.push({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Readme link import failed",
             slug: candidate.url,
-            error: err instanceof Error ? err.message : "Readme link import failed",
           });
         }
       })
@@ -196,7 +229,7 @@ async function discoverFromReadmeLinks(
 async function discoverAndImportFromSource(
   source: ExternalSkillSource,
   result: WeeklyImportResult,
-  authorId?: string,
+  authorId?: string
 ): Promise<void> {
   if (source.skillsPath === "__readme_links__") {
     await discoverFromReadmeLinks(source, result, authorId);
@@ -208,11 +241,14 @@ async function discoverAndImportFromSource(
   try {
     const url = getContentsUrl(source);
     const res = await fetch(url, {
-      headers: { Accept: "application/vnd.github.v3+json" },
       cache: "no-store",
+      headers: { Accept: "application/vnd.github.v3+json" },
     });
     if (!res.ok) {
-      result.errors.push({ slug: source.id, error: `GitHub API ${res.status}` });
+      result.errors.push({
+        error: `GitHub API ${res.status}`,
+        slug: source.id,
+      });
       return;
     }
     const items = (await res.json()) as GitHubItem[];
@@ -224,16 +260,20 @@ async function discoverAndImportFromSource(
             i.type === "file" &&
             source.fileExtensions!.some((ext) => i.name.endsWith(ext))
         )
-        .map((i) => ({ name: i.name.replace(/\.[^.]+$/, ""), path: i.path, isFile: true }));
+        .map((i) => ({
+          isFile: true,
+          name: i.name.replace(/\.[^.]+$/, ""),
+          path: i.path,
+        }));
     } else {
       entries = items
         .filter((i) => i.type === "dir" && !i.name.startsWith("."))
-        .map((i) => ({ name: i.name, path: i.path, isFile: false }));
+        .map((i) => ({ isFile: false, name: i.name, path: i.path }));
     }
-  } catch (err) {
+  } catch (error) {
     result.errors.push({
+      error: error instanceof Error ? error.message : "Discovery failed",
       slug: source.id,
-      error: err instanceof Error ? err.message : "Discovery failed",
     });
     return;
   }
@@ -260,7 +300,10 @@ async function discoverAndImportFromSource(
       const { data, content } = matter(raw);
       const title =
         content.match(/^#\s+(.+)$/m)?.[1]?.trim() ??
-        slug.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+        slug
+          .split("-")
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+          .join(" ");
       const description = String(
         data.description ?? createExcerpt(content, 160)
       );
@@ -271,52 +314,54 @@ async function discoverAndImportFromSource(
         : await fetchAgentDocs(source, entry.path);
 
       const sourceUrl = `https://github.com/${source.org}/${source.repo}/tree/${source.branch}/${entry.path}`;
-      const sources: SourceDefinition[] = [normalizeSource(sourceUrl, category)];
+      const sources: SourceDefinition[] = [
+        normalizeSource(sourceUrl, category),
+      ];
 
       const automation: SkillAutomationState = {
-        enabled: true,
         cadence: "weekly",
-        status: "active",
-        prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
+        enabled: true,
         preferredHour: DEFAULT_PREFERRED_HOUR,
+        prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
+        status: "active",
       };
 
       await createSkill({
-        slug,
-        title,
-        description,
-        category,
+        agentDocs: Object.keys(agentDocs).length > 0 ? agentDocs : undefined,
+        authorId,
+        automation,
         body: content.trim(),
-        visibility: "public",
+        category,
+        description,
+        iconUrl: source.iconUrl || undefined,
         origin: "remote",
+        ownerName: source.name,
+        slug,
+        sources,
         tags: normalizeTags([
           category,
           source.trustTier,
-          source.name.toLowerCase().replace(/\s+/g, "-"),
+          source.name.toLowerCase().replaceAll(/\s+/g, "-"),
           ...((data.tags as string[]) ?? []),
         ]),
-        ownerName: source.name,
-        authorId,
-        sources,
-        automation,
+        title,
         updates: [],
-        agentDocs: Object.keys(agentDocs).length > 0 ? agentDocs : undefined,
-        iconUrl: source.iconUrl || undefined,
         version: 1,
+        visibility: "public",
       });
 
       result.imported.push({
-        slug,
-        title,
         category,
+        description,
+        slug,
         sourceId: source.id,
         sourceName: source.name,
-        description,
+        title,
       });
-    } catch (err) {
+    } catch (error) {
       result.errors.push({
+        error: error instanceof Error ? error.message : "Import failed",
         slug,
-        error: err instanceof Error ? err.message : "Import failed",
       });
     }
   });
@@ -329,9 +374,9 @@ async function discoverAndImportFromSource(
 
 export async function runWeeklyImport(): Promise<WeeklyImportResult> {
   const result: WeeklyImportResult = {
+    errors: [],
     imported: [],
     skipped: [],
-    errors: [],
   };
 
   const authorIds = await prefetchSourceAuthorIds();

@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 const SCREENSHOT_PATH = "/images/og.png";
 
-const fontDir = dirname(fileURLToPath(import.meta.url));
+const fontDir = import.meta.dirname;
 
 const neueMontBook = readFile(join(fontDir, "NeueMontreal-Book.ttf"));
 const neueMontBold = readFile(join(fontDir, "NeueMontreal-Bold.ttf"));
@@ -29,52 +29,42 @@ export async function GET(request: NextRequest) {
     searchParams.get("description") || SEO_DEFAULT_DESCRIPTION;
   const category = searchParams.get("category") || null;
 
-  const origin = new URL(request.url).origin;
+  const { origin } = new URL(request.url);
   const screenshotUrl = `${origin}${SCREENSHOT_PATH}`;
 
-  const [bookFont, boldFont] = await Promise.all([
-    neueMontBook,
-    neueMontBold,
-  ]);
+  const [bookFont, boldFont] = await Promise.all([neueMontBook, neueMontBold]);
 
   return new ImageResponse(
-    (
-      <OgCard
-        title={title}
-        description={description}
-        category={category}
-        screenshotUrl={screenshotUrl}
-      />
-    ),
+    <OgCard
+      title={title}
+      description={description}
+      category={category}
+      screenshotUrl={screenshotUrl}
+    />,
     {
-      width: OG_WIDTH,
-      height: OG_HEIGHT,
       fonts: [
-        { name: "Neue Montreal", data: bookFont, style: "normal", weight: 400 },
-        { name: "Neue Montreal", data: boldFont, style: "normal", weight: 700 },
+        { data: bookFont, name: "Neue Montreal", style: "normal", weight: 400 },
+        { data: boldFont, name: "Neue Montreal", style: "normal", weight: 700 },
       ],
       headers: {
         "Cache-Control":
           "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
         "Content-Type": "image/png",
       },
-    },
+      height: OG_HEIGHT,
+      width: OG_WIDTH,
+    }
   );
 }
 
-type OgCardProps = {
+interface OgCardProps {
   title: string;
   description: string;
   category: string | null;
   screenshotUrl: string;
-};
+}
 
-function OgCard({
-  title,
-  description,
-  category,
-  screenshotUrl,
-}: OgCardProps) {
+function OgCard({ title, description, category, screenshotUrl }: OgCardProps) {
   const displayTitle = title.length > 80 ? `${title.slice(0, 77)}...` : title;
   const displayDesc =
     description.length > 140 ? `${description.slice(0, 137)}...` : description;
@@ -83,56 +73,56 @@ function OgCard({
   return (
     <div
       style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        position: "relative",
-        overflow: "hidden",
         background:
           "linear-gradient(145deg, #0a0a09 0%, #1a0f0a 35%, #3d1f10 70%, #4a2618 100%)",
+        display: "flex",
         fontFamily: "Neue Montreal",
+        height: "100%",
+        overflow: "hidden",
+        position: "relative",
+        width: "100%",
       }}
     >
       {/* Warm radial glow from bottom-left */}
       <div
         style={{
-          position: "absolute",
-          bottom: "-100px",
-          left: "-60px",
-          width: "700px",
-          height: "500px",
-          borderRadius: "50%",
           background:
             "radial-gradient(ellipse at center, rgba(232, 101, 10, 0.18) 0%, transparent 65%)",
+          borderRadius: "50%",
+          bottom: "-100px",
+          height: "500px",
+          left: "-60px",
+          position: "absolute",
+          width: "700px",
         }}
       />
 
       {/* Orange glow behind screenshot */}
       <div
         style={{
-          position: "absolute",
-          top: "-60px",
-          right: "-100px",
-          width: "800px",
-          height: "700px",
-          borderRadius: "50%",
           background:
             "radial-gradient(ellipse at center, rgba(232, 101, 10, 0.12) 0%, transparent 60%)",
+          borderRadius: "50%",
+          height: "700px",
+          position: "absolute",
+          right: "-100px",
+          top: "-60px",
+          width: "800px",
         }}
       />
 
       {/* Screenshot: large, positioned to bleed off the right edge */}
       <div
         style={{
-          position: "absolute",
-          top: "40px",
-          right: "-400px",
-          bottom: "40px",
-          width: "820px",
-          display: "flex",
-          borderRadius: "12px",
-          overflow: "hidden",
           border: "1px solid rgba(255, 255, 255, 0.10)",
+          borderRadius: "12px",
+          bottom: "40px",
+          display: "flex",
+          overflow: "hidden",
+          position: "absolute",
+          right: "-400px",
+          top: "40px",
+          width: "820px",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -152,23 +142,23 @@ function OgCard({
         style={{
           display: "flex",
           flexDirection: "column",
+          flexShrink: 0,
           justifyContent: "space-between",
           padding: "48px 0 48px 56px",
-          width: "720px",
-          flexShrink: 0,
           position: "relative",
+          width: "720px",
         }}
       >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <div style={{ alignItems: "center", display: "flex", gap: "14px" }}>
           <GearIcon />
           <span
             style={{
+              color: "rgba(255, 255, 255, 0.50)",
               fontSize: 15,
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: "rgba(255, 255, 255, 0.50)",
             }}
           >
             {SITE_NAME}
@@ -184,16 +174,16 @@ function OgCard({
           }}
         >
           {category && (
-            <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ alignItems: "center", display: "flex" }}>
               <div
                 style={{
+                  borderLeft: "3px solid #e8650a",
+                  color: "#e8650a",
                   fontSize: 12,
                   fontWeight: 700,
-                  textTransform: "uppercase",
                   letterSpacing: "0.12em",
-                  color: "#e8650a",
-                  borderLeft: "3px solid #e8650a",
                   paddingLeft: "10px",
+                  textTransform: "uppercase",
                 }}
               >
                 {category}
@@ -203,12 +193,12 @@ function OgCard({
 
           <h1
             style={{
+              color: "#f5f5f5",
               fontSize: titleSize,
               fontWeight: 700,
-              lineHeight: 1.1,
               letterSpacing: "-0.035em",
+              lineHeight: 1.1,
               margin: 0,
-              color: "#f5f5f5",
             }}
           >
             {displayTitle}
@@ -216,10 +206,10 @@ function OgCard({
 
           <p
             style={{
+              color: "rgba(255, 255, 255, 0.50)",
               fontSize: 18,
               fontWeight: 400,
               lineHeight: 1.55,
-              color: "rgba(255, 255, 255, 0.50)",
               margin: 0,
             }}
           >
@@ -230,28 +220,28 @@ function OgCard({
         {/* Footer */}
         <div
           style={{
-            display: "flex",
             alignItems: "center",
+            display: "flex",
             gap: "16px",
           }}
         >
           <span
             style={{
+              color: "rgba(255, 255, 255, 0.28)",
               fontSize: 14,
               fontWeight: 400,
               letterSpacing: "0.03em",
-              color: "rgba(255, 255, 255, 0.28)",
             }}
           >
             loooooop.vercel.app
           </span>
           <div
             style={{
-              width: 48,
-              height: 4,
-              borderRadius: 2,
               background:
                 "linear-gradient(90deg, #e8650a, rgba(232, 101, 10, 0.25))",
+              borderRadius: 2,
+              height: 4,
+              width: 48,
             }}
           />
         </div>

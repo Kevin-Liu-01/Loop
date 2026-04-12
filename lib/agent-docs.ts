@@ -16,15 +16,20 @@ async function fileExists(filePath: string): Promise<boolean> {
 export async function parseAgentDocs(skillDir: string): Promise<AgentDocs> {
   const docs: AgentDocs = {};
 
-  const entries = Object.entries(AGENT_DOC_FILENAMES) as [AgentDocKey, string][];
+  const entries = Object.entries(AGENT_DOC_FILENAMES) as [
+    AgentDocKey,
+    string,
+  ][];
 
   const results = await Promise.all(
     entries.map(async ([key, filename]) => {
       const filePath = path.join(skillDir, filename);
-      if (!(await fileExists(filePath))) return null;
+      if (!(await fileExists(filePath))) {
+        return null;
+      }
 
-      const content = await fs.readFile(filePath, "utf8");
-      return { key, content: content.trim() };
+      const content = await fs.readFile(filePath, "utf-8");
+      return { content: content.trim(), key };
     })
   );
 
@@ -38,12 +43,18 @@ export async function parseAgentDocs(skillDir: string): Promise<AgentDocs> {
 }
 
 export function hasAgentDocs(docs: AgentDocs | undefined): boolean {
-  if (!docs) return false;
-  return Object.values(docs).some((value) => typeof value === "string" && value.length > 0);
+  if (!docs) {
+    return false;
+  }
+  return Object.values(docs).some(
+    (value) => typeof value === "string" && value.length > 0
+  );
 }
 
 export function getAgentDocKeys(docs: AgentDocs | undefined): AgentDocKey[] {
-  if (!docs) return [];
+  if (!docs) {
+    return [];
+  }
   return (Object.keys(docs) as AgentDocKey[]).filter(
     (key) => typeof docs[key] === "string" && (docs[key] as string).length > 0
   );
@@ -51,15 +62,20 @@ export function getAgentDocKeys(docs: AgentDocs | undefined): AgentDocKey[] {
 
 export function getAgentDocLabel(key: AgentDocKey): string {
   switch (key) {
-    case "codex":
+    case "codex": {
       return "Codex";
-    case "cursor":
+    }
+    case "cursor": {
       return "Cursor";
-    case "claude":
+    }
+    case "claude": {
       return "Claude";
-    case "agents":
+    }
+    case "agents": {
       return "AGENTS.md";
-    default:
+    }
+    default: {
       return key;
+    }
   }
 }

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import type { CategorySlug, UsageEventKind } from "@/lib/types";
 
-type UsageBeaconProps = {
+interface UsageBeaconProps {
   kind: Exclude<UsageEventKind, "api_call">;
   label: string;
   path?: string;
@@ -12,33 +12,36 @@ type UsageBeaconProps = {
   categorySlug?: CategorySlug;
   details?: string;
   dedupeKey?: string;
-};
+}
 
-type ClientUsagePayload = {
+interface ClientUsagePayload {
   kind: Exclude<UsageEventKind, "api_call">;
   label: string;
   path?: string;
   skillSlug?: string;
   categorySlug?: CategorySlug;
   details?: string;
-};
+}
 
 export function postUsageEvent(payload: ClientUsagePayload) {
   const body = JSON.stringify(payload);
 
-  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.sendBeacon === "function"
+  ) {
     const blob = new Blob([body], { type: "application/json" });
     navigator.sendBeacon("/api/usage", blob);
     return;
   }
 
   void fetch("/api/usage", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json"
-    },
     body,
-    keepalive: true
+    headers: {
+      "content-type": "application/json",
+    },
+    keepalive: true,
+    method: "POST",
   }).catch(() => {});
 }
 

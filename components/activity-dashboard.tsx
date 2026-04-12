@@ -2,37 +2,41 @@
 
 import { useState } from "react";
 
-import { ChevronDownIcon } from "@/components/frontier-icons";
 import { ActivityFeedImports } from "@/components/activity-feed-imports";
 import { ActivityUsageToolbar } from "@/components/activity-usage-toolbar";
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
-import { ImportSourcesList } from "@/components/import-sources-list";
 import { AreaChart } from "@/components/charts/area-chart";
 import { StatTile } from "@/components/charts/stat-tile";
-import { useUsageComparisonMode } from "@/components/usage-comparison-context";
+import { ChevronDownIcon } from "@/components/frontier-icons";
+import { ImportSourcesList } from "@/components/import-sources-list";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { Panel } from "@/components/ui/panel";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tip } from "@/components/ui/tip";
+import { useUsageComparisonMode } from "@/components/usage-comparison-context";
 import { cn } from "@/lib/cn";
 import type { RecentImportItem } from "@/lib/db/recent-imports";
-import { peakVolumeHour, sumBucketTotals } from "@/lib/usage-sidebar-insights";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
-import type { UsageDeltaSet, UsageOverview, UsageTotalsSnapshot } from "@/lib/usage";
+import type {
+  UsageDeltaSet,
+  UsageOverview,
+  UsageTotalsSnapshot,
+} from "@/lib/usage";
 import { usageStatTileValues } from "@/lib/usage";
+import { peakVolumeHour, sumBucketTotals } from "@/lib/usage-sidebar-insights";
 
 type ActivitySidebarTab = "automations" | "imports";
 
-type ActivityDashboardProps = {
+interface ActivityDashboardProps {
   overview: UsageOverview;
   automations: AutomationSummary[];
   recentImports?: RecentImportItem[];
   skillMap?: Map<string, SkillRecord>;
   variant?: "default" | "sidebar";
-};
+}
 
-type ActivitySidebarViewProps = {
+interface ActivitySidebarViewProps {
   overview: UsageOverview;
   tileValues: UsageTotalsSnapshot;
   deltas: UsageDeltaSet;
@@ -47,11 +51,13 @@ type ActivitySidebarViewProps = {
   hasEvents: boolean;
   activeAutomations: AutomationSummary[];
   onEditAutomation?: (automation: AutomationSummary) => void;
-};
+}
 
 function truncateRouteLabel(route: string, max = 36): string {
   const t = route.trim();
-  if (t.length <= max) return t;
+  if (t.length <= max) {
+    return t;
+  }
   return `${t.slice(0, max - 1)}…`;
 }
 
@@ -59,10 +65,15 @@ const IMPORTS_COLLAPSED_LIMIT = 6;
 
 function CollapsibleImports({ imports }: { imports: RecentImportItem[] }) {
   const [expanded, setExpanded] = useState(false);
-  if (imports.length === 0) return null;
+  if (imports.length === 0) {
+    return null;
+  }
 
   const canCollapse = imports.length > IMPORTS_COLLAPSED_LIMIT;
-  const visible = canCollapse && !expanded ? imports.slice(0, IMPORTS_COLLAPSED_LIMIT) : imports;
+  const visible =
+    canCollapse && !expanded
+      ? imports.slice(0, IMPORTS_COLLAPSED_LIMIT)
+      : imports;
   const hiddenCount = imports.length - IMPORTS_COLLAPSED_LIMIT;
 
   return (
@@ -71,19 +82,26 @@ function CollapsibleImports({ imports }: { imports: RecentImportItem[] }) {
         <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-ink-faint">
           Recently imported
         </span>
-        <span className="text-[0.625rem] tabular-nums text-ink-faint/60">{imports.length}</span>
+        <span className="text-[0.625rem] tabular-nums text-ink-faint/60">
+          {imports.length}
+        </span>
       </div>
       <ActivityFeedImports imports={visible} />
       {canCollapse && (
         <button
           className={cn(
-            "mt-2 flex w-full items-center justify-center gap-1 py-1.5 text-[0.6875rem] font-medium text-ink-faint transition-colors hover:text-ink-soft",
+            "mt-2 flex w-full items-center justify-center gap-1 py-1.5 text-[0.6875rem] font-medium text-ink-faint transition-colors hover:text-ink-soft"
           )}
           onClick={() => setExpanded((prev) => !prev)}
           type="button"
         >
           {expanded ? "Show less" : `Show ${hiddenCount} more`}
-          <ChevronDownIcon className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")} />
+          <ChevronDownIcon
+            className={cn(
+              "h-3 w-3 transition-transform",
+              expanded && "rotate-180"
+            )}
+          />
         </button>
       )}
     </div>
@@ -114,7 +132,9 @@ function SidebarSegment({
     >
       {label}
       {typeof count === "number" && count > 0 && (
-        <span className="tabular-nums text-[0.6rem] text-ink-faint">{count}</span>
+        <span className="tabular-nums text-[0.6rem] text-ink-faint">
+          {count}
+        </span>
       )}
     </button>
   );
@@ -136,7 +156,8 @@ function ActivitySidebarView({
   activeAutomations,
   onEditAutomation,
 }: ActivitySidebarViewProps) {
-  const [sidebarTab, setSidebarTab] = useState<ActivitySidebarTab>("automations");
+  const [sidebarTab, setSidebarTab] =
+    useState<ActivitySidebarTab>("automations");
   const peak = peakVolumeHour(overview.timeSeries);
   const totalRolling = sumBucketTotals(overview.timeSeries);
   const topRoutes = overview.routeUsage.slice(0, 4);
@@ -171,9 +192,16 @@ function ActivitySidebarView({
 
           {sidebarTab === "automations" ? (
             automations.length > 0 ? (
-              <AutomationCalendar automations={automations} onEditAutomation={onEditAutomation} skillMap={skillMap} variant="sidebar" />
+              <AutomationCalendar
+                automations={automations}
+                onEditAutomation={onEditAutomation}
+                skillMap={skillMap}
+                variant="sidebar"
+              />
             ) : (
-              <EmptyCard className="border-dashed py-4 text-sm">No automations configured yet.</EmptyCard>
+              <EmptyCard className="border-dashed py-4 text-sm">
+                No automations configured yet.
+              </EmptyCard>
             )
           ) : (
             <div className="grid gap-4">
@@ -194,13 +222,16 @@ function ActivitySidebarView({
             {peak ? (
               <p className="m-0 text-xs leading-relaxed text-ink-muted">
                 Peak <span className="tabular-nums">{peak.label}</span> ·{" "}
-                <span className="tabular-nums">{peak.count}</span> events · hover the chart for hourly
-                detail
+                <span className="tabular-nums">{peak.count}</span> events ·
+                hover the chart for hourly detail
               </p>
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-[0.62rem] text-ink-faint">
-            <Tip content="All events: views, interactions, and API calls" side="top">
+            <Tip
+              content="All events: views, interactions, and API calls"
+              side="top"
+            >
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-0.5 w-3 rounded-full bg-accent" />
                 total
@@ -210,7 +241,10 @@ function ActivitySidebarView({
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block h-0.5 w-3 rounded-full"
-                  style={{ background: "var(--color-ink-faint)", opacity: 0.55 }}
+                  style={{
+                    background: "var(--color-ink-faint)",
+                    opacity: 0.55,
+                  }}
                 />
                 api
               </span>
@@ -285,7 +319,9 @@ function ActivitySidebarView({
                 <>
                   <p className="m-0 text-lg font-semibold tabular-nums tracking-[-0.03em] text-ink">
                     {peak.label}
-                    <span className="ml-1 text-sm font-normal text-ink-muted">· {peak.count}</span>
+                    <span className="ml-1 text-sm font-normal text-ink-muted">
+                      · {peak.count}
+                    </span>
                   </p>
                   <p className="m-0 text-[0.625rem] leading-snug text-ink-faint">
                     Busiest single hour
@@ -305,7 +341,9 @@ function ActivitySidebarView({
               <StatusDot size="xs" tone="fresh" />
               <span className="font-medium text-ink">Healthy</span>
               <span className="text-ink-faint">·</span>
-              <span className="text-ink-soft">{overview.totalsRolling24h.apiCalls} calls</span>
+              <span className="text-ink-soft">
+                {overview.totalsRolling24h.apiCalls} calls
+              </span>
             </span>
           </div>
 
@@ -360,13 +398,21 @@ function ActivitySidebarView({
 
 function linkedSkillProps(
   automation: AutomationSummary,
-  skillMap?: Map<string, SkillRecord>,
+  skillMap?: Map<string, SkillRecord>
 ): { skillSlug?: string; skillIconUrl?: string | null; skillName?: string } {
   const slug = automation.matchedSkillSlugs[0];
-  if (!slug || !skillMap) return {};
+  if (!slug || !skillMap) {
+    return {};
+  }
   const skill = skillMap.get(slug);
-  if (!skill) return {};
-  return { skillSlug: skill.slug, skillIconUrl: skill.iconUrl, skillName: skill.title };
+  if (!skill) {
+    return {};
+  }
+  return {
+    skillIconUrl: skill.iconUrl,
+    skillName: skill.title,
+    skillSlug: skill.slug,
+  };
 }
 
 function hasRollingUsage(overview: UsageOverview): boolean {
@@ -383,7 +429,11 @@ export function shouldShowActivityDashboard(
   automations: AutomationSummary[],
   recentImports?: RecentImportItem[]
 ): boolean {
-  return hasRollingUsage(overview) || automations.length > 0 || (recentImports?.length ?? 0) > 0;
+  return (
+    hasRollingUsage(overview) ||
+    automations.length > 0 ||
+    (recentImports?.length ?? 0) > 0
+  );
 }
 
 export function ActivityDashboard({
@@ -405,14 +455,16 @@ export function ActivityDashboard({
 
   const areaData = overview.timeSeries.map((b) => ({
     label: b.label,
-    value: b.total,
     secondary: b.api,
+    value: b.total,
   }));
 
   const activeAutomations = automations.filter((a) => a.status === "ACTIVE");
   const hasEvents = hasRollingUsage(overview);
 
-  if (!shouldShowActivityDashboard(overview, automations)) return null;
+  if (!shouldShowActivityDashboard(overview, automations)) {
+    return null;
+  }
 
   const isSidebar = variant === "sidebar";
 
@@ -500,7 +552,10 @@ export function ActivityDashboard({
               </h3>
             </div>
             <div className="flex items-center gap-3 text-[0.65rem] text-ink-faint">
-              <Tip content="All events: views, interactions, and API calls" side="top">
+              <Tip
+                content="All events: views, interactions, and API calls"
+                side="top"
+              >
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-0.5 w-3 rounded-full bg-accent" />
                   total
@@ -510,7 +565,10 @@ export function ActivityDashboard({
                 <span className="flex items-center gap-1.5">
                   <span
                     className="inline-block h-0.5 w-3 rounded-full"
-                    style={{ background: "var(--color-ink-faint)", opacity: 0.5 }}
+                    style={{
+                      background: "var(--color-ink-faint)",
+                      opacity: 0.5,
+                    }}
                   />
                   api
                 </span>
@@ -520,7 +578,9 @@ export function ActivityDashboard({
           {hasEvents ? (
             <AreaChart id="home-events" data={areaData} />
           ) : (
-            <EmptyCard className="border-line/80 bg-transparent">No events in the last 24 hours.</EmptyCard>
+            <EmptyCard className="border-line/80 bg-transparent">
+              No events in the last 24 hours.
+            </EmptyCard>
           )}
         </article>
 
@@ -532,7 +592,14 @@ export function ActivityDashboard({
                   Automations
                 </h3>
               </div>
-              <Tip content={activeAutomations.length > 0 ? `${activeAutomations.length} automation${activeAutomations.length !== 1 ? "s" : ""} running on schedule` : "No automations currently enabled"} side="left">
+              <Tip
+                content={
+                  activeAutomations.length > 0
+                    ? `${activeAutomations.length} automation${activeAutomations.length !== 1 ? "s" : ""} running on schedule`
+                    : "No automations currently enabled"
+                }
+                side="left"
+              >
                 <span className="flex items-center gap-1.5 text-xs text-ink-faint">
                   <StatusDot
                     tone={activeAutomations.length > 0 ? "fresh" : "idle"}
@@ -542,7 +609,11 @@ export function ActivityDashboard({
                 </span>
               </Tip>
             </div>
-            <AutomationCalendar automations={automations} onEditAutomation={setEditTarget} skillMap={skillMap} />
+            <AutomationCalendar
+              automations={automations}
+              onEditAutomation={setEditTarget}
+              skillMap={skillMap}
+            />
           </article>
         ) : null}
       </div>

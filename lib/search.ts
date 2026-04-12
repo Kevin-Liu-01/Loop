@@ -1,15 +1,15 @@
-import { searchSkills as dbSearchSkills } from "@/lib/db/search";
 import { listBriefs } from "@/lib/db/briefs";
 import { listCategories } from "@/lib/db/categories";
 import { listMcps } from "@/lib/db/mcps";
+import { searchSkills as dbSearchSkills } from "@/lib/db/search";
 import { buildMcpVersionHref } from "@/lib/format";
 import type { SearchHit, SkillOrigin } from "@/lib/types";
 
-export type SearchOptions = {
+export interface SearchOptions {
   kind?: "skill" | "category" | "brief" | "mcp";
   category?: string;
   limit?: number;
-};
+}
 
 export async function search(
   query: string,
@@ -21,62 +21,77 @@ export async function search(
   if (!options.kind || options.kind === "skill") {
     return dbSearchSkills(query, {
       category: options.category,
-      limit
+      limit,
     });
   }
 
   if (options.kind === "category") {
     const categories = await listCategories();
     return categories
-      .filter((c) => !normalizedQuery || c.title.toLowerCase().includes(normalizedQuery) || c.slug.includes(normalizedQuery))
+      .filter(
+        (c) =>
+          !normalizedQuery ||
+          c.title.toLowerCase().includes(normalizedQuery) ||
+          c.slug.includes(normalizedQuery)
+      )
       .slice(0, limit)
       .map((c, i) => ({
-        id: `category:${c.slug}`,
-        kind: "category" as const,
-        title: c.title,
+        category: c.slug,
         description: c.description,
         href: `/categories/${c.slug}`,
-        category: c.slug,
+        id: `category:${c.slug}`,
+        kind: "category" as const,
+        score: limit - i,
         tags: c.keywords,
+        title: c.title,
         updatedAt: new Date().toISOString(),
-        score: limit - i
       }));
   }
 
   if (options.kind === "brief") {
     const briefs = await listBriefs();
     return briefs
-      .filter((b) => !normalizedQuery || b.title.toLowerCase().includes(normalizedQuery) || b.summary.toLowerCase().includes(normalizedQuery))
+      .filter(
+        (b) =>
+          !normalizedQuery ||
+          b.title.toLowerCase().includes(normalizedQuery) ||
+          b.summary.toLowerCase().includes(normalizedQuery)
+      )
       .slice(0, limit)
       .map((b, i) => ({
-        id: `brief:${b.slug}`,
-        kind: "brief" as const,
-        title: b.title,
+        category: b.slug,
         description: b.summary,
         href: `/categories/${b.slug}`,
-        category: b.slug,
+        id: `brief:${b.slug}`,
+        kind: "brief" as const,
+        score: limit - i,
         tags: b.items.flatMap((item) => item.tags),
+        title: b.title,
         updatedAt: b.generatedAt,
-        score: limit - i
       }));
   }
 
   if (options.kind === "mcp") {
     const mcps = await listMcps();
     return mcps
-      .filter((m) => !normalizedQuery || m.name.toLowerCase().includes(normalizedQuery) || m.description.toLowerCase().includes(normalizedQuery))
+      .filter(
+        (m) =>
+          !normalizedQuery ||
+          m.name.toLowerCase().includes(normalizedQuery) ||
+          m.description.toLowerCase().includes(normalizedQuery)
+      )
       .slice(0, limit)
       .map((m, i) => ({
-        id: `mcp:${m.id}:${m.version}`,
-        kind: "mcp" as const,
-        title: m.name,
         description: m.description,
         href: buildMcpVersionHref(m.name, m.version),
-        tags: m.tags,
-        updatedAt: m.updatedAt,
+        id: `mcp:${m.id}:${m.version}`,
+        kind: "mcp" as const,
         origin: "system" as SkillOrigin | "system",
+        score: limit - i,
+        tags: m.tags,
+        title: m.name,
+        updatedAt: m.updatedAt,
         versionLabel: m.versionLabel,
-        score: limit - i
       }));
   }
 

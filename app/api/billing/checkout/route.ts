@@ -7,16 +7,19 @@ import { withApiUsage } from "@/lib/usage-server";
 export async function GET(request: Request) {
   return withApiUsage(
     {
-      route: "/api/billing/checkout",
+      label: "Create checkout session",
       method: "GET",
-      label: "Create checkout session"
+      route: "/api/billing/checkout",
     },
     async () => {
       let session;
       try {
         session = await requireAuth();
       } catch (error) {
-        return authErrorResponse(error) ?? Response.json({ error: "Unauthorized" }, { status: 401 });
+        return (
+          authErrorResponse(error) ??
+          Response.json({ error: "Unauthorized" }, { status: 401 })
+        );
       }
 
       const { searchParams, origin } = new URL(request.url);
@@ -24,14 +27,22 @@ export async function GET(request: Request) {
       const allowedPlans = new Set(getPaidPlans().map((entry) => entry.slug));
 
       if (!plan || !allowedPlans.has(plan)) {
-        return NextResponse.redirect(new URL("/?billing=unknown-plan", request.url));
+        return NextResponse.redirect(
+          new URL("/?billing=unknown-plan", request.url)
+        );
       }
 
       try {
-        const checkoutUrl = await createCheckoutSession(plan, origin, session.userId);
+        const checkoutUrl = await createCheckoutSession(
+          plan,
+          origin,
+          session.userId
+        );
         return NextResponse.redirect(checkoutUrl);
       } catch {
-        return NextResponse.redirect(new URL("/?billing=unconfigured", request.url));
+        return NextResponse.redirect(
+          new URL("/?billing=unconfigured", request.url)
+        );
       }
     }
   );

@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
-import { DownloadIcon, LinkIcon, TriangleAlertIcon } from "@/components/frontier-icons";
-import { Panel, PanelHead } from "@/components/ui/panel";
-import { ProgressBar } from "@/components/ui/progress-bar";
+import {
+  DownloadIcon,
+  LinkIcon,
+  TriangleAlertIcon,
+} from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 import { FieldGroup, FieldLabel, textFieldBase } from "@/components/ui/field";
+import { Panel, PanelHead } from "@/components/ui/panel";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/cn";
 
 export function ImportSkillForm({
@@ -27,14 +31,12 @@ export function ImportSkillForm({
 
     startTransition(async () => {
       const importResponse = await fetch("/api/imports", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind: "skill", url }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
-      const importPayload = (await importResponse
-        .json()
-        .catch(() => ({}))) as {
+      const importPayload = (await importResponse.json().catch(() => ({}))) as {
         error?: string;
         skill?: { slug?: string };
       };
@@ -47,14 +49,12 @@ export function ImportSkillForm({
       setMessage("Imported. Creating an editable copy.");
 
       const trackResponse = await fetch("/api/skills/track", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug: importPayload.skill.slug }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
-      const trackPayload = (await trackResponse
-        .json()
-        .catch(() => ({}))) as {
+      const trackPayload = (await trackResponse.json().catch(() => ({}))) as {
         error?: string;
         href?: string;
       };
@@ -62,7 +62,7 @@ export function ImportSkillForm({
       if (!trackResponse.ok || !trackPayload.href) {
         setError(
           trackPayload.error ??
-            "Imported, but could not create the editable copy.",
+            "Imported, but could not create the editable copy."
         );
         return;
       }
@@ -86,9 +86,7 @@ export function ImportSkillForm({
           </div>
         </PanelHead>
 
-        <p className="text-sm text-ink-soft">
-          Paste a markdown or README URL.
-        </p>
+        <p className="text-sm text-ink-soft">Paste a markdown or README URL.</p>
 
         <FieldGroup>
           <FieldLabel>Skill URL</FieldLabel>
@@ -113,9 +111,7 @@ export function ImportSkillForm({
             <strong className="text-sm font-semibold text-ink">
               What happens next
             </strong>
-            <p className="m-0 text-sm text-ink-soft">
-              Import. Edit. Refresh.
-            </p>
+            <p className="m-0 text-sm text-ink-soft">Import. Edit. Refresh.</p>
           </div>
         </div>
 
@@ -134,7 +130,9 @@ export function ImportSkillForm({
             </p>
           </div>
         )}
-        {!isPending && message ? <p className="m-0 text-sm text-ink-soft">{message}</p> : null}
+        {!isPending && message ? (
+          <p className="m-0 text-sm text-ink-soft">{message}</p>
+        ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Button disabled={isPending || !url.trim()} type="submit">

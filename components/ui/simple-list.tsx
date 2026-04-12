@@ -1,10 +1,10 @@
 import { cn } from "@/lib/cn";
 
-type SimpleListProps = {
+interface SimpleListProps {
   tight?: boolean;
   className?: string;
   children: React.ReactNode;
-};
+}
 
 export function SimpleList({ tight, className, children }: SimpleListProps) {
   return (
@@ -20,12 +20,18 @@ type SimpleListItemProps = {
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLElement>;
 
-export function SimpleListItem({ link, className, children, ...rest }: SimpleListItemProps) {
+export function SimpleListItem({
+  link,
+  className,
+  children,
+  ...rest
+}: SimpleListItemProps) {
   return (
     <article
       className={cn(
         "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 border-t border-line bg-transparent py-4 first:border-t-0 first:pt-0",
-        link && "transition-[border-color,transform,background] duration-150 hover:bg-transparent",
+        link &&
+          "transition-[border-color,transform,background] duration-150 hover:bg-transparent",
         className
       )}
       {...rest}
@@ -35,7 +41,13 @@ export function SimpleListItem({ link, className, children, ...rest }: SimpleLis
   );
 }
 
-export function SimpleListIcon({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SimpleListIcon({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div
       className={cn(
@@ -48,21 +60,53 @@ export function SimpleListIcon({ className, children }: { className?: string; ch
   );
 }
 
-export function SimpleListBody({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("grid min-w-0 flex-1 gap-1.5", className)}>{children}</div>;
-}
-
-export function SimpleListRow({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SimpleListBody({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={cn("flex min-w-0 flex-wrap items-start justify-between gap-3", className)}>
+    <div className={cn("grid min-w-0 flex-1 gap-1.5", className)}>
       {children}
     </div>
   );
 }
 
-export function SimpleListMeta({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SimpleListRow({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={cn("flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink-soft", className)}>
+    <div
+      className={cn(
+        "flex min-w-0 flex-wrap items-start justify-between gap-3",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function SimpleListMeta({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink-soft",
+        className
+      )}
+    >
       {children}
     </div>
   );

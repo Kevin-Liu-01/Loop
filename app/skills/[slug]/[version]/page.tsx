@@ -10,28 +10,39 @@ import { getBrief, parseVersionSegment } from "@/lib/format";
 import { hasUserPurchasedSkill } from "@/lib/purchases";
 import { getLoopSnapshot } from "@/lib/refresh";
 import { buildSkillMetadata } from "@/lib/seo";
-import { canSessionEditSkill, canViewPrivateSkill } from "@/lib/skill-authoring";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
+import {
+  canSessionEditSkill,
+  canViewPrivateSkill,
+} from "@/lib/skill-authoring";
 import { listLoopRuns, listUsageEvents } from "@/lib/system-state";
 import { buildSkillUsageSummary } from "@/lib/usage";
 
-type VersionedSkillPageProps = {
+interface VersionedSkillPageProps {
   params: Promise<{
     slug: string;
     version: string;
   }>;
-};
+}
 
-export async function generateMetadata({ params }: VersionedSkillPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: VersionedSkillPageProps): Promise<Metadata> {
   const { slug, version } = await params;
   const versionNumber = parseVersionSegment(version);
-  if (!versionNumber) return {};
+  if (!versionNumber) {
+    return {};
+  }
   const skill = await getSkillRecordBySlug(slug, versionNumber);
-  if (!skill) return {};
+  if (!skill) {
+    return {};
+  }
   return buildSkillMetadata(skill);
 }
 
-export default async function VersionedSkillPage({ params }: VersionedSkillPageProps) {
+export default async function VersionedSkillPage({
+  params,
+}: VersionedSkillPageProps) {
   const { slug, version } = await params;
   const versionNumber = parseVersionSegment(version);
 
@@ -39,11 +50,21 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const [session, snapshot, skill, previousSkill, loopRuns, usageEvents, timeZone] = await Promise.all([
+  const [
+    session,
+    snapshot,
+    skill,
+    previousSkill,
+    loopRuns,
+    usageEvents,
+    timeZone,
+  ] = await Promise.all([
     getSessionUser(),
     getLoopSnapshot(),
     getSkillRecordBySlug(slug, versionNumber),
-    versionNumber > 1 ? getSkillRecordBySlug(slug, versionNumber - 1) : Promise.resolve(null),
+    versionNumber > 1
+      ? getSkillRecordBySlug(slug, versionNumber - 1)
+      : Promise.resolve(null),
     listLoopRuns(),
     listUsageEvents(),
     getUsageTimeZoneFromCookie(),
@@ -53,7 +74,9 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
     notFound();
   }
 
-  const sessionAuthor = session ? await findSkillAuthorForSession(session) : null;
+  const sessionAuthor = session
+    ? await findSkillAuthorForSession(session)
+    : null;
 
   if (!canViewPrivateSkill(skill, session, sessionAuthor)) {
     notFound();
@@ -61,13 +84,17 @@ export default async function VersionedSkillPage({ params }: VersionedSkillPageP
 
   const upstreams = await listSkillUpstreams(skill.slug);
 
-  const purchased = session?.userId ? await hasUserPurchasedSkill(session.userId, slug) : false;
+  const purchased = session?.userId
+    ? await hasUserPurchasedSkill(session.userId, slug)
+    : false;
   const canEdit = canSessionEditSkill(skill, session, sessionAuthor);
 
   const brief = getBrief(snapshot.dailyBriefs, skill.category);
   const latestRun =
     loopRuns.find(
-      (run) => run.slug === skill.slug && run.origin === (skill.origin === "remote" ? "remote" : "user")
+      (run) =>
+        run.slug === skill.slug &&
+        run.origin === (skill.origin === "remote" ? "remote" : "user")
     ) ?? null;
   const usage = buildSkillUsageSummary(skill.slug, usageEvents, loopRuns);
 

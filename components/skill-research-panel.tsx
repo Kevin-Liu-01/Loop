@@ -5,15 +5,19 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { formatTagLabel } from "@/lib/tag-utils";
 import type { SkillRecord } from "@/lib/types";
 
-type SkillResearchPanelProps = {
+interface SkillResearchPanelProps {
   skill: SkillRecord;
-};
+}
 
 export function SkillResearchPanel({ skill }: SkillResearchPanelProps) {
   const profile = skill.researchProfile;
   const trackedSources = skill.sources ?? [];
 
-  if (!profile && trackedSources.length === 0 && (skill.upstreams?.length ?? 0) === 0) {
+  if (
+    !profile &&
+    trackedSources.length === 0 &&
+    (skill.upstreams?.length ?? 0) === 0
+  ) {
     return null;
   }
 
@@ -44,18 +48,22 @@ export function SkillResearchPanel({ skill }: SkillResearchPanelProps) {
 
           <div className="flex flex-wrap gap-2">
             <Badge color="blue">{trackedSources.length} sources</Badge>
-            {Array.from(modeCounts.entries()).map(([mode, count]) => (
+            {[...modeCounts.entries()].map(([mode, count]) => (
               <Badge color="teal" key={mode}>
                 {count} {formatTagLabel(mode)}
               </Badge>
             ))}
-            {Array.from(trustCounts.entries()).map(([trust, count]) => (
+            {[...trustCounts.entries()].map(([trust, count]) => (
               <Badge color="amber" key={trust}>
                 {count} {formatTagLabel(trust)}
               </Badge>
             ))}
-            {skill.featuredRank ? <Badge color="purple">Rank {skill.featuredRank}</Badge> : null}
-            {skill.qualityScore ? <Badge color="green">Quality {skill.qualityScore}</Badge> : null}
+            {skill.featuredRank ? (
+              <Badge color="purple">Rank {skill.featuredRank}</Badge>
+            ) : null}
+            {skill.qualityScore ? (
+              <Badge color="green">Quality {skill.qualityScore}</Badge>
+            ) : null}
           </div>
 
           {profile?.featuredReason ? (
@@ -83,7 +91,9 @@ export function SkillResearchPanel({ skill }: SkillResearchPanelProps) {
                     <strong className="text-sm text-ink">
                       {index + 1}. {step.title}
                     </strong>
-                    <p className="m-0 text-sm leading-relaxed text-ink-soft">{step.detail}</p>
+                    <p className="m-0 text-sm leading-relaxed text-ink-soft">
+                      {step.detail}
+                    </p>
                   </article>
                 ))}
               </div>
@@ -119,12 +129,20 @@ export function SkillResearchPanel({ skill }: SkillResearchPanelProps) {
                     rel="noreferrer"
                     target="_blank"
                   >
-                    <strong className="text-sm text-ink">{upstream.title}</strong>
-                    <p className="m-0 text-sm leading-relaxed text-ink-soft">{upstream.description}</p>
+                    <strong className="text-sm text-ink">
+                      {upstream.title}
+                    </strong>
+                    <p className="m-0 text-sm leading-relaxed text-ink-soft">
+                      {upstream.description}
+                    </p>
                     {upstream.tags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {upstream.tags.slice(0, 4).map((tag) => (
-                          <Badge color="neutral" key={`${upstream.slug}-${tag}`} size="sm">
+                          <Badge
+                            color="neutral"
+                            key={`${upstream.slug}-${tag}`}
+                            size="sm"
+                          >
                             {formatTagLabel(tag)}
                           </Badge>
                         ))}

@@ -1,7 +1,7 @@
 process.env.TZ = "UTC";
 
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   filterEventsInClosedRange,
@@ -14,7 +14,10 @@ import {
 
 test("startOfDayInTimeZone UTC", () => {
   const d = new Date(Date.UTC(2024, 5, 11, 15, 30, 0));
-  assert.equal(startOfDayInTimeZone(d, "UTC").toISOString(), "2024-06-11T00:00:00.000Z");
+  assert.equal(
+    startOfDayInTimeZone(d, "UTC").toISOString(),
+    "2024-06-11T00:00:00.000Z"
+  );
 });
 
 test("yesterdaySameClockWindow mirrors span from midnight today in zone", () => {
@@ -39,7 +42,7 @@ test("prior24hWindowBeforeRolling", () => {
 });
 
 test("filterEventsInClosedRange is inclusive on both ends", () => {
-  const events: Array<{ at: string; k: number }> = [
+  const events: { at: string; k: number }[] = [
     { at: "2024-06-10T00:00:00.000Z", k: 1 },
     { at: "2024-06-10T15:00:00.000Z", k: 2 },
   ];
@@ -51,5 +54,8 @@ test("filterEventsInClosedRange is inclusive on both ends", () => {
 
 test("usageEventsSinceIsoForOverview starts at yesterday midnight in zone", () => {
   const now = new Date(Date.UTC(2024, 5, 11, 8, 0, 0));
-  assert.equal(usageEventsSinceIsoForOverview(now, "UTC"), "2024-06-10T00:00:00.000Z");
+  assert.equal(
+    usageEventsSinceIsoForOverview(now, "UTC"),
+    "2024-06-10T00:00:00.000Z"
+  );
 });

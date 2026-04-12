@@ -4,7 +4,7 @@ import path from "node:path";
 const nextDir = path.join(process.cwd(), ".next");
 
 try {
-  await fs.rm(nextDir, { recursive: true, force: true });
+  await fs.rm(nextDir, { force: true, recursive: true });
   console.log("cleaned .next");
 } catch (error) {
   console.warn("unable to clean .next", error);

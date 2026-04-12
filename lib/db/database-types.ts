@@ -1,6 +1,12 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       conversations: {
@@ -981,4 +987,4 @@ export type Database = {
     Functions: Record<string, never>;
     Enums: Record<string, never>;
   };
-};
+}

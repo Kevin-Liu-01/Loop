@@ -1,7 +1,8 @@
 import { cn } from "@/lib/cn";
+
 import { Sparkline } from "./sparkline";
 
-type StatTileProps = {
+interface StatTileProps {
   label: string;
   value: string | number;
   sparkData?: number[];
@@ -10,7 +11,7 @@ type StatTileProps = {
   size?: "default" | "compact";
   /** Secondary line under the value (e.g. rolling comparison) */
   delta?: string | null;
-};
+}
 
 export function StatTile({
   label,
@@ -57,7 +58,9 @@ export function StatTile({
         <span
           className={cn(
             "relative z-10 text-ink-faint",
-            compact ? "text-[0.58rem] leading-tight" : "text-[0.65rem] leading-snug"
+            compact
+              ? "text-[0.58rem] leading-tight"
+              : "text-[0.65rem] leading-snug"
           )}
         >
           {delta}

@@ -5,10 +5,9 @@
  *   source <(sed 's/^/export /' .env.local) && npx tsx lib/db/seed-platform-overhaul.ts
  */
 
+import { findSkillFiles, parseSkill, CODEX_ROOT } from "@/lib/content";
 import { getServerSupabase } from "@/lib/db/client";
-import { listSkills, updateSkill } from "@/lib/db/skills";
 import { listMcps, upsertMcp } from "@/lib/db/mcps";
-import { SKILL_SOURCE_CONFIGS } from "@/lib/db/seed-data/skill-sources";
 import {
   DIRECT_TRANSPLANT_SKILLS,
   FEATURED_REASON_OVERRIDES,
@@ -19,23 +18,31 @@ import {
   SKILL_UPSTREAM_LINKS,
   TRUSTED_SKILL_SOURCE_SEEDS,
 } from "@/lib/db/seed-data/catalog-overhaul";
-import { findSkillFiles, parseSkill, CODEX_ROOT } from "@/lib/content";
+import { SKILL_SOURCE_CONFIGS } from "@/lib/db/seed-data/skill-sources";
+import { listSkills, updateSkill } from "@/lib/db/skills";
 import { slugify } from "@/lib/markdown";
-import { getMcpIcon, getSkillIcon } from "@/lib/skill-icons";
 import {
   buildResearchProfile,
   buildQualityScore as buildSharedQualityScore,
 } from "@/lib/research-profile";
+import { getMcpIcon, getSkillIcon } from "@/lib/skill-icons";
 import type {
   ImportedMcpDocument,
   SkillRecord,
   SkillUpstreamRecord,
 } from "@/lib/types";
 
-function upsertManagedSection(body: string, title: string, sectionBody: string): string {
+function upsertManagedSection(
+  body: string,
+  title: string,
+  sectionBody: string
+): string {
   const trimmed = body.trim();
-  const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const sectionPattern = new RegExp(`\\n## ${escapedTitle}\\n[\\s\\S]*?(?=\\n## |$)`, "m");
+  const escapedTitle = title.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sectionPattern = new RegExp(
+    `\\n## ${escapedTitle}\\n[\\s\\S]*?(?=\\n## |$)`,
+    "m"
+  );
   const replacement = `\n## ${title}\n${sectionBody.trim()}\n`;
 
   if (sectionPattern.test(trimmed)) {
@@ -54,7 +61,10 @@ function buildFeaturedRank(slug: string): number {
   return FEATURED_SKILL_ORDER.length - index;
 }
 
-function buildQualityScoreForSeed(skill: SkillRecord, upstreams: SkillUpstreamRecord[]): number {
+function buildQualityScoreForSeed(
+  skill: SkillRecord,
+  upstreams: SkillUpstreamRecord[]
+): number {
   return buildSharedQualityScore(
     skill.sources ?? [],
     upstreams,
@@ -62,7 +72,10 @@ function buildQualityScoreForSeed(skill: SkillRecord, upstreams: SkillUpstreamRe
   );
 }
 
-function buildResearchProfileForSeed(skill: SkillRecord, upstreams: SkillUpstreamRecord[]) {
+function buildResearchProfileForSeed(
+  skill: SkillRecord,
+  upstreams: SkillUpstreamRecord[]
+) {
   const profile = buildResearchProfile(skill, upstreams);
   const override = FEATURED_REASON_OVERRIDES[skill.slug];
   if (override) {
@@ -79,7 +92,9 @@ function buildDiscoverySection(skill: SkillRecord): string {
 
   return sources
     .map((source) => {
-      const metadata = [source.kind, source.mode, source.trust].filter(Boolean).join(" · ");
+      const metadata = [source.kind, source.mode, source.trust]
+        .filter(Boolean)
+        .join(" · ");
       return `- [${source.label}](${source.url}) – ${metadata}. ${source.rationale ?? "Tracked for material changes."}`;
     })
     .join("\n");
@@ -91,12 +106,17 @@ function buildUpstreamSection(upstreams: SkillUpstreamRecord[]): string {
   }
 
   return upstreams
-    .map((upstream) => `- [${upstream.title}](${upstream.upstreamUrl}) – ${upstream.description}`)
+    .map(
+      (upstream) =>
+        `- [${upstream.title}](${upstream.upstreamUrl}) – ${upstream.description}`
+    )
     .join("\n");
 }
 
 function buildSandboxSection(skill: SkillRecord): string {
-  const prompt = skill.automation?.prompt ?? `Refresh ${skill.title} from tracked sources and update the operating guidance.`;
+  const prompt =
+    skill.automation?.prompt ??
+    `Refresh ${skill.title} from tracked sources and update the operating guidance.`;
 
   return [
     "- Attach this skill before asking the agent to design, implement, audit, or refresh work in this domain.",
@@ -105,10 +125,26 @@ function buildSandboxSection(skill: SkillRecord): string {
   ].join("\n");
 }
 
-function buildBody(baseBody: string, skill: SkillRecord, upstreams: SkillUpstreamRecord[]): string {
-  const withDiscovery = upsertManagedSection(baseBody, "Discovery engine", buildDiscoverySection(skill));
-  const withUpstreams = upsertManagedSection(withDiscovery, "Trusted upstreams", buildUpstreamSection(upstreams));
-  return upsertManagedSection(withUpstreams, "Sandbox workflow", buildSandboxSection(skill));
+function buildBody(
+  baseBody: string,
+  skill: SkillRecord,
+  upstreams: SkillUpstreamRecord[]
+): string {
+  const withDiscovery = upsertManagedSection(
+    baseBody,
+    "Discovery engine",
+    buildDiscoverySection(skill)
+  );
+  const withUpstreams = upsertManagedSection(
+    withDiscovery,
+    "Trusted upstreams",
+    buildUpstreamSection(upstreams)
+  );
+  return upsertManagedSection(
+    withUpstreams,
+    "Sandbox workflow",
+    buildSandboxSection(skill)
+  );
 }
 
 function buildPackageName(mcp: ImportedMcpDocument): string | undefined {
@@ -128,7 +164,9 @@ function buildPackageName(mcp: ImportedMcpDocument): string | undefined {
   return undefined;
 }
 
-function buildInstallStrategy(mcp: ImportedMcpDocument): ImportedMcpDocument["installStrategy"] {
+function buildInstallStrategy(
+  mcp: ImportedMcpDocument
+): ImportedMcpDocument["installStrategy"] {
   if (mcp.transport === "http") {
     return "remote-http";
   }
@@ -148,7 +186,9 @@ function buildInstallStrategy(mcp: ImportedMcpDocument): ImportedMcpDocument["in
   return "manual";
 }
 
-function buildAuthType(mcp: ImportedMcpDocument): ImportedMcpDocument["authType"] {
+function buildAuthType(
+  mcp: ImportedMcpDocument
+): ImportedMcpDocument["authType"] {
   if (mcp.envKeys.length === 0) {
     return "none";
   }
@@ -162,47 +202,57 @@ function buildAuthType(mcp: ImportedMcpDocument): ImportedMcpDocument["authType"
 
 function defaultSandboxSupport(mcp: ImportedMcpDocument): boolean {
   return (
-    (mcp.transport === "stdio" && typeof mcp.command === "string" && mcp.command.length > 0) ||
-    (mcp.transport === "http" && typeof mcp.url === "string" && mcp.url.length > 0)
+    (mcp.transport === "stdio" &&
+      typeof mcp.command === "string" &&
+      mcp.command.length > 0) ||
+    (mcp.transport === "http" &&
+      typeof mcp.url === "string" &&
+      mcp.url.length > 0)
   );
 }
 
 function normalizeMcp(mcp: ImportedMcpDocument): ImportedMcpDocument {
   const override = MCP_NORMALIZATION_OVERRIDES[mcp.name];
-  const installStrategy = override?.installStrategy ?? buildInstallStrategy(mcp);
+  const installStrategy =
+    override?.installStrategy ?? buildInstallStrategy(mcp);
   const authType = override?.authType ?? buildAuthType(mcp);
-  const sandboxSupported = override?.sandboxSupported ?? defaultSandboxSupport(mcp);
+  const sandboxSupported =
+    override?.sandboxSupported ?? defaultSandboxSupport(mcp);
   const verificationStatus =
-    override?.verificationStatus ??
-    (sandboxSupported ? "partial" : "broken");
+    override?.verificationStatus ?? (sandboxSupported ? "partial" : "broken");
   const icon = getMcpIcon(mcp.name, mcp.homepageUrl);
 
   return {
     ...mcp,
-    slug: mcp.slug ?? slugify(mcp.name),
-    docsUrl: override?.docsUrl ?? mcp.docsUrl ?? mcp.homepageUrl ?? mcp.manifestUrl,
+    authType,
+    docsUrl:
+      override?.docsUrl ?? mcp.docsUrl ?? mcp.homepageUrl ?? mcp.manifestUrl,
+    iconUrl: icon.kind === "url" ? icon.url : mcp.iconUrl,
+    installStrategy,
+    normalizedConfig: {
+      args: mcp.args,
+      command: mcp.command ?? null,
+      envKeys: mcp.envKeys,
+      headers: mcp.headers ?? {},
+      transport: mcp.transport,
+      url: mcp.url ?? null,
+    },
     packageName: mcp.packageName ?? buildPackageName(mcp),
     packageRegistry:
       mcp.packageRegistry ??
-      (mcp.manifestUrl.includes("npmjs.com") ? "npm" : mcp.manifestUrl.includes("github.com") ? "github" : undefined),
-    installStrategy,
-    authType,
-    verificationStatus,
-    sandboxSupported,
+      (mcp.manifestUrl.includes("npmjs.com")
+        ? "npm"
+        : mcp.manifestUrl.includes("github.com")
+          ? "github"
+          : undefined),
     sandboxNotes:
       override?.sandboxNotes ??
       (sandboxSupported
         ? "Runnable in the Loop sandbox once any required credentials are present."
         : "Not exposed in the sandbox because the current config is not verified as runnable."),
-    normalizedConfig: {
-      transport: mcp.transport,
-      url: mcp.url ?? null,
-      command: mcp.command ?? null,
-      args: mcp.args,
-      envKeys: mcp.envKeys,
-      headers: mcp.headers ?? {},
-    },
-    iconUrl: icon.kind === "url" ? icon.url : mcp.iconUrl,
+    sandboxSupported,
+    slug: mcp.slug ?? slugify(mcp.name),
+    verificationStatus,
   };
 }
 
@@ -212,23 +262,27 @@ async function loadLocalUpstreams(): Promise<Map<string, SkillUpstreamRecord>> {
   const resolved = new Map<string, SkillUpstreamRecord>();
 
   for (const seed of LOCAL_UPSTREAM_SKILLS) {
-    const match = parsed.find((skill) => skill.path.endsWith(seed.matchPathSuffix));
+    const match = parsed.find((skill) =>
+      skill.path.endsWith(seed.matchPathSuffix)
+    );
     if (!match) {
-      console.warn(`[catalog-overhaul] Missing local upstream for ${seed.slug} (${seed.matchPathSuffix})`);
+      console.warn(
+        `[catalog-overhaul] Missing local upstream for ${seed.slug} (${seed.matchPathSuffix})`
+      );
       continue;
     }
 
     resolved.set(seed.slug, {
-      slug: seed.slug,
-      title: seed.title,
-      description: seed.description || match.description,
-      category: seed.category,
-      upstreamUrl: seed.upstreamUrl,
-      upstreamKind: seed.upstreamKind,
-      sourceId: seed.sourceId,
-      logoUrl: match.iconUrl,
-      tags: Array.from(new Set([...seed.tags, ...match.tags])).slice(0, 8),
       body: match.body,
+      category: seed.category,
+      description: seed.description || match.description,
+      logoUrl: match.iconUrl,
+      slug: seed.slug,
+      sourceId: seed.sourceId,
+      tags: [...new Set([...seed.tags, ...match.tags])].slice(0, 8),
+      title: seed.title,
+      upstreamKind: seed.upstreamKind,
+      upstreamUrl: seed.upstreamUrl,
     });
   }
 
@@ -240,40 +294,38 @@ async function seedTrustedSourcesAndUpstreams(
 ): Promise<void> {
   const db = getServerSupabase();
 
-  const { error: sourceError } = await db
-    .from("trusted_skill_sources")
-    .upsert(
-      TRUSTED_SKILL_SOURCE_SEEDS.map((source) => ({
-        id: source.id,
-        slug: source.slug,
-        name: source.name,
-        trust_tier: source.trustTier,
-        source_type: source.sourceType,
-        homepage_url: source.homepageUrl,
-        repo_url: source.repoUrl ?? null,
-        logo_url: source.logoUrl ?? null,
-        discovery_mode: source.discoveryMode,
-        search_queries: source.searchQueries,
-        tags: source.tags,
-      })) as never,
-      { onConflict: "id" }
-    );
+  const { error: sourceError } = await db.from("trusted_skill_sources").upsert(
+    TRUSTED_SKILL_SOURCE_SEEDS.map((source) => ({
+      discovery_mode: source.discoveryMode,
+      homepage_url: source.homepageUrl,
+      id: source.id,
+      logo_url: source.logoUrl ?? null,
+      name: source.name,
+      repo_url: source.repoUrl ?? null,
+      search_queries: source.searchQueries,
+      slug: source.slug,
+      source_type: source.sourceType,
+      tags: source.tags,
+      trust_tier: source.trustTier,
+    })) as never,
+    { onConflict: "id" }
+  );
 
   if (sourceError) {
     throw sourceError;
   }
 
-  const upstreamRows = Array.from(upstreams.values()).map((upstream) => ({
-    slug: upstream.slug,
-    title: upstream.title,
-    description: upstream.description,
-    category: upstream.category,
-    source_id: upstream.sourceId,
-    upstream_url: upstream.upstreamUrl,
-    upstream_kind: upstream.upstreamKind,
+  const upstreamRows = [...upstreams.values()].map((upstream) => ({
     body: upstream.body,
+    category: upstream.category,
+    description: upstream.description,
     logo_url: upstream.logoUrl ?? null,
+    slug: upstream.slug,
+    source_id: upstream.sourceId,
     tags: upstream.tags,
+    title: upstream.title,
+    upstream_kind: upstream.upstreamKind,
+    upstream_url: upstream.upstreamUrl,
   }));
 
   if (upstreamRows.length > 0) {
@@ -286,14 +338,18 @@ async function seedTrustedSourcesAndUpstreams(
     }
   }
 
-  const linkRows = Object.entries(SKILL_UPSTREAM_LINKS).flatMap(([skillSlug, upstreamSlugs]) =>
-    upstreamSlugs
-      .filter((upstreamSlug) => upstreams.has(upstreamSlug))
-      .map((upstreamSlug) => ({
-        skill_slug: skillSlug,
-        upstream_slug: upstreamSlug,
-        relation: DIRECT_TRANSPLANT_SKILLS[skillSlug] === upstreamSlug ? "derived-from" : "secondary",
-      }))
+  const linkRows = Object.entries(SKILL_UPSTREAM_LINKS).flatMap(
+    ([skillSlug, upstreamSlugs]) =>
+      upstreamSlugs
+        .filter((upstreamSlug) => upstreams.has(upstreamSlug))
+        .map((upstreamSlug) => ({
+          relation:
+            DIRECT_TRANSPLANT_SKILLS[skillSlug] === upstreamSlug
+              ? "derived-from"
+              : "secondary",
+          skill_slug: skillSlug,
+          upstream_slug: upstreamSlug,
+        }))
   );
 
   if (linkRows.length > 0) {
@@ -309,7 +365,9 @@ async function seedTrustedSourcesAndUpstreams(
 
 async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
   const skills = await listSkills();
-  const sourceConfigBySlug = new Map(SKILL_SOURCE_CONFIGS.map((config) => [config.slug, config]));
+  const sourceConfigBySlug = new Map(
+    SKILL_SOURCE_CONFIGS.map((config) => [config.slug, config])
+  );
 
   let updated = 0;
 
@@ -324,31 +382,40 @@ async function refreshSkills(upstreams: Map<string, SkillUpstreamRecord>) {
     const skillIcon = getSkillIcon(existing.slug);
     const draft: SkillRecord = {
       ...existing,
-      description: transplant?.description ?? existing.description,
-      body: buildBody(transplant?.body ?? existing.body, {
-        ...existing,
-        description: transplant?.description ?? existing.description,
-        sources: sourceConfig?.sources ?? existing.sources,
-        automation: sourceConfig?.automation ?? existing.automation,
-      }, upstreamEntries),
-      tags: Array.from(new Set([...existing.tags, ...upstreamEntries.flatMap((entry) => entry.tags)])),
-      sources: sourceConfig?.sources ?? existing.sources,
       automation: sourceConfig?.automation ?? existing.automation,
+      body: buildBody(
+        transplant?.body ?? existing.body,
+        {
+          ...existing,
+          automation: sourceConfig?.automation ?? existing.automation,
+          description: transplant?.description ?? existing.description,
+          sources: sourceConfig?.sources ?? existing.sources,
+        },
+        upstreamEntries
+      ),
+      description: transplant?.description ?? existing.description,
+      sources: sourceConfig?.sources ?? existing.sources,
+      tags: [
+        ...new Set([
+          ...existing.tags,
+          ...upstreamEntries.flatMap((entry) => entry.tags),
+        ]),
+      ],
     };
     const researchProfile = buildResearchProfileForSeed(draft, upstreamEntries);
 
     await updateSkill(existing.slug, {
-      title: draft.title,
-      description: draft.description,
-      body: draft.body,
-      tags: draft.tags,
-      sources: draft.sources,
       automation: draft.automation,
+      body: draft.body,
+      description: draft.description,
       featured: buildFeaturedRank(existing.slug) > 0 || existing.featured,
       featuredRank: buildFeaturedRank(existing.slug),
+      iconUrl: skillIcon.kind === "url" ? skillIcon.url : existing.iconUrl,
       qualityScore: buildQualityScoreForSeed(draft, upstreamEntries),
       researchProfile,
-      iconUrl: skillIcon.kind === "url" ? skillIcon.url : existing.iconUrl,
+      sources: draft.sources,
+      tags: draft.tags,
+      title: draft.title,
     });
 
     updated++;
@@ -375,7 +442,9 @@ async function main() {
   console.log("=== Loop Catalog Overhaul ===");
   const upstreams = await loadLocalUpstreams();
 
-  console.log(`\n[1/3] Seeding trusted sources and upstream links (${upstreams.size} upstreams)...`);
+  console.log(
+    `\n[1/3] Seeding trusted sources and upstream links (${upstreams.size} upstreams)...`
+  );
   await seedTrustedSourcesAndUpstreams(upstreams);
 
   console.log("\n[2/3] Refreshing skills...");

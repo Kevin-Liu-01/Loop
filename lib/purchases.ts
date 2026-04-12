@@ -1,22 +1,26 @@
 import { getServerSupabase } from "@/lib/db/client";
 import type { SkillPurchaseRecord } from "@/lib/types";
 
-export async function recordPurchase(record: SkillPurchaseRecord): Promise<void> {
+export async function recordPurchase(
+  record: SkillPurchaseRecord
+): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("purchases").upsert(
     {
-      id: record.id,
+      amount: record.amount,
       clerk_user_id: record.clerkUserId,
+      currency: record.currency,
+      id: record.id,
+      purchased_at: record.purchasedAt,
       skill_slug: record.skillSlug,
       stripe_payment_intent_id: record.stripePaymentIntentId,
-      amount: record.amount,
-      currency: record.currency,
-      purchased_at: record.purchasedAt
     } as never,
     { onConflict: "id" }
   );
 
-  if (error) throw new Error(`recordPurchase failed: ${error.message}`);
+  if (error) {
+    throw new Error(`recordPurchase failed: ${error.message}`);
+  }
 }
 
 export async function hasUserPurchasedSkill(
@@ -32,7 +36,9 @@ export async function hasUserPurchasedSkill(
     .limit(1)
     .maybeSingle();
 
-  if (error) throw new Error(`hasUserPurchasedSkill failed: ${error.message}`);
+  if (error) {
+    throw new Error(`hasUserPurchasedSkill failed: ${error.message}`);
+  }
   return data !== null;
 }
 
@@ -46,15 +52,17 @@ export async function getUserPurchases(
     .eq("clerk_user_id", clerkUserId)
     .order("purchased_at", { ascending: false });
 
-  if (error) throw new Error(`getUserPurchases failed: ${error.message}`);
+  if (error) {
+    throw new Error(`getUserPurchases failed: ${error.message}`);
+  }
 
   return (data ?? []).map((row) => ({
-    id: row.id,
+    amount: row.amount,
     clerkUserId: row.clerk_user_id,
+    currency: row.currency,
+    id: row.id,
+    purchasedAt: row.purchased_at,
     skillSlug: row.skill_slug,
     stripePaymentIntentId: row.stripe_payment_intent_id,
-    amount: row.amount,
-    currency: row.currency,
-    purchasedAt: row.purchased_at
   }));
 }

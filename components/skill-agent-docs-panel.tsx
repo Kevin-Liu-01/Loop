@@ -1,10 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-import Image from "next/image";
 
 import { CopyButton } from "@/components/copy-button";
 import { CodeIcon, FileCodeIcon } from "@/components/frontier-icons";
@@ -13,17 +12,17 @@ import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
 
-type SkillAgentDocsPanelProps = {
+interface SkillAgentDocsPanelProps {
   agentDocs?: AgentDocs;
   skillSlug: string;
   skillHref: string;
-};
+}
 
 const KNOWN_DOC_LABELS: Record<string, string> = {
   agents: "AGENTS.md",
-  cursor: "CURSOR.md",
   claude: "CLAUDE.md",
   codex: "CODEX.md",
+  cursor: "CURSOR.md",
 };
 
 function docLabel(key: string): string {
@@ -47,14 +46,20 @@ function PlatformDocTabIcon({ docKey }: { docKey: string }) {
   return <CodeIcon className="h-3 w-3" />;
 }
 
-export function SkillAgentDocsPanel({ agentDocs, skillSlug, skillHref }: SkillAgentDocsPanelProps) {
+export function SkillAgentDocsPanel({
+  agentDocs,
+  skillSlug,
+  skillHref,
+}: SkillAgentDocsPanelProps) {
   const entries = Object.entries(agentDocs ?? {}).filter(
     ([, content]) => typeof content === "string" && content.trim().length > 0
   ) as [string, string][];
 
   const [activeTab, setActiveTab] = useState<string>(entries[0]?.[0] ?? "");
 
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return null;
+  }
 
   const activeContent = agentDocs?.[activeTab] ?? "";
 

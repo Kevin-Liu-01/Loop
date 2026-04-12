@@ -21,9 +21,13 @@ import { LinkButton } from "@/components/ui/link-button";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { cn } from "@/lib/cn";
 import { countMonthlyRuns, formatNextRun } from "@/lib/schedule";
-import type { AutomationSummary, SkillOrigin, SourceDefinition } from "@/lib/types";
+import type {
+  AutomationSummary,
+  SkillOrigin,
+  SourceDefinition,
+} from "@/lib/types";
 
-type SkillAutomationPanelProps = {
+interface SkillAutomationPanelProps {
   slug: string;
   skillTitle: string;
   origin: SkillOrigin;
@@ -31,7 +35,7 @@ type SkillAutomationPanelProps = {
   automation?: AutomationSummary;
   canManage?: boolean;
   sources?: SourceDefinition[];
-};
+}
 
 function MetricCard({
   icon,
@@ -50,7 +54,7 @@ function MetricCard({
         "grid gap-1 rounded-none border px-3.5 py-3",
         accent
           ? "border-accent/20 bg-accent/8"
-          : "border-line bg-paper-3/90 dark:bg-paper-2/40",
+          : "border-line bg-paper-3/90 dark:bg-paper-2/40"
       )}
     >
       <span className="flex items-center gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
@@ -68,7 +72,8 @@ function PromptPreview({ prompt }: { prompt?: string }) {
   if (!prompt?.trim()) {
     return (
       <div className="rounded-none border border-dashed border-line bg-paper-3/70 px-4 py-3 text-sm text-ink-soft dark:bg-paper-2/30">
-        No automation brief yet. Add one so refreshes optimize for the right deltas instead of free-associating into the void.
+        No automation brief yet. Add one so refreshes optimize for the right
+        deltas instead of free-associating into the void.
       </div>
     );
   }
@@ -99,9 +104,20 @@ export function SkillAutomationPanel({
   const isActive = automation?.status === "ACTIVE";
   const now = useMemo(() => new Date(), []);
   const monthlyRuns = automation
-    ? countMonthlyRuns(automation.cadence, now.getFullYear(), now.getMonth(), automation.preferredDay)
+    ? countMonthlyRuns(
+        automation.cadence,
+        now.getFullYear(),
+        now.getMonth(),
+        automation.preferredDay
+      )
     : 0;
-  const nextRun = automation ? formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay) : "On demand";
+  const nextRun = automation
+    ? formatNextRun(
+        automation.cadence,
+        automation.preferredHour ?? 12,
+        automation.preferredDay
+      )
+    : "On demand";
   const scheduleLabel = automation?.schedule?.trim() || "Manual only";
 
   if (!isTracked) {
@@ -122,9 +138,9 @@ export function SkillAutomationPanel({
                   Make this skill self-updating
                 </h3>
                 <p className="m-0 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-                  Tracking creates your editable fork, puts automation controls on the skill page,
-                  and gives you refresh traces, diffs, and schedule management without bouncing
-                  back to settings.
+                  Tracking creates your editable fork, puts automation controls
+                  on the skill page, and gives you refresh traces, diffs, and
+                  schedule management without bouncing back to settings.
                 </p>
               </div>
               <TrackSkillButton
@@ -182,7 +198,9 @@ export function SkillAutomationPanel({
               <PanelHead className="items-start">
                 <div className="grid gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge color={isActive ? "green" : "neutral"}>{isActive ? "Active" : "Paused"}</Badge>
+                    <Badge color={isActive ? "green" : "neutral"}>
+                      {isActive ? "Active" : "Paused"}
+                    </Badge>
                     <Badge color="neutral">{scheduleLabel}</Badge>
                     <Badge color="blue">{sourceCount} sources</Badge>
                   </div>
@@ -198,7 +216,11 @@ export function SkillAutomationPanel({
 
                 <div className="flex flex-wrap gap-2">
                   {canManage ? (
-                    <Button onClick={() => setEditOpen(true)} size="sm" type="button">
+                    <Button
+                      onClick={() => setEditOpen(true)}
+                      size="sm"
+                      type="button"
+                    >
                       <SettingsIcon className="h-3.5 w-3.5" />
                       Edit automation
                     </Button>
@@ -206,7 +228,7 @@ export function SkillAutomationPanel({
                   <Button
                     onClick={() =>
                       document
-                        .getElementById("run-log")
+                        .querySelector("#run-log")
                         ?.scrollIntoView({ behavior: "smooth", block: "start" })
                     }
                     size="sm"
@@ -216,7 +238,11 @@ export function SkillAutomationPanel({
                     <TimelineIcon className="h-3.5 w-3.5" />
                     Open refresh trace
                   </Button>
-                  <LinkButton href="/settings/automations" size="sm" variant="soft">
+                  <LinkButton
+                    href="/settings/automations"
+                    size="sm"
+                    variant="soft"
+                  >
                     <AutomationIcon className="h-3.5 w-3.5" />
                     {canManage ? "Automation desk" : "View automation desk"}
                   </LinkButton>

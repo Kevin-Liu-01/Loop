@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ArrowRightIcon } from "@/components/frontier-icons";
 import {
@@ -13,16 +13,16 @@ import {
   CommandList,
 } from "@/components/ui/shadcn/command";
 
-type PaletteItem = {
+interface PaletteItem {
   label: string;
   href: string;
   section: string;
   hint?: string;
-};
+}
 
-type CommandPaletteProps = {
+interface CommandPaletteProps {
   items: PaletteItem[];
-};
+}
 
 const STORAGE_KEY = "loop.palette.query";
 
@@ -33,7 +33,9 @@ export function CommandPalette({ items }: CommandPaletteProps) {
 
   useEffect(() => {
     const savedQuery = window.localStorage.getItem(STORAGE_KEY);
-    if (savedQuery) setQuery(savedQuery);
+    if (savedQuery) {
+      setQuery(savedQuery);
+    }
   }, []);
 
   useEffect(() => {
@@ -65,8 +67,11 @@ export function CommandPalette({ items }: CommandPaletteProps) {
     const map = new Map<string, PaletteItem[]>();
     for (const item of items) {
       const existing = map.get(item.section);
-      if (existing) existing.push(item);
-      else map.set(item.section, [item]);
+      if (existing) {
+        existing.push(item);
+      } else {
+        map.set(item.section, [item]);
+      }
     }
     return map;
   }, [items]);
@@ -99,7 +104,9 @@ export function CommandPalette({ items }: CommandPaletteProps) {
                 <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
                 <span className="min-w-0 truncate">{item.label}</span>
                 {item.hint ? (
-                  <span className="ml-auto shrink-0 text-xs text-ink-faint">{item.hint}</span>
+                  <span className="ml-auto shrink-0 text-xs text-ink-faint">
+                    {item.hint}
+                  </span>
                 ) : null}
               </CommandItem>
             ))}

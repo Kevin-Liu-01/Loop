@@ -12,7 +12,7 @@ export type ActiveOperationStatus =
   | "done"
   | "error";
 
-export type ActiveOperation = {
+export interface ActiveOperation {
   id: string;
   kind: ActiveOperationKind;
   label: string;
@@ -27,7 +27,7 @@ export type ActiveOperation = {
   trigger: "manual" | "automation";
   latestMessage?: string;
   errorMessage?: string;
-};
+}
 
 export function isTerminalStatus(status: ActiveOperationStatus): boolean {
   return status === "done" || status === "error";
@@ -35,16 +35,25 @@ export function isTerminalStatus(status: ActiveOperationStatus): boolean {
 
 export function computeElapsedLabel(startedAt: number): string {
   const elapsed = Math.max(0, Date.now() - startedAt);
-  if (elapsed < 1000) return "just now";
+  if (elapsed < 1000) {
+    return "just now";
+  }
   const seconds = Math.floor(elapsed / 1000);
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
   const minutes = Math.floor(seconds / 60);
   const remaining = seconds % 60;
   return remaining > 0 ? `${minutes}m ${remaining}s` : `${minutes}m`;
 }
 
-export function computeProgress(completedSteps: number, totalSteps: number): number {
-  if (totalSteps <= 0) return 0;
+export function computeProgress(
+  completedSteps: number,
+  totalSteps: number
+): number {
+  if (totalSteps <= 0) {
+    return 0;
+  }
   return Math.min(100, Math.round((completedSteps / totalSteps) * 100));
 }
 

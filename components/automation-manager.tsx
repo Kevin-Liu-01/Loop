@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
 import { AutomationIcon, TimelineIcon } from "@/components/frontier-icons";
 import { SkillInline } from "@/components/skill-inline";
 import { Badge } from "@/components/ui/badge";
-import { SkillIcon } from "@/components/ui/skill-icon";
 import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
-import { FieldGroup, textFieldBase, textFieldArea } from "@/components/ui/field";
+import {
+  FieldGroup,
+  textFieldBase,
+  textFieldArea,
+} from "@/components/ui/field";
+import { Panel, PanelHead } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import {
   Dialog,
@@ -21,22 +25,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
-import { Panel, PanelHead } from "@/components/ui/panel";
+import { SkillIcon } from "@/components/ui/skill-icon";
 import { StatusDot } from "@/components/ui/status-dot";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
+import {
+  CADENCE_ALL_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
-import { CADENCE_ALL_OPTIONS, STATUS_OPTIONS } from "@/lib/automation-constants";
 import { formatMonthYear } from "@/lib/format";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
-import type { AutomationSummary, SkillRecord, UserSkillCadence } from "@/lib/types";
+import type {
+  AutomationSummary,
+  SkillRecord,
+  UserSkillCadence,
+} from "@/lib/types";
 
-type AutomationManagerProps = {
+interface AutomationManagerProps {
   automations: AutomationSummary[];
   skills: SkillRecord[];
   manageableSkillSlugs: string[];
-};
+}
 
-export function AutomationManager({ automations, skills, manageableSkillSlugs }: AutomationManagerProps) {
+export function AutomationManager({
+  automations,
+  skills,
+  manageableSkillSlugs,
+}: AutomationManagerProps) {
   const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -46,8 +61,14 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
     canManage: boolean;
   } | null>(null);
 
-  const skillMap = useMemo(() => new Map(skills.map((s) => [s.slug, s])), [skills]);
-  const manageableSkillSlugSet = useMemo(() => new Set(manageableSkillSlugs), [manageableSkillSlugs]);
+  const skillMap = useMemo(
+    () => new Map(skills.map((s) => [s.slug, s])),
+    [skills]
+  );
+  const manageableSkillSlugSet = useMemo(
+    () => new Set(manageableSkillSlugs),
+    [manageableSkillSlugs]
+  );
   const manageableSkills = useMemo(
     () => skills.filter((skill) => manageableSkillSlugSet.has(skill.slug)),
     [manageableSkillSlugSet, skills]
@@ -55,7 +76,9 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
 
   const filteredAutomations = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return automations;
+    if (!needle) {
+      return automations;
+    }
 
     return automations.filter((a) =>
       `${a.name} ${a.prompt} ${a.schedule} ${a.matchedSkillSlugs.join(" ")}`
@@ -89,14 +112,23 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
                   : `${automations.length} automation${automations.length !== 1 ? "s" : ""}`}
               </p>
               <p className="m-0 flex items-center gap-1.5 text-xs text-ink-faint">
-                <StatusDot tone={activeCount > 0 ? "fresh" : "idle"} pulse={activeCount > 0} />
+                <StatusDot
+                  tone={activeCount > 0 ? "fresh" : "idle"}
+                  pulse={activeCount > 0}
+                />
                 {activeCount} active
               </p>
             </div>
           </div>
-          <Button disabled={manageableSkills.length === 0} onClick={() => setCreateOpen(true)} size="sm">
+          <Button
+            disabled={manageableSkills.length === 0}
+            onClick={() => setCreateOpen(true)}
+            size="sm"
+          >
             <AutomationIcon className="h-3.5 w-3.5" />
-            {manageableSkills.length === 0 ? "No editable skills" : "New automation"}
+            {manageableSkills.length === 0
+              ? "No editable skills"
+              : "New automation"}
           </Button>
         </div>
 
@@ -113,7 +145,11 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
                   </p>
                 </div>
               </PanelHead>
-              <AutomationCalendar automations={automations} onEditAutomation={handleOpenAutomationModal} skillMap={skillMap} />
+              <AutomationCalendar
+                automations={automations}
+                onEditAutomation={handleOpenAutomationModal}
+                skillMap={skillMap}
+              />
             </Panel>
           </div>
         ) : null}
@@ -148,7 +184,9 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
         ) : automations.length === 0 ? (
           <EmptyCard icon={<AutomationIcon className="h-5 w-5" />}>
             <p className="m-0 text-sm">No automations yet.</p>
-            <p className="m-0 text-xs text-ink-faint">Create one to keep your skills up to date on a schedule.</p>
+            <p className="m-0 text-xs text-ink-faint">
+              Create one to keep your skills up to date on a schedule.
+            </p>
           </EmptyCard>
         ) : (
           <EmptyCard>No automations match this filter.</EmptyCard>
@@ -161,43 +199,54 @@ export function AutomationManager({ automations, skills, manageableSkillSlugs }:
         skills={manageableSkills}
       />
 
-      {selectedAutomation && (() => {
-        const linkedSlug = selectedAutomation.automation.matchedSkillSlugs[0];
-        const linkedSkill = linkedSlug ? skillMap.get(linkedSlug) : undefined;
-        return (
-          <AutomationEditModal
-            automation={selectedAutomation.automation}
-            canManage={selectedAutomation.canManage}
-            initialPreferredHour={selectedAutomation.automation.preferredHour}
-            onClose={() => setSelectedAutomation(null)}
-            open
-            skillCategory={linkedSkill?.category}
-            skillIconUrl={linkedSkill?.iconUrl}
-            skillName={linkedSkill?.title}
-            skillSlug={linkedSkill?.slug}
-            sources={linkedSkill?.sources}
-          />
-        );
-      })()}
+      {selectedAutomation &&
+        (() => {
+          const linkedSlug = selectedAutomation.automation.matchedSkillSlugs[0];
+          const linkedSkill = linkedSlug ? skillMap.get(linkedSlug) : undefined;
+          return (
+            <AutomationEditModal
+              automation={selectedAutomation.automation}
+              canManage={selectedAutomation.canManage}
+              initialPreferredHour={selectedAutomation.automation.preferredHour}
+              onClose={() => setSelectedAutomation(null)}
+              open
+              skillCategory={linkedSkill?.category}
+              skillIconUrl={linkedSkill?.iconUrl}
+              skillName={linkedSkill?.title}
+              skillSlug={linkedSkill?.slug}
+              sources={linkedSkill?.sources}
+            />
+          );
+        })()}
     </section>
   );
 }
 
-type AutomationCardProps = {
+interface AutomationCardProps {
   automation: AutomationSummary;
   canManage: boolean;
   skillMap: Map<string, SkillRecord>;
   onEdit: () => void;
-};
+}
 
-function AutomationCard({ automation, canManage, skillMap, onEdit }: AutomationCardProps) {
+function AutomationCard({
+  automation,
+  canManage,
+  skillMap,
+  onEdit,
+}: AutomationCardProps) {
   const linkedSkill = automation.matchedSkillSlugs[0]
     ? skillMap.get(automation.matchedSkillSlugs[0])
     : null;
 
   const isActive = automation.status === "ACTIVE";
   const now = new Date();
-  const monthRuns = countMonthlyRuns(automation.cadence, now.getFullYear(), now.getMonth(), automation.preferredDay);
+  const monthRuns = countMonthlyRuns(
+    automation.cadence,
+    now.getFullYear(),
+    now.getMonth(),
+    automation.preferredDay
+  );
 
   return (
     <article
@@ -210,7 +259,11 @@ function AutomationCard({ automation, canManage, skillMap, onEdit }: AutomationC
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-line bg-paper-2 text-ink-soft [&>svg]:h-4 [&>svg]:w-4">
         {linkedSkill ? (
-          <SkillIcon iconUrl={linkedSkill.iconUrl} size={24} slug={linkedSkill.slug} />
+          <SkillIcon
+            iconUrl={linkedSkill.iconUrl}
+            size={24}
+            slug={linkedSkill.slug}
+          />
         ) : (
           <TimelineIcon />
         )}
@@ -232,13 +285,26 @@ function AutomationCard({ automation, canManage, skillMap, onEdit }: AutomationC
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
           <span className="flex items-center gap-1.5">
-            <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg
+              className="h-3 w-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
             {automation.schedule}
           </span>
-          <span className="tabular-nums">Next: {formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay)}</span>
+          <span className="tabular-nums">
+            Next:{" "}
+            {formatNextRun(
+              automation.cadence,
+              automation.preferredHour ?? 12,
+              automation.preferredDay
+            )}
+          </span>
           <span className="tabular-nums">{monthRuns} runs/mo</span>
         </div>
 
@@ -263,7 +329,13 @@ function AutomationCard({ automation, canManage, skillMap, onEdit }: AutomationC
         type="button"
         variant="soft"
       >
-        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg
+          className="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+        >
           {canManage ? (
             <>
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -281,16 +353,24 @@ function AutomationCard({ automation, canManage, skillMap, onEdit }: AutomationC
   );
 }
 
-type CreateAutomationModalProps = {
+interface CreateAutomationModalProps {
   open: boolean;
   onClose: () => void;
   skills: SkillRecord[];
-};
+}
 
-function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalProps) {
+function CreateAutomationModal({
+  open,
+  onClose,
+  skills,
+}: CreateAutomationModalProps) {
   const router = useRouter();
-  const [selectedSkillSlug, setSelectedSkillSlug] = useState(skills[0]?.slug ?? "");
-  const [name, setName] = useState(skills[0] ? `${skills[0].title} refresh` : "");
+  const [selectedSkillSlug, setSelectedSkillSlug] = useState(
+    skills[0]?.slug ?? ""
+  );
+  const [name, setName] = useState(
+    skills[0] ? `${skills[0].title} refresh` : ""
+  );
   const [note, setNote] = useState("");
   const [cadence, setCadence] = useState<UserSkillCadence>("daily");
   const [status, setStatus] = useState<"ACTIVE" | "PAUSED">("ACTIVE");
@@ -298,7 +378,10 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const skillMap = useMemo(() => new Map(skills.map((s) => [s.slug, s])), [skills]);
+  const skillMap = useMemo(
+    () => new Map(skills.map((s) => [s.slug, s])),
+    [skills]
+  );
 
   useEffect(() => {
     const nextSkill = skills[0];
@@ -309,7 +392,9 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
   function handleSkillChange(nextSlug: string) {
     setSelectedSkillSlug(nextSlug);
     const skill = skillMap.get(nextSlug);
-    if (skill) setName(`${skill.title} refresh`);
+    if (skill) {
+      setName(`${skill.title} refresh`);
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -319,19 +404,30 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
 
     startTransition(async () => {
       const response = await fetch("/api/automations", {
-        method: "POST",
+        body: JSON.stringify({
+          cadence,
+          name,
+          note,
+          skillSlug: selectedSkillSlug,
+          status,
+        }),
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, skillSlug: selectedSkillSlug, note, cadence, status })
+        method: "POST",
       });
 
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; id?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        id?: string;
+      };
       if (!response.ok) {
         setError(payload.error ?? "Unable to create automation.");
         return;
       }
 
       const skill = skillMap.get(selectedSkillSlug);
-      setMessage(`${payload.id ?? "automation"} created${skill ? ` for ${skill.title}` : ""}.`);
+      setMessage(
+        `${payload.id ?? "automation"} created${skill ? ` for ${skill.title}` : ""}.`
+      );
       setNote("");
       router.refresh();
       setTimeout(() => onClose(), 1200);
@@ -339,7 +435,14 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="lg">
         <DialogHeader>
           <DialogTitle>New automation</DialogTitle>
@@ -349,97 +452,122 @@ function CreateAutomationModal({ open, onClose, skills }: CreateAutomationModalP
               : "You do not currently own any skills with editable automation."}
           </DialogDescription>
         </DialogHeader>
-        <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSubmit}>
+        <form
+          className="flex min-h-0 flex-1 flex-col gap-0"
+          onSubmit={handleSubmit}
+        >
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <div className="grid gap-5">
-          {skills.length === 0 ? (
-            <div className="rounded-xl border border-line bg-paper-2/60 px-4 py-3 text-sm text-ink-soft">
-              Track a skill or open one you own to manage its automation.
-            </div>
-          ) : null}
-          <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Skill</span>
-            <Select
-              disabled={skills.length === 0}
-              onChange={handleSkillChange}
-              options={skills.map((skill) => ({ value: skill.slug, label: skill.title }))}
-              value={selectedSkillSlug}
-            />
-            {(() => {
-              const selected = skillMap.get(selectedSkillSlug);
-              if (!selected) return null;
-              return (
-                <div className="flex items-start gap-3 rounded-none border border-line bg-paper-2/40 px-3 py-2.5">
-                  <SkillInline
-                    category={selected.category}
-                    iconUrl={selected.iconUrl}
-                    slug={selected.slug}
-                    title={selected.title}
-                    versionLabel={selected.versionLabel}
-                  />
-                  {selected.description ? (
-                    <p className="m-0 hidden line-clamp-1 text-xs text-ink-soft sm:block">
-                      {selected.description}
-                    </p>
-                  ) : null}
+            <div className="grid gap-5">
+              {skills.length === 0 ? (
+                <div className="rounded-xl border border-line bg-paper-2/60 px-4 py-3 text-sm text-ink-soft">
+                  Track a skill or open one you own to manage its automation.
                 </div>
-              );
-            })()}
-          </FieldGroup>
+              ) : null}
+              <FieldGroup>
+                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                  Skill
+                </span>
+                <Select
+                  disabled={skills.length === 0}
+                  onChange={handleSkillChange}
+                  options={skills.map((skill) => ({
+                    label: skill.title,
+                    value: skill.slug,
+                  }))}
+                  value={selectedSkillSlug}
+                />
+                {(() => {
+                  const selected = skillMap.get(selectedSkillSlug);
+                  if (!selected) {
+                    return null;
+                  }
+                  return (
+                    <div className="flex items-start gap-3 rounded-none border border-line bg-paper-2/40 px-3 py-2.5">
+                      <SkillInline
+                        category={selected.category}
+                        iconUrl={selected.iconUrl}
+                        slug={selected.slug}
+                        title={selected.title}
+                        versionLabel={selected.versionLabel}
+                      />
+                      {selected.description ? (
+                        <p className="m-0 hidden line-clamp-1 text-xs text-ink-soft sm:block">
+                          {selected.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })()}
+              </FieldGroup>
 
-          <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Name</span>
-            <input
-              className={cn(textFieldBase)}
-              maxLength={80}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Frontend refresh"
-              required
-              value={name}
-            />
-          </FieldGroup>
+              <FieldGroup>
+                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                  Name
+                </span>
+                <input
+                  className={cn(textFieldBase)}
+                  maxLength={80}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Frontend refresh"
+                  required
+                  value={name}
+                />
+              </FieldGroup>
 
-          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-            <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Schedule</span>
-              <Select
-                onChange={(v) => setCadence(v as UserSkillCadence)}
-                options={CADENCE_ALL_OPTIONS}
-                value={cadence}
-              />
-            </FieldGroup>
+              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                <FieldGroup>
+                  <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                    Schedule
+                  </span>
+                  <Select
+                    onChange={(v) => setCadence(v as UserSkillCadence)}
+                    options={CADENCE_ALL_OPTIONS}
+                    value={cadence}
+                  />
+                </FieldGroup>
 
-            <FieldGroup>
-              <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Status</span>
-              <Select
-                onChange={(v) => setStatus(v as "ACTIVE" | "PAUSED")}
-                options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-                value={status}
-              />
-            </FieldGroup>
+                <FieldGroup>
+                  <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                    Status
+                  </span>
+                  <Select
+                    onChange={(v) => setStatus(v as "ACTIVE" | "PAUSED")}
+                    options={STATUS_OPTIONS.map((o) => ({
+                      label: o.label,
+                      value: o.value,
+                    }))}
+                    value={status}
+                  />
+                </FieldGroup>
+              </div>
+
+              <FieldGroup>
+                <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">
+                  Instruction
+                </span>
+                <textarea
+                  className={cn(textFieldBase, textFieldArea)}
+                  maxLength={240}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="What should this run look for?"
+                  value={note}
+                />
+              </FieldGroup>
+
+              {error && <p className="text-sm text-danger">{error}</p>}
+              {message && <p className="text-sm text-success">{message}</p>}
+            </div>
           </div>
-
-          <FieldGroup>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-ink-soft">Instruction</span>
-            <textarea
-              className={cn(textFieldBase, textFieldArea)}
-              maxLength={240}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="What should this run look for?"
-              value={note}
-            />
-          </FieldGroup>
-
-          {error && <p className="text-sm text-danger">{error}</p>}
-          {message && <p className="text-sm text-success">{message}</p>}
-          </div>
-        </div>
 
           <DialogFooter>
             <Button onClick={onClose} type="button" variant="ghost" size="sm">
               Cancel
             </Button>
-            <Button disabled={isPending || !selectedSkillSlug || skills.length === 0} size="sm" type="submit">
+            <Button
+              disabled={isPending || !selectedSkillSlug || skills.length === 0}
+              size="sm"
+              type="submit"
+            >
               {isPending ? "Creating..." : "Create automation"}
             </Button>
           </DialogFooter>

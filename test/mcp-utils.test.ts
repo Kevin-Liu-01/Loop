@@ -6,18 +6,18 @@ import { supportsSandboxMcp } from "@/lib/mcp-utils";
 test("supportsSandboxMcp respects explicit sandbox support flags", () => {
   assert.equal(
     supportsSandboxMcp({
-      transport: "stdio",
       sandboxSupported: false,
+      transport: "stdio",
     }),
-    false,
+    false
   );
 
   assert.equal(
     supportsSandboxMcp({
-      transport: "ws",
       sandboxSupported: true,
+      transport: "ws",
     }),
-    true,
+    true
   );
 });
 
@@ -26,20 +26,20 @@ test("supportsSandboxMcp falls back to executable transports when unset", () => 
     supportsSandboxMcp({
       transport: "stdio",
     }),
-    true,
+    true
   );
 
   assert.equal(
     supportsSandboxMcp({
       transport: "http",
     }),
-    true,
+    true
   );
 
   assert.equal(
     supportsSandboxMcp({
       transport: "sse",
     }),
-    false,
+    false
   );
 });

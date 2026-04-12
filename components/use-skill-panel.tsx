@@ -3,19 +3,33 @@
 import Link from "next/link";
 
 import { CopyButton } from "@/components/copy-button";
-import { ArrowRightIcon, CodeIcon, LinkIcon, PlayIcon, TerminalIcon } from "@/components/frontier-icons";
-import { buttonBase, buttonSizes, buttonVariants } from "@/components/ui/button";
+import {
+  ArrowRightIcon,
+  CodeIcon,
+  LinkIcon,
+  PlayIcon,
+  TerminalIcon,
+} from "@/components/frontier-icons";
+import {
+  buttonBase,
+  buttonSizes,
+  buttonVariants,
+} from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/shadcn/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/shadcn/tooltip";
 import { cn } from "@/lib/cn";
 import type { AgentDocs } from "@/lib/types";
 
-type UseSkillPanelProps = {
+interface UseSkillPanelProps {
   slug: string;
   skillHref: string;
   agentPrompt: string;
   agentDocs?: AgentDocs;
-};
+}
 
 const sectionLabel =
   "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
@@ -34,10 +48,10 @@ function ActionGroup({ children }: { children: React.ReactNode }) {
 }
 
 const PLATFORM_LABELS: Record<string, string> = {
-  cursor: "Cursor",
+  agents: "Agents",
   claude: "Claude Code",
   codex: "Codex",
-  agents: "Agents",
+  cursor: "Cursor",
 };
 
 function buildCurlSnippet(slug: string): string {
@@ -106,7 +120,9 @@ export function UseSkillPanel({
 
         <div className={rowClass}>
           <TerminalIcon className={rowIcon} />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">curl</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+            curl
+          </span>
           <CopyButton
             iconOnly
             label="Copy curl command"

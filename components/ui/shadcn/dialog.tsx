@@ -1,11 +1,14 @@
 "use client";
 
-import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
+import * as React from "react";
 
 import { cn } from "@/lib/cn";
-import { modalDialogContentSurface, modalDialogOverlay } from "@/lib/modal-dialog";
+import {
+  modalDialogContentSurface,
+  modalDialogOverlay,
+} from "@/lib/modal-dialog";
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -38,14 +41,14 @@ const DialogContent = React.forwardRef<
   }
 >(({ className, children, maxWidth = "xl", ...props }, ref) => {
   const maxWidthMap: Record<string, string> = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
     "2xl": "max-w-2xl",
     "4xl": "max-w-4xl",
     "6xl": "max-w-6xl",
     full: "max-w-[calc(100vw-2rem)]",
+    lg: "max-w-lg",
+    md: "max-w-md",
+    sm: "max-w-sm",
+    xl: "max-w-xl",
   };
 
   return (
@@ -76,7 +79,10 @@ const DialogContent = React.forwardRef<
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -88,7 +94,10 @@ function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   );
 }
 
-function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -121,7 +130,10 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-pretty text-sm leading-relaxed text-ink-soft", className)}
+    className={cn(
+      "text-pretty text-sm leading-relaxed text-ink-soft",
+      className
+    )}
     {...props}
   />
 ));

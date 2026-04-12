@@ -7,8 +7,8 @@ import {
   GlobeIcon,
 } from "@/components/frontier-icons";
 import { OperatorGate } from "@/components/operator-gate";
-import { SettingsSectionPage } from "@/components/settings-section-page";
 import { SettingsImportsCustomSourceForm } from "@/components/settings-imports-custom-source-form";
+import { SettingsSectionPage } from "@/components/settings-section-page";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { getUserSubscription } from "@/lib/auth";
@@ -19,14 +19,14 @@ export const dynamic = "force-dynamic";
 
 function formatNextRun(when: Date): string {
   return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "short",
     day: "numeric",
-    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    timeZoneName: "shortGeneric",
+    month: "short",
     timeZone: "UTC",
+    timeZoneName: "shortGeneric",
+    weekday: "long",
+    year: "numeric",
   }).format(when);
 }
 
@@ -51,7 +51,10 @@ export default async function SettingsImportsPage() {
                 </h2>
                 <p className="mt-1 m-0 text-sm text-ink-muted">
                   Platform imports run weekly on{" "}
-                  <span className="font-medium text-ink-soft">Mondays at 09:00 UTC</span>.
+                  <span className="font-medium text-ink-soft">
+                    Mondays at 09:00 UTC
+                  </span>
+                  .
                 </p>
               </div>
             </div>
@@ -74,7 +77,8 @@ export default async function SettingsImportsPage() {
                   Auto-import sources
                 </h2>
                 <p className="mt-1 m-0 max-w-[62ch] text-sm text-ink-muted">
-                  Registries Loop syncs from on the weekly cadence. Paths are relative to the repository root.
+                  Registries Loop syncs from on the weekly cadence. Paths are
+                  relative to the repository root.
                 </p>
               </div>
             </div>
@@ -82,9 +86,14 @@ export default async function SettingsImportsPage() {
 
           <ul className="m-0 grid list-none gap-0 divide-y divide-line rounded-none border border-line p-0">
             {EXTERNAL_SKILL_SOURCES.map((source) => (
-              <li className="grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4" key={source.id}>
+              <li
+                className="grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4"
+                key={source.id}
+              >
                 <div className="min-w-0">
-                  <p className="m-0 font-medium tracking-tight text-ink">{source.name}</p>
+                  <p className="m-0 font-medium tracking-tight text-ink">
+                    {source.name}
+                  </p>
                   <p className="mt-1 m-0 text-xs text-ink-muted">
                     {source.org}/{source.repo}
                     <span className="text-ink-faint"> · </span>
@@ -95,13 +104,28 @@ export default async function SettingsImportsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <span title={source.trustTier === "official" ? "Maintained by the vendor" : "Community-maintained source"}>
-                    <Badge color={source.trustTier === "official" ? "orange" : "neutral"}>
-                      {source.trustTier === "official" ? "Official" : "Community"}
+                  <span
+                    title={
+                      source.trustTier === "official"
+                        ? "Maintained by the vendor"
+                        : "Community-maintained source"
+                    }
+                  >
+                    <Badge
+                      color={
+                        source.trustTier === "official" ? "orange" : "neutral"
+                      }
+                    >
+                      {source.trustTier === "official"
+                        ? "Official"
+                        : "Community"}
                     </Badge>
                   </span>
                   <span title={source.id}>
-                    <Badge color="neutral" className="max-w-[14rem] truncate font-normal">
+                    <Badge
+                      color="neutral"
+                      className="max-w-[14rem] truncate font-normal"
+                    >
                       {source.id}
                     </Badge>
                   </span>
@@ -122,17 +146,26 @@ export default async function SettingsImportsPage() {
                   Import history
                 </h2>
                 <p className="mt-1 m-0 max-w-[62ch] text-sm text-ink-muted">
-                  Recent runs from <code className="font-mono text-[0.8125rem] text-ink-soft">weekly_import_runs</code>{" "}
+                  Recent runs from{" "}
+                  <code className="font-mono text-[0.8125rem] text-ink-soft">
+                    weekly_import_runs
+                  </code>{" "}
                   will appear here.
                 </p>
               </div>
             </div>
           </PanelHead>
           <div className="rounded-none border border-dashed border-line bg-paper-2/40 px-4 py-10 text-center dark:bg-paper-2/20">
-            <AutomationIcon className="mx-auto h-8 w-8 text-ink-faint" aria-hidden />
-            <p className="mt-3 m-0 text-sm font-medium text-ink-soft">No import runs to show yet</p>
+            <AutomationIcon
+              className="mx-auto h-8 w-8 text-ink-faint"
+              aria-hidden
+            />
+            <p className="mt-3 m-0 text-sm font-medium text-ink-soft">
+              No import runs to show yet
+            </p>
             <p className="mt-1 m-0 text-xs text-ink-faint">
-              History will list status, duration, and errors once the dashboard reads from Supabase.
+              History will list status, duration, and errors once the dashboard
+              reads from Supabase.
             </p>
           </div>
         </Panel>
@@ -145,7 +178,8 @@ export default async function SettingsImportsPage() {
                   Add custom import source
                 </h2>
                 <p className="mt-1 m-0 max-w-[62ch] text-sm text-ink-muted">
-                  Register another GitHub repository and skills directory for the weekly import job.
+                  Register another GitHub repository and skills directory for
+                  the weekly import job.
                 </p>
               </div>
             </div>

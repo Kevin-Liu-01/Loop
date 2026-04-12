@@ -1,8 +1,12 @@
 import Link from "next/link";
 
-import { cn } from "@/lib/cn";
-import { buttonBase, buttonVariants, buttonSizes } from "@/components/ui/button";
+import {
+  buttonBase,
+  buttonVariants,
+  buttonSizes,
+} from "@/components/ui/button";
 import type { ButtonVariant, ButtonSize } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 
 type LinkButtonProps = {
   variant?: ButtonVariant;
@@ -22,7 +26,13 @@ export function LinkButton({
 }: LinkButtonProps) {
   return (
     <Link
-      className={cn(buttonBase, buttonVariants[variant], buttonSizes[size], grain && "grain-btn", className)}
+      className={cn(
+        buttonBase,
+        buttonVariants[variant],
+        buttonSizes[size],
+        grain && "grain-btn",
+        className
+      )}
       {...rest}
     />
   );

@@ -1,11 +1,11 @@
-import type { LanguageModel } from "ai";
 import type { Sandbox } from "@vercel/sandbox";
+import type { LanguageModel } from "ai";
 
 import { serializeMcp, serializeSkill } from "@/lib/agents";
 import { buildSandboxTools } from "@/lib/sandbox-tools";
 import type { ImportedMcpDocument, SkillRecord } from "@/lib/types";
 
-export type SandboxAgentConfig = {
+export interface SandboxAgentConfig {
   model: LanguageModel;
   skills: SkillRecord[];
   mcps?: ImportedMcpDocument[];
@@ -13,7 +13,7 @@ export type SandboxAgentConfig = {
   runtime: string;
   systemPrompt?: string;
   attachmentContext?: string;
-};
+}
 
 function buildSandboxInstructions(
   skillContext: string,
@@ -63,6 +63,7 @@ export function buildSandboxAgentConfig(config: SandboxAgentConfig) {
   const mcpContext = (config.mcps ?? []).map(serializeMcp).join("\n\n");
 
   return {
+    maxToolSteps: 20,
     system: buildSandboxInstructions(
       skillContext,
       mcpContext,
@@ -71,6 +72,5 @@ export function buildSandboxAgentConfig(config: SandboxAgentConfig) {
       config.attachmentContext
     ),
     tools: sandboxTools,
-    maxToolSteps: 20
   };
 }

@@ -2,18 +2,19 @@
   "name": "loop",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.30.0",
   "scripts": {
     "predev": "node ./scripts/clean-next.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "ultracite check",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "content:build": "node --import tsx ./lib/refresh.ts --write-local",
     "content:refresh": "node --import tsx ./lib/refresh.ts --write-local --upload-blob",
-    "browser:debug": "bash ./scripts/browser-debug.sh"
+    "browser:debug": "bash ./scripts/browser-debug.sh",
+    "check": "ultracite check",
+    "fix": "ultracite fix"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.0",
@@ -72,10 +73,13 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.183.1",
-    "eslint": "^9.25.1",
-    "eslint-config-next": "^16.2.1",
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
+    "oxlint-tsgolint": "^0.20.0",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
-  }
+    "typescript": "^5.8.3",
+    "ultracite": "7.4.3"
+  },
+  "packageManager": "pnpm@10.30.0"
 }

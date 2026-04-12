@@ -1,26 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ExternalLinkIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { DownloadIcon } from "@/components/frontier-icons";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton, SkeletonLine } from "@/components/ui/skeleton";
-import { useTrackedOperation } from "@/hooks/use-tracked-operation";
 import { Tip } from "@/components/ui/tip";
-import { formatTagLabel } from "@/lib/tag-utils";
+import { useTrackedOperation } from "@/hooks/use-tracked-operation";
 import { cn } from "@/lib/cn";
+import { formatTagLabel } from "@/lib/tag-utils";
 
 function SourceIcon({ src, size }: { src: string; size: number }) {
   const pad = Math.max(2, Math.round(size * 0.14));
   return (
     <span
       className="inline-flex shrink-0 items-center justify-center bg-white ring-1 ring-black/10"
-      style={{ width: size, height: size }}
+      style={{ height: size, width: size }}
     >
       <img
         alt=""
@@ -34,15 +34,15 @@ function SourceIcon({ src, size }: { src: string; size: number }) {
   );
 }
 
-type DiscoveredSkill = {
+interface DiscoveredSkill {
   sourceId: string;
   sourceName: string;
   slug: string;
   path: string;
   skillMdUrl: string;
-};
+}
 
-type SourceResult = {
+interface SourceResult {
   source: {
     id: string;
     name: string;
@@ -58,13 +58,13 @@ type SourceResult = {
   };
   skills: DiscoveredSkill[];
   count: number;
-};
+}
 
-type ApiResponse = {
+interface ApiResponse {
   ok: boolean;
   sources: SourceResult[];
   totalSkills: number;
-};
+}
 
 function SectionHeader() {
   return (
@@ -102,15 +102,15 @@ export function ExternalSkillSources({
         setData(json);
         if (!json.sources || json.sources.length === 0) {
           setError(
-            "No external sources returned. GitHub API rate limit may have been reached.",
+            "No external sources returned. GitHub API rate limit may have been reached."
           );
         }
       })
-      .catch((err) => {
+      .catch((error) => {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to fetch external sources",
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch external sources"
         );
       })
       .finally(() => setLoading(false));
@@ -131,14 +131,14 @@ export function ExternalSkillSources({
 
       startTransition(async () => {
         const res = await fetch("/api/imports", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
           body: JSON.stringify({
             kind: "skill",
-            url: skill.skillMdUrl,
-            sourceName: source?.name,
             sourceIconUrl: source?.iconUrl,
+            sourceName: source?.name,
+            url: skill.skillMdUrl,
           }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
         });
 
         const payload = (await res.json().catch(() => ({}))) as {
@@ -157,9 +157,9 @@ export function ExternalSkillSources({
         op.advance({ message: "Imported, now tracking..." });
 
         const trackRes = await fetch("/api/skills/track", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
           body: JSON.stringify({ slug: payload.skill.slug }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
         });
 
         const trackPayload = (await trackRes.json().catch(() => ({}))) as {
@@ -180,7 +180,7 @@ export function ExternalSkillSources({
         }
       });
     },
-    [onSuccess, router, startTrackedOp],
+    [onSuccess, router, startTrackedOp]
   );
 
   if (loading) {
@@ -191,7 +191,10 @@ export function ExternalSkillSources({
         </PanelHead>
         <div className="grid gap-3">
           {Array.from({ length: 3 }, (_, i) => (
-            <div className="grid gap-3 border border-line bg-paper-3 p-4" key={i}>
+            <div
+              className="grid gap-3 border border-line bg-paper-3 p-4"
+              key={i}
+            >
               <div className="flex items-center gap-3">
                 <Skeleton className="h-7 w-7 shrink-0" />
                 <div className="min-w-0 flex-1 grid gap-1.5">
@@ -333,7 +336,7 @@ export function ExternalSkillSources({
                   <div
                     className={cn(
                       "flex items-center gap-3 border border-line bg-paper-3 px-3 py-2.5",
-                      importingSlug === skill.slug && "opacity-60",
+                      importingSlug === skill.slug && "opacity-60"
                     )}
                     key={`${skill.sourceId}:${skill.path}`}
                   >
@@ -363,7 +366,11 @@ export function ExternalSkillSources({
                     </Tip>
                     {importingSlug === skill.slug && (
                       <div className="col-span-full">
-                        <ProgressBar rounded={false} size="sm" status="active" />
+                        <ProgressBar
+                          rounded={false}
+                          size="sm"
+                          status="active"
+                        />
                       </div>
                     )}
                   </div>

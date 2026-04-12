@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   SendIcon,
@@ -20,15 +14,15 @@ import {
   PlayIcon,
   GlobeIcon,
 } from "@/components/frontier-icons";
-import { SandboxStatusBar } from "@/components/ui/sandbox-status-bar";
+import { SandboxInspector } from "@/components/sandbox-inspector";
 import { SandboxMessage, SavedMessage } from "@/components/sandbox-message";
 import { SandboxSidebar } from "@/components/sandbox-sidebar";
 import { SandboxToolbar } from "@/components/sandbox-toolbar";
 import type { SandboxToolbarConfig } from "@/components/sandbox-toolbar";
-import { SandboxInspector } from "@/components/sandbox-inspector";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
+import { SandboxStatusBar } from "@/components/ui/sandbox-status-bar";
 import { useSandboxInspector } from "@/hooks/use-sandbox-inspector";
+import { cn } from "@/lib/cn";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import type {
   AgentProviderPreset,
@@ -41,13 +35,13 @@ import type {
 
 type SandboxRuntime = "node24" | "python3.13";
 
-type SandboxShellProps = {
+interface SandboxShellProps {
   mcps: ImportedMcpDocument[];
   presets: AgentProviderPreset[];
   skills: SkillRecord[];
   initialSkillSlug?: string;
   initialMcpId?: string;
-};
+}
 
 type SandboxState = "idle" | "creating" | "running" | "stopped" | "error";
 
@@ -58,44 +52,44 @@ const INSPECTOR_KEY = "loop.sandbox.inspector";
 function defaultConfig(
   presets: AgentProviderPreset[],
   initialSkillSlug?: string,
-  initialMcpId?: string,
+  initialMcpId?: string
 ): SandboxToolbarConfig {
   const preset = presets[0];
   return {
-    runtime: "node24",
-    providerId: preset?.id ?? "gateway",
-    model: preset?.defaultModel ?? "openai/gpt-5-mini",
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
-    selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : [],
+    model: preset?.defaultModel ?? "openai/gpt-5-mini",
+    providerId: preset?.id ?? "gateway",
+    runtime: "node24",
     selectedMcpIds: initialMcpId ? [initialMcpId] : [],
+    selectedSkillSlugs: initialSkillSlug ? [initialSkillSlug] : [],
   };
 }
 
-type SandboxAuthError = {
+interface SandboxAuthError {
   code: "SANDBOX_AUTH_FAILED";
   message: string;
   steps: string[];
-};
+}
 
 type SandboxRequestResult =
   | { sandboxId: string }
   | { error: string; authError?: SandboxAuthError };
 
 async function requestSandbox(
-  runtime: SandboxRuntime,
+  runtime: SandboxRuntime
 ): Promise<SandboxRequestResult> {
   try {
     const res = await fetch("/api/sandbox/session", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify({ runtime }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       if (body.code === "SANDBOX_AUTH_FAILED") {
         return {
-          error: body.message,
           authError: body as SandboxAuthError,
+          error: body.message,
         };
       }
       return {
@@ -103,15 +97,15 @@ async function requestSandbox(
       };
     }
     return (await res.json()) as { sandboxId: string };
-  } catch (err) {
+  } catch (error) {
     return {
-      error: err instanceof Error ? err.message : "Sandbox creation failed",
+      error: error instanceof Error ? error.message : "Sandbox creation failed",
     };
   }
 }
 
 function extractTextFromParts(
-  parts: Array<{ type?: string; text?: string }>,
+  parts: { type?: string; text?: string }[]
 ): string {
   return parts
     .filter((p) => p.type === "text")
@@ -119,7 +113,7 @@ function extractTextFromParts(
     .join("");
 }
 
-type MessagePart = {
+interface MessagePart {
   type: string;
   text?: string;
   toolInvocation?: {
@@ -129,15 +123,15 @@ type MessagePart = {
     state: string;
   };
   [key: string]: unknown;
-};
+}
 
-const SUGGESTIONS: Array<{
+const SUGGESTIONS: {
   text: string;
   icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { text: "Fetch the top HN story and analyze it", icon: GlobeIcon },
-  { text: "Create a simple HTTP server and test it", icon: CodeIcon },
-  { text: "Run a benchmark script and chart results", icon: PlayIcon },
+}[] = [
+  { icon: GlobeIcon, text: "Fetch the top HN story and analyze it" },
+  { icon: CodeIcon, text: "Create a simple HTTP server and test it" },
+  { icon: PlayIcon, text: "Run a benchmark script and chart results" },
 ];
 
 export function SandboxShell({
@@ -149,7 +143,7 @@ export function SandboxShell({
 }: SandboxShellProps) {
   // ── Config ──
   const [config, setConfig] = useState<SandboxToolbarConfig>(() =>
-    defaultConfig(presets, initialSkillSlug, initialMcpId),
+    defaultConfig(presets, initialSkillSlug, initialMcpId)
   );
   const hydratedRef = useRef(false);
 
@@ -187,18 +181,18 @@ export function SandboxShell({
   conversationIdRef.current = conversationId;
   const skillBySlug = useMemo(
     () => new Map(skills.map((skill) => [skill.slug, skill])),
-    [skills],
+    [skills]
   );
   const mcpById = useMemo(
     () => new Map(mcps.map((mcp) => [mcp.id, mcp])),
-    [mcps],
+    [mcps]
   );
 
   // ── VM Inspector hook ──
   const inspector = useSandboxInspector(
     sandboxId,
     config.runtime,
-    inspectorOpen && sandboxState === "running",
+    inspectorOpen && sandboxState === "running"
   );
 
   // ── Hydrate persisted config + panel states ──
@@ -209,16 +203,16 @@ export function SandboxShell({
         const saved = JSON.parse(raw) as Partial<SandboxToolbarConfig>;
         setConfig((prev) => ({
           ...prev,
-          runtime: saved.runtime ?? prev.runtime,
-          providerId: saved.providerId ?? prev.providerId,
-          model: saved.model ?? prev.model,
           apiKeyEnvVar: saved.apiKeyEnvVar ?? prev.apiKeyEnvVar,
-          selectedSkillSlugs: initialSkillSlug
-            ? prev.selectedSkillSlugs
-            : saved.selectedSkillSlugs ?? prev.selectedSkillSlugs,
+          model: saved.model ?? prev.model,
+          providerId: saved.providerId ?? prev.providerId,
+          runtime: saved.runtime ?? prev.runtime,
           selectedMcpIds: initialMcpId
             ? prev.selectedMcpIds
-            : saved.selectedMcpIds ?? prev.selectedMcpIds,
+            : (saved.selectedMcpIds ?? prev.selectedMcpIds),
+          selectedSkillSlugs: initialSkillSlug
+            ? prev.selectedSkillSlugs
+            : (saved.selectedSkillSlugs ?? prev.selectedSkillSlugs),
         }));
       }
     } catch {
@@ -226,13 +220,17 @@ export function SandboxShell({
     }
     try {
       const stored = window.localStorage.getItem(SIDEBAR_KEY);
-      if (stored !== null) setSidebarOpen(stored === "true");
+      if (stored !== null) {
+        setSidebarOpen(stored === "true");
+      }
     } catch {
       /* ignore */
     }
     try {
       const stored = window.localStorage.getItem(INSPECTOR_KEY);
-      if (stored !== null) setInspectorOpen(stored === "true");
+      if (stored !== null) {
+        setInspectorOpen(stored === "true");
+      }
     } catch {
       /* ignore */
     }
@@ -248,12 +246,12 @@ export function SandboxShell({
 
   useEffect(() => {
     const supportedMcpIds = new Set(
-      mcps.filter((mcp) => supportsSandboxMcp(mcp)).map((mcp) => mcp.id),
+      mcps.filter((mcp) => supportsSandboxMcp(mcp)).map((mcp) => mcp.id)
     );
 
     setConfig((prev) => {
       const nextSelectedMcpIds = prev.selectedMcpIds.filter((id) =>
-        supportedMcpIds.has(id),
+        supportedMcpIds.has(id)
       );
 
       if (nextSelectedMcpIds.length === prev.selectedMcpIds.length) {
@@ -285,8 +283,8 @@ export function SandboxShell({
     function handleUnload() {
       if (sandboxIdRef.current) {
         fetch(`/api/sandbox/session?sandboxId=${sandboxIdRef.current}`, {
-          method: "DELETE",
           keepalive: true,
+          method: "DELETE",
         });
       }
     }
@@ -300,17 +298,17 @@ export function SandboxShell({
       new DefaultChatTransport({
         api: "/api/sandbox/run",
         body: () => ({
-          sandboxId: sandboxIdRef.current ?? "",
-          runtime: configRef.current.runtime,
-          providerId: configRef.current.providerId,
-          model: configRef.current.model,
           apiKeyEnvVar: configRef.current.apiKeyEnvVar,
-          selectedSkillSlugs: configRef.current.selectedSkillSlugs,
+          model: configRef.current.model,
+          providerId: configRef.current.providerId,
+          runtime: configRef.current.runtime,
+          sandboxId: sandboxIdRef.current ?? "",
           selectedMcpIds: configRef.current.selectedMcpIds,
+          selectedSkillSlugs: configRef.current.selectedSkillSlugs,
         }),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    []
   );
 
   const { messages, sendMessage, status, error } = useChat({
@@ -324,9 +322,12 @@ export function SandboxShell({
   // ── Auto-scroll ──
   useEffect(() => {
     const el = scrollContainerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     const handleScroll = () => {
-      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
       userScrolledUpRef.current = distanceFromBottom > 80;
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
@@ -334,9 +335,13 @@ export function SandboxShell({
   }, []);
 
   useEffect(() => {
-    if (userScrolledUpRef.current) return;
+    if (userScrolledUpRef.current) {
+      return;
+    }
     const el = scrollContainerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const isStreaming = status === "streaming" || status === "submitted";
     if (isStreaming) {
@@ -367,18 +372,16 @@ export function SandboxShell({
   const titleGeneratedRef = useRef(false);
   const generatedTitleRef = useRef<string | null>(null);
 
-  function serializeMessages(
-    msgs: typeof messages,
-  ): Array<{
+  function serializeMessages(msgs: typeof messages): {
     id: string;
     role: "user" | "assistant";
     content: string;
     parts?: ConversationMessagePart[];
     createdAt: string;
     metadata?: ConversationMessageMetadata;
-  }> {
+  }[] {
     return msgs.map((m) => {
-      const rawParts = (m.parts ?? []) as Array<{
+      const rawParts = (m.parts ?? []) as {
         type?: string;
         text?: string;
         toolInvocation?: {
@@ -387,22 +390,22 @@ export function SandboxShell({
           result?: Record<string, unknown>;
           state: string;
         };
-      }>;
+      }[];
 
       const richParts: ConversationMessagePart[] = rawParts
         .map((p): ConversationMessagePart | null => {
           if (p.type === "text" && p.text) {
-            return { type: "text", text: p.text };
+            return { text: p.text, type: "text" };
           }
           if (p.type === "tool-invocation" && p.toolInvocation) {
             return {
-              type: "tool-invocation",
               toolInvocation: {
-                toolName: p.toolInvocation.toolName,
                 args: p.toolInvocation.args,
                 result: p.toolInvocation.result,
                 state: p.toolInvocation.state,
+                toolName: p.toolInvocation.toolName,
               },
+              type: "tool-invocation",
             };
           }
           return null;
@@ -410,16 +413,16 @@ export function SandboxShell({
         .filter((p): p is ConversationMessagePart => p !== null);
 
       return {
-        id: m.id,
-        role: m.role as "user" | "assistant",
         content: extractTextFromParts(rawParts),
-        parts: richParts.length > 0 ? richParts : undefined,
         createdAt:
           (m as unknown as { createdAt?: Date }).createdAt?.toISOString() ??
           new Date().toISOString(),
+        id: m.id,
         metadata:
           (m as unknown as { metadata?: ConversationMessageMetadata })
             .metadata ?? undefined,
+        parts: richParts.length > 0 ? richParts : undefined,
+        role: m.role as "user" | "assistant",
       };
     });
   }
@@ -436,26 +439,26 @@ export function SandboxShell({
         const firstUserMsg = msgs.find((m) => m.role === "user");
         return firstUserMsg
           ? extractTextFromParts(
-              (firstUserMsg.parts ?? []) as Array<{
+              (firstUserMsg.parts ?? []) as {
                 type?: string;
                 text?: string;
-              }>,
+              }[]
             ).slice(0, 100)
           : "Untitled session";
       })();
 
     try {
       const res = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          id: conversationIdRef.current,
           channel: "sandbox",
-          title,
+          id: conversationIdRef.current,
           messages: serialized,
           model: configRef.current.model,
           providerId: configRef.current.providerId,
+          title,
         }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
       const data = (await res.json()) as { id?: string };
       if (data.id && !conversationIdRef.current) {
@@ -477,39 +480,41 @@ export function SandboxShell({
 
   async function generateAndUpdateTitle(
     convoId: string,
-    serialized: Array<{ role: string; content: string }>,
+    serialized: { role: string; content: string }[]
   ) {
     try {
       const cfg = configRef.current;
       const titleRes = await fetch("/api/conversations/title", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          messages: serialized.slice(0, 6).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          providerId: cfg.providerId,
-          model: cfg.model,
           apiKeyEnvVar: cfg.apiKeyEnvVar || undefined,
+          messages: serialized.slice(0, 6).map((m) => ({
+            content: m.content,
+            role: m.role,
+          })),
+          model: cfg.model,
+          providerId: cfg.providerId,
         }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
       const titleData = (await titleRes.json()) as { title?: string };
-      if (!titleData.title) return;
+      if (!titleData.title) {
+        return;
+      }
 
       generatedTitleRef.current = titleData.title;
 
       await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          id: convoId,
           channel: "sandbox",
-          title: titleData.title,
+          id: convoId,
           messages: serializeMessages(messagesRef.current),
           model: configRef.current.model,
           providerId: configRef.current.providerId,
+          title: titleData.title,
         }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
       setSidebarVersion((v) => v + 1);
     } catch {
@@ -522,21 +527,21 @@ export function SandboxShell({
       .map((slug) => skillBySlug.get(slug))
       .filter((skill): skill is SkillRecord => Boolean(skill))
       .map((skill) => ({
+        iconUrl: skill.iconUrl,
         slug: skill.slug,
         title: skill.title,
         versionLabel: skill.versionLabel,
-        iconUrl: skill.iconUrl,
       }));
 
     const attachedMcps = configRef.current.selectedMcpIds
       .map((id) => mcpById.get(id))
       .filter((mcp): mcp is ImportedMcpDocument => Boolean(mcp))
       .map((mcp) => ({
+        iconUrl: mcp.iconUrl,
         id: mcp.id,
         name: mcp.name,
-        transport: mcp.transport,
-        iconUrl: mcp.iconUrl,
         sandboxSupported: mcp.sandboxSupported,
+        transport: mcp.transport,
       }));
 
     if (attachedSkills.length === 0 && attachedMcps.length === 0) {
@@ -545,8 +550,8 @@ export function SandboxShell({
 
     return {
       attachments: {
-        skills: attachedSkills,
         mcps: attachedMcps,
+        skills: attachedSkills,
       },
     };
   }
@@ -557,11 +562,13 @@ export function SandboxShell({
     setSandboxError(null);
     setAuthError(null);
     const result = await requestSandbox(
-      configRef.current.runtime as SandboxRuntime,
+      configRef.current.runtime as SandboxRuntime
     );
     if ("error" in result) {
       setSandboxError(result.error);
-      if (result.authError) setAuthError(result.authError);
+      if (result.authError) {
+        setAuthError(result.authError);
+      }
       setSandboxState("error");
       return null;
     }
@@ -573,7 +580,9 @@ export function SandboxShell({
 
   const stopSandbox = useCallback(async () => {
     const id = sandboxIdRef.current;
-    if (!id) return;
+    if (!id) {
+      return;
+    }
     try {
       await fetch(`/api/sandbox/session?sandboxId=${id}`, {
         method: "DELETE",
@@ -589,7 +598,9 @@ export function SandboxShell({
   // ── Send message ──
   async function handleSend() {
     const text = input.trim();
-    if (!text) return;
+    if (!text) {
+      return;
+    }
     setInput("");
     userScrolledUpRef.current = false;
 
@@ -601,12 +612,14 @@ export function SandboxShell({
 
     if (!sandboxIdRef.current) {
       const created = await createSandbox();
-      if (!created) return;
+      if (!created) {
+        return;
+      }
     }
 
     sendMessage({
-      text,
       metadata: buildAttachmentMetadata(),
+      text,
     });
   }
 
@@ -619,7 +632,9 @@ export function SandboxShell({
 
   // ── Conversation switching ──
   async function handleSelectConversation(id: string) {
-    if (id === conversationId && !viewConvo) return;
+    if (id === conversationId && !viewConvo) {
+      return;
+    }
     try {
       const res = await fetch(`/api/conversations/${id}`);
       const data = (await res.json()) as {
@@ -646,14 +661,20 @@ export function SandboxShell({
     setChatKey(String(Date.now()));
     titleGeneratedRef.current = false;
     generatedTitleRef.current = null;
-    if (sandboxIdRef.current) stopSandbox();
+    if (sandboxIdRef.current) {
+      stopSandbox();
+    }
   }
 
   async function handleDeleteConversation(id: string) {
     try {
       const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-      if (!res.ok) return;
-      if (id === conversationId) handleNewConversation();
+      if (!res.ok) {
+        return;
+      }
+      if (id === conversationId) {
+        handleNewConversation();
+      }
       setSidebarVersion((v) => v + 1);
     } catch {
       /* best effort */
@@ -681,7 +702,7 @@ export function SandboxShell({
 
   function updateConfig<K extends keyof SandboxToolbarConfig>(
     key: K,
-    value: SandboxToolbarConfig[K],
+    value: SandboxToolbarConfig[K]
   ) {
     setConfig((prev) => ({ ...prev, [key]: value }));
   }
@@ -698,7 +719,7 @@ export function SandboxShell({
         <aside
           className={cn(
             "flex h-full min-h-0 w-[260px] shrink-0 flex-col overflow-hidden border-r border-line bg-paper-2/40 dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)]",
+            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)]"
           )}
         >
           <SandboxSidebar
@@ -729,7 +750,10 @@ export function SandboxShell({
 
         {/* Messages (scroll) */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div
+            ref={scrollContainerRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          >
             {showEmptyHero ? (
               <div className="flex h-full flex-col items-center justify-center px-4 py-8 text-center sm:px-6 sm:py-12">
                 <div className="grid max-w-lg gap-6">
@@ -744,8 +768,8 @@ export function SandboxShell({
                       Sandbox
                     </h2>
                     <p className="m-0 mx-auto max-w-[42ch] text-pretty text-sm leading-relaxed text-ink-muted">
-                      Run code, tools, and MCP servers in an isolated VM.{"\n"}
-                      A session spins up when you send your first message.
+                      Run code, tools, and MCP servers in an isolated VM.{"\n"}A
+                      session spins up when you send your first message.
                     </p>
                   </div>
 
@@ -815,7 +839,11 @@ export function SandboxShell({
                         (message as unknown as { createdAt?: Date }).createdAt
                       }
                       metadata={
-                        (message as unknown as { metadata?: ConversationMessageMetadata }).metadata
+                        (
+                          message as unknown as {
+                            metadata?: ConversationMessageMetadata;
+                          }
+                        ).metadata
                       }
                       parts={(message.parts ?? []) as MessagePart[]}
                       role={message.role as "user" | "assistant"}
@@ -849,7 +877,7 @@ export function SandboxShell({
             "shrink-0 border-t border-line",
             "bg-paper-3/70 backdrop-blur-xl dark:bg-paper-2/50",
             "px-4 sm:px-5",
-            "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5",
+            "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5"
           )}
         >
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-2.5">
@@ -870,14 +898,14 @@ export function SandboxShell({
                 className={cn(
                   "overflow-hidden border border-line bg-paper-3 transition-all duration-150",
                   "has-[:focus]:border-accent/40 has-[:focus]:ring-2 has-[:focus]:ring-accent/10",
-                  "dark:bg-paper-3/80",
+                  "dark:bg-paper-3/80"
                 )}
               >
                 <textarea
                   ref={textareaRef}
                   className={cn(
                     "w-full resize-none bg-transparent px-3 py-2.5 pr-12 text-sm leading-relaxed text-ink outline-none",
-                    "placeholder:text-ink-faint/70",
+                    "placeholder:text-ink-faint/70"
                   )}
                   disabled={isBusy}
                   onChange={(e) => setInput(e.target.value)}
@@ -896,7 +924,7 @@ export function SandboxShell({
                       "flex h-7 w-7 items-center justify-center transition-colors",
                       input.trim() && !isBusy
                         ? "bg-accent text-white hover:bg-accent-hover"
-                        : "bg-paper-2/80 text-ink-faint dark:bg-paper-2",
+                        : "bg-paper-2/80 text-ink-faint dark:bg-paper-2"
                     )}
                     disabled={!input.trim() || isBusy}
                     onClick={handleSend}
@@ -950,7 +978,7 @@ export function SandboxShell({
         <aside
           className={cn(
             "flex h-full min-h-0 w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-paper-2/40 dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,92vw)]",
+            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,92vw)]"
           )}
         >
           <SandboxInspector

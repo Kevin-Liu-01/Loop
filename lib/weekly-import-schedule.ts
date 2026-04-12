@@ -16,8 +16,12 @@ export function getNextWeeklyImportRunUtc(now: Date = new Date()): Date {
         0
       )
     );
-    if (d.getUTCDay() !== 1) continue;
-    if (d.getTime() > now.getTime()) return d;
+    if (d.getUTCDay() !== 1) {
+      continue;
+    }
+    if (d.getTime() > now.getTime()) {
+      return d;
+    }
   }
   const fallback = new Date(now);
   fallback.setUTCDate(fallback.getUTCDate() + 7);

@@ -5,16 +5,16 @@ import { useRef, useState, useEffect } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 
-type ExpandableContentProps = {
+interface ExpandableContentProps {
   maxHeight?: number;
   className?: string;
   children: React.ReactNode;
-};
+}
 
 export function ExpandableContent({
   maxHeight = 400,
   className,
-  children
+  children,
 }: ExpandableContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [clamped, setClamped] = useState(false);
@@ -22,7 +22,9 @@ export function ExpandableContent({
 
   useEffect(() => {
     const el = contentRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     setClamped(el.scrollHeight > maxHeight + 40);
   }, [maxHeight, children]);
 

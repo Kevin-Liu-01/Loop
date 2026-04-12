@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { CheckIcon, RefreshIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,26 @@ import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 
-type RefreshResponse = {
+interface RefreshResponse {
   error?: string;
   generatedAt?: string;
   skills?: number;
   dailyBriefs?: number;
-};
+}
 
-type RefreshResult = {
+interface RefreshResult {
   generatedAt: string;
   skills: number;
   dailyBriefs: number;
-};
+}
 
-function ResultTile({ label, value }: { label: string; value: string | number }) {
+function ResultTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="grid gap-0.5 rounded-none border border-line bg-paper-2/40 p-3 dark:bg-black/20">
       <span className="text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
@@ -47,7 +53,9 @@ export function RefreshControls() {
     setErrorMessage(null);
 
     startTransition(async () => {
-      const response = await fetch("/api/refresh?mode=full", { method: "POST" });
+      const response = await fetch("/api/refresh?mode=full", {
+        method: "POST",
+      });
       const payload = (await response.json()) as RefreshResponse;
 
       if (!response.ok) {
@@ -56,11 +64,11 @@ export function RefreshControls() {
       }
 
       setResult({
+        dailyBriefs: payload.dailyBriefs ?? 0,
         generatedAt: payload.generatedAt
           ? formatDateTime(payload.generatedAt, timeZone)
           : formatDateTime(new Date().toISOString(), timeZone),
         skills: payload.skills ?? 0,
-        dailyBriefs: payload.dailyBriefs ?? 0,
       });
       router.refresh();
     });
@@ -81,12 +89,21 @@ export function RefreshControls() {
             {result ? (
               <CheckIcon className="h-4.5 w-4.5 text-success" />
             ) : (
-              <RefreshIcon className={cn("h-4.5 w-4.5 text-ink-soft", isPending && "animate-spin")} />
+              <RefreshIcon
+                className={cn(
+                  "h-4.5 w-4.5 text-ink-soft",
+                  isPending && "animate-spin"
+                )}
+              />
             )}
           </span>
           <div>
             <p className="m-0 text-sm font-semibold tracking-tight text-ink">
-              {isPending ? "Refreshing..." : result ? "Refresh complete" : "Manual refresh"}
+              {isPending
+                ? "Refreshing..."
+                : result
+                  ? "Refresh complete"
+                  : "Manual refresh"}
             </p>
             <p className="m-0 text-xs text-ink-faint">
               {isPending
@@ -97,8 +114,15 @@ export function RefreshControls() {
             </p>
           </div>
         </div>
-        <Button disabled={isPending} onClick={handleRefresh} type="button" size="sm">
-          <RefreshIcon className={cn("h-3.5 w-3.5", isPending && "animate-spin")} />
+        <Button
+          disabled={isPending}
+          onClick={handleRefresh}
+          type="button"
+          size="sm"
+        >
+          <RefreshIcon
+            className={cn("h-3.5 w-3.5", isPending && "animate-spin")}
+          />
           {isPending ? "Running..." : "Run full refresh"}
         </Button>
       </div>
@@ -107,7 +131,12 @@ export function RefreshControls() {
         <div className="grid grid-cols-3 gap-3 p-5 sm:p-6">
           <ResultTile label="Skills" value={result.skills} />
           <ResultTile label="Briefs" value={result.dailyBriefs} />
-          <ResultTile label="Finished" value={result.generatedAt.split(",")[1]?.trim() ?? result.generatedAt} />
+          <ResultTile
+            label="Finished"
+            value={
+              result.generatedAt.split(",")[1]?.trim() ?? result.generatedAt
+            }
+          />
         </div>
       ) : null}
 
@@ -120,7 +149,8 @@ export function RefreshControls() {
       {!result && !errorMessage ? (
         <div className="p-5 sm:p-6">
           <p className="m-0 text-xs leading-relaxed text-ink-faint">
-            Safe to run repeatedly. Walks the refresh pipeline: re-reads sources, regenerates artifacts, and updates counters.
+            Safe to run repeatedly. Walks the refresh pipeline: re-reads
+            sources, regenerates artifacts, and updates counters.
           </p>
         </div>
       ) : null}

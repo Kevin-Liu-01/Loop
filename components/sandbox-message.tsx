@@ -4,8 +4,8 @@ import { useEffect, useReducer } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { SandboxToolBlock } from "@/components/ui/sandbox-tool-block";
+import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { formatTime } from "@/lib/format";
 import type {
@@ -13,7 +13,7 @@ import type {
   ConversationMessagePart,
 } from "@/lib/types";
 
-type MessagePart = {
+interface MessagePart {
   type: string;
   text?: string;
   toolInvocation?: {
@@ -23,22 +23,22 @@ type MessagePart = {
     state: string;
   };
   [key: string]: unknown;
-};
+}
 
-type SandboxMessageProps = {
+interface SandboxMessageProps {
   role: "user" | "assistant" | "system";
   parts: MessagePart[];
   createdAt?: Date;
   metadata?: ConversationMessageMetadata;
-};
+}
 
-type SavedMessageProps = {
+interface SavedMessageProps {
   role: string;
   content: string;
   parts?: ConversationMessagePart[];
   createdAt: string;
   metadata?: ConversationMessageMetadata;
-};
+}
 
 function Timestamp({ date }: { date: Date }) {
   const { timeZone } = useAppTimezone();
@@ -55,14 +55,14 @@ function Timestamp({ date }: { date: Date }) {
   const mins = Math.floor(diff / 60_000);
 
   let relative: string;
-  if (mins < 1) relative = "just now";
-  else if (mins < 60) relative = `${mins}m ago`;
-  else {
+  if (mins < 1) {
+    relative = "just now";
+  } else if (mins < 60) {
+    relative = `${mins}m ago`;
+  } else {
     const hours = Math.floor(mins / 60);
     relative =
-      hours < 24
-        ? `${hours}h ago`
-        : formatTime(date.toISOString(), timeZone);
+      hours < 24 ? `${hours}h ago` : formatTime(date.toISOString(), timeZone);
   }
 
   return (
@@ -88,7 +88,9 @@ function AttachmentChips({
     (attachments?.skills.length ?? 0) > 0 ||
     (attachments?.mcps.length ?? 0) > 0;
 
-  if (!hasAttachments) return null;
+  if (!hasAttachments) {
+    return null;
+  }
 
   return (
     <div
@@ -116,13 +118,7 @@ function AttachmentChips({
   );
 }
 
-function MessageMeta({
-  role,
-  timestamp,
-}: {
-  role: string;
-  timestamp: Date;
-}) {
+function MessageMeta({ role, timestamp }: { role: string; timestamp: Date }) {
   const isUser = role === "user";
 
   return (
@@ -186,7 +182,10 @@ export function SandboxMessage({
       {parts.map((part, i) => {
         if (part.type === "text" && part.text) {
           return (
-            <div key={i} className="chat-bubble chat-bubble--assistant self-start">
+            <div
+              key={i}
+              className="chat-bubble chat-bubble--assistant self-start"
+            >
               <div className="chat-markdown">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {part.text}
@@ -236,7 +235,10 @@ export function SavedMessage({
         {parts.map((part, i) => {
           if (part.type === "text") {
             return (
-              <div key={i} className="chat-bubble chat-bubble--assistant self-start">
+              <div
+                key={i}
+                className="chat-bubble chat-bubble--assistant self-start"
+              >
                 <div className="chat-markdown">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {part.text}

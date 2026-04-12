@@ -1,4 +1,7 @@
 import type { LoopRunRecord, UsageEventRecord } from "@/lib/types";
+import { bucketEventsByHour, bucketLatencyByHour } from "@/lib/usage-charts";
+import type { LatencyBucket, TimeSeriesBucket } from "@/lib/usage-charts";
+import type { UsageComparisonMode } from "@/lib/usage-comparison-modes";
 import {
   filterEventsInClosedRange,
   prior24hWindowBeforeRolling,
@@ -6,46 +9,39 @@ import {
   startOfDayInTimeZone,
   yesterdaySameClockWindow,
 } from "@/lib/usage-day-bounds";
-import type { UsageComparisonMode } from "@/lib/usage-comparison-modes";
-import { buildVsYesterdayStrings } from "@/lib/usage-vs-yesterday";
 import {
   latencyHalfComparison,
   rollingHalfDeltas,
 } from "@/lib/usage-sidebar-insights";
-import {
-  bucketEventsByHour,
-  bucketLatencyByHour,
-  type LatencyBucket,
-  type TimeSeriesBucket,
-} from "@/lib/usage-charts";
+import { buildVsYesterdayStrings } from "@/lib/usage-vs-yesterday";
 
-export type RouteUsageSummary = {
+export interface RouteUsageSummary {
   route: string;
   count: number;
   errorCount: number;
   avgDurationMs: number;
   lastAt: string;
-};
+}
 
-export type UsageTotalsSnapshot = {
+export interface UsageTotalsSnapshot {
   pageViews: number;
   interactions: number;
   apiCalls: number;
   errorCalls: number;
   avgApiDurationMs: number;
-};
+}
 
-export type UsageDeltaSet = {
+export interface UsageDeltaSet {
   pageViews: string | null;
   interactions: string | null;
   apiCalls: string | null;
   avgApiDurationMs: string | null;
-};
+}
 
 /** @deprecated Use `comparisons.yesterday_same_time` */
 export type VsYesterdaySameTime = UsageDeltaSet;
 
-export type UsageOverview = {
+export interface UsageOverview {
   /** IANA zone used for “today” / “yesterday same time” windows. */
   timeZone: string;
   /** Local calendar day in `timeZone`: midnight → now. */
@@ -61,22 +57,22 @@ export type UsageOverview = {
   latencySeries: LatencyBucket[];
   routeUsage: RouteUsageSummary[];
   recentEvents: UsageEventRecord[];
-  activityCounts: Array<{
+  activityCounts: {
     label: string;
     count: number;
-  }>;
-};
+  }[];
+}
 
-export type SkillDailyCount = {
+export interface SkillDailyCount {
   date: string;
   views: number;
   copies: number;
   saves: number;
   refreshes: number;
   apiCalls: number;
-};
+}
 
-export type SkillUsageSummary = {
+export interface SkillUsageSummary {
   pageViews: number;
   copies: number;
   saves: number;
@@ -85,14 +81,16 @@ export type SkillUsageSummary = {
   lastSeenAt: string | null;
   recentEvents: UsageEventRecord[];
   dailyCounts: SkillDailyCount[];
-};
+}
 
 function average(values: number[]): number {
   if (values.length === 0) {
     return 0;
   }
 
-  return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+  return Math.round(
+    values.reduce((total, value) => total + value, 0) / values.length
+  );
 }
 
 export function formatUsageEvent(event: UsageEventRecord): string {
@@ -108,37 +106,51 @@ export function usageStatTileValues(
   overview: UsageOverview,
   mode: UsageComparisonMode
 ): UsageTotalsSnapshot {
-  if (mode === "yesterday_same_time") return overview.totals;
+  if (mode === "yesterday_same_time") {
+    return overview.totals;
+  }
   return overview.totalsRolling24h;
 }
 
-export function computeUsageTotals(events: UsageEventRecord[]): UsageTotalsSnapshot {
+export function computeUsageTotals(
+  events: UsageEventRecord[]
+): UsageTotalsSnapshot {
   const pageViews = events.filter((event) => event.kind === "page_view").length;
   const apiEvents = events.filter((event) => event.kind === "api_call");
   const interactions = events.length - pageViews - apiEvents.length;
   return {
-    pageViews,
-    interactions,
     apiCalls: apiEvents.length,
-    errorCalls: apiEvents.filter((event) => event.ok === false || (event.status ?? 200) >= 400).length,
-    avgApiDurationMs: average(apiEvents.map((event) => event.durationMs ?? 0).filter((value) => value > 0)),
+    avgApiDurationMs: average(
+      apiEvents
+        .map((event) => event.durationMs ?? 0)
+        .filter((value) => value > 0)
+    ),
+    errorCalls: apiEvents.filter(
+      (event) => event.ok === false || (event.status ?? 200) >= 400
+    ).length,
+    interactions,
+    pageViews,
   };
 }
 
 function buildRouteUsage(apiEvents: UsageEventRecord[]): RouteUsageSummary[] {
-  const routeMap = new Map<string, { count: number; errorCount: number; durations: number[]; lastAt: string }>();
+  const routeMap = new Map<
+    string,
+    { count: number; errorCount: number; durations: number[]; lastAt: string }
+  >();
 
   for (const event of apiEvents) {
     const route = event.route ?? event.label;
     const current = routeMap.get(route) ?? {
       count: 0,
-      errorCount: 0,
       durations: [],
+      errorCount: 0,
       lastAt: event.at,
     };
 
     current.count += 1;
-    current.errorCount += event.ok === false || (event.status ?? 200) >= 400 ? 1 : 0;
+    current.errorCount +=
+      event.ok === false || (event.status ?? 200) >= 400 ? 1 : 0;
     if (typeof event.durationMs === "number") {
       current.durations.push(event.durationMs);
     }
@@ -149,19 +161,22 @@ function buildRouteUsage(apiEvents: UsageEventRecord[]): RouteUsageSummary[] {
     routeMap.set(route, current);
   }
 
-  return Array.from(routeMap.entries())
+  return [...routeMap.entries()]
     .map(([route, value]) => ({
-      route,
+      avgDurationMs: average(value.durations),
       count: value.count,
       errorCount: value.errorCount,
-      avgDurationMs: average(value.durations),
       lastAt: value.lastAt,
+      route,
     }))
-    .sort((left, right) => right.count - left.count || right.lastAt.localeCompare(left.lastAt))
+    .toSorted(
+      (left, right) =>
+        right.count - left.count || right.lastAt.localeCompare(left.lastAt)
+    )
     .slice(0, 6);
 }
 
-const activityLabels: Array<[UsageEventRecord["kind"], string]> = [
+const activityLabels: [UsageEventRecord["kind"], string][] = [
   ["page_view", "views"],
   ["copy_prompt", "prompt copies"],
   ["copy_url", "link copies"],
@@ -177,48 +192,76 @@ const activityLabels: Array<[UsageEventRecord["kind"], string]> = [
 function buildActivityCounts(events: UsageEventRecord[]) {
   return activityLabels
     .map(([kind, label]) => ({
-      label,
       count: events.filter((event) => event.kind === kind).length,
+      label,
     }))
     .filter((entry) => entry.count > 0)
     .slice(0, 6);
 }
 
-export type BuildUsageOverviewOptions = {
+export interface BuildUsageOverviewOptions {
   /** Freeze time in tests; defaults to `new Date()`. */
   now?: Date;
   /** IANA timezone for calendar windows; default UTC. */
   timeZone?: string;
-};
+}
 
 function buildVsPrior24hStrings(
   current: UsageTotalsSnapshot,
   baseline: UsageTotalsSnapshot
 ): UsageDeltaSet {
   return {
-    pageViews: formatVsPrior24hCount(current.pageViews, baseline.pageViews),
-    interactions: formatVsPrior24hCount(current.interactions, baseline.interactions),
     apiCalls: formatVsPrior24hCount(current.apiCalls, baseline.apiCalls),
-    avgApiDurationMs: formatVsPrior24hLatency(current.avgApiDurationMs, baseline.avgApiDurationMs),
+    avgApiDurationMs: formatVsPrior24hLatency(
+      current.avgApiDurationMs,
+      baseline.avgApiDurationMs
+    ),
+    interactions: formatVsPrior24hCount(
+      current.interactions,
+      baseline.interactions
+    ),
+    pageViews: formatVsPrior24hCount(current.pageViews, baseline.pageViews),
   };
 }
 
-function formatVsPrior24hCount(current: number, baseline: number): string | null {
-  if (baseline === 0 && current === 0) return null;
-  if (baseline === 0) return "↑ vs prior 24h";
+function formatVsPrior24hCount(
+  current: number,
+  baseline: number
+): string | null {
+  if (baseline === 0 && current === 0) {
+    return null;
+  }
+  if (baseline === 0) {
+    return "↑ vs prior 24h";
+  }
   const pct = Math.round(((current - baseline) / baseline) * 100);
-  if (pct === 0) return "Flat vs prior 24h";
+  if (pct === 0) {
+    return "Flat vs prior 24h";
+  }
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct}% vs prior 24h`;
 }
 
-function formatVsPrior24hLatency(currentMs: number, baselineMs: number): string | null {
-  if (currentMs === 0 && baselineMs === 0) return null;
-  if (baselineMs === 0 && currentMs > 0) return "vs prior 24h";
-  if (baselineMs === 0) return null;
-  if (currentMs === 0) return "-100% avg vs prior 24h";
+function formatVsPrior24hLatency(
+  currentMs: number,
+  baselineMs: number
+): string | null {
+  if (currentMs === 0 && baselineMs === 0) {
+    return null;
+  }
+  if (baselineMs === 0 && currentMs > 0) {
+    return "vs prior 24h";
+  }
+  if (baselineMs === 0) {
+    return null;
+  }
+  if (currentMs === 0) {
+    return "-100% avg vs prior 24h";
+  }
   const pct = Math.round(((currentMs - baselineMs) / baselineMs) * 100);
-  if (pct === 0) return "Flat vs prior 24h";
+  if (pct === 0) {
+    return "Flat vs prior 24h";
+  }
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct}% avg vs prior 24h`;
 }
@@ -250,49 +293,51 @@ export function buildUsageOverview(
   const latencySeries = bucketLatencyByHour(rollingEvents, 24, now);
   const half = rollingHalfDeltas(timeSeries);
   const prior12h: UsageDeltaSet = {
-    pageViews: half.views,
-    interactions: half.interactions,
     apiCalls: half.api,
     avgApiDurationMs: latencyHalfComparison(latencySeries),
+    interactions: half.interactions,
+    pageViews: half.views,
   };
 
   const comparisons: Record<UsageComparisonMode, UsageDeltaSet> = {
-    yesterday_same_time: vsYesterday,
-    prior_24h: prior24h,
     prior_12h: prior12h,
+    prior_24h: prior24h,
+    yesterday_same_time: vsYesterday,
   };
 
-  const tzShort = timeZone.replace(/_/g, " ");
+  const tzShort = timeZone.replaceAll("_", " ");
   const comparisonFootnotes: Record<UsageComparisonMode, string> = {
-    yesterday_same_time: `Deltas vs same clock span yesterday (${tzShort}).`,
-    prior_24h: "Deltas: last 24h vs the 24h before that.",
     prior_12h: "Deltas: last 12h vs prior 12h, same rolling window.",
+    prior_24h: "Deltas: last 24h vs the 24h before that.",
+    yesterday_same_time: `Deltas vs same clock span yesterday (${tzShort}).`,
   };
 
   const apiRolling = rollingEvents.filter((e) => e.kind === "api_call");
   const routeUsage = buildRouteUsage(apiRolling);
   const activityCounts = buildActivityCounts(rollingEvents);
-  const recentEvents = rollingEvents
-    .slice()
-    .sort((left, right) => right.at.localeCompare(left.at))
+  const recentEvents = [...rollingEvents]
+    .toSorted((left, right) => right.at.localeCompare(left.at))
     .slice(0, 12);
 
   return {
+    activityCounts,
+    comparisonFootnotes,
+    comparisons,
+    latencySeries,
+    recentEvents,
+    routeUsage,
+    timeSeries,
     timeZone,
     totals,
     totalsRolling24h,
     vsYesterday,
-    comparisons,
-    comparisonFootnotes,
-    timeSeries,
-    latencySeries,
-    routeUsage,
-    recentEvents,
-    activityCounts,
   };
 }
 
-function buildDailyCounts(events: UsageEventRecord[], days: number): SkillDailyCount[] {
+function buildDailyCounts(
+  events: UsageEventRecord[],
+  days: number
+): SkillDailyCount[] {
   const now = new Date();
   const buckets = new Map<string, SkillDailyCount>();
 
@@ -300,35 +345,49 @@ function buildDailyCounts(events: UsageEventRecord[], days: number): SkillDailyC
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    buckets.set(key, { date: key, views: 0, copies: 0, saves: 0, refreshes: 0, apiCalls: 0 });
+    buckets.set(key, {
+      apiCalls: 0,
+      copies: 0,
+      date: key,
+      refreshes: 0,
+      saves: 0,
+      views: 0,
+    });
   }
 
   for (const event of events) {
     const key = event.at.slice(0, 10);
     const bucket = buckets.get(key);
-    if (!bucket) continue;
+    if (!bucket) {
+      continue;
+    }
 
     switch (event.kind) {
-      case "page_view":
+      case "page_view": {
         bucket.views++;
         break;
+      }
       case "copy_prompt":
-      case "copy_url":
+      case "copy_url": {
         bucket.copies++;
         break;
-      case "skill_save":
+      }
+      case "skill_save": {
         bucket.saves++;
         break;
-      case "skill_refresh":
+      }
+      case "skill_refresh": {
         bucket.refreshes++;
         break;
-      case "api_call":
+      }
+      case "api_call": {
         bucket.apiCalls++;
         break;
+      }
     }
   }
 
-  return Array.from(buckets.values());
+  return [...buckets.values()];
 }
 
 export function buildSkillUsageSummary(
@@ -337,20 +396,28 @@ export function buildSkillUsageSummary(
   loopRuns: LoopRunRecord[]
 ): SkillUsageSummary {
   const relevantEvents = events
-    .filter((event) => event.skillSlug === skillSlug || event.path?.includes(`/skills/${skillSlug}`))
-    .sort((left, right) => right.at.localeCompare(left.at));
+    .filter(
+      (event) =>
+        event.skillSlug === skillSlug ||
+        event.path?.includes(`/skills/${skillSlug}`)
+    )
+    .toSorted((left, right) => right.at.localeCompare(left.at));
 
   return {
-    pageViews: relevantEvents.filter((event) => event.kind === "page_view").length,
-    copies: relevantEvents.filter((event) => event.kind === "copy_prompt" || event.kind === "copy_url").length,
-    saves: relevantEvents.filter((event) => event.kind === "skill_save").length,
+    apiCalls: relevantEvents.filter((event) => event.kind === "api_call")
+      .length,
+    copies: relevantEvents.filter(
+      (event) => event.kind === "copy_prompt" || event.kind === "copy_url"
+    ).length,
+    dailyCounts: buildDailyCounts(relevantEvents, 14),
+    lastSeenAt: relevantEvents[0]?.at ?? null,
+    pageViews: relevantEvents.filter((event) => event.kind === "page_view")
+      .length,
+    recentEvents: relevantEvents.slice(0, 8),
     refreshes: Math.max(
       relevantEvents.filter((event) => event.kind === "skill_refresh").length,
       loopRuns.filter((run) => run.slug === skillSlug).length
     ),
-    apiCalls: relevantEvents.filter((event) => event.kind === "api_call").length,
-    lastSeenAt: relevantEvents[0]?.at ?? null,
-    recentEvents: relevantEvents.slice(0, 8),
-    dailyCounts: buildDailyCounts(relevantEvents, 14),
+    saves: relevantEvents.filter((event) => event.kind === "skill_save").length,
   };
 }

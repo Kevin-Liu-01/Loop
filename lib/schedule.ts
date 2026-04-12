@@ -32,11 +32,15 @@ function resolveDay(preferredDay?: number): number {
 export function formatScheduleLabel(
   cadence: UserSkillCadence,
   preferredHour: number,
-  preferredDay?: number,
+  preferredDay?: number
 ): string {
-  if (cadence === "manual") return "Manual";
+  if (cadence === "manual") {
+    return "Manual";
+  }
   const time = formatTime12h(preferredHour);
-  if (cadence === "weekly") return `${DAY_LABELS[resolveDay(preferredDay)]} · ${time}`;
+  if (cadence === "weekly") {
+    return `${DAY_LABELS[resolveDay(preferredDay)]} · ${time}`;
+  }
   return `Daily · ${time}`;
 }
 
@@ -47,9 +51,11 @@ export function formatScheduleLabel(
 export function getNextRunDate(
   cadence: UserSkillCadence,
   preferredHour: number,
-  preferredDay?: number,
+  preferredDay?: number
 ): Date | null {
-  if (cadence === "manual") return null;
+  if (cadence === "manual") {
+    return null;
+  }
 
   const now = new Date();
   const candidate = new Date(now);
@@ -78,21 +84,31 @@ function formatRelativeDate(next: Date): string {
   const hours = Math.floor(diff / 3_600_000);
   const days = Math.floor(diff / 86_400_000);
 
-  if (hours < 1) return "< 1h";
-  if (hours < 24) return `in ${hours}h`;
-  if (days === 1) return "tomorrow";
-  if (days < 7) return `in ${days} days`;
+  if (hours < 1) {
+    return "< 1h";
+  }
+  if (hours < 24) {
+    return `in ${hours}h`;
+  }
+  if (days === 1) {
+    return "tomorrow";
+  }
+  if (days < 7) {
+    return `in ${days} days`;
+  }
 
-  return next.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return next.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
 export function formatNextRun(
   cadence: UserSkillCadence,
   preferredHour: number,
-  preferredDay?: number,
+  preferredDay?: number
 ): string {
   const next = getNextRunDate(cadence, preferredHour, preferredDay);
-  if (!next) return "–";
+  if (!next) {
+    return "–";
+  }
   return formatRelativeDate(next);
 }
 
@@ -104,9 +120,11 @@ export function getRunDatesForMonth(
   cadence: UserSkillCadence,
   year: number,
   month: number,
-  preferredDay?: number,
+  preferredDay?: number
 ): Date[] {
-  if (cadence === "manual") return [];
+  if (cadence === "manual") {
+    return [];
+  }
 
   const dates: Date[] = [];
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -128,7 +146,7 @@ export function countMonthlyRuns(
   cadence: UserSkillCadence,
   year: number,
   month: number,
-  preferredDay?: number,
+  preferredDay?: number
 ): number {
   return getRunDatesForMonth(cadence, year, month, preferredDay).length;
 }
@@ -136,9 +154,13 @@ export function countMonthlyRuns(
 export function isScheduledOnDate(
   cadence: UserSkillCadence,
   date: Date,
-  preferredDay?: number,
+  preferredDay?: number
 ): boolean {
-  if (cadence === "manual") return false;
-  if (cadence === "daily") return true;
+  if (cadence === "manual") {
+    return false;
+  }
+  if (cadence === "daily") {
+    return true;
+  }
   return date.getDay() === resolveDay(preferredDay);
 }

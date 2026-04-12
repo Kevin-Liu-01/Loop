@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-
 import { SignIn } from "@clerk/nextjs";
+import type { Metadata } from "next";
 
 import { AuthSplitLayout } from "@/components/auth-layout";
 
 export const metadata: Metadata = {
+  description:
+    "Sign in to Loop – the operator desk for self-updating agent skills.",
   title: "Sign in",
-  description: "Sign in to Loop – the operator desk for self-updating agent skills.",
 };
 
 export default function SignInPage() {

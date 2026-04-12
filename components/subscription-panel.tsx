@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { StatusDot } from "@/components/ui/status-dot";
 
-type SubscriptionPanelProps = {
+interface SubscriptionPanelProps {
   email: string;
   hasSubscription: boolean;
   planSlug: string | null;
   status: string | null;
   customerId: string | null;
-};
+}
 
 const OPERATOR_FEATURES = [
   "Unlimited skills",
@@ -59,11 +59,14 @@ export function SubscriptionPanel({
     return (
       <div className="grid gap-5 rounded-none border border-line bg-paper-3/92 p-5 sm:p-6">
         <div>
-          <p className="m-0 text-sm font-semibold tracking-tight text-ink">Free plan</p>
+          <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+            Free plan
+          </p>
           <p className="m-0 mt-1 text-xs text-ink-faint">{email}</p>
         </div>
         <p className="m-0 text-sm leading-relaxed text-ink-muted">
-          You can create 1 skill for free. Upgrade to Operator to unlock everything.
+          You can create 1 skill for free. Upgrade to Operator to unlock
+          everything.
         </p>
         <ul className="m-0 grid gap-2 p-0 list-none">
           {OPERATOR_FEATURES.map((f) => (
@@ -92,13 +95,16 @@ export function SubscriptionPanel({
             <ZapIcon className="h-4.5 w-4.5 text-accent" />
           </span>
           <div>
-            <p className="m-0 text-sm font-semibold tracking-tight text-ink">Operator</p>
+            <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+              Operator
+            </p>
             <p className="m-0 text-xs text-ink-faint">{email}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge color="orange">
-            {(planSlug ?? "operator").charAt(0).toUpperCase() + (planSlug ?? "operator").slice(1)}
+            {(planSlug ?? "operator").charAt(0).toUpperCase() +
+              (planSlug ?? "operator").slice(1)}
           </Badge>
           <StatusLabel status={status} />
         </div>

@@ -18,7 +18,7 @@ import type {
   VersionReference,
 } from "@/lib/types";
 
-type SkillRow = {
+interface SkillRow {
   id: string;
   slug: string;
   title: string;
@@ -55,12 +55,18 @@ type SkillRow = {
   quality_score?: number;
   research_profile?: unknown;
   forked_from_slug?: string | null;
-};
+}
 
-async function attachAuthors(rows: SkillRow[]): Promise<Map<string, SkillRecord["author"]>> {
-  const authorIds = Array.from(
-    new Set(rows.map((row) => row.author_id).filter((value): value is string => Boolean(value)))
-  );
+async function attachAuthors(
+  rows: SkillRow[]
+): Promise<Map<string, SkillRecord["author"]>> {
+  const authorIds = [
+    ...new Set(
+      rows
+        .map((row) => row.author_id)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ];
 
   const authors = await listSkillAuthorsByIds(authorIds);
   return new Map(authors.map((author) => [author.id, author]));
@@ -71,53 +77,55 @@ export function rowToSkillRecord(
   availableVersions?: VersionReference[],
   author?: SkillRecord["author"]
 ): SkillRecord {
-  const version = row.version;
+  const { version } = row;
   const versions = availableVersions ?? [
-    { version, label: buildVersionLabel(version), updatedAt: row.updated_at }
+    { label: buildVersionLabel(version), updatedAt: row.updated_at, version },
   ];
 
   return {
-    slug: row.slug,
-    title: row.title,
-    description: row.description,
-    category: row.category as SkillRecord["category"],
     accent: row.accent,
-    featured: row.featured,
-    visibility: row.visibility as SkillVisibility,
-    origin: row.origin as SkillOrigin,
-    href: buildSkillVersionHref(row.slug, version),
-    path: row.path ?? "",
-    relativeDir: row.relative_dir ?? "",
-    updatedAt: row.updated_at,
-    tags: row.tags,
-    headings: (row.headings ?? []) as SkillHeading[],
-    body: row.body,
-    excerpt: createExcerpt(row.body),
-    references: (row.references_data ?? []) as ReferenceDoc[],
+    agentDocs: (row.agent_docs ?? {}) as AgentDocs,
     agents: (row.agents_data ?? []) as AgentPrompt[],
+    author,
+    authorId: row.author_id ?? undefined,
+    automation: (row.automation ?? undefined) as
+      | SkillAutomationState
+      | undefined,
     automations: [],
+    availableVersions: versions,
+    body: row.body,
+    category: row.category as SkillRecord["category"],
+    creatorClerkUserId: row.creator_clerk_user_id ?? undefined,
+    description: row.description,
+    excerpt: createExcerpt(row.body),
+    featured: row.featured,
+    featuredRank: row.featured_rank ?? 0,
+    forkedFromSlug: row.forked_from_slug ?? undefined,
+    headings: (row.headings ?? []) as SkillHeading[],
+    href: buildSkillVersionHref(row.slug, version),
+    iconUrl: row.icon_url ?? undefined,
+    origin: row.origin as SkillOrigin,
+    ownerName: row.owner_name ?? undefined,
+    path: row.path ?? "",
+    price: row.price ?? null,
+    qualityScore: row.quality_score ?? 0,
+    references: (row.references_data ?? []) as ReferenceDoc[],
+    relativeDir: row.relative_dir ?? "",
+    researchProfile: row.research_profile as SkillResearchProfile | undefined,
+    slug: row.slug,
+    sources: (row.sources ?? []) as SourceDefinition[],
+    syncEnabled: row.sync_enabled,
+    tags: row.tags,
+    title: row.title,
+    updatedAt: row.updated_at,
+    updates: (row.updates ?? []) as SkillUpdateEntry[],
     version,
     versionLabel: buildVersionLabel(version),
-    availableVersions: versions,
-    ownerName: row.owner_name ?? undefined,
-    authorId: row.author_id ?? undefined,
-    author,
-    sources: (row.sources ?? []) as SourceDefinition[],
-    automation: (row.automation ?? undefined) as SkillAutomationState | undefined,
-    updates: (row.updates ?? []) as SkillUpdateEntry[],
-    agentDocs: (row.agent_docs ?? {}) as AgentDocs,
-    price: row.price ?? null,
-    creatorClerkUserId: row.creator_clerk_user_id ?? undefined,
-    iconUrl: row.icon_url ?? undefined,
-    featuredRank: row.featured_rank ?? 0,
-    qualityScore: row.quality_score ?? 0,
-    researchProfile: row.research_profile as SkillResearchProfile | undefined,
-    syncEnabled: row.sync_enabled,
-    forkedFromSlug: row.forked_from_slug ?? undefined
+    visibility: row.visibility as SkillVisibility,
   };
 }
 
-export type CreateSkillInput = {
+export interface CreateSkillInput {
   slug: string;
   title: string;
   description: string;
@@ -150,44 +158,58 @@ export type CreateSkillInput = {
   qualityScore?: number;
   researchProfile?: SkillResearchProfile;
   forkedFromSlug?: string;
-};
+}
 
 function inputToRow(input: CreateSkillInput): Record<string, unknown> {
   const row: Record<string, unknown> = {
-    slug: input.slug,
-    title: input.title,
-    description: input.description,
-    category: input.category,
-    body: input.body,
     accent: input.accent ?? "signal-red",
-    featured: input.featured ?? false,
-    visibility: input.visibility ?? "public",
-    origin: input.origin,
-    path: input.path ?? null,
-    relative_dir: input.relativeDir ?? null,
-    tags: input.tags ?? [],
-    headings: input.headings ?? [],
-    owner_name: input.ownerName ?? null,
-    author_id: input.authorId ?? null,
-    sources: input.sources ?? [],
-    automation: input.automation ?? null,
-    updates: input.updates ?? [],
     agent_docs: input.agentDocs ?? {},
-    references_data: input.references ?? [],
     agents_data: input.agents ?? [],
-    source_url: input.sourceUrl ?? null,
+    author_id: input.authorId ?? null,
+    automation: input.automation ?? null,
+    body: input.body,
     canonical_url: input.canonicalUrl ?? null,
+    category: input.category,
+    description: input.description,
+    featured: input.featured ?? false,
+    headings: input.headings ?? [],
+    origin: input.origin,
+    owner_name: input.ownerName ?? null,
+    path: input.path ?? null,
+    references_data: input.references ?? [],
+    relative_dir: input.relativeDir ?? null,
+    slug: input.slug,
+    source_url: input.sourceUrl ?? null,
+    sources: input.sources ?? [],
     sync_enabled: input.syncEnabled ?? false,
-    version: input.version ?? 1
+    tags: input.tags ?? [],
+    title: input.title,
+    updates: input.updates ?? [],
+    version: input.version ?? 1,
+    visibility: input.visibility ?? "public",
   };
 
-  if (input.price !== undefined) row.price = input.price;
-  if (input.creatorClerkUserId !== undefined) row.creator_clerk_user_id = input.creatorClerkUserId;
-  if (input.iconUrl !== undefined) row.icon_url = input.iconUrl;
-  if (input.featuredRank !== undefined) row.featured_rank = input.featuredRank;
-  if (input.qualityScore !== undefined) row.quality_score = input.qualityScore;
-  if (input.researchProfile !== undefined) row.research_profile = input.researchProfile;
-  if (input.forkedFromSlug !== undefined) row.forked_from_slug = input.forkedFromSlug;
+  if (input.price !== undefined) {
+    row.price = input.price;
+  }
+  if (input.creatorClerkUserId !== undefined) {
+    row.creator_clerk_user_id = input.creatorClerkUserId;
+  }
+  if (input.iconUrl !== undefined) {
+    row.icon_url = input.iconUrl;
+  }
+  if (input.featuredRank !== undefined) {
+    row.featured_rank = input.featuredRank;
+  }
+  if (input.qualityScore !== undefined) {
+    row.quality_score = input.qualityScore;
+  }
+  if (input.researchProfile !== undefined) {
+    row.research_profile = input.researchProfile;
+  }
+  if (input.forkedFromSlug !== undefined) {
+    row.forked_from_slug = input.forkedFromSlug;
+  }
 
   return row;
 }
@@ -211,15 +233,23 @@ export async function listSkills(filter?: {
   }
 
   const { data, error } = await query.order("title");
-  if (error) throw new Error(`listSkills failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listSkills failed: ${error.message}`);
+  }
   const rows = data as SkillRow[];
   const authors = await attachAuthors(rows);
   return rows.map((row) =>
-    rowToSkillRecord(row, undefined, row.author_id ? authors.get(row.author_id) : undefined)
+    rowToSkillRecord(
+      row,
+      undefined,
+      row.author_id ? authors.get(row.author_id) : undefined
+    )
   );
 }
 
-export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> {
+export async function getSkillBySlug(
+  slug: string
+): Promise<SkillRecord | null> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("skills")
@@ -227,8 +257,12 @@ export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> 
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error) throw new Error(`getSkillBySlug failed: ${error.message}`);
-  if (!data) return null;
+  if (error) {
+    throw new Error(`getSkillBySlug failed: ${error.message}`);
+  }
+  if (!data) {
+    return null;
+  }
 
   const { data: versions } = await db
     .from("skill_versions")
@@ -239,15 +273,19 @@ export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> 
   const row = data as SkillRow;
   const authors = await attachAuthors([row]);
   const availableVersions: VersionReference[] = [
-    { version: row.version, label: buildVersionLabel(row.version), updatedAt: row.updated_at },
+    {
+      label: buildVersionLabel(row.version),
+      updatedAt: row.updated_at,
+      version: row.version,
+    },
     ...(versions ?? [])
       .filter((v: { version: number }) => v.version !== row.version)
       .map((v: { version: number; created_at: string }) => ({
-        version: v.version,
         label: buildVersionLabel(v.version),
-        updatedAt: v.created_at
-      }))
-  ].sort((a, b) => b.version - a.version);
+        updatedAt: v.created_at,
+        version: v.version,
+      })),
+  ].toSorted((a, b) => b.version - a.version);
 
   return rowToSkillRecord(
     row,
@@ -256,7 +294,10 @@ export async function getSkillBySlug(slug: string): Promise<SkillRecord | null> 
   );
 }
 
-export async function getSkillAtVersion(slug: string, version: number): Promise<SkillRecord | null> {
+export async function getSkillAtVersion(
+  slug: string,
+  version: number
+): Promise<SkillRecord | null> {
   const db = getServerSupabase();
 
   const { data: skillData } = await db
@@ -265,7 +306,9 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!skillData) return null;
+  if (!skillData) {
+    return null;
+  }
   const currentRow = skillData as SkillRow;
 
   if (currentRow.version === version) {
@@ -279,7 +322,9 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
     .eq("version", version)
     .maybeSingle();
 
-  if (error || !versionData) return null;
+  if (error || !versionData) {
+    return null;
+  }
 
   const v = versionData as {
     version: number;
@@ -299,19 +344,19 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
 
   const versionRow: SkillRow = {
     ...currentRow,
-    version: v.version,
-    title: v.title,
-    description: v.description,
-    category: v.category,
-    body: v.body,
-    tags: v.tags,
-    owner_name: v.owner_name,
-    visibility: v.visibility,
-    sources: v.sources,
-    automation: v.automation,
-    updates: v.updates,
     agent_docs: v.agent_docs,
-    updated_at: v.created_at
+    automation: v.automation,
+    body: v.body,
+    category: v.category,
+    description: v.description,
+    owner_name: v.owner_name,
+    sources: v.sources,
+    tags: v.tags,
+    title: v.title,
+    updated_at: v.created_at,
+    updates: v.updates,
+    version: v.version,
+    visibility: v.visibility,
   };
 
   const [authors, { data: allVersionRows }] = await Promise.all([
@@ -324,15 +369,19 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
   ]);
 
   const availableVersions: VersionReference[] = [
-    { version: currentRow.version, label: buildVersionLabel(currentRow.version), updatedAt: currentRow.updated_at },
+    {
+      label: buildVersionLabel(currentRow.version),
+      updatedAt: currentRow.updated_at,
+      version: currentRow.version,
+    },
     ...(allVersionRows ?? [])
       .filter((r: { version: number }) => r.version !== currentRow.version)
       .map((r: { version: number; created_at: string }) => ({
-        version: r.version,
         label: buildVersionLabel(r.version),
         updatedAt: r.created_at,
+        version: r.version,
       })),
-  ].sort((a, b) => b.version - a.version);
+  ].toSorted((a, b) => b.version - a.version);
 
   return rowToSkillRecord(
     versionRow,
@@ -341,7 +390,9 @@ export async function getSkillAtVersion(slug: string, version: number): Promise<
   );
 }
 
-export async function createSkill(input: CreateSkillInput): Promise<SkillRecord> {
+export async function createSkill(
+  input: CreateSkillInput
+): Promise<SkillRecord> {
   const db = getServerSupabase();
   const row = inputToRow(input);
 
@@ -351,7 +402,9 @@ export async function createSkill(input: CreateSkillInput): Promise<SkillRecord>
     .select("*")
     .single();
 
-  if (error) throw new Error(`createSkill failed: ${error.message}`);
+  if (error) {
+    throw new Error(`createSkill failed: ${error.message}`);
+  }
   const skillRow = data as SkillRow;
   const authors = await attachAuthors([skillRow]);
   return rowToSkillRecord(
@@ -368,37 +421,99 @@ export async function updateSkill(
   const db = getServerSupabase();
   const mapped: Record<string, unknown> = {};
 
-  if (updates.origin !== undefined) mapped.origin = updates.origin;
-  if (updates.title !== undefined) mapped.title = updates.title;
-  if (updates.description !== undefined) mapped.description = updates.description;
-  if (updates.category !== undefined) mapped.category = updates.category;
-  if (updates.body !== undefined) mapped.body = updates.body;
-  if (updates.accent !== undefined) mapped.accent = updates.accent;
-  if (updates.featured !== undefined) mapped.featured = updates.featured;
-  if (updates.visibility !== undefined) mapped.visibility = updates.visibility;
-  if (updates.tags !== undefined) mapped.tags = updates.tags;
-  if (updates.headings !== undefined) mapped.headings = updates.headings;
-  if (updates.ownerName !== undefined) mapped.owner_name = updates.ownerName;
-  if (updates.authorId !== undefined) mapped.author_id = updates.authorId;
-  if (updates.sources !== undefined) mapped.sources = updates.sources;
-  if (updates.automation !== undefined) mapped.automation = updates.automation;
-  if (updates.updates !== undefined) mapped.updates = updates.updates;
-  if (updates.agentDocs !== undefined) mapped.agent_docs = updates.agentDocs;
-  if (updates.references !== undefined) mapped.references_data = updates.references;
-  if (updates.agents !== undefined) mapped.agents_data = updates.agents;
-  if (updates.sourceUrl !== undefined) mapped.source_url = updates.sourceUrl;
-  if (updates.canonicalUrl !== undefined) mapped.canonical_url = updates.canonicalUrl;
-  if (updates.syncEnabled !== undefined) mapped.sync_enabled = updates.syncEnabled;
-  if (updates.version !== undefined) mapped.version = updates.version;
-  if (updates.path !== undefined) mapped.path = updates.path;
-  if (updates.relativeDir !== undefined) mapped.relative_dir = updates.relativeDir;
-  if (updates.price !== undefined) mapped.price = updates.price;
-  if (updates.creatorClerkUserId !== undefined) mapped.creator_clerk_user_id = updates.creatorClerkUserId;
-  if (updates.iconUrl !== undefined) mapped.icon_url = updates.iconUrl;
-  if (updates.featuredRank !== undefined) mapped.featured_rank = updates.featuredRank;
-  if (updates.qualityScore !== undefined) mapped.quality_score = updates.qualityScore;
-  if (updates.researchProfile !== undefined) mapped.research_profile = updates.researchProfile;
-  if (updates.forkedFromSlug !== undefined) mapped.forked_from_slug = updates.forkedFromSlug;
+  if (updates.origin !== undefined) {
+    mapped.origin = updates.origin;
+  }
+  if (updates.title !== undefined) {
+    mapped.title = updates.title;
+  }
+  if (updates.description !== undefined) {
+    mapped.description = updates.description;
+  }
+  if (updates.category !== undefined) {
+    mapped.category = updates.category;
+  }
+  if (updates.body !== undefined) {
+    mapped.body = updates.body;
+  }
+  if (updates.accent !== undefined) {
+    mapped.accent = updates.accent;
+  }
+  if (updates.featured !== undefined) {
+    mapped.featured = updates.featured;
+  }
+  if (updates.visibility !== undefined) {
+    mapped.visibility = updates.visibility;
+  }
+  if (updates.tags !== undefined) {
+    mapped.tags = updates.tags;
+  }
+  if (updates.headings !== undefined) {
+    mapped.headings = updates.headings;
+  }
+  if (updates.ownerName !== undefined) {
+    mapped.owner_name = updates.ownerName;
+  }
+  if (updates.authorId !== undefined) {
+    mapped.author_id = updates.authorId;
+  }
+  if (updates.sources !== undefined) {
+    mapped.sources = updates.sources;
+  }
+  if (updates.automation !== undefined) {
+    mapped.automation = updates.automation;
+  }
+  if (updates.updates !== undefined) {
+    mapped.updates = updates.updates;
+  }
+  if (updates.agentDocs !== undefined) {
+    mapped.agent_docs = updates.agentDocs;
+  }
+  if (updates.references !== undefined) {
+    mapped.references_data = updates.references;
+  }
+  if (updates.agents !== undefined) {
+    mapped.agents_data = updates.agents;
+  }
+  if (updates.sourceUrl !== undefined) {
+    mapped.source_url = updates.sourceUrl;
+  }
+  if (updates.canonicalUrl !== undefined) {
+    mapped.canonical_url = updates.canonicalUrl;
+  }
+  if (updates.syncEnabled !== undefined) {
+    mapped.sync_enabled = updates.syncEnabled;
+  }
+  if (updates.version !== undefined) {
+    mapped.version = updates.version;
+  }
+  if (updates.path !== undefined) {
+    mapped.path = updates.path;
+  }
+  if (updates.relativeDir !== undefined) {
+    mapped.relative_dir = updates.relativeDir;
+  }
+  if (updates.price !== undefined) {
+    mapped.price = updates.price;
+  }
+  if (updates.creatorClerkUserId !== undefined) {
+    mapped.creator_clerk_user_id = updates.creatorClerkUserId;
+  }
+  if (updates.iconUrl !== undefined) {
+    mapped.icon_url = updates.iconUrl;
+  }
+  if (updates.featuredRank !== undefined) {
+    mapped.featured_rank = updates.featuredRank;
+  }
+  if (updates.qualityScore !== undefined) {
+    mapped.quality_score = updates.qualityScore;
+  }
+  if (updates.researchProfile !== undefined) {
+    mapped.research_profile = updates.researchProfile;
+  }
+  if (updates.forkedFromSlug !== undefined) {
+    mapped.forked_from_slug = updates.forkedFromSlug;
+  }
 
   const { data, error } = await db
     .from("skills")
@@ -407,19 +522,29 @@ export async function updateSkill(
     .select("*")
     .single();
 
-  if (error) throw new Error(`updateSkill failed: ${error.message}`);
+  if (error) {
+    throw new Error(`updateSkill failed: ${error.message}`);
+  }
   const row = data as SkillRow;
   const authors = await attachAuthors([row]);
-  return rowToSkillRecord(row, undefined, row.author_id ? authors.get(row.author_id) : undefined);
+  return rowToSkillRecord(
+    row,
+    undefined,
+    row.author_id ? authors.get(row.author_id) : undefined
+  );
 }
 
 export async function deleteSkill(slug: string): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("skills").delete().eq("slug", slug);
-  if (error) throw new Error(`deleteSkill failed: ${error.message}`);
+  if (error) {
+    throw new Error(`deleteSkill failed: ${error.message}`);
+  }
 }
 
-export async function upsertSkillFromFilesystem(input: CreateSkillInput): Promise<SkillRecord> {
+export async function upsertSkillFromFilesystem(
+  input: CreateSkillInput
+): Promise<SkillRecord> {
   const db = getServerSupabase();
   const row = inputToRow(input);
 
@@ -429,7 +554,9 @@ export async function upsertSkillFromFilesystem(input: CreateSkillInput): Promis
     .select("*")
     .single();
 
-  if (error) throw new Error(`upsertSkillFromFilesystem failed: ${error.message}`);
+  if (error) {
+    throw new Error(`upsertSkillFromFilesystem failed: ${error.message}`);
+  }
   const skillRow = data as SkillRow;
   const authors = await attachAuthors([skillRow]);
   return rowToSkillRecord(
@@ -447,7 +574,9 @@ export async function getSkillIdBySlug(slug: string): Promise<string | null> {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error) throw new Error(`getSkillIdBySlug failed: ${error.message}`);
+  if (error) {
+    throw new Error(`getSkillIdBySlug failed: ${error.message}`);
+  }
   return (data as { id: string } | null)?.id ?? null;
 }
 
@@ -457,6 +586,8 @@ export async function countUserSkills(clerkUserId: string): Promise<number> {
     .from("skills")
     .select("*", { count: "exact", head: true })
     .eq("creator_clerk_user_id", clerkUserId);
-  if (error) throw new Error(`countUserSkills failed: ${error.message}`);
+  if (error) {
+    throw new Error(`countUserSkills failed: ${error.message}`);
+  }
   return count ?? 0;
 }

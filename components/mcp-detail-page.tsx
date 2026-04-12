@@ -3,99 +3,126 @@ import Link from "next/link";
 import { AppGridShell } from "@/components/app-grid-shell";
 import { CopyButton } from "@/components/copy-button";
 import { ExpandableContent } from "@/components/expandable-content";
-import { GlobeIcon, KeyIcon, PlayIcon, TerminalIcon } from "@/components/frontier-icons";
+import {
+  GlobeIcon,
+  KeyIcon,
+  PlayIcon,
+  TerminalIcon,
+} from "@/components/frontier-icons";
 import { McpDetailSidebar } from "@/components/mcp-detail-sidebar";
 import { ShareButton } from "@/components/share-button";
 import { SiteHeader } from "@/components/site-header";
-import { McpIcon } from "@/components/ui/skill-icon";
-import { UsageBeacon } from "@/components/usage-beacon";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { Panel } from "@/components/ui/panel";
-import { getTagColorForTransport } from "@/lib/tag-utils";
+import { McpIcon } from "@/components/ui/skill-icon";
+import { UsageBeacon } from "@/components/usage-beacon";
 import { cn } from "@/lib/cn";
 import { buildMcpVersionHref, formatRelativeDate } from "@/lib/format";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
-import { pageInsetPadX } from "@/lib/ui-layout";
+import { getTagColorForTransport } from "@/lib/tag-utils";
 import type { ImportedMcpDocument, VersionReference } from "@/lib/types";
+import { pageInsetPadX } from "@/lib/ui-layout";
 
-const sectionH2 = "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
+const sectionH2 =
+  "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
 const codeSurface =
   "rounded-none border border-line bg-paper-2/50 p-4 dark:bg-paper-2/25";
-const metaLabel = "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
+const metaLabel =
+  "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
 const metaValue = "text-sm font-semibold tracking-[-0.03em] text-ink";
 
-type McpDetailPageProps = {
+interface McpDetailPageProps {
   mcp: ImportedMcpDocument;
   timeZone?: string;
-};
+}
 
 function buildAvailableVersions(mcp: ImportedMcpDocument): VersionReference[] {
   const current: VersionReference = {
-    version: mcp.version,
     label: mcp.versionLabel,
-    updatedAt: mcp.updatedAt
+    updatedAt: mcp.updatedAt,
+    version: mcp.version,
   };
 
   const fromVersions: VersionReference[] = mcp.versions.map((v) => ({
-    version: v.version,
     label: `v${v.version}`,
-    updatedAt: v.updatedAt
+    updatedAt: v.updatedAt,
+    version: v.version,
   }));
 
   const seen = new Set<number>();
   const all = [current, ...fromVersions].filter((v) => {
-    if (seen.has(v.version)) return false;
+    if (seen.has(v.version)) {
+      return false;
+    }
     seen.add(v.version);
     return true;
   });
 
-  return all.sort((a, b) => b.version - a.version);
+  return all.toSorted((a, b) => b.version - a.version);
 }
 
 function formatTransportLabel(transport: string): string {
   switch (transport) {
-    case "stdio":
+    case "stdio": {
       return "Standard I/O";
-    case "http":
+    }
+    case "http": {
       return "HTTP";
-    case "sse":
+    }
+    case "sse": {
       return "Server-Sent Events";
-    case "ws":
+    }
+    case "ws": {
       return "WebSocket";
-    default:
+    }
+    default: {
       return transport;
+    }
   }
 }
 
-function formatVerificationLabel(status?: ImportedMcpDocument["verificationStatus"]): string {
+function formatVerificationLabel(
+  status?: ImportedMcpDocument["verificationStatus"]
+): string {
   switch (status) {
-    case "verified":
+    case "verified": {
       return "Verified";
-    case "partial":
+    }
+    case "partial": {
       return "Partially verified";
-    case "broken":
+    }
+    case "broken": {
       return "Broken";
+    }
     case "unverified":
-    default:
+    default: {
       return "Unverified";
+    }
   }
 }
 
-function formatInstallStrategy(strategy?: ImportedMcpDocument["installStrategy"]): string {
+function formatInstallStrategy(
+  strategy?: ImportedMcpDocument["installStrategy"]
+): string {
   switch (strategy) {
-    case "remote-http":
+    case "remote-http": {
       return "Remote HTTP";
-    case "uvx":
+    }
+    case "uvx": {
       return "uvx";
-    case "binary":
+    }
+    case "binary": {
       return "Binary";
-    case "manual":
+    }
+    case "manual": {
       return "Manual";
+    }
     case "npx":
-    default:
+    default: {
       return "npx";
+    }
   }
 }
 
@@ -115,7 +142,12 @@ export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
         path={href}
       />
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
-        <div className={cn("relative shrink-0 overflow-hidden border-b border-line py-4", pageInsetPadX)}>
+        <div
+          className={cn(
+            "relative shrink-0 overflow-hidden border-b border-line py-4",
+            pageInsetPadX
+          )}
+        >
           <header className="relative z-10 grid gap-4">
             <Link
               className="w-fit text-xs font-medium text-ink-faint transition-colors hover:text-ink"
@@ -125,9 +157,13 @@ export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
             </Link>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Badge color={getTagColorForTransport(mcp.transport)}>{mcp.transport.toUpperCase()}</Badge>
+              <Badge color={getTagColorForTransport(mcp.transport)}>
+                {mcp.transport.toUpperCase()}
+              </Badge>
               <Badge color="neutral">{mcp.versionLabel}</Badge>
-              <Badge color="teal">{formatVerificationLabel(mcp.verificationStatus)}</Badge>
+              <Badge color="teal">
+                {formatVerificationLabel(mcp.verificationStatus)}
+              </Badge>
               {isRunnable ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
@@ -207,7 +243,7 @@ export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
                 usageEvent={{
                   kind: "copy_url",
                   label: "Copied MCP manifest URL",
-                  path: href
+                  path: href,
                 }}
                 value={mcp.manifestUrl}
                 variant="soft"
@@ -220,7 +256,7 @@ export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
                 usageEvent={{
                   kind: "copy_url",
                   label: "Copied MCP link",
-                  path: href
+                  path: href,
                 }}
                 value={href}
                 variant="soft"
@@ -243,9 +279,7 @@ export function McpDetailPage({ mcp, timeZone }: McpDetailPageProps) {
                 <EnvironmentKeysSection envKeys={mcp.envKeys} />
               )}
 
-              {hasHeaders && (
-                <HeadersSection headers={mcp.headers!} />
-              )}
+              {hasHeaders && <HeadersSection headers={mcp.headers!} />}
 
               <RawManifestSection raw={mcp.raw} />
             </div>
@@ -286,17 +320,23 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="grid gap-0.5">
             <small className={metaLabel}>transport</small>
-            <strong className={metaValue}>{formatTransportLabel(mcp.transport)}</strong>
+            <strong className={metaValue}>
+              {formatTransportLabel(mcp.transport)}
+            </strong>
           </div>
 
           <div className="grid gap-0.5">
             <small className={metaLabel}>verification</small>
-            <strong className={metaValue}>{formatVerificationLabel(mcp.verificationStatus)}</strong>
+            <strong className={metaValue}>
+              {formatVerificationLabel(mcp.verificationStatus)}
+            </strong>
           </div>
 
           <div className="grid gap-0.5">
             <small className={metaLabel}>install</small>
-            <strong className={metaValue}>{formatInstallStrategy(mcp.installStrategy)}</strong>
+            <strong className={metaValue}>
+              {formatInstallStrategy(mcp.installStrategy)}
+            </strong>
           </div>
 
           <div className="grid gap-0.5">
@@ -307,7 +347,9 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
           {mcp.url && (
             <div className="col-span-2 grid gap-0.5">
               <small className={metaLabel}>url</small>
-              <code className="truncate font-mono text-sm text-ink">{mcp.url}</code>
+              <code className="truncate font-mono text-sm text-ink">
+                {mcp.url}
+              </code>
             </div>
           )}
 
@@ -317,7 +359,8 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
               <div className={cn(codeSurface, "flex items-center gap-2")}>
                 <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
                 <code className="block whitespace-pre-wrap font-mono text-sm text-ink wrap-break-word">
-                  {mcp.command}{mcp.args.length > 0 ? ` ${mcp.args.join(" ")}` : ""}
+                  {mcp.command}
+                  {mcp.args.length > 0 ? ` ${mcp.args.join(" ")}` : ""}
                 </code>
               </div>
             </div>
@@ -326,7 +369,9 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
           {mcp.args.length > 0 && !mcp.command && (
             <div className="col-span-2 grid gap-0.5">
               <small className={metaLabel}>args</small>
-              <code className="font-mono text-sm text-ink">{mcp.args.join(" ")}</code>
+              <code className="font-mono text-sm text-ink">
+                {mcp.args.join(" ")}
+              </code>
             </div>
           )}
 
@@ -400,8 +445,12 @@ function HeadersSection({ headers }: { headers: Record<string, string> }) {
               className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-none border border-line bg-paper-2/50 px-3 py-2 dark:bg-paper-2/25"
               key={key}
             >
-              <code className="font-mono text-sm font-semibold text-ink">{key}</code>
-              <code className="truncate font-mono text-sm text-ink-soft">{value}</code>
+              <code className="font-mono text-sm font-semibold text-ink">
+                {key}
+              </code>
+              <code className="truncate font-mono text-sm text-ink-soft">
+                {value}
+              </code>
             </div>
           ))}
         </div>

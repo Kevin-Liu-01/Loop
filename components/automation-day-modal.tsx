@@ -1,5 +1,8 @@
 "use client";
 
+import { AutomationIcon } from "@/components/frontier-icons";
+import { Badge } from "@/components/ui/badge";
+import { LinkButton } from "@/components/ui/link-button";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
 import { SkillIcon } from "@/components/ui/skill-icon";
-import { AutomationIcon } from "@/components/frontier-icons";
-import { Badge } from "@/components/ui/badge";
-import { LinkButton } from "@/components/ui/link-button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
@@ -20,20 +20,19 @@ import { formatNextRun } from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
 
-export type DayAutomationEntry = {
+export interface DayAutomationEntry {
   automation: AutomationSummary;
   color: { bg: string; ring: string; border: string };
-};
+}
 
-type AutomationDayModalProps = {
+interface AutomationDayModalProps {
   open: boolean;
   onClose: () => void;
   date: Date | null;
   entries: DayAutomationEntry[];
   onEditAutomation?: (automation: AutomationSummary) => void;
   skillMap?: Map<string, SkillRecord>;
-};
-
+}
 
 function AutomationRunIcon({
   skill,
@@ -43,10 +42,12 @@ function AutomationRunIcon({
   color: { bg: string; ring: string; border: string };
 }) {
   return (
-    <div className={cn(
-      "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border",
-      skill ? color.border : "border-line bg-paper-2 dark:bg-paper-2/60",
-    )}>
+    <div
+      className={cn(
+        "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border",
+        skill ? color.border : "border-line bg-paper-2 dark:bg-paper-2/60"
+      )}
+    >
       {skill ? (
         <SkillIcon flush iconUrl={skill.iconUrl} size={40} slug={skill.slug} />
       ) : (
@@ -54,20 +55,39 @@ function AutomationRunIcon({
       )}
       <span
         aria-hidden
-        className={cn("absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-paper-3", color.bg)}
+        className={cn(
+          "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-paper-3",
+          color.bg
+        )}
       />
     </div>
   );
 }
 
-export function AutomationDayModal({ open, onClose, date, entries, onEditAutomation, skillMap }: AutomationDayModalProps) {
+export function AutomationDayModal({
+  open,
+  onClose,
+  date,
+  entries,
+  onEditAutomation,
+  skillMap,
+}: AutomationDayModalProps) {
   const { timeZone } = useAppTimezone();
   const title = date ? formatFullDate(date, timeZone) : "";
   const isClickable = typeof onEditAutomation === "function";
-  const activeCount = entries.filter(({ automation }) => automation.status === "ACTIVE").length;
+  const activeCount = entries.filter(
+    ({ automation }) => automation.status === "ACTIVE"
+  ).length;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="lg">
         <DialogHeader className="gap-1 space-y-0">
           <DialogTitle>Scheduled runs</DialogTitle>
@@ -85,7 +105,9 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
           {entries.length === 0 ? (
             <div className="flex flex-col items-center gap-3 border border-dashed border-line bg-paper-2/40 px-4 py-10 text-center dark:bg-black/20">
               <AutomationIcon className="h-5 w-5 text-ink-faint" />
-              <p className="m-0 text-sm text-ink-soft">No automations on this day.</p>
+              <p className="m-0 text-sm text-ink-soft">
+                No automations on this day.
+              </p>
             </div>
           ) : (
             <ul className="m-0 grid list-none gap-2 p-0">
@@ -94,8 +116,12 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
                   ? skillMap?.get(automation.matchedSkillSlugs[0])
                   : undefined;
                 const isActive = automation.status === "ACTIVE";
-                const schedule = automation.schedule;
-                const nextRun = formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay);
+                const { schedule } = automation;
+                const nextRun = formatNextRun(
+                  automation.cadence,
+                  automation.preferredHour ?? 12,
+                  automation.preferredDay
+                );
 
                 const inner = (
                   <div className="flex items-start gap-3.5">
@@ -106,10 +132,7 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
                         <span className="font-medium leading-tight text-ink">
                           {automation.name}
                         </span>
-                        <Badge
-                          color={isActive ? "green" : "neutral"}
-                          size="sm"
-                        >
+                        <Badge color={isActive ? "green" : "neutral"} size="sm">
                           <StatusDot
                             className="mr-1"
                             pulse={isActive}
@@ -121,7 +144,9 @@ export function AutomationDayModal({ open, onClose, date, entries, onEditAutomat
 
                       {linkedSkill && (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-ink-soft">{linkedSkill.title}</span>
+                          <span className="text-xs text-ink-soft">
+                            {linkedSkill.title}
+                          </span>
                           <Badge
                             color={getTagColorForCategory(linkedSkill.category)}
                             size="sm"

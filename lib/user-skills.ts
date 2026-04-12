@@ -1,21 +1,29 @@
 import { z } from "zod";
 
-import { DEFAULT_PREFERRED_DAY, DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
-import { formatScheduleLabel } from "@/lib/schedule";
+import {
+  DEFAULT_PREFERRED_DAY,
+  DEFAULT_PREFERRED_HOUR,
+} from "@/lib/automation-constants";
+import {
+  createSkillVersion as dbCreateSkillVersion,
+  getSkillVersions as dbGetSkillVersions,
+} from "@/lib/db/skill-versions";
 import {
   createSkill as dbCreateSkill,
   getSkillBySlug as dbGetSkillBySlug,
   getSkillIdBySlug,
   listSkills as dbListSkills,
-  updateSkill as dbUpdateSkill
+  updateSkill as dbUpdateSkill,
 } from "@/lib/db/skills";
-import {
-  createSkillVersion as dbCreateSkillVersion,
-  getSkillVersions as dbGetSkillVersions
-} from "@/lib/db/skill-versions";
 import { buildVersionLabel, buildSkillVersionHref } from "@/lib/format";
-import { createExcerpt, extractHeadings, slugify, stableHash } from "@/lib/markdown";
+import {
+  createExcerpt,
+  extractHeadings,
+  slugify,
+  stableHash,
+} from "@/lib/markdown";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
+import { formatScheduleLabel } from "@/lib/schedule";
 import type {
   AgentDocs,
   AgentPrompt,
@@ -30,12 +38,12 @@ import type {
   UserSkillCadence,
   UserSkillDocument,
   UserSkillVersion,
-  VersionReference
+  VersionReference,
 } from "@/lib/types";
 
 const CATEGORY_SLUGS = CATEGORY_REGISTRY.map((category) => category.slug) as [
   CategorySlug,
-  ...CategorySlug[]
+  ...CategorySlug[],
 ];
 
 // ---------------------------------------------------------------------------
@@ -44,44 +52,51 @@ const CATEGORY_SLUGS = CATEGORY_REGISTRY.map((category) => category.slug) as [
 
 const sourceSchema = z.object({
   id: z.string().min(1),
-  label: z.string().min(1),
-  url: z.string().url(),
   kind: z.enum(["rss", "atom", "docs", "blog", "github", "watchlist"]),
-  tags: z.array(z.string())
+  label: z.string().min(1),
+  tags: z.array(z.string()),
+  url: z.string().url(),
 });
 
 export const AUTOMATION_PROMPT_MAX_LENGTH = 600;
 
 const automationSchema = z.object({
-  enabled: z.boolean(),
   cadence: z.enum(["daily", "weekly", "manual"]),
-  status: z.enum(["active", "paused"]),
+  enabled: z.boolean(),
+  lastRunAt: z.string().datetime().optional(),
   prompt: z.string(),
-  lastRunAt: z.string().datetime().optional()
+  status: z.enum(["active", "paused"]),
 });
 
 export const createUserSkillInputSchema = z.object({
-  title: z.string().trim().min(3).max(80),
-  description: z.string().trim().min(16).max(220),
-  category: z.enum(CATEGORY_SLUGS),
-  body: z.string().trim().min(40).max(24000),
-  ownerName: z.string().trim().max(48).optional(),
-  tags: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
-  sourceUrls: z.array(z.string().url()).max(8).default([]),
+  agentDocs: z.record(z.string()).optional(),
   autoUpdate: z.boolean().default(true),
   automationCadence: z.enum(["daily", "weekly", "manual"]).default("daily"),
-  automationPrompt: z.string().trim().max(AUTOMATION_PROMPT_MAX_LENGTH).optional(),
-  preferredHour: z.number().int().min(0).max(23).optional(),
+  automationPrompt: z
+    .string()
+    .trim()
+    .max(AUTOMATION_PROMPT_MAX_LENGTH)
+    .optional(),
+  body: z.string().trim().min(40).max(24_000),
+  category: z.enum(CATEGORY_SLUGS),
+  description: z.string().trim().min(16).max(220),
+  ownerName: z.string().trim().max(48).optional(),
   preferredDay: z.number().int().min(0).max(6).optional(),
-  agentDocs: z.record(z.string()).optional(),
-  price: z.object({ amount: z.number(), currency: z.string() }).nullable().optional(),
+  preferredHour: z.number().int().min(0).max(23).optional(),
+  price: z
+    .object({ amount: z.number(), currency: z.string() })
+    .nullable()
+    .optional(),
+  sourceUrls: z.array(z.string().url()).max(8).default([]),
+  tags: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
+  title: z.string().trim().min(3).max(80),
   visibility: z.enum(["public", "private"]).optional().default("private"),
 });
 
 export type CreateUserSkillInput = z.input<typeof createUserSkillInputSchema>;
 
 export const updateUserSkillInputSchema = createUserSkillInputSchema.extend({
-  slug: z.string().trim().min(1)
+  slug: z.string().trim().min(1),
 });
 
 export type UpdateUserSkillInput = z.input<typeof updateUserSkillInputSchema>;
@@ -102,44 +117,64 @@ function titleCaseFromHost(hostname: string): string {
 function inferSourceKind(url: string): SourceKind {
   const lower = url.toLowerCase();
 
-  if (lower.endsWith(".atom") || lower.includes("/atom")) return "atom";
-  if (lower.includes("github.com")) return "github";
-  if (lower.includes("/docs") || lower.includes("developers.")) return "docs";
-  if (lower.includes("/blog") || lower.includes("blog.")) return "blog";
-  if (lower.includes("rss") || lower.includes("feed") || lower.endsWith(".xml")) return "rss";
+  if (lower.endsWith(".atom") || lower.includes("/atom")) {
+    return "atom";
+  }
+  if (lower.includes("github.com")) {
+    return "github";
+  }
+  if (lower.includes("/docs") || lower.includes("developers.")) {
+    return "docs";
+  }
+  if (lower.includes("/blog") || lower.includes("blog.")) {
+    return "blog";
+  }
+  if (
+    lower.includes("rss") ||
+    lower.includes("feed") ||
+    lower.endsWith(".xml")
+  ) {
+    return "rss";
+  }
 
   return "watchlist";
 }
 
 export function normalizeTags(input: string[]): string[] {
-  return Array.from(
-    new Set(
+  return [
+    ...new Set(
       input
         .map((tag) => slugify(tag))
-        .map((tag) => tag.replace(/^-+|-+$/g, ""))
+        .map((tag) => tag.replaceAll(/^-+|-+$/g, ""))
         .filter(Boolean)
-    )
-  ).slice(0, 8);
+    ),
+  ].slice(0, 8);
 }
 
-export function normalizeSource(url: string, category: CategorySlug): SourceDefinition {
+export function normalizeSource(
+  url: string,
+  category: CategorySlug
+): SourceDefinition {
   const parsed = new URL(url);
   const hostnameLabel = titleCaseFromHost(parsed.hostname) || "Watchlist";
   const pathLabel = parsed.pathname
     .split("/")
     .filter(Boolean)
-    .slice(-1)[0]
+    .at(-1)
     ?.replace(/\.(xml|rss|atom|json)$/i, "")
-    ?.replace(/[-_]/g, " ");
-  const suffix = pathLabel && pathLabel.toLowerCase() !== hostnameLabel.toLowerCase() ? ` ${pathLabel}` : "";
+    ?.replaceAll(/[-_]/g, " ");
+  const suffix =
+    pathLabel && pathLabel.toLowerCase() !== hostnameLabel.toLowerCase()
+      ? ` ${pathLabel}`
+      : "";
   const label = `${hostnameLabel}${suffix}`.trim();
 
   return {
     id: stableHash(`${category}:${url}`),
-    label,
-    url,
     kind: inferSourceKind(url),
-    tags: normalizeTags([category, hostnameLabel, pathLabel ?? ""])
+    label,
+    tags: normalizeTags([category, hostnameLabel, pathLabel ?? ""]),
+    url,
   };
 }
 
@@ -148,40 +183,50 @@ export function buildAutomationPrompt(
   slug: string
 ): string {
   const trimmedPrompt = input.automationPrompt?.trim();
-  if (trimmedPrompt) return trimmedPrompt;
+  if (trimmedPrompt) {
+    return trimmedPrompt;
+  }
   return `Refresh $${slug} from the tracked sources. Capture only concrete changes, fold them into the skill, and stay terse.`;
 }
 
-function buildAgentPrompt(skill: UserSkillDocument | UserSkillVersion, slug: string): AgentPrompt {
+function buildAgentPrompt(
+  skill: UserSkillDocument | UserSkillVersion,
+  slug: string
+): AgentPrompt {
   return {
-    provider: "loop",
-    displayName: "Loop default",
-    shortDescription: "Base prompt synthesized from the submitted skill and its update rules.",
     defaultPrompt: skill.automation.prompt || `Use $${slug} for this task.`,
-    path: `loop://skills/${slug}/prompt`
+    displayName: "Loop default",
+    path: `loop://skills/${slug}/prompt`,
+    provider: "loop",
+    shortDescription:
+      "Base prompt synthesized from the submitted skill and its update rules.",
   };
 }
 
 function buildSourceReferences(sources: SourceDefinition[]): ReferenceDoc[] {
   return sources.map((source) => ({
+    excerpt: source.tags.join(" · ") || source.kind,
+    path: source.url,
     slug: source.id,
     title: source.label,
-    path: source.url,
-    excerpt: source.tags.join(" · ") || source.kind
   }));
 }
 
 function formatCadence(cadence: UserSkillCadence): string {
-  if (cadence === "daily") return "Daily";
-  if (cadence === "weekly") return "Weekly";
+  if (cadence === "daily") {
+    return "Daily";
+  }
+  if (cadence === "weekly") {
+    return "Weekly";
+  }
   return "Manual";
 }
 
 function toVersionReference(version: UserSkillVersion): VersionReference {
   return {
-    version: version.version,
     label: buildVersionLabel(version.version),
-    updatedAt: version.updatedAt
+    updatedAt: version.updatedAt,
+    version: version.version,
   };
 }
 
@@ -191,21 +236,29 @@ function buildUserSkillVersion(
   updatedAt: string
 ): UserSkillVersion {
   return {
-    version,
     updatedAt,
-    ...fields
+    version,
+    ...fields,
   };
 }
 
 function latestUserSkillVersion(skill: UserSkillDocument): UserSkillVersion {
-  return skill.versions
-    .slice()
-    .sort((left, right) => right.version - left.version)[0];
+  return [...skill.versions].toSorted(
+    (left, right) => right.version - left.version
+  )[0];
 }
 
-function materializeUserSkillVersion(skill: UserSkillDocument, requestedVersion?: number): UserSkillVersion {
-  if (!requestedVersion) return latestUserSkillVersion(skill);
-  return skill.versions.find((version) => version.version === requestedVersion) ?? latestUserSkillVersion(skill);
+function materializeUserSkillVersion(
+  skill: UserSkillDocument,
+  requestedVersion?: number
+): UserSkillVersion {
+  if (!requestedVersion) {
+    return latestUserSkillVersion(skill);
+  }
+  return (
+    skill.versions.find((version) => version.version === requestedVersion) ??
+    latestUserSkillVersion(skill)
+  );
 }
 
 function buildUserSkillBody(version: UserSkillVersion): string {
@@ -219,7 +272,9 @@ function buildUserSkillBody(version: UserSkillVersion): string {
       `- Cadence: ${formatCadence(version.automation.cadence)}`,
       `- Status: ${version.automation.status}`,
       `- Sources tracked: ${version.sources.length}`,
-      latestUpdate ? `- Last refresh: ${latestUpdate.generatedAt}` : "- Last refresh: waiting for first pass"
+      latestUpdate
+        ? `- Last refresh: ${latestUpdate.generatedAt}`
+        : "- Last refresh: waiting for first pass",
     ].join("\n")
   );
 
@@ -238,7 +293,7 @@ function buildUserSkillBody(version: UserSkillVersion): string {
           : "- Sections changed: none recorded",
         "",
         "### Suggested moves",
-        ...latestUpdate.experiments.map((experiment) => `- ${experiment}`)
+        ...latestUpdate.experiments.map((experiment) => `- ${experiment}`),
       ].join("\n")
     );
   }
@@ -247,7 +302,9 @@ function buildUserSkillBody(version: UserSkillVersion): string {
     sections.push(
       [
         "## Tracked sources",
-        ...version.sources.map((source) => `- [${source.label}](${source.url}) · ${source.kind}`)
+        ...version.sources.map(
+          (source) => `- [${source.label}](${source.url}) · ${source.kind}`
+        ),
       ].join("\n")
     );
   }
@@ -256,7 +313,9 @@ function buildUserSkillBody(version: UserSkillVersion): string {
     sections.push(
       [
         "## Recent signal log",
-        ...version.updates.slice(0, 3).map((update) => `- ${update.generatedAt}: ${update.summary}`)
+        ...version.updates
+          .slice(0, 3)
+          .map((update) => `- ${update.generatedAt}: ${update.summary}`),
       ].join("\n")
     );
   }
@@ -264,32 +323,49 @@ function buildUserSkillBody(version: UserSkillVersion): string {
   return sections.filter(Boolean).join("\n\n");
 }
 
-function buildEditableTags(existing: string[], category: CategorySlug, nextTags: string[]): string[] {
+function buildEditableTags(
+  existing: string[],
+  category: CategorySlug,
+  nextTags: string[]
+): string[] {
   const marker = existing.includes("tracked") ? "tracked" : "community";
-  const filtered = nextTags.filter((tag) => tag !== "tracked" && tag !== "community");
+  const filtered = nextTags.filter(
+    (tag) => tag !== "tracked" && tag !== "community"
+  );
   return normalizeTags([category, ...filtered, marker]);
 }
 
-export function sameSourceList(left: SourceDefinition[], right: SourceDefinition[]): boolean {
+export function sameSourceList(
+  left: SourceDefinition[],
+  right: SourceDefinition[]
+): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-export function sameAutomation(left: SkillAutomationState, right: SkillAutomationState): boolean {
+export function sameAutomation(
+  left: SkillAutomationState,
+  right: SkillAutomationState
+): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function cloneVersion(version: UserSkillVersion): UserSkillVersion {
   return {
     ...version,
-    tags: [...version.tags],
-    sources: version.sources.map((source) => ({ ...source, tags: [...source.tags] })),
     automation: { ...version.automation },
+    sources: version.sources.map((source) => ({
+      ...source,
+      tags: [...source.tags],
+    })),
+    tags: [...version.tags],
     updates: version.updates.map((update) => ({
       ...update,
+      changedSections: update.changedSections
+        ? [...update.changedSections]
+        : undefined,
       experiments: [...update.experiments],
-      changedSections: update.changedSections ? [...update.changedSections] : undefined,
-      items: update.items.map((item) => ({ ...item, tags: [...item.tags] }))
-    }))
+      items: update.items.map((item) => ({ ...item, tags: [...item.tags] })),
+    })),
   };
 }
 
@@ -297,86 +373,115 @@ function cloneVersion(version: UserSkillVersion): UserSkillVersion {
 // Public pure logic
 // ---------------------------------------------------------------------------
 
-export function isUserSkillAutomationDue(skill: UserSkillDocument, now = new Date()): boolean {
-  if (!skill.automation.enabled || skill.automation.status !== "active" || skill.sources.length === 0) {
+export function isUserSkillAutomationDue(
+  skill: UserSkillDocument,
+  now = new Date()
+): boolean {
+  if (
+    !skill.automation.enabled ||
+    skill.automation.status !== "active" ||
+    skill.sources.length === 0
+  ) {
     return false;
   }
 
-  if (skill.automation.cadence === "manual") return false;
+  if (skill.automation.cadence === "manual") {
+    return false;
+  }
 
   const failures = skill.automation.consecutiveFailures ?? 0;
   if (failures >= 3) {
-    console.warn(`[automation] Skipping ${skill.slug}: ${failures} consecutive failures`);
+    console.warn(
+      `[automation] Skipping ${skill.slug}: ${failures} consecutive failures`
+    );
     return false;
   }
 
   if (skill.automation.cadence === "weekly") {
     const preferredDay = skill.automation.preferredDay ?? DEFAULT_PREFERRED_DAY;
-    if (now.getUTCDay() !== preferredDay) return false;
+    if (now.getUTCDay() !== preferredDay) {
+      return false;
+    }
   }
 
-  const lastRunAt = skill.automation.lastRunAt ? new Date(skill.automation.lastRunAt) : null;
-  if (!lastRunAt || Number.isNaN(lastRunAt.valueOf())) return true;
+  const lastRunAt = skill.automation.lastRunAt
+    ? new Date(skill.automation.lastRunAt)
+    : null;
+  if (!lastRunAt || Number.isNaN(lastRunAt.valueOf())) {
+    return true;
+  }
 
   const elapsedMs = now.valueOf() - lastRunAt.valueOf();
-  const thresholdMs = skill.automation.cadence === "daily" ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  const thresholdMs =
+    skill.automation.cadence === "daily"
+      ? 24 * 60 * 60 * 1000
+      : 7 * 24 * 60 * 60 * 1000;
   return elapsedMs >= thresholdMs;
 }
 
-export function createUserSkillDocument(input: CreateUserSkillInput, now = new Date()): UserSkillDocument {
+export function createUserSkillDocument(
+  input: CreateUserSkillInput,
+  now = new Date()
+): UserSkillDocument {
   const parsed = createUserSkillInputSchema.parse({
     ...input,
     ownerName: input.ownerName?.trim() || undefined,
+    sourceUrls: [
+      ...new Set(
+        (input.sourceUrls ?? []).map((url) => url.trim()).filter(Boolean)
+      ),
+    ],
     tags: normalizeTags(input.tags ?? []),
-    sourceUrls: Array.from(new Set((input.sourceUrls ?? []).map((url) => url.trim()).filter(Boolean)))
   });
 
   const slugBase = slugify(parsed.title) || `skill-${stableHash(parsed.title)}`;
   const createdAt = now.toISOString();
-  const sources = parsed.sourceUrls.map((url) => normalizeSource(url, parsed.category));
+  const sources = parsed.sourceUrls.map((url) =>
+    normalizeSource(url, parsed.category)
+  );
   const automationEnabled = parsed.autoUpdate && parsed.sourceUrls.length > 0;
   const latestVersion = buildUserSkillVersion(
     {
-      title: parsed.title,
-      description: parsed.description,
-      category: parsed.category,
-      body: parsed.body,
-      ownerName: parsed.ownerName,
-      tags: normalizeTags([parsed.category, ...parsed.tags, "community"]),
-      visibility: parsed.visibility ?? "private",
-      sources,
+      agentDocs: parsed.agentDocs as AgentDocs | undefined,
       automation: {
-        enabled: automationEnabled,
         cadence: automationEnabled ? parsed.automationCadence : "manual",
-        status: automationEnabled ? "active" : "paused",
-        prompt: buildAutomationPrompt(parsed, slugBase),
-        preferredHour: parsed.preferredHour ?? DEFAULT_PREFERRED_HOUR,
+        enabled: automationEnabled,
         preferredDay: parsed.preferredDay,
+        preferredHour: parsed.preferredHour ?? DEFAULT_PREFERRED_HOUR,
+        prompt: buildAutomationPrompt(parsed, slugBase),
+        status: automationEnabled ? "active" : "paused",
       },
+      body: parsed.body,
+      category: parsed.category,
+      description: parsed.description,
+      ownerName: parsed.ownerName,
+      sources,
+      tags: normalizeTags([parsed.category, ...parsed.tags, "community"]),
+      title: parsed.title,
       updates: [],
-      agentDocs: parsed.agentDocs as AgentDocs | undefined
+      visibility: parsed.visibility ?? "private",
     },
     1,
     createdAt
   );
 
   return {
-    slug: slugBase,
-    title: latestVersion.title,
-    description: latestVersion.description,
-    category: latestVersion.category,
-    body: latestVersion.body,
-    ownerName: latestVersion.ownerName,
-    tags: latestVersion.tags,
-    visibility: latestVersion.visibility,
-    createdAt,
-    updatedAt: createdAt,
-    sources: latestVersion.sources,
+    agentDocs: latestVersion.agentDocs,
     automation: latestVersion.automation,
+    body: latestVersion.body,
+    category: latestVersion.category,
+    createdAt,
+    description: latestVersion.description,
+    ownerName: latestVersion.ownerName,
+    slug: slugBase,
+    sources: latestVersion.sources,
+    tags: latestVersion.tags,
+    title: latestVersion.title,
+    updatedAt: createdAt,
     updates: latestVersion.updates,
     version: 1,
     versions: [latestVersion],
-    agentDocs: latestVersion.agentDocs
+    visibility: latestVersion.visibility,
   };
 }
 
@@ -391,32 +496,45 @@ export function applyUserEditsToSkill(
   input: UpdateUserSkillInput
 ): { skill: UserSkillDocument; changed: boolean } {
   if (input.slug !== skill.slug) {
-    throw new Error("The requested skill slug does not match the current document.");
+    throw new Error(
+      "The requested skill slug does not match the current document."
+    );
   }
 
   const parsed = updateUserSkillInputSchema.parse({
     ...input,
     ownerName: input.ownerName?.trim() || undefined,
+    sourceUrls: [
+      ...new Set(
+        (input.sourceUrls ?? []).map((url) => url.trim()).filter(Boolean)
+      ),
+    ],
     tags: normalizeTags(input.tags ?? []),
-    sourceUrls: Array.from(new Set((input.sourceUrls ?? []).map((url) => url.trim()).filter(Boolean)))
   });
 
-  const nextSources = parsed.sourceUrls.map((url) => normalizeSource(url, parsed.category));
+  const nextSources = parsed.sourceUrls.map((url) =>
+    normalizeSource(url, parsed.category)
+  );
   const automationEnabled = parsed.autoUpdate && nextSources.length > 0;
   const nextAutomation: SkillAutomationState = {
-    enabled: automationEnabled,
     cadence: automationEnabled ? parsed.automationCadence : "manual",
-    status: automationEnabled ? "active" : "paused",
-    prompt: buildAutomationPrompt(parsed, skill.slug),
+    enabled: automationEnabled,
     lastRunAt: skill.automation.lastRunAt,
-    preferredHour: parsed.preferredHour ?? skill.automation.preferredHour ?? DEFAULT_PREFERRED_HOUR,
     preferredDay: parsed.preferredDay ?? skill.automation.preferredDay,
+    preferredHour:
+      parsed.preferredHour ??
+      skill.automation.preferredHour ??
+      DEFAULT_PREFERRED_HOUR,
+    prompt: buildAutomationPrompt(parsed, skill.slug),
+    status: automationEnabled ? "active" : "paused",
   };
   const nextTags = buildEditableTags(skill.tags, parsed.category, parsed.tags);
 
   const priceChanged =
     JSON.stringify(skill.price ?? null) !==
-    JSON.stringify(parsed.price && parsed.price.amount > 0 ? parsed.price : null);
+    JSON.stringify(
+      parsed.price && parsed.price.amount > 0 ? parsed.price : null
+    );
 
   const changed =
     skill.title !== parsed.title ||
@@ -429,23 +547,24 @@ export function applyUserEditsToSkill(
     !sameAutomation(skill.automation, nextAutomation) ||
     priceChanged;
 
-  const skillPrice = parsed.price && parsed.price.amount > 0 ? parsed.price : null;
+  const skillPrice =
+    parsed.price && parsed.price.amount > 0 ? parsed.price : null;
 
   const editedSkill: UserSkillDocument = {
     ...skill,
-    title: parsed.title,
-    description: parsed.description,
-    category: parsed.category,
-    body: parsed.body,
-    ownerName: parsed.ownerName,
-    tags: nextTags,
-    sources: nextSources,
-    automation: nextAutomation,
     agentDocs: (parsed.agentDocs as AgentDocs | undefined) ?? skill.agentDocs,
-    price: skillPrice
+    automation: nextAutomation,
+    body: parsed.body,
+    category: parsed.category,
+    description: parsed.description,
+    ownerName: parsed.ownerName,
+    price: skillPrice,
+    sources: nextSources,
+    tags: nextTags,
+    title: parsed.title,
   };
 
-  return { skill: editedSkill, changed };
+  return { changed, skill: editedSkill };
 }
 
 export function updateUserSkillDocument(
@@ -456,30 +575,30 @@ export function updateUserSkillDocument(
   const { skill: editedSkill, changed } = applyUserEditsToSkill(skill, input);
 
   if (!changed) {
-    return { skill, changed: false };
+    return { changed: false, skill };
   }
 
   const updatedAt = now.toISOString();
   const nextSkill = createNextUserSkillVersion(
     skill,
     {
-      title: editedSkill.title,
-      description: editedSkill.description,
-      category: editedSkill.category,
-      body: editedSkill.body,
-      ownerName: editedSkill.ownerName,
-      tags: editedSkill.tags,
-      visibility: editedSkill.visibility,
-      sources: editedSkill.sources,
-      automation: editedSkill.automation,
-      updates: editedSkill.updates,
       agentDocs: editedSkill.agentDocs,
-      price: editedSkill.price
+      automation: editedSkill.automation,
+      body: editedSkill.body,
+      category: editedSkill.category,
+      description: editedSkill.description,
+      ownerName: editedSkill.ownerName,
+      price: editedSkill.price,
+      sources: editedSkill.sources,
+      tags: editedSkill.tags,
+      title: editedSkill.title,
+      updates: editedSkill.updates,
+      visibility: editedSkill.visibility,
     },
     updatedAt
   );
 
-  return { skill: nextSkill, changed: true };
+  return { changed: true, skill: nextSkill };
 }
 
 export function createNextUserSkillVersion(
@@ -492,93 +611,102 @@ export function createNextUserSkillVersion(
 
   return {
     ...skill,
-    title: snapshot.title,
-    description: snapshot.description,
-    category: snapshot.category,
-    body: snapshot.body,
-    ownerName: snapshot.ownerName,
-    tags: snapshot.tags,
-    visibility: snapshot.visibility,
-    updatedAt,
-    sources: snapshot.sources,
+    agentDocs: snapshot.agentDocs,
     automation: snapshot.automation,
+    body: snapshot.body,
+    category: snapshot.category,
+    description: snapshot.description,
+    ownerName: snapshot.ownerName,
+    sources: snapshot.sources,
+    tags: snapshot.tags,
+    title: snapshot.title,
+    updatedAt,
     updates: snapshot.updates,
     version: versionNumber,
-    versions: [snapshot, ...skill.versions.map(cloneVersion)]
-      .sort((left, right) => right.version - left.version),
-    agentDocs: snapshot.agentDocs
+    versions: [snapshot, ...skill.versions.map(cloneVersion)].toSorted(
+      (left, right) => right.version - left.version
+    ),
+    visibility: snapshot.visibility,
   };
 }
 
-export function buildUserSkillAutomation(skill: UserSkillDocument): AutomationSummary | null {
-  if (!skill.automation.enabled) return null;
+export function buildUserSkillAutomation(
+  skill: UserSkillDocument
+): AutomationSummary | null {
+  if (!skill.automation.enabled) {
+    return null;
+  }
 
   const hour = skill.automation.preferredHour ?? DEFAULT_PREFERRED_HOUR;
   const day = skill.automation.preferredDay;
   return {
+    cadence: skill.automation.cadence,
+    cwd: [],
     id: `user:${skill.slug}`,
+    matchedCategorySlugs: [skill.category],
+    matchedSkillSlugs: [skill.slug],
     name: `${skill.title} refresh`,
+    path: `loop://skills/${skill.slug}/automation`,
+    preferredDay: day,
+    preferredHour: hour,
+    preferredModel: skill.automation.preferredModel,
     prompt: skill.automation.prompt,
     schedule: formatScheduleLabel(skill.automation.cadence, hour, day),
-    cadence: skill.automation.cadence,
     status: skill.automation.status.toUpperCase(),
-    path: `loop://skills/${skill.slug}/automation`,
-    cwd: [],
-    matchedSkillSlugs: [skill.slug],
-    matchedCategorySlugs: [skill.category],
-    preferredModel: skill.automation.preferredModel,
-    preferredHour: hour,
-    preferredDay: day,
   };
 }
 
-export function buildUserSkillRecord(skill: UserSkillDocument, requestedVersion?: number): SkillRecord {
+export function buildUserSkillRecord(
+  skill: UserSkillDocument,
+  requestedVersion?: number
+): SkillRecord {
   const version = materializeUserSkillVersion(skill, requestedVersion);
   const body = buildUserSkillBody(version);
-  const category = CATEGORY_REGISTRY.find((entry) => entry.slug === version.category);
+  const category = CATEGORY_REGISTRY.find(
+    (entry) => entry.slug === version.category
+  );
 
   const latestUpdate = version.updates[0];
 
   return {
-    slug: skill.slug,
-    title: version.title,
-    description: latestUpdate?.summary ?? version.description,
-    category: version.category,
     accent: category?.accent ?? "signal-red",
-    featured: false,
-    visibility: version.visibility,
-    origin: "user",
-    href: buildSkillVersionHref(skill.slug, version.version),
-    path: `loop://community-skills/${skill.slug}`,
-    relativeDir: `community/${skill.slug}`,
-    updatedAt: version.updatedAt,
-    tags: normalizeTags(version.tags),
-    headings: extractHeadings(body),
-    body,
-    excerpt: createExcerpt(body),
-    references: buildSourceReferences(version.sources),
+    agentDocs: version.agentDocs,
     agents: [buildAgentPrompt(version, skill.slug)],
+    automation: version.automation,
     automations: [],
+    availableVersions: [...skill.versions]
+      .toSorted((left, right) => right.version - left.version)
+      .map(toVersionReference),
+    body,
+    category: version.category,
+    description: latestUpdate?.summary ?? version.description,
+    excerpt: createExcerpt(body),
+    featured: false,
+    headings: extractHeadings(body),
+    href: buildSkillVersionHref(skill.slug, version.version),
+    origin: "user",
+    ownerName: version.ownerName,
+    path: `loop://community-skills/${skill.slug}`,
+    references: buildSourceReferences(version.sources),
+    relativeDir: `community/${skill.slug}`,
+    slug: skill.slug,
+    sources: version.sources,
+    tags: normalizeTags(version.tags),
+    title: version.title,
+    updatedAt: version.updatedAt,
+    updates: version.updates,
     version: version.version,
     versionLabel: buildVersionLabel(version.version),
-    availableVersions: skill.versions
-      .slice()
-      .sort((left, right) => right.version - left.version)
-      .map(toVersionReference),
-    ownerName: version.ownerName,
-    sources: version.sources,
-    automation: version.automation,
-    updates: version.updates,
-    agentDocs: version.agentDocs
+    visibility: version.visibility,
   };
 }
 
 export function buildSkillUpdateSignals(
   skill: UserSkillDocument
-): Array<{ label: string; items: DailySignal[] }> {
+): { label: string; items: DailySignal[] }[] {
   return skill.updates.map((update) => ({
+    items: update.items,
     label: update.generatedAt,
-    items: update.items
   }));
 }
 
@@ -588,48 +716,48 @@ export function buildSkillUpdateSignals(
 
 export function skillRecordToUserDoc(record: SkillRecord): UserSkillDocument {
   const versions: UserSkillVersion[] = record.availableVersions.map((vRef) => ({
-    version: vRef.version,
-    updatedAt: vRef.updatedAt,
-    title: record.title,
-    description: record.description,
-    category: record.category,
-    body: record.body,
-    ownerName: record.ownerName,
-    tags: record.tags,
-    visibility: record.visibility,
-    sources: record.sources ?? [],
+    agentDocs: record.agentDocs,
     automation: record.automation ?? {
-      enabled: false,
       cadence: "manual" as UserSkillCadence,
+      enabled: false,
+      prompt: "",
       status: "paused" as const,
-      prompt: ""
     },
+    body: record.body,
+    category: record.category,
+    description: record.description,
+    ownerName: record.ownerName,
+    sources: record.sources ?? [],
+    tags: record.tags,
+    title: record.title,
+    updatedAt: vRef.updatedAt,
     updates: record.updates ?? [],
-    agentDocs: record.agentDocs
+    version: vRef.version,
+    visibility: record.visibility,
   }));
 
   return {
-    slug: record.slug,
-    title: record.title,
-    description: record.description,
-    category: record.category,
-    body: record.body,
-    ownerName: record.ownerName,
-    tags: record.tags,
-    visibility: record.visibility,
-    createdAt: record.updatedAt,
-    updatedAt: record.updatedAt,
-    sources: record.sources ?? [],
+    agentDocs: record.agentDocs,
     automation: record.automation ?? {
-      enabled: false,
       cadence: "manual",
+      enabled: false,
+      prompt: "",
       status: "paused",
-      prompt: ""
     },
+    body: record.body,
+    category: record.category,
+    createdAt: record.updatedAt,
+    description: record.description,
+    ownerName: record.ownerName,
+    slug: record.slug,
+    sources: record.sources ?? [],
+    tags: record.tags,
+    title: record.title,
+    updatedAt: record.updatedAt,
     updates: record.updates ?? [],
     version: record.version,
     versions,
-    agentDocs: record.agentDocs
+    visibility: record.visibility,
   };
 }
 
@@ -638,11 +766,11 @@ export async function listUserSkillDocuments(): Promise<UserSkillDocument[]> {
   return records.map(skillRecordToUserDoc);
 }
 
-type SkillCreatorIdentity = {
+interface SkillCreatorIdentity {
   creatorClerkUserId?: string;
   authorId?: string;
   ownerName?: string;
-};
+}
 
 export async function addUserSkill(
   input: CreateUserSkillInput,
@@ -650,7 +778,7 @@ export async function addUserSkill(
 ): Promise<UserSkillDocument> {
   const document = createUserSkillDocument({
     ...input,
-    ownerName: identity?.ownerName ?? input.ownerName
+    ownerName: identity?.ownerName ?? input.ownerName,
   });
   const existing = await dbGetSkillBySlug(document.slug);
   if (existing) {
@@ -658,23 +786,23 @@ export async function addUserSkill(
   }
 
   await dbCreateSkill({
-    slug: document.slug,
-    title: document.title,
-    description: document.description,
-    category: document.category,
-    body: document.body,
-    visibility: document.visibility,
-    origin: "user",
-    tags: document.tags,
-    ownerName: document.ownerName,
-    sources: document.sources,
-    automation: document.automation,
-    updates: document.updates,
     agentDocs: document.agentDocs,
-    version: 1,
-    price: document.price ?? null,
+    authorId: identity?.authorId,
+    automation: document.automation,
+    body: document.body,
+    category: document.category,
     creatorClerkUserId: identity?.creatorClerkUserId,
-    authorId: identity?.authorId
+    description: document.description,
+    origin: "user",
+    ownerName: document.ownerName,
+    price: document.price ?? null,
+    slug: document.slug,
+    sources: document.sources,
+    tags: document.tags,
+    title: document.title,
+    updates: document.updates,
+    version: 1,
+    visibility: document.visibility,
   });
 
   return document;
@@ -687,14 +815,16 @@ export async function addTrackedSkillFromRecord(
 ): Promise<UserSkillDocument> {
   const existing = await dbGetSkillBySlug(skill.slug);
 
-  const sources = categorySources.map((source) => normalizeSource(source.url, skill.category));
+  const sources = categorySources.map((source) =>
+    normalizeSource(source.url, skill.category)
+  );
   const automationEnabled = sources.length > 0;
   const automation: SkillAutomationState = {
-    enabled: automationEnabled,
     cadence: automationEnabled ? "daily" : "manual",
-    status: automationEnabled ? "active" : "paused",
-    prompt: `Refresh $${skill.slug}: search the web for recent developments, cross-reference with tracked sources, and update the skill with concrete changes. Prioritize new versions, deprecations, and revised best practices. Stay terse and operational.`,
+    enabled: automationEnabled,
     preferredHour: DEFAULT_PREFERRED_HOUR,
+    prompt: `Refresh $${skill.slug}: search the web for recent developments, cross-reference with tracked sources, and update the skill with concrete changes. Prioritize new versions, deprecations, and revised best practices. Stay terse and operational.`,
+    status: automationEnabled ? "active" : "paused",
   };
 
   if (existing) {
@@ -703,75 +833,81 @@ export async function addTrackedSkillFromRecord(
     }
 
     const record = await dbUpdateSkill(existing.slug, {
-      origin: "user",
-      tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
-      sources,
       automation,
+      origin: "user",
+      sources,
+      tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
     });
     return skillRecordToUserDoc(record);
   }
 
   const record = await dbCreateSkill({
-    slug: skill.slug,
-    title: skill.title,
-    description: skill.description,
-    category: skill.category,
-    body: skill.body,
-    visibility: skill.visibility,
-    origin: "user",
-    tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
-    ownerName: skill.ownerName,
-    authorId: skill.authorId,
-    sources,
-    automation,
-    updates: [],
     agentDocs: skill.agentDocs,
-    version: 1
+    authorId: skill.authorId,
+    automation,
+    body: skill.body,
+    category: skill.category,
+    description: skill.description,
+    origin: "user",
+    ownerName: skill.ownerName,
+    slug: skill.slug,
+    sources,
+    tags: normalizeTags([skill.category, ...skill.tags, "tracked"]),
+    title: skill.title,
+    updates: [],
+    version: 1,
+    visibility: skill.visibility,
   });
 
   return skillRecordToUserDoc(record);
 }
 
-export async function saveUserSkillDocuments(skills: UserSkillDocument[]): Promise<void> {
+export async function saveUserSkillDocuments(
+  skills: UserSkillDocument[]
+): Promise<void> {
   await Promise.all(
     skills.map(async (skill) => {
       await dbUpdateSkill(skill.slug, {
-        title: skill.title,
-        description: skill.description,
-        category: skill.category,
+        agentDocs: skill.agentDocs,
+        automation: skill.automation,
         body: skill.body,
-        visibility: skill.visibility,
-        tags: skill.tags,
+        category: skill.category,
+        description: skill.description,
         ownerName: skill.ownerName,
         sources: skill.sources,
-        automation: skill.automation,
+        tags: skill.tags,
+        title: skill.title,
         updates: skill.updates,
-        agentDocs: skill.agentDocs,
-        version: skill.version
+        version: skill.version,
+        visibility: skill.visibility,
       });
 
       const skillId = await getSkillIdBySlug(skill.slug);
       if (skillId) {
         const existingVersions = await dbGetSkillVersions(skillId);
-        const existingVersionNumbers = new Set(existingVersions.map((v) => v.version));
+        const existingVersionNumbers = new Set(
+          existingVersions.map((v) => v.version)
+        );
 
-        const newVersions = skill.versions.filter((v) => !existingVersionNumbers.has(v.version));
+        const newVersions = skill.versions.filter(
+          (v) => !existingVersionNumbers.has(v.version)
+        );
         await Promise.all(
           newVersions.map((v) =>
             dbCreateSkillVersion({
-              skillId,
-              version: v.version,
-              title: v.title,
-              description: v.description,
-              category: v.category,
-              body: v.body,
-              tags: v.tags,
-              ownerName: v.ownerName,
-              visibility: v.visibility,
-              sources: v.sources,
+              agentDocs: v.agentDocs,
               automation: v.automation,
+              body: v.body,
+              category: v.category,
+              description: v.description,
+              ownerName: v.ownerName,
+              skillId,
+              sources: v.sources,
+              tags: v.tags,
+              title: v.title,
               updates: v.updates,
-              agentDocs: v.agentDocs
+              version: v.version,
+              visibility: v.visibility,
             })
           )
         );

@@ -1,5 +1,5 @@
-import { getUserSubscription } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
+import { getUserSubscription } from "@/lib/auth";
 import { countUserSkills } from "@/lib/db/skills";
 import { listLoopRuns } from "@/lib/system-state";
 import type { SkillAutomationState, UserSkillCadence } from "@/lib/types";
@@ -13,23 +13,33 @@ export const AUTOMATION_PROXIMITY_MS = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function cadenceIntervalMs(cadence: UserSkillCadence): number | null {
-  if (cadence === "daily") return MS_PER_DAY;
-  if (cadence === "weekly") return 7 * MS_PER_DAY;
+  if (cadence === "daily") {
+    return MS_PER_DAY;
+  }
+  if (cadence === "weekly") {
+    return 7 * MS_PER_DAY;
+  }
   return null;
 }
 
 export async function canCreateSkill(
   clerkUserId: string,
   email?: string
-): Promise<{ allowed: boolean; currentCount: number; limit: number; isOperator: boolean }> {
+): Promise<{
+  allowed: boolean;
+  currentCount: number;
+  limit: number;
+  isOperator: boolean;
+}> {
   const [currentCount, subscription] = await Promise.all([
     countUserSkills(clerkUserId),
     getUserSubscription(clerkUserId),
   ]);
-  const isOperator = subscription !== null || (email ? isAdminEmail(email) : false);
+  const isOperator =
+    subscription !== null || (email ? isAdminEmail(email) : false);
   const limit = FREE_SKILL_LIMIT;
   const allowed = isOperator || currentCount < limit;
-  return { allowed, currentCount, limit, isOperator };
+  return { allowed, currentCount, isOperator, limit };
 }
 
 export async function getManualUpdateCooldown(slug: string): Promise<{
@@ -42,15 +52,15 @@ export async function getManualUpdateCooldown(slug: string): Promise<{
     (run) => run.slug === slug && run.trigger === "manual"
   );
   if (!lastManual) {
-    return { allowed: true, remainingMs: 0, lastRunAt: null };
+    return { allowed: true, lastRunAt: null, remainingMs: 0 };
   }
   const lastRunAt = lastManual.startedAt;
   const elapsed = Date.now() - Date.parse(lastRunAt);
   if (Number.isNaN(elapsed) || elapsed >= MANUAL_UPDATE_COOLDOWN_MS) {
-    return { allowed: true, remainingMs: 0, lastRunAt };
+    return { allowed: true, lastRunAt, remainingMs: 0 };
   }
   const remainingMs = MANUAL_UPDATE_COOLDOWN_MS - elapsed;
-  return { allowed: false, remainingMs, lastRunAt };
+  return { allowed: false, lastRunAt, remainingMs };
 }
 
 export function isAutomationImminent(

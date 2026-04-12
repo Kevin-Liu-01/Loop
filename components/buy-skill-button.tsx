@@ -1,19 +1,26 @@
 "use client";
 
+import { useAuth, SignInButton } from "@clerk/nextjs";
 import { useState, useTransition } from "react";
 
-import { useAuth, SignInButton } from "@clerk/nextjs";
-
-import { CheckIcon, CreditCardIcon, KeyIcon } from "@/components/frontier-icons";
+import {
+  CheckIcon,
+  CreditCardIcon,
+  KeyIcon,
+} from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 
-type BuySkillButtonProps = {
+interface BuySkillButtonProps {
   slug: string;
   priceLabel: string;
   purchased: boolean;
-};
+}
 
-export function BuySkillButton({ slug, priceLabel, purchased }: BuySkillButtonProps) {
+export function BuySkillButton({
+  slug,
+  priceLabel,
+  purchased,
+}: BuySkillButtonProps) {
   const { isSignedIn } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +49,13 @@ export function BuySkillButton({ slug, priceLabel, purchased }: BuySkillButtonPr
     setError(null);
     startTransition(async () => {
       const response = await fetch(`/api/skills/${slug}/checkout`, {
-        method: "POST"
+        method: "POST",
       });
 
-      const payload = (await response.json()) as { url?: string; error?: string };
+      const payload = (await response.json()) as {
+        url?: string;
+        error?: string;
+      };
 
       if (!response.ok || !payload.url) {
         setError(payload.error ?? "Unable to start checkout.");

@@ -5,21 +5,21 @@ import { useCallback, useRef } from "react";
 import { useActiveOperations } from "@/components/active-operations-provider";
 import type { ActiveOperationKind } from "@/lib/active-operations";
 
-type TrackedOperationOptions = {
+interface TrackedOperationOptions {
   kind: ActiveOperationKind;
   label: string;
   slug?: string;
   href?: string;
   trigger?: "manual" | "automation";
   totalSteps?: number;
-};
+}
 
-type OperationHandle = {
+interface OperationHandle {
   id: string;
   advance: (patch?: { message?: string; description?: string }) => void;
   complete: (message?: string) => void;
   fail: (errorMessage: string) => void;
-};
+}
 
 export function useTrackedOperation() {
   const { addOperation, updateOperation } = useActiveOperations();
@@ -28,11 +28,11 @@ export function useTrackedOperation() {
   const start = useCallback(
     (opts: TrackedOperationOptions): OperationHandle => {
       const id = addOperation(opts.kind, {
+        href: opts.href,
         label: opts.label,
         slug: opts.slug,
-        href: opts.href,
-        trigger: opts.trigger ?? "manual",
         totalSteps: opts.totalSteps,
+        trigger: opts.trigger ?? "manual",
       });
 
       updateOperation(id, { status: "running" });
@@ -41,31 +41,34 @@ export function useTrackedOperation() {
       const total = opts.totalSteps ?? 0;
 
       const handle: OperationHandle = {
-        id,
         advance(patch) {
           completed += 1;
-          const progress = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+          const progress =
+            total > 0
+              ? Math.min(100, Math.round((completed / total) * 100))
+              : 0;
           updateOperation(id, {
             completedSteps: completed,
-            progress,
-            latestMessage: patch?.message,
             description: patch?.description,
+            latestMessage: patch?.message,
+            progress,
           });
         },
         complete(message) {
           updateOperation(id, {
-            status: "done",
-            progress: 100,
             latestMessage: message ?? "Complete",
+            progress: 100,
+            status: "done",
           });
         },
         fail(errorMessage) {
           updateOperation(id, {
-            status: "error",
             errorMessage,
             latestMessage: errorMessage,
+            status: "error",
           });
         },
+        id,
       };
 
       handleRef.current = handle;
@@ -74,5 +77,5 @@ export function useTrackedOperation() {
     [addOperation, updateOperation]
   );
 
-  return { start, current: handleRef };
+  return { current: handleRef, start };
 }

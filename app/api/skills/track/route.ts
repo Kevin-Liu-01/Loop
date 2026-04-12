@@ -1,5 +1,4 @@
 import { revalidatePath } from "next/cache";
-
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
@@ -7,18 +6,22 @@ import { getSkillCatalogue } from "@/lib/content";
 import { updateSkill } from "@/lib/db/skills";
 import { buildResearchProfile } from "@/lib/research-profile";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
-import { addTrackedSkillFromRecord, buildUserSkillRecord, normalizeSource } from "@/lib/user-skills";
+import {
+  addTrackedSkillFromRecord,
+  buildUserSkillRecord,
+  normalizeSource,
+} from "@/lib/user-skills";
 
 const bodySchema = z.object({
-  slug: z.string().min(1)
+  slug: z.string().min(1),
 });
 
 export async function POST(request: Request) {
   return withApiUsage(
     {
-      route: "/api/skills/track",
+      label: "Track skill",
       method: "POST",
-      label: "Track skill"
+      route: "/api/skills/track",
     },
     async () => {
       try {
@@ -28,15 +31,18 @@ export async function POST(request: Request) {
         const skill = base.skills.find((entry) => entry.slug === payload.slug);
 
         if (!skill) {
-          return Response.json({ error: "That skill could not be found." }, { status: 404 });
+          return Response.json(
+            { error: "That skill could not be found." },
+            { status: 404 }
+          );
         }
 
         if (skill.origin === "user") {
           return Response.json({
+            created: false,
+            href: skill.href,
             ok: true,
             slug: skill.slug,
-            href: skill.href,
-            created: false
           });
         }
 
@@ -50,9 +56,10 @@ export async function POST(request: Request) {
         const tracked = await addTrackedSkillFromRecord(skill, sourcesToTrack);
         const record = buildUserSkillRecord(tracked);
 
-        const researchProfile = buildResearchProfile(
-          { title: tracked.title, sources: tracked.sources },
-        );
+        const researchProfile = buildResearchProfile({
+          sources: tracked.sources,
+          title: tracked.title,
+        });
         await updateSkill(tracked.slug, { researchProfile }).catch(() => {});
 
         revalidatePath("/");
@@ -63,30 +70,35 @@ export async function POST(request: Request) {
         revalidatePath(record.href);
 
         await logUsageEvent({
+          categorySlug: tracked.category,
+          details: tracked.title,
           kind: "skill_track",
-          source: "api",
           label: "Tracked skill",
           path: record.href,
           skillSlug: tracked.slug,
-          categorySlug: tracked.category,
-          details: tracked.title
+          source: "api",
         });
 
         return Response.json({
+          created: true,
+          href: record.href,
           ok: true,
           slug: tracked.slug,
-          href: record.href,
-          created: true
         });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to make this skill updateable." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to make this skill updateable." },
+          { status: 400 }
+        );
       }
     }
   );

@@ -1,52 +1,62 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
-import { AnimatePresence, motion } from "motion/react";
 import { ImageIcon, Loader2Icon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { AgentDocsEditor } from "@/components/agent-docs-editor";
-import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import {
   CheckIcon,
   ChevronDownIcon,
   RefreshIcon,
   TriangleAlertIcon,
 } from "@/components/frontier-icons";
-import { Button } from "@/components/ui/button";
+import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { Badge } from "@/components/ui/badge";
-import { FieldGroup, textFieldArea, textFieldBase, textFieldCode } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import {
+  FieldGroup,
+  textFieldArea,
+  textFieldBase,
+  textFieldCode,
+} from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
+import {
+  CADENCE_ALL_OPTIONS,
+  DAY_OF_WEEK_OPTIONS,
+  DEFAULT_PREFERRED_DAY,
+  DEFAULT_PREFERRED_HOUR,
+  PREFERRED_HOUR_SELECT_OPTIONS,
+} from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
-import { CADENCE_ALL_OPTIONS, DAY_OF_WEEK_OPTIONS, DEFAULT_PREFERRED_DAY, DEFAULT_PREFERRED_HOUR, PREFERRED_HOUR_SELECT_OPTIONS } from "@/lib/automation-constants";
-import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
 import type { AgentDocs, SkillRecord } from "@/lib/types";
+import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
 
 const BODY_MAX_CHARS = 24_000;
 
 const fieldLabel =
   "text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint";
 
-type FeedbackBarProps = {
+interface FeedbackBarProps {
   variant: "error" | "success" | "progress";
   children: React.ReactNode;
-};
+}
 
 function FeedbackBar({ variant, children }: FeedbackBarProps) {
   const styles = {
     error:
       "border-red-500/25 bg-red-500/8 text-red-600 dark:border-red-400/20 dark:bg-red-950/30 dark:text-red-400",
-    success:
-      "border-accent/25 bg-accent/8 text-accent dark:border-accent/20 dark:bg-accent/10",
     progress:
       "border-sky-500/25 bg-sky-500/8 text-sky-600 dark:border-sky-400/20 dark:bg-sky-950/30 dark:text-sky-400",
+    success:
+      "border-accent/25 bg-accent/8 text-accent dark:border-accent/20 dark:bg-accent/10",
   };
   const icons = {
     error: <TriangleAlertIcon className="h-3.5 w-3.5 shrink-0" />,
-    success: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
     progress: <Loader2Icon className="h-3.5 w-3.5 shrink-0 animate-spin" />,
+    success: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
   };
   return (
     <div
@@ -61,12 +71,12 @@ function FeedbackBar({ variant, children }: FeedbackBarProps) {
   );
 }
 
-type CollapsibleSectionProps = {
+interface CollapsibleSectionProps {
   title: string;
   summary?: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
-};
+}
 
 function CollapsibleSection({
   title,
@@ -93,11 +103,11 @@ function CollapsibleSection({
   );
 }
 
-type SkillAuthorStudioProps = {
+interface SkillAuthorStudioProps {
   skill: SkillRecord;
-};
+}
 
-type AuthorStudioState = {
+interface AuthorStudioState {
   title: string;
   description: string;
   category: SkillRecord["category"];
@@ -110,34 +120,41 @@ type AuthorStudioState = {
   body: string;
   ownerName: string;
   agentDocs: AgentDocs;
-};
+}
 
 function buildInitialState(skill: SkillRecord): AuthorStudioState {
   return {
-    title: skill.title,
-    description: skill.description,
-    category: skill.category,
-    tags: skill.tags
-      .filter((tag) => tag !== skill.category && tag !== "tracked" && tag !== "community")
-      .join(", "),
-    sourceUrls: (skill.sources ?? []).map((source) => source.url).join("\n"),
-    cadence: skill.automation?.enabled ? skill.automation.cadence : "manual",
-    preferredHour: skill.automation?.preferredHour ?? DEFAULT_PREFERRED_HOUR,
-    preferredDay: skill.automation?.preferredDay ?? DEFAULT_PREFERRED_DAY,
+    agentDocs: skill.agentDocs ?? {},
     automationPrompt: skill.automation?.prompt ?? "",
     body: skill.body,
+    cadence: skill.automation?.enabled ? skill.automation.cadence : "manual",
+    category: skill.category,
+    description: skill.description,
     ownerName: skill.ownerName ?? "",
-    agentDocs: skill.agentDocs ?? {}
+    preferredDay: skill.automation?.preferredDay ?? DEFAULT_PREFERRED_DAY,
+    preferredHour: skill.automation?.preferredHour ?? DEFAULT_PREFERRED_HOUR,
+    sourceUrls: (skill.sources ?? []).map((source) => source.url).join("\n"),
+    tags: skill.tags
+      .filter(
+        (tag) =>
+          tag !== skill.category && tag !== "tracked" && tag !== "community"
+      )
+      .join(", "),
+    title: skill.title,
   };
 }
 
 export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
   const router = useRouter();
-  const [state, setState] = useState<AuthorStudioState>(() => buildInitialState(skill));
+  const [state, setState] = useState<AuthorStudioState>(() =>
+    buildInitialState(skill)
+  );
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
-  const [iconPreview, setIconPreview] = useState<string | null>(skill.iconUrl ?? null);
+  const [iconPreview, setIconPreview] = useState<string | null>(
+    skill.iconUrl ?? null
+  );
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -184,14 +201,19 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
   );
 
   const isDirty = useMemo(
-    () => JSON.stringify(buildInitialState(skill)) !== JSON.stringify(state) || iconFile !== null,
+    () =>
+      JSON.stringify(buildInitialState(skill)) !== JSON.stringify(state) ||
+      iconFile !== null,
     [iconFile, skill, state]
   );
 
-  function update<K extends keyof AuthorStudioState>(key: K, value: AuthorStudioState[K]) {
+  function update<K extends keyof AuthorStudioState>(
+    key: K,
+    value: AuthorStudioState[K]
+  ) {
     setState((current) => ({
       ...current,
-      [key]: value
+      [key]: value,
     }));
   }
 
@@ -201,7 +223,12 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
       return;
     }
 
-    const allowedTypes = new Set(["image/png", "image/svg+xml", "image/webp", "image/jpeg"]);
+    const allowedTypes = new Set([
+      "image/png",
+      "image/svg+xml",
+      "image/webp",
+      "image/jpeg",
+    ]);
     if (!allowedTypes.has(file.type) || file.size > 1_048_576) {
       setError("Icon must be PNG, SVG, WebP, or JPEG under 1 MB.");
       return;
@@ -220,12 +247,17 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     const formData = new FormData();
     formData.append("icon", iconFile);
 
-    const response = await fetch(`/api/skills/${encodeURIComponent(skill.slug)}/icon`, {
-      method: "POST",
-      body: formData
-    });
+    const response = await fetch(
+      `/api/skills/${encodeURIComponent(skill.slug)}/icon`,
+      {
+        body: formData,
+        method: "POST",
+      }
+    );
 
-    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
     if (!response.ok) {
       throw new Error(payload.error ?? "Unable to upload the icon.");
     }
@@ -233,35 +265,38 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
 
   function buildFormPayload() {
     return {
-      title: state.title,
-      description: state.description,
-      category: state.category,
+      agentDocs:
+        Object.keys(state.agentDocs).length > 0 ? state.agentDocs : undefined,
+      autoUpdate: state.cadence !== "manual",
+      automationCadence: state.cadence,
+      automationPrompt: state.automationPrompt,
       body: state.body,
+      category: state.category,
+      description: state.description,
       ownerName: state.ownerName,
-      tags: tagList,
+      preferredDay: state.preferredDay,
+      preferredHour: state.preferredHour,
       sourceUrls: state.sourceUrls
         .split("\n")
         .map((value) => value.trim())
         .filter(Boolean),
-      autoUpdate: state.cadence !== "manual",
-      automationCadence: state.cadence,
-      automationPrompt: state.automationPrompt,
-      preferredHour: state.preferredHour,
-      preferredDay: state.preferredDay,
-      agentDocs: Object.keys(state.agentDocs).length > 0 ? state.agentDocs : undefined
+      tags: tagList,
+      title: state.title,
     };
   }
-
 
   async function save(): Promise<boolean> {
     setError(null);
     setNotice(null);
 
-    const response = await fetch(`/api/skills/${encodeURIComponent(skill.slug)}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(buildFormPayload())
-    });
+    const response = await fetch(
+      `/api/skills/${encodeURIComponent(skill.slug)}`,
+      {
+        body: JSON.stringify(buildFormPayload()),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      }
+    );
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string;
@@ -278,7 +313,11 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     try {
       await uploadIcon();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload the icon.");
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Unable to upload the icon."
+      );
       return false;
     }
 
@@ -315,19 +354,20 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
     (v) => typeof v === "string" && v.length > 0
   ).length;
 
-  const automationSummary = [
-    state.cadence !== "manual" ? state.cadence : null,
-    sourceCount > 0 ? `${sourceCount} source${sourceCount === 1 ? "" : "s"}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ") || "manual";
+  const automationSummary =
+    [
+      state.cadence !== "manual" ? state.cadence : null,
+      sourceCount > 0
+        ? `${sourceCount} source${sourceCount === 1 ? "" : "s"}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "manual";
 
-  const brandingSummary = [
-    iconPreview ? "icon" : null,
-    state.ownerName ? "attribution" : null,
-  ]
-    .filter(Boolean)
-    .join(" + ") || "none";
+  const brandingSummary =
+    [iconPreview ? "icon" : null, state.ownerName ? "attribution" : null]
+      .filter(Boolean)
+      .join(" + ") || "none";
 
   return (
     <form className="grid gap-0 border border-line" onSubmit={handleSubmit}>
@@ -336,7 +376,9 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-faint">
           Author studio
         </span>
-        <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
+        <Badge color="neutral" size="sm">
+          {skill.versionLabel}
+        </Badge>
 
         <AnimatePresence>
           {isDirty && (
@@ -358,7 +400,12 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         </AnimatePresence>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button disabled={isPending || !isDirty} size="sm" type="submit" variant="ghost">
+          <Button
+            disabled={isPending || !isDirty}
+            size="sm"
+            type="submit"
+            variant="ghost"
+          >
             {isPending ? "Saving\u2026" : "Save"}
           </Button>
           <Button
@@ -400,8 +447,13 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
             <FieldGroup>
               <span className={fieldLabel}>Category</span>
               <Select
-                onChange={(v) => update("category", v as SkillRecord["category"])}
-                options={CATEGORY_REGISTRY.map((c) => ({ value: c.slug, label: c.title }))}
+                onChange={(v) =>
+                  update("category", v as SkillRecord["category"])
+                }
+                options={CATEGORY_REGISTRY.map((c) => ({
+                  label: c.title,
+                  value: c.slug,
+                }))}
                 value={state.category}
               />
             </FieldGroup>
@@ -435,7 +487,8 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
           <div className="flex items-baseline justify-between">
             <span className={fieldLabel}>Skill body</span>
             <span className="text-[0.625rem] tabular-nums text-ink-faint">
-              {state.body.length.toLocaleString()}/{BODY_MAX_CHARS.toLocaleString()}
+              {state.body.length.toLocaleString()}/
+              {BODY_MAX_CHARS.toLocaleString()}
             </span>
           </div>
           <textarea
@@ -460,14 +513,18 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
               />
             </FieldGroup>
 
-            <div className={cn(
-              "grid gap-3",
-              state.cadence === "weekly" ? "xl:grid-cols-3" : "xl:grid-cols-2",
-            )}>
+            <div
+              className={cn(
+                "grid gap-3",
+                state.cadence === "weekly" ? "xl:grid-cols-3" : "xl:grid-cols-2"
+              )}
+            >
               <FieldGroup>
                 <span className={fieldLabel}>Refresh cadence</span>
                 <Select
-                  onChange={(v) => update("cadence", v as AuthorStudioState["cadence"])}
+                  onChange={(v) =>
+                    update("cadence", v as AuthorStudioState["cadence"])
+                  }
                   options={CADENCE_ALL_OPTIONS}
                   value={state.cadence}
                 />
@@ -478,7 +535,10 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
                   <span className={fieldLabel}>Day of week</span>
                   <Select
                     onChange={(v) => update("preferredDay", Number(v))}
-                    options={DAY_OF_WEEK_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                    options={DAY_OF_WEEK_OPTIONS.map((o) => ({
+                      label: o.label,
+                      value: o.value,
+                    }))}
                     value={String(state.preferredDay)}
                   />
                 </FieldGroup>
@@ -499,7 +559,9 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
               <textarea
                 className={cn(textFieldBase, textFieldArea)}
                 maxLength={AUTOMATION_PROMPT_MAX_LENGTH}
-                onChange={(event) => update("automationPrompt", event.target.value)}
+                onChange={(event) =>
+                  update("automationPrompt", event.target.value)
+                }
                 placeholder="What should the refresh care about?"
                 rows={3}
                 value={state.automationPrompt}
@@ -514,7 +576,9 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
         >
           <AgentDocsEditor
             embedded
-            onChange={(docs) => setState((current) => ({ ...current, agentDocs: docs }))}
+            onChange={(docs) =>
+              setState((current) => ({ ...current, agentDocs: docs }))
+            }
             value={state.agentDocs}
           />
         </CollapsibleSection>
@@ -525,15 +589,23 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
               <span className={fieldLabel}>Skill icon</span>
               <label className="flex cursor-pointer items-center gap-3 border border-dashed border-line bg-paper-2/50 px-3 py-3 transition-colors hover:border-ink-faint dark:bg-paper-3/20">
                 {iconPreview ? (
-                  <img alt="Icon preview" className="h-10 w-10 shrink-0 object-cover" src={iconPreview} />
+                  <img
+                    alt="Icon preview"
+                    className="h-10 w-10 shrink-0 object-cover"
+                    src={iconPreview}
+                  />
                 ) : (
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-paper-2 dark:bg-paper-3/40">
                     <ImageIcon className="h-4 w-4 text-ink-faint" />
                   </span>
                 )}
                 <span className="grid gap-0.5">
-                  <span className="text-xs font-medium text-ink">{iconPreview ? "Change icon" : "Upload icon"}</span>
-                  <span className="text-[0.625rem] text-ink-faint">PNG, SVG, WebP, JPEG · max 1 MB</span>
+                  <span className="text-xs font-medium text-ink">
+                    {iconPreview ? "Change icon" : "Upload icon"}
+                  </span>
+                  <span className="text-[0.625rem] text-ink-faint">
+                    PNG, SVG, WebP, JPEG · max 1 MB
+                  </span>
                 </span>
                 <input
                   accept="image/png,image/svg+xml,image/webp,image/jpeg"
@@ -556,7 +628,11 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
 
             <div className="grid gap-1.5 border border-line/60 bg-paper-2/50 p-3 dark:border-line/40 dark:bg-paper-3/20">
               <span className={fieldLabel}>Published as</span>
-              <SkillAuthorBadge author={skill.author} ownerName={state.ownerName || skill.ownerName} iconUrl={skill.iconUrl} />
+              <SkillAuthorBadge
+                author={skill.author}
+                ownerName={state.ownerName || skill.ownerName}
+                iconUrl={skill.iconUrl}
+              />
             </div>
           </div>
         </CollapsibleSection>

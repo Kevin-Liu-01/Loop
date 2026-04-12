@@ -12,25 +12,29 @@ import { Button } from "@/components/ui/button";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
-import { sandboxHeaderHeight, sandboxHeaderBase, sandboxEyebrow } from "@/lib/sandbox-ui";
+import {
+  sandboxHeaderHeight,
+  sandboxHeaderBase,
+  sandboxEyebrow,
+} from "@/lib/sandbox-ui";
 
-type ConversationSummary = {
+interface ConversationSummary {
   id: string;
   title: string;
   messageCount: number;
   model?: string;
   createdAt: string;
   updatedAt: string;
-};
+}
 
-type SandboxSidebarProps = {
+interface SandboxSidebarProps {
   currentId: string | null;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
   version: number;
   className?: string;
-};
+}
 
 export function SandboxSidebar({
   currentId,
@@ -41,9 +45,7 @@ export function SandboxSidebar({
   className,
 }: SandboxSidebarProps) {
   const { timeZone } = useAppTimezone();
-  const [conversations, setConversations] = useState<ConversationSummary[]>(
-    [],
-  );
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(() => {
@@ -62,7 +64,13 @@ export function SandboxSidebar({
   return (
     <div className={cn("flex h-full min-h-0 min-w-0 flex-col", className)}>
       {/* Header */}
-      <div className={cn(sandboxHeaderBase, sandboxHeaderHeight, "justify-between")}>
+      <div
+        className={cn(
+          sandboxHeaderBase,
+          sandboxHeaderHeight,
+          "justify-between"
+        )}
+      >
         <div className="flex items-center gap-2.5">
           <TerminalIcon className="h-3.5 w-3.5 text-accent" />
           <span className={sandboxEyebrow}>Sessions</span>
@@ -123,9 +131,7 @@ export function SandboxSidebar({
                   key={c.id}
                   className={cn(
                     "group relative flex w-full items-start gap-2.5 border-b border-line/60 px-4 py-3 text-left transition-colors",
-                    isActive
-                      ? "bg-accent/[0.06]"
-                      : "hover:bg-paper-2/50",
+                    isActive ? "bg-accent/[0.06]" : "hover:bg-paper-2/50"
                   )}
                   onClick={() => onSelect(c.id)}
                   type="button"
@@ -140,7 +146,7 @@ export function SandboxSidebar({
                         "truncate text-sm font-medium leading-snug",
                         isActive
                           ? "text-accent"
-                          : "text-ink group-hover:text-ink",
+                          : "text-ink group-hover:text-ink"
                       )}
                     >
                       {c.title || "Untitled session"}

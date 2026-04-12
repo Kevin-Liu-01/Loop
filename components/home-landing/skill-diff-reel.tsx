@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
+import { DIFF_SCENES } from "@/lib/home-landing/skill-diff-scenes";
+import type {
+  DiffScene,
+  DiffSceneLine,
+} from "@/lib/home-landing/skill-diff-scenes";
 import { formatTagLabel } from "@/lib/tag-utils";
-import { DIFF_SCENES, type DiffScene, type DiffSceneLine } from "@/lib/home-landing/skill-diff-scenes";
 
-const SCENE_DURATION_MS = 5_500;
+const SCENE_DURATION_MS = 5500;
 
 function DiffLineRow({ line, index }: { line: DiffSceneLine; index: number }) {
   const isAdded = line.type === "added";
@@ -22,7 +26,7 @@ function DiffLineRow({ line, index }: { line: DiffSceneLine; index: number }) {
       )}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.25, delay: index * 0.02 }}
+      transition={{ delay: index * 0.02, duration: 0.25 }}
     >
       <span
         className={cn(
@@ -38,7 +42,8 @@ function DiffLineRow({ line, index }: { line: DiffSceneLine; index: number }) {
         className={cn(
           "whitespace-pre-wrap break-words pr-3 text-[0.6875rem] leading-[1.7]",
           isAdded && "text-[oklch(0.88_0.06_145)]",
-          isRemoved && "text-[oklch(0.78_0.06_25)] line-through decoration-[oklch(0.78_0.06_25/0.3)]",
+          isRemoved &&
+            "text-[oklch(0.78_0.06_25)] line-through decoration-[oklch(0.78_0.06_25/0.3)]",
           !isAdded && !isRemoved && "text-ink-soft/70"
         )}
       >
@@ -84,15 +89,21 @@ export function SkillDiffReel() {
   const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) return;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reducedMotion) {
+      return;
+    }
 
     intervalRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % DIFF_SCENES.length);
     }, SCENE_DURATION_MS);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, []);
 
@@ -112,7 +123,11 @@ export function SkillDiffReel() {
           <SceneHeader scene={scene} />
           <div className="overflow-hidden">
             {scene.lines.map((line, i) => (
-              <DiffLineRow key={`${scene.skillTitle}-${i}`} line={line} index={i} />
+              <DiffLineRow
+                key={`${scene.skillTitle}-${i}`}
+                line={line}
+                index={i}
+              />
             ))}
           </div>
         </motion.div>

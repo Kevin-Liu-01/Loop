@@ -4,8 +4,8 @@ import { useCallback, useRef } from "react";
 
 import { useActiveOperations } from "@/components/active-operations-provider";
 import { computeProgress } from "@/lib/active-operations";
-import { streamLoopUpdate } from "@/lib/stream-loop-update";
 import type { ActiveOperationKind } from "@/lib/active-operations";
+import { streamLoopUpdate } from "@/lib/stream-loop-update";
 import type { StreamLoopCallbacks } from "@/lib/stream-loop-update";
 import type {
   AgentReasoningStep,
@@ -14,16 +14,19 @@ import type {
   LoopUpdateTarget,
 } from "@/lib/types";
 
-type TrackedUpdateCallbacks = {
+interface TrackedUpdateCallbacks {
   onStart?: (loop: LoopUpdateTarget) => void;
   onSource?: (source: LoopUpdateSourceLog) => void;
   onMessage?: (message: string) => void;
   onReasoningStep?: (step: AgentReasoningStep) => void;
-  onComplete?: (result: LoopUpdateResult, sources: LoopUpdateSourceLog[]) => void;
+  onComplete?: (
+    result: LoopUpdateResult,
+    sources: LoopUpdateSourceLog[]
+  ) => void;
   onError?: (message: string) => void;
-};
+}
 
-type TrackedUpdateOptions = {
+interface TrackedUpdateOptions {
   slug: string;
   origin: string;
   label: string;
@@ -31,7 +34,7 @@ type TrackedUpdateOptions = {
   trigger?: "manual" | "automation";
   kind?: ActiveOperationKind;
   callbacks?: TrackedUpdateCallbacks;
-};
+}
 
 export function useTrackedLoopUpdate() {
   const { addOperation, updateOperation } = useActiveOperations();
@@ -42,23 +45,47 @@ export function useTrackedLoopUpdate() {
     async (opts: TrackedUpdateOptions): Promise<void> => {
       const kind = opts.kind ?? "skill-update";
       const id = addOperation(kind, {
+        href: opts.href,
         label: opts.label,
         slug: opts.slug,
-        href: opts.href,
         trigger: opts.trigger ?? "manual",
       });
       totalSourcesRef.current = 0;
       completedSourcesRef.current = 0;
 
       const bridgedCallbacks: StreamLoopCallbacks = {
-        onStart(loop: LoopUpdateTarget) {
-          totalSourcesRef.current = loop.sources.length;
+        onComplete(result: LoopUpdateResult, sources: LoopUpdateSourceLog[]) {
           updateOperation(id, {
-            status: "running",
-            totalSteps: loop.sources.length,
-            latestMessage: `Scanning ${loop.sources.length} sources...`,
+            completedSteps: totalSourcesRef.current,
+            latestMessage: result.changed
+              ? `Updated to ${result.nextVersionLabel}`
+              : "No material changes",
+            progress: 100,
+            status: "done",
           });
-          opts.callbacks?.onStart?.(loop);
+          opts.callbacks?.onComplete?.(result, sources);
+        },
+
+        onError(message: string) {
+          updateOperation(id, {
+            errorMessage: message,
+            latestMessage: message,
+            status: "error",
+          });
+          opts.callbacks?.onError?.(message);
+        },
+
+        onMessage(message: string) {
+          updateOperation(id, { latestMessage: message });
+          opts.callbacks?.onMessage?.(message);
+        },
+
+        onReasoningStep(step: AgentReasoningStep) {
+          updateOperation(id, {
+            latestMessage: step.reasoning.slice(0, 100),
+            status: "completing",
+          });
+          opts.callbacks?.onReasoningStep?.(step);
         },
 
         onSource(source: LoopUpdateSourceLog) {
@@ -71,57 +98,34 @@ export function useTrackedLoopUpdate() {
           );
           updateOperation(id, {
             completedSteps: completedSourcesRef.current,
-            progress,
             latestMessage: `${source.label}: ${source.note ?? source.status}`,
+            progress,
           });
           opts.callbacks?.onSource?.(source);
         },
 
-        onMessage(message: string) {
-          updateOperation(id, { latestMessage: message });
-          opts.callbacks?.onMessage?.(message);
-        },
-
-        onReasoningStep(step: AgentReasoningStep) {
+        onStart(loop: LoopUpdateTarget) {
+          totalSourcesRef.current = loop.sources.length;
           updateOperation(id, {
-            status: "completing",
-            latestMessage: step.reasoning.slice(0, 100),
+            latestMessage: `Scanning ${loop.sources.length} sources...`,
+            status: "running",
+            totalSteps: loop.sources.length,
           });
-          opts.callbacks?.onReasoningStep?.(step);
-        },
-
-        onComplete(result: LoopUpdateResult, sources: LoopUpdateSourceLog[]) {
-          updateOperation(id, {
-            status: "done",
-            progress: 100,
-            completedSteps: totalSourcesRef.current,
-            latestMessage: result.changed
-              ? `Updated to ${result.nextVersionLabel}`
-              : "No material changes",
-          });
-          opts.callbacks?.onComplete?.(result, sources);
-        },
-
-        onError(message: string) {
-          updateOperation(id, {
-            status: "error",
-            errorMessage: message,
-            latestMessage: message,
-          });
-          opts.callbacks?.onError?.(message);
+          opts.callbacks?.onStart?.(loop);
         },
       };
 
       try {
         await streamLoopUpdate(opts.slug, opts.origin, bridgedCallbacks);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Update failed.";
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Update failed.";
         updateOperation(id, {
-          status: "error",
           errorMessage: message,
           latestMessage: message,
+          status: "error",
         });
-        throw err;
+        throw error;
       }
     },
     [addOperation, updateOperation]

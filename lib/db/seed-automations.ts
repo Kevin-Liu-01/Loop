@@ -7,15 +7,17 @@
  * Usage: npx tsx lib/db/seed-automations.ts
  */
 
-import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { SKILL_SOURCE_CONFIGS } from "@/lib/db/seed-data/skill-sources";
+import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 
 async function applySourcesAndAutomation(): Promise<{
   updated: number;
   skipped: number;
   errors: number;
 }> {
-  console.log(`\n[1/2] Applying sources and automation to ${SKILL_SOURCE_CONFIGS.length} skills...`);
+  console.log(
+    `\n[1/2] Applying sources and automation to ${SKILL_SOURCE_CONFIGS.length} skills...`
+  );
 
   let updated = 0;
   let skipped = 0;
@@ -31,14 +33,16 @@ async function applySourcesAndAutomation(): Promise<{
       }
 
       await updateSkill(cfg.slug, {
+        automation: cfg.automation,
         origin: "user",
         sources: cfg.sources,
-        automation: cfg.automation
       });
 
       const sourceCount = cfg.sources.length;
-      const cadence = cfg.automation.cadence;
-      console.log(`  [ok]   ${cfg.slug} – ${sourceCount} sources, ${cadence} cadence`);
+      const { cadence } = cfg.automation;
+      console.log(
+        `  [ok]   ${cfg.slug} – ${sourceCount} sources, ${cadence} cadence`
+      );
       updated++;
     } catch (error) {
       console.error(`  [err]  ${cfg.slug}: ${(error as Error).message}`);
@@ -46,10 +50,14 @@ async function applySourcesAndAutomation(): Promise<{
     }
   }
 
-  return { updated, skipped, errors };
+  return { errors, skipped, updated };
 }
 
-function printSummary(result: { updated: number; skipped: number; errors: number }): void {
+function printSummary(result: {
+  updated: number;
+  skipped: number;
+  errors: number;
+}): void {
   console.log("\n[2/2] Summary");
   console.log(`  Updated: ${result.updated}`);
   console.log(`  Skipped: ${result.skipped}`);

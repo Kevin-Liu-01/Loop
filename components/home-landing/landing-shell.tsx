@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-
 import { motion } from "motion/react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
-import { ArrowRightIcon, AutomationIcon, GITHUB_REPO_URL, GitHubIcon } from "@/components/frontier-icons";
+import {
+  ArrowRightIcon,
+  AutomationIcon,
+  GITHUB_REPO_URL,
+  GitHubIcon,
+} from "@/components/frontier-icons";
 import { GrainShader } from "@/components/home-landing/grain-shader";
 import { HeroDiffField } from "@/components/home-landing/hero-diff-field";
 import { LoopLogo } from "@/components/loop-logo";
@@ -19,15 +23,20 @@ import { LinkButton } from "@/components/ui/link-button";
 import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tip } from "@/components/ui/tip";
-import { computeFreshness, type FreshnessInfo } from "@/lib/freshness";
-import { formatTagLabel, getTagColorForCategory, getTagColorForTransport } from "@/lib/tag-utils";
-import type { AutomationSummary, CategorySlug, SkillRecord } from "@/lib/types";
+import { computeFreshness } from "@/lib/freshness";
+import type { FreshnessInfo } from "@/lib/freshness";
 import type {
   LandingSkillRow,
   LandingMcpRow,
 } from "@/lib/home-landing/landing-data";
+import {
+  formatTagLabel,
+  getTagColorForCategory,
+  getTagColorForTransport,
+} from "@/lib/tag-utils";
+import type { AutomationSummary, CategorySlug, SkillRecord } from "@/lib/types";
 
-type NormalizedSkill = {
+interface NormalizedSkill {
   slug: string;
   title: string;
   category: string;
@@ -38,12 +47,16 @@ type NormalizedSkill = {
   iconUrl?: string;
   ownerName: string;
   href: string;
-};
+}
 
 function computeTone(iso: string): "fresh" | "stale" | "idle" {
   const hours = (Date.now() - new Date(iso).getTime()) / 3_600_000;
-  if (hours < 6) return "fresh";
-  if (hours < 72) return "stale";
+  if (hours < 6) {
+    return "fresh";
+  }
+  if (hours < 72) {
+    return "stale";
+  }
   return "idle";
 }
 
@@ -53,72 +66,89 @@ function landingFreshness(skill: SkillRecord): FreshnessInfo {
 
 function relativeTime(iso: string): string {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   const days = Math.round(hours / 24);
   return `${days}d ago`;
 }
 
 function normalizeSkillRecord(s: SkillRecord): NormalizedSkill {
   return {
-    slug: s.slug,
-    title: s.title,
     category: s.category,
-    versionLabel: s.versionLabel,
-    tone: computeTone(s.updatedAt),
-    relativeTime: relativeTime(s.updatedAt),
     description: s.description || s.excerpt,
+    href: s.href,
     iconUrl: s.iconUrl ?? undefined,
     ownerName: s.ownerName ?? s.author?.displayName ?? "Loop",
-    href: s.href,
+    relativeTime: relativeTime(s.updatedAt),
+    slug: s.slug,
+    title: s.title,
+    tone: computeTone(s.updatedAt),
+    versionLabel: s.versionLabel,
   };
 }
 
 function normalizeStaticSkill(s: LandingSkillRow): NormalizedSkill {
   return {
-    slug: s.slug,
-    title: s.title,
     category: s.category,
-    versionLabel: s.versionLabel,
-    tone: s.tone,
-    relativeTime: s.updatedAt,
     description: s.description,
+    href: "/sign-up",
     iconUrl: s.iconUrl,
     ownerName: s.ownerName,
-    href: "/sign-up",
+    relativeTime: s.updatedAt,
+    slug: s.slug,
+    title: s.title,
+    tone: s.tone,
+    versionLabel: s.versionLabel,
   };
 }
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
+  transition: {
+    duration: 0.55,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  },
+  viewport: { amount: 0.2 as const, once: true },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 as const },
-  transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
 const staggerWrap = {
   initial: { opacity: 0 },
+  transition: { delayChildren: 0.05, staggerChildren: 0.06 },
+  viewport: { amount: 0.1 as const, once: true },
   whileInView: { opacity: 1 },
-  viewport: { once: true, amount: 0.1 as const },
-  transition: { staggerChildren: 0.06, delayChildren: 0.05 },
 };
 
 const staggerItem = {
   initial: { opacity: 0, y: 12 },
+  transition: {
+    duration: 0.45,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  },
   whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
-type LandingShellProps = {
+interface LandingShellProps {
   skills?: SkillRecord[];
   staticSkills?: LandingSkillRow[];
   mcps: LandingMcpRow[];
   automations: AutomationSummary[];
-};
+}
 
-export function LandingShell({ skills, staticSkills, mcps, automations }: LandingShellProps) {
+export function LandingShell({
+  skills,
+  staticSkills,
+  mcps,
+  automations,
+}: LandingShellProps) {
   const [brandHover, setBrandHover] = useState(false);
 
   const normalizedSkills: NormalizedSkill[] = skills
@@ -126,9 +156,13 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
     : (staticSkills ?? []).map(normalizeStaticSkill);
 
   const skillMap = useMemo(() => {
-    if (!skills) return undefined;
+    if (!skills) {
+      return;
+    }
     const map = new Map<string, SkillRecord>();
-    for (const s of skills) map.set(s.slug, s);
+    for (const s of skills) {
+      map.set(s.slug, s);
+    }
     return map;
   }, [skills]);
 
@@ -192,8 +226,7 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             <div className="grid gap-5">
               <h1 className="font-serif text-[clamp(2.8rem,5.8vw,4.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-ink">
                 Skills that{"\u00A0"}never
-                <br className="max-sm:hidden" />
-                {" "}go{"\u00A0"}stale
+                <br className="max-sm:hidden" /> go{"\u00A0"}stale
               </h1>
 
               <p className="mx-auto max-w-[34rem] text-balance text-[1.1rem] leading-[1.7] text-ink/55">
@@ -213,7 +246,7 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
           </motion.div>
 
           {/* Proof strip */}
-          {/* 
+          {/*
           <motion.div
             className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[0.72rem] font-medium tabular-nums text-white/25"
             initial={{ opacity: 0 }}
@@ -261,22 +294,56 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                     >
                       <a className="group min-w-0" href={skill.href}>
                         <div className="flex items-start gap-2.5">
-                          <SkillIcon className="mt-0.5 rounded-md" iconUrl={skill.iconUrl} size={28} slug={skill.slug} />
+                          <SkillIcon
+                            className="mt-0.5 rounded-md"
+                            iconUrl={skill.iconUrl}
+                            size={28}
+                            slug={skill.slug}
+                          />
                           <div className="min-w-0 grid flex-1 gap-1">
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
-                              <Tip content={freshness.tone === "fresh" ? "Recently updated" : freshness.tone === "stale" ? "Hasn't changed recently" : "Unknown freshness"} side="top">
-                                <span className="inline-flex items-center"><StatusDot tone={freshness.tone} /></span>
+                              <Tip
+                                content={
+                                  freshness.tone === "fresh"
+                                    ? "Recently updated"
+                                    : freshness.tone === "stale"
+                                      ? "Hasn't changed recently"
+                                      : "Unknown freshness"
+                                }
+                                side="top"
+                              >
+                                <span className="inline-flex items-center">
+                                  <StatusDot tone={freshness.tone} />
+                                </span>
                               </Tip>
                               <span className="truncate font-serif text-[0.94rem] font-medium text-ink group-hover:text-ink-soft">
                                 {skill.title}
                               </span>
-                              <Badge color={getTagColorForCategory(skill.category)} size="sm">{formatTagLabel(skill.category)}</Badge>
-                              <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
+                              <Badge
+                                color={getTagColorForCategory(skill.category)}
+                                size="sm"
+                              >
+                                {formatTagLabel(skill.category)}
+                              </Badge>
+                              <Badge color="neutral" size="sm">
+                                {skill.versionLabel}
+                              </Badge>
                             </div>
-                            <p className="m-0 line-clamp-1 text-sm text-ink-soft">{skill.description}</p>
+                            <p className="m-0 line-clamp-1 text-sm text-ink-soft">
+                              {skill.description}
+                            </p>
                             <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-ink-faint">
-                              <SkillAuthorBadge author={skill.author} compact linked={false} ownerName={skill.ownerName} iconUrl={skill.iconUrl} />
-                              <SkillMetaBar freshness={freshness} skill={skill} />
+                              <SkillAuthorBadge
+                                author={skill.author}
+                                compact
+                                linked={false}
+                                ownerName={skill.ownerName}
+                                iconUrl={skill.iconUrl}
+                              />
+                              <SkillMetaBar
+                                freshness={freshness}
+                                skill={skill}
+                              />
                             </div>
                           </div>
                         </div>
@@ -305,15 +372,27 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                   >
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <SkillIcon className="rounded-md" iconUrl={skill.iconUrl} size={24} slug={skill.slug} />
+                        <SkillIcon
+                          className="rounded-md"
+                          iconUrl={skill.iconUrl}
+                          size={24}
+                          slug={skill.slug}
+                        />
                         <StatusDot tone={skill.tone} />
                         <span className="truncate font-serif text-[0.94rem] font-medium text-ink">
                           {skill.title}
                         </span>
-                        <Badge color={getTagColorForCategory(skill.category as CategorySlug)} size="sm">
+                        <Badge
+                          color={getTagColorForCategory(
+                            skill.category as CategorySlug
+                          )}
+                          size="sm"
+                        >
                           {formatTagLabel(skill.category)}
                         </Badge>
-                        <Badge color="neutral" size="sm">{skill.versionLabel}</Badge>
+                        <Badge color="neutral" size="sm">
+                          {skill.versionLabel}
+                        </Badge>
                       </div>
                       <p className="m-0 mt-1 line-clamp-1 text-sm text-ink-soft">
                         {skill.description}
@@ -321,7 +400,9 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                       <div className="mt-1 flex items-center gap-2 text-xs text-ink-faint">
                         <span>{skill.ownerName}</span>
                         <span>·</span>
-                        <span className="tabular-nums">{skill.relativeTime}</span>
+                        <span className="tabular-nums">
+                          {skill.relativeTime}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 max-sm:pl-0">
@@ -353,16 +434,25 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             {...staggerWrap}
           >
             {/* Left: Calendar */}
-            <motion.div className="lg:border-r lg:border-line lg:pr-8" {...staggerItem}>
+            <motion.div
+              className="lg:border-r lg:border-line lg:pr-8"
+              {...staggerItem}
+            >
               <div className="mb-6 grid gap-2">
                 <h2 className="font-serif text-[clamp(1.3rem,2.2vw,1.7rem)] font-medium leading-[1.12] tracking-[-0.03em]">
                   Scheduled intelligence
                 </h2>
                 <p className="max-w-[26rem] text-sm leading-[1.65] text-ink-soft">
-                  Every dot is an automated agent run – skills refresh themselves on a schedule you control.
+                  Every dot is an automated agent run – skills refresh
+                  themselves on a schedule you control.
                 </p>
               </div>
-              <AutomationCalendar automations={automations} maxLegendRows={5} skillMap={skillMap} variant="sidebar" />
+              <AutomationCalendar
+                automations={automations}
+                maxLegendRows={5}
+                skillMap={skillMap}
+                variant="sidebar"
+              />
             </motion.div>
 
             {/* Right: MCP list */}
@@ -372,7 +462,8 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                   Connect any tool
                 </h2>
                 <p className="max-w-[26rem] text-sm leading-[1.65] text-ink-soft">
-                  Import from the open MCP ecosystem – Loop versions everything alongside your skills.
+                  Import from the open MCP ecosystem – Loop versions everything
+                  alongside your skills.
                 </p>
               </div>
               <div className="grid gap-1.5">
@@ -392,7 +483,10 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
                         <span className="truncate text-sm font-medium text-ink">
                           {mcp.name}
                         </span>
-                        <Badge color={getTagColorForTransport(mcp.transport)} size="sm">
+                        <Badge
+                          color={getTagColorForTransport(mcp.transport)}
+                          size="sm"
+                        >
                           {mcp.transport}
                         </Badge>
                       </div>
@@ -446,11 +540,36 @@ export function LandingShell({ skills, staticSkills, mcps, automations }: Landin
             © {new Date().getFullYear()} Loop · Operator desk for agent skills
           </p>
           <nav className="flex items-center gap-6 text-[0.62rem]">
-            <Link className="text-ink-faint transition-colors hover:text-ink" href="/sign-up">Get started</Link>
-            <Link className="text-ink-faint transition-colors hover:text-ink" href="#skills">Skills</Link>
-            <Link className="text-ink-faint transition-colors hover:text-ink" href="#mcps">MCPs</Link>
-            <Link className="text-ink-faint transition-colors hover:text-ink" href="/faq">FAQ</Link>
-            <Link className="text-ink-faint transition-colors hover:text-ink" href="/sign-in">Sign in</Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="/sign-up"
+            >
+              Get started
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="#skills"
+            >
+              Skills
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="#mcps"
+            >
+              MCPs
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="/faq"
+            >
+              FAQ
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="/sign-in"
+            >
+              Sign in
+            </Link>
             <a
               className="text-ink-faint transition-colors hover:text-ink"
               href={GITHUB_REPO_URL}

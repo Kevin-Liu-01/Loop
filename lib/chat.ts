@@ -1,7 +1,7 @@
-type MessageLike = {
+interface MessageLike {
   content?: unknown;
-  parts?: Array<{ type?: string; text?: string }>;
-};
+  parts?: { type?: string; text?: string }[];
+}
 
 export function messageToText(message: MessageLike): string {
   if (typeof message.content === "string") {

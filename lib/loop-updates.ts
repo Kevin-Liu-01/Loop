@@ -5,46 +5,46 @@ import type {
   LoopUpdateSourceLog,
   LoopUpdateTarget,
   SkillRecord,
-  SourceDefinition
+  SourceDefinition,
 } from "@/lib/types";
 
 export function buildLoopUpdateTarget(skill: SkillRecord): LoopUpdateTarget {
   const latestUpdate = skill.updates?.[0];
 
   return {
-    slug: skill.slug,
-    title: skill.title,
-    category: skill.category,
-    origin: skill.origin === "remote" ? "remote" : "user",
-    description: skill.description,
-    versionLabel: skill.versionLabel,
-    updatedAt: skill.updatedAt,
-    href: skill.href,
     automationLabel:
       skill.origin === "user"
         ? skill.automation?.enabled
           ? `${skill.automation.cadence} ${skill.automation.status}`
           : "manual"
         : "import sync",
+    category: skill.category,
+    description: skill.description,
+    href: skill.href,
+    lastBodyChanged: latestUpdate?.bodyChanged,
+    lastChangedSections: latestUpdate?.changedSections ?? [],
+    lastEditorModel: latestUpdate?.editorModel,
+    lastExperiments: latestUpdate?.experiments ?? [],
+    lastGeneratedAt: latestUpdate?.generatedAt,
+    lastSignals: latestUpdate?.items ?? [],
     lastSummary: latestUpdate?.summary,
     lastWhatChanged: latestUpdate?.whatChanged,
-    lastGeneratedAt: latestUpdate?.generatedAt,
-    lastExperiments: latestUpdate?.experiments ?? [],
-    lastSignals: latestUpdate?.items ?? [],
-    lastChangedSections: latestUpdate?.changedSections ?? [],
-    lastBodyChanged: latestUpdate?.bodyChanged,
-    lastEditorModel: latestUpdate?.editorModel,
+    origin: skill.origin === "remote" ? "remote" : "user",
+    slug: skill.slug,
     sources: (skill.sources ?? []).map((source) => ({
       id: source.id,
-      label: source.label,
-      url: source.url,
       kind: source.kind,
+      label: source.label,
       logoUrl: source.logoUrl || buildSourceLogoUrl(source.url),
       mode: source.mode,
-      trust: source.trust,
       parser: source.parser,
-      searchQueries: source.searchQueries
-    }))
+      searchQueries: source.searchQueries,
+      trust: source.trust,
+      url: source.url,
+    })),
+    title: skill.title,
+    updatedAt: skill.updatedAt,
+    versionLabel: skill.versionLabel,
   };
 }
 
@@ -54,47 +54,49 @@ export function buildLoopUpdateSourceLog(
 ): LoopUpdateSourceLog {
   return {
     id: source.id,
-    label: source.label,
-    url: source.url,
+    itemCount: 0,
+    items: [],
     kind: source.kind,
+    label: source.label,
     logoUrl: source.logoUrl || buildSourceLogoUrl(source.url),
     mode: source.mode,
-    trust: source.trust,
     parser: source.parser,
     searchQueries: source.searchQueries,
     status,
-    itemCount: 0,
-    items: []
+    trust: source.trust,
+    url: source.url,
   };
 }
 
-export function buildLoopRunResult(run?: LoopRunRecord | null): LoopUpdateResult | null {
+export function buildLoopRunResult(
+  run?: LoopRunRecord | null
+): LoopUpdateResult | null {
   if (!run?.previousVersionLabel || !run.nextVersionLabel || !run.href) {
     return null;
   }
 
   return {
-    slug: run.slug,
-    title: run.title,
-    origin: run.origin,
+    addedSources: run.addedSources,
+    bodyChanged: run.bodyChanged,
     changed:
       run.status === "success" &&
       (run.bodyChanged === true ||
         run.previousVersionLabel !== run.nextVersionLabel ||
         run.diffLines.some((line) => line.type !== "context")),
-    previousVersionLabel: run.previousVersionLabel,
-    nextVersionLabel: run.nextVersionLabel,
-    updatedAt: run.finishedAt,
-    href: run.href,
-    diffLines: run.diffLines,
-    summary: run.summary,
-    whatChanged: run.whatChanged,
-    items: run.sources.flatMap((source) => source.items).slice(0, 4),
     changedSections: run.changedSections,
-    bodyChanged: run.bodyChanged,
+    diffLines: run.diffLines,
     editorModel: run.editorModel,
+    href: run.href,
+    items: run.sources.flatMap((source) => source.items).slice(0, 4),
+    nextVersionLabel: run.nextVersionLabel,
+    origin: run.origin,
+    previousVersionLabel: run.previousVersionLabel,
     reasoningSteps: run.reasoningSteps,
     searchesUsed: run.searchesUsed,
-    addedSources: run.addedSources
+    slug: run.slug,
+    summary: run.summary,
+    title: run.title,
+    updatedAt: run.finishedAt,
+    whatChanged: run.whatChanged,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { AutomationEditModal } from "@/components/automation-edit-modal";
 import { AutomationIcon } from "@/components/frontier-icons";
@@ -10,17 +10,24 @@ import { cn } from "@/lib/cn";
 import { formatNextRun } from "@/lib/schedule";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
 
-const metaLabel = "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
+const metaLabel =
+  "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
 const metaValue = "text-sm font-semibold tracking-[-0.03em]";
 
-type SidebarAutomationsPanelProps = {
+interface SidebarAutomationsPanelProps {
   automations: AutomationSummary[];
   skills?: SkillRecord[];
-};
+}
 
-export function SidebarAutomationsPanel({ automations, skills = [] }: SidebarAutomationsPanelProps) {
+export function SidebarAutomationsPanel({
+  automations,
+  skills = [],
+}: SidebarAutomationsPanelProps) {
   const [editTarget, setEditTarget] = useState<AutomationSummary | null>(null);
-  const skillMap = useMemo(() => new Map(skills.map((s) => [s.slug, s])), [skills]);
+  const skillMap = useMemo(
+    () => new Map(skills.map((s) => [s.slug, s])),
+    [skills]
+  );
 
   const editSkill = editTarget?.matchedSkillSlugs[0]
     ? skillMap.get(editTarget.matchedSkillSlugs[0])
@@ -76,10 +83,12 @@ export function SidebarAutomationsPanel({ automations, skills = [] }: SidebarAut
                   <span className="min-w-0 flex-1 truncate text-[0.6875rem] font-semibold text-ink">
                     {auto.name}
                   </span>
-                  <span className={cn(
-                    "flex items-center gap-1 text-[0.625rem]",
-                    isActive ? "text-success" : "text-ink-faint"
-                  )}>
+                  <span
+                    className={cn(
+                      "flex items-center gap-1 text-[0.625rem]",
+                      isActive ? "text-success" : "text-ink-faint"
+                    )}
+                  >
                     <StatusDot
                       pulse={isActive}
                       size="xs"
@@ -93,12 +102,18 @@ export function SidebarAutomationsPanel({ automations, skills = [] }: SidebarAut
                 <div className="grid grid-cols-2 gap-px bg-line/50 dark:bg-line/30">
                   <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
                     <small className={metaLabel}>schedule</small>
-                    <span className="text-[0.6875rem] font-medium text-ink-soft">{auto.schedule}</span>
+                    <span className="text-[0.6875rem] font-medium text-ink-soft">
+                      {auto.schedule}
+                    </span>
                   </div>
                   <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
                     <small className={metaLabel}>next</small>
                     <span className="text-[0.6875rem] font-medium tabular-nums text-ink-soft">
-                      {formatNextRun(auto.cadence, auto.preferredHour ?? 12, auto.preferredDay)}
+                      {formatNextRun(
+                        auto.cadence,
+                        auto.preferredHour ?? 12,
+                        auto.preferredDay
+                      )}
                     </span>
                   </div>
                 </div>

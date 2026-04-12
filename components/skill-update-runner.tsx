@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState, useTransition } from "react";
 
 import { DiffViewer } from "@/components/diff-viewer";
 import {
@@ -20,9 +20,9 @@ import { Panel, PanelHead } from "@/components/ui/panel";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RunMetadataBar } from "@/components/ui/run-metadata-bar";
 import { StepIndicatorCompact } from "@/components/ui/step-indicator";
+import { Tip } from "@/components/ui/tip";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { useTrackedLoopUpdate } from "@/hooks/use-tracked-loop-update";
-import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import { buildLoopRunResult } from "@/lib/loop-updates";
@@ -35,34 +35,40 @@ import type {
   LoopUpdateResult,
   LoopUpdateSourceLog,
   LoopUpdateTarget,
-  LoopUpdateTargetOrigin
+  LoopUpdateTargetOrigin,
 } from "@/lib/types";
 
-type SkillUpdateRunnerProps = {
+interface SkillUpdateRunnerProps {
   slug: string;
   origin: LoopUpdateTargetOrigin;
   sourceCount: number;
   automation?: AutomationSummary;
   latestRun?: LoopRunRecord | null;
   canManage?: boolean;
-};
+}
 
 const STAT_BOX = "grid gap-1 rounded-2xl border border-line bg-paper-3 p-4";
-const STAT_LABEL = "text-xs font-medium uppercase tracking-[0.08em] text-ink-soft";
+const STAT_LABEL =
+  "text-xs font-medium uppercase tracking-[0.08em] text-ink-soft";
 const STAT_VALUE = "text-sm font-semibold tracking-[-0.03em]";
 const PANEL_TITLE = "m-0 text-lg font-semibold tracking-tight text-ink";
-const SECTION_LABEL = "mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft";
+const SECTION_LABEL =
+  "mb-2 inline-block text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft";
 
 function formatTriggerLabel(trigger: LoopRunRecord["trigger"]): string {
   switch (trigger) {
-    case "manual":
+    case "manual": {
       return "Manual";
-    case "automation":
+    }
+    case "automation": {
       return "Automation";
-    case "import-sync":
+    }
+    case "import-sync": {
       return "Import sync";
-    default:
+    }
+    default: {
       return trigger;
+    }
   }
 }
 
@@ -70,37 +76,98 @@ type StepMessageKind = "source" | "reasoning" | "done" | "error" | "generic";
 
 function classifyMessage(message: string): StepMessageKind {
   const lower = message.toLowerCase();
-  if (lower.includes("error") || lower.includes("failed")) return "error";
-  if (lower.includes("is live") || lower.includes("finished") || lower.includes("no material diff")) return "done";
-  if (lower.includes("source") || lower.includes("scanning") || lower.includes("queued")) return "source";
-  if (lower.includes("agent") || lower.includes("reasoning") || lower.includes("started agent")) return "reasoning";
+  if (lower.includes("error") || lower.includes("failed")) {
+    return "error";
+  }
+  if (
+    lower.includes("is live") ||
+    lower.includes("finished") ||
+    lower.includes("no material diff")
+  ) {
+    return "done";
+  }
+  if (
+    lower.includes("source") ||
+    lower.includes("scanning") ||
+    lower.includes("queued")
+  ) {
+    return "source";
+  }
+  if (
+    lower.includes("agent") ||
+    lower.includes("reasoning") ||
+    lower.includes("started agent")
+  ) {
+    return "reasoning";
+  }
   return "generic";
 }
 
-function StepIcon({ kind, isLast, isLive }: { kind: StepMessageKind; isLast: boolean; isLive: boolean }) {
+function StepIcon({
+  kind,
+  isLast,
+  isLive,
+}: {
+  kind: StepMessageKind;
+  isLast: boolean;
+  isLive: boolean;
+}) {
   const baseClass = "h-3.5 w-3.5";
   const wrapClass = cn(
     "flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-paper-3 text-ink-soft [&>svg]:h-3.5 [&>svg]:w-3.5",
     isLast && isLive && "animate-pulse"
   );
   switch (kind) {
-    case "source":
-      return <div className={wrapClass}><SearchIcon className={baseClass} /></div>;
-    case "reasoning":
-      return <div className={wrapClass}><CpuIcon className={baseClass} /></div>;
-    case "done":
-      return <div className={cn(wrapClass, "border-success/30 bg-success/10 text-success")}><CheckIcon className={baseClass} /></div>;
-    case "error":
-      return <div className={cn(wrapClass, "border-danger/30 bg-danger/10 text-danger")}><TriangleAlertIcon className={baseClass} /></div>;
-    default:
-      return <div className={wrapClass}><AutomationIcon className={baseClass} /></div>;
+    case "source": {
+      return (
+        <div className={wrapClass}>
+          <SearchIcon className={baseClass} />
+        </div>
+      );
+    }
+    case "reasoning": {
+      return (
+        <div className={wrapClass}>
+          <CpuIcon className={baseClass} />
+        </div>
+      );
+    }
+    case "done": {
+      return (
+        <div
+          className={cn(
+            wrapClass,
+            "border-success/30 bg-success/10 text-success"
+          )}
+        >
+          <CheckIcon className={baseClass} />
+        </div>
+      );
+    }
+    case "error": {
+      return (
+        <div
+          className={cn(wrapClass, "border-danger/30 bg-danger/10 text-danger")}
+        >
+          <TriangleAlertIcon className={baseClass} />
+        </div>
+      );
+    }
+    default: {
+      return (
+        <div className={wrapClass}>
+          <AutomationIcon className={baseClass} />
+        </div>
+      );
+    }
   }
 }
 
-function buildPendingSourcesFromTarget(loop: LoopUpdateTarget): LoopUpdateSourceLog[] {
+function buildPendingSourcesFromTarget(
+  loop: LoopUpdateTarget
+): LoopUpdateSourceLog[] {
   return loop.sources.map((source) => ({
     ...source,
-    status: "pending",
     itemCount: 0,
     items: [],
     note: "Queued for scan.",
@@ -109,21 +176,22 @@ function buildPendingSourcesFromTarget(loop: LoopUpdateTarget): LoopUpdateSource
         ? "Scanning an index-style source and ranking discovered links against the skill's query hints."
         : source.mode === "search"
           ? "Biasing discovery toward the source's query hints instead of static navigation links."
-          : "Tracking the canonical source for fresh deltas."
+          : "Tracking the canonical source for fresh deltas.",
+    status: "pending",
   }));
 }
 
 const SOURCE_DOT_CLASSES: Record<string, string> = {
   done: "bg-success",
-  running: "animate-pulse bg-warning",
   error: "bg-danger",
+  running: "animate-pulse bg-warning",
 };
 
 function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
   const metadata = [
-    source.mode ? source.mode.replace(/-/g, " ") : null,
-    source.trust ? source.trust.replace(/-/g, " ") : null,
-    source.parser ? source.parser.replace(/-/g, " ") : null
+    source.mode ? source.mode.replaceAll("-", " ") : null,
+    source.trust ? source.trust.replaceAll("-", " ") : null,
+    source.parser ? source.parser.replaceAll("-", " ") : null,
   ].filter(Boolean);
 
   return (
@@ -146,15 +214,21 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
             const hints = ["Discovery mode", "Trust tier", "Parser type"];
             return (
               <Tip content={hints[idx] ?? entry} key={entry} side="top">
-                <span><Badge color="neutral">{entry}</Badge></span>
+                <span>
+                  <Badge color="neutral">{entry}</Badge>
+                </span>
               </Tip>
             );
           })}
         </div>
       ) : null}
-      <p className="m-0 text-sm text-ink-soft">{source.note ?? `${source.itemCount} items found.`}</p>
+      <p className="m-0 text-sm text-ink-soft">
+        {source.note ?? `${source.itemCount} items found.`}
+      </p>
       {source.reasoning ? (
-        <p className="m-0 text-xs leading-relaxed text-ink-faint">{source.reasoning}</p>
+        <p className="m-0 text-xs leading-relaxed text-ink-faint">
+          {source.reasoning}
+        </p>
       ) : null}
       {source.searchQueries && source.searchQueries.length > 0 ? (
         <p className="m-0 text-xs text-ink-faint">
@@ -180,8 +254,16 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
   );
 }
 
-function StepLog({ messages, isLive }: { messages: string[]; isLive: boolean }) {
-  if (messages.length === 0) return null;
+function StepLog({
+  messages,
+  isLive,
+}: {
+  messages: string[];
+  isLive: boolean;
+}) {
+  if (messages.length === 0) {
+    return null;
+  }
 
   return (
     <div className="grid gap-0">
@@ -195,12 +277,16 @@ function StepLog({ messages, isLive }: { messages: string[]; isLive: boolean }) 
           >
             <StepIcon isLast={isLast} isLive={isLive} kind={kind} />
             <div className="grid gap-0.5 pt-1">
-              <span className="text-xs font-medium text-ink-faint">Step {index + 1}</span>
-              <span className={cn(
-                "text-sm text-ink-soft",
-                kind === "error" && "text-danger",
-                kind === "done" && "text-success"
-              )}>
+              <span className="text-xs font-medium text-ink-faint">
+                Step {index + 1}
+              </span>
+              <span
+                className={cn(
+                  "text-sm text-ink-soft",
+                  kind === "error" && "text-danger",
+                  kind === "done" && "text-success"
+                )}
+              >
                 {message}
               </span>
             </div>
@@ -217,33 +303,45 @@ export function SkillUpdateRunner({
   sourceCount,
   automation,
   latestRun,
-  canManage = false
+  canManage = false,
 }: SkillUpdateRunnerProps) {
   const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [isRunning, startTransition] = useTransition();
   const [messages, setMessages] = useState<string[]>([]);
   const [sourceLogs, setSourceLogs] = useState<LoopUpdateSourceLog[]>([]);
-  const [reasoningSteps, setReasoningSteps] = useState<AgentReasoningStep[]>([]);
+  const [reasoningSteps, setReasoningSteps] = useState<AgentReasoningStep[]>(
+    []
+  );
   const { run: runTrackedUpdate } = useTrackedLoopUpdate();
   const [result, setResult] = useState<LoopUpdateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const hasLiveState = messages.length > 0 || result !== null || error !== null;
-  const historicalResult = useMemo(() => buildLoopRunResult(latestRun), [latestRun]);
+  const historicalResult = useMemo(
+    () => buildLoopRunResult(latestRun),
+    [latestRun]
+  );
   const sourcesDoneCount = useMemo(
-    () => (hasLiveState ? sourceLogs : latestRun?.sources ?? []).filter((s) => s.status === "done").length,
+    () =>
+      (hasLiveState ? sourceLogs : (latestRun?.sources ?? [])).filter(
+        (s) => s.status === "done"
+      ).length,
     [hasLiveState, sourceLogs, latestRun]
   );
 
-  const visibleMessages = hasLiveState ? messages : latestRun?.messages ?? [];
-  const visibleSourceLogs = hasLiveState ? sourceLogs : latestRun?.sources ?? [];
-  const visibleReasoningSteps = hasLiveState ? reasoningSteps : latestRun?.reasoningSteps ?? [];
-  const visibleError = hasLiveState ? error : latestRun?.errorMessage ?? null;
+  const visibleMessages = hasLiveState ? messages : (latestRun?.messages ?? []);
+  const visibleSourceLogs = hasLiveState
+    ? sourceLogs
+    : (latestRun?.sources ?? []);
+  const visibleReasoningSteps = hasLiveState
+    ? reasoningSteps
+    : (latestRun?.reasoningSteps ?? []);
+  const visibleError = hasLiveState ? error : (latestRun?.errorMessage ?? null);
   const visibleDiffLines = hasLiveState
     ? (result?.diffLines ?? [])
-    : latestRun?.diffLines ?? [];
+    : (latestRun?.diffLines ?? []);
   const visibleTrigger = hasLiveState
     ? "Manual"
     : latestRun
@@ -251,16 +349,19 @@ export function SkillUpdateRunner({
       : origin === "remote"
         ? "Import sync"
         : "Automation";
-  const visibleEditorModel = result?.editorModel ?? latestRun?.editorModel ?? null;
-  const visibleStartedAt = hasLiveState ? null : latestRun?.startedAt ?? null;
-  const visibleFinishedAt = hasLiveState ? null : latestRun?.finishedAt ?? null;
+  const visibleEditorModel =
+    result?.editorModel ?? latestRun?.editorModel ?? null;
+  const visibleStartedAt = hasLiveState ? null : (latestRun?.startedAt ?? null);
+  const visibleFinishedAt = hasLiveState
+    ? null
+    : (latestRun?.finishedAt ?? null);
   const visibleStatus: "success" | "error" | "running" = isRunning
     ? "running"
     : visibleError
       ? "error"
       : result
         ? "success"
-        : latestRun?.status ?? "success";
+        : (latestRun?.status ?? "success");
   const scheduleLabel = automation
     ? automation.schedule
     : origin === "remote"
@@ -269,7 +370,11 @@ export function SkillUpdateRunner({
   const nextRunLabel = automation
     ? automation.status === "PAUSED"
       ? "Paused"
-      : formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay)
+      : formatNextRun(
+          automation.cadence,
+          automation.preferredHour ?? 12,
+          automation.preferredDay
+        )
     : origin === "remote"
       ? "On source change"
       : "On demand";
@@ -295,32 +400,7 @@ export function SkillUpdateRunner({
     startTransition(async () => {
       try {
         await runTrackedUpdate({
-          slug,
-          origin,
-          label: slug,
-          href: `/skills/${slug}`,
-          trigger: "manual",
           callbacks: {
-            onStart(loop) {
-              setMessages((prev) => [
-                ...prev,
-                `Started agent run across ${loop.sources.length} tracked sources.`
-              ]);
-              setSourceLogs(buildPendingSourcesFromTarget(loop));
-            },
-            onSource(source) {
-              setSourceLogs((prev) => applySourceUpdate(prev, source));
-              setMessages((prev) => [
-                ...prev,
-                `${source.label}: ${source.note ?? source.status}.`
-              ]);
-            },
-            onMessage(message) {
-              setMessages((prev) => [...prev, message]);
-            },
-            onReasoningStep(step) {
-              setReasoningSteps((prev) => [...prev, step]);
-            },
             onComplete(completeResult, sources) {
               setResult(completeResult);
               setSourceLogs(sources);
@@ -328,7 +408,7 @@ export function SkillUpdateRunner({
                 ...prev,
                 completeResult.changed
                   ? `${completeResult.nextVersionLabel} is live with a saved revision.`
-                  : "Source fetch finished. No material diff landed."
+                  : "Source fetch finished. No material diff landed.",
               ]);
               setError(null);
               router.refresh();
@@ -337,11 +417,38 @@ export function SkillUpdateRunner({
               setError(message);
               setMessages((prev) => [...prev, message]);
             },
+            onMessage(message) {
+              setMessages((prev) => [...prev, message]);
+            },
+            onReasoningStep(step) {
+              setReasoningSteps((prev) => [...prev, step]);
+            },
+            onSource(source) {
+              setSourceLogs((prev) => applySourceUpdate(prev, source));
+              setMessages((prev) => [
+                ...prev,
+                `${source.label}: ${source.note ?? source.status}.`,
+              ]);
+            },
+            onStart(loop) {
+              setMessages((prev) => [
+                ...prev,
+                `Started agent run across ${loop.sources.length} tracked sources.`,
+              ]);
+              setSourceLogs(buildPendingSourcesFromTarget(loop));
+            },
           },
+          href: `/skills/${slug}`,
+          label: slug,
+          origin,
+          slug,
+          trigger: "manual",
         });
       } catch (caughtError) {
         const message =
-          caughtError instanceof Error ? caughtError.message : "Manual loop update failed.";
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Manual loop update failed.";
         setError(message);
         setMessages((prev) => [...prev, message]);
       }
@@ -349,7 +456,8 @@ export function SkillUpdateRunner({
   }, [slug, origin, router, startTransition, runTrackedUpdate]);
 
   const canRun = sourceCount > 0 && !isRunning && canManage;
-  const buttonLabel = origin === "remote" ? "Sync from source" : "Run automation now";
+  const buttonLabel =
+    origin === "remote" ? "Sync from source" : "Run automation now";
 
   return (
     <div className="grid gap-6">
@@ -366,17 +474,32 @@ export function SkillUpdateRunner({
                   {!canManage
                     ? "Only the skill owner can trigger manual refreshes. You can still inspect the trace and latest diff."
                     : sourceCount > 0
-                    ? `Fetch ${sourceCount} sources, rank fresh leads, and rewrite the skill with a visible trace.`
-                    : "Add sources in Setup to enable updates."}
+                      ? `Fetch ${sourceCount} sources, rank fresh leads, and rewrite the skill with a visible trace.`
+                      : "Add sources in Setup to enable updates."}
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {automation ? (
-        <Tip content={automation.status === "ACTIVE" ? "Automation runs on schedule" : "Automation is paused"} side="bottom">
-          <span><Badge color={automation.status === "ACTIVE" ? "green" : "neutral"}>{automation.status.toLowerCase()}</Badge></span>
-        </Tip>
-      ) : null}
+                <Tip
+                  content={
+                    automation.status === "ACTIVE"
+                      ? "Automation runs on schedule"
+                      : "Automation is paused"
+                  }
+                  side="bottom"
+                >
+                  <span>
+                    <Badge
+                      color={
+                        automation.status === "ACTIVE" ? "green" : "neutral"
+                      }
+                    >
+                      {automation.status.toLowerCase()}
+                    </Badge>
+                  </span>
+                </Tip>
+              ) : null}
               <Button disabled={!canRun} onClick={handleRun} type="button">
                 {isRunning ? "Running..." : buttonLabel}
               </Button>
@@ -419,12 +542,20 @@ export function SkillUpdateRunner({
         </div>
       </Panel>
 
-      {(visibleMessages.length > 0 || visibleSourceLogs.length > 0) ? (
+      {visibleMessages.length > 0 || visibleSourceLogs.length > 0 ? (
         <Panel compact className="overflow-hidden">
           {isRunning && (
             <ProgressBar
               className="-mx-6 -mt-6 mb-4"
-              progress={sourcesDoneCount > 0 ? Math.round((sourcesDoneCount / Math.max(visibleSourceLogs.length, 1)) * 100) : undefined}
+              progress={
+                sourcesDoneCount > 0
+                  ? Math.round(
+                      (sourcesDoneCount /
+                        Math.max(visibleSourceLogs.length, 1)) *
+                        100
+                    )
+                  : undefined
+              }
               rounded={false}
               size="sm"
               status="active"
@@ -459,11 +590,17 @@ export function SkillUpdateRunner({
             <div className="flex items-center gap-2">
               {visibleStatus === "running" ? (
                 <Tip content="Results are streaming in real time" side="bottom">
-                  <span><Badge color="blue">streaming</Badge></span>
+                  <span>
+                    <Badge color="blue">streaming</Badge>
+                  </span>
                 </Tip>
               ) : latestRun ? (
                 <Tip content="When this run completed" side="bottom">
-                  <span><Badge color="neutral">{formatDateTime(latestRun.finishedAt, timeZone)}</Badge></span>
+                  <span>
+                    <Badge color="neutral">
+                      {formatDateTime(latestRun.finishedAt, timeZone)}
+                    </Badge>
+                  </span>
                 </Tip>
               ) : null}
               <Button
@@ -478,7 +615,9 @@ export function SkillUpdateRunner({
           </PanelHead>
 
           <RunMetadataBar
-            addedSourceCount={result?.addedSources?.length ?? latestRun?.addedSources?.length}
+            addedSourceCount={
+              result?.addedSources?.length ?? latestRun?.addedSources?.length
+            }
             editorModel={visibleEditorModel}
             finishedAt={visibleFinishedAt}
             searchesUsed={result?.searchesUsed ?? latestRun?.searchesUsed}
@@ -505,7 +644,9 @@ export function SkillUpdateRunner({
                 <p className="m-0 text-sm text-ink-soft">{result.summary}</p>
               ) : null}
               {result.whatChanged ? (
-                <p className="m-0 text-sm text-ink-soft">{result.whatChanged}</p>
+                <p className="m-0 text-sm text-ink-soft">
+                  {result.whatChanged}
+                </p>
               ) : null}
             </div>
           ) : null}
@@ -554,12 +695,19 @@ export function SkillUpdateRunner({
                   Open full diff
                 </button>
               </div>
-              <DiffViewer compact label="Latest skill diff" lines={visibleDiffLines} maxHeight={260} />
+              <DiffViewer
+                compact
+                label="Latest skill diff"
+                lines={visibleDiffLines}
+                maxHeight={260}
+              />
             </div>
           ) : null}
         </Panel>
       ) : latestRun === undefined || latestRun === null ? (
-        <EmptyCard>No update runs yet. Trigger one above or wait for automation.</EmptyCard>
+        <EmptyCard>
+          No update runs yet. Trigger one above or wait for automation.
+        </EmptyCard>
       ) : null}
 
       <RunLogModal

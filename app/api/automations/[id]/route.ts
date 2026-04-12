@@ -2,32 +2,44 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
-import { isValidCronSlotHour, isValidDayOfWeek } from "@/lib/automation-constants";
-import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
+import {
+  isValidCronSlotHour,
+  isValidDayOfWeek,
+} from "@/lib/automation-constants";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
+import type {
+  SkillAutomationState,
+  UserSkillAutomationStatus,
+} from "@/lib/types";
 import { withApiUsage } from "@/lib/usage-server";
-import type { SkillAutomationState, UserSkillAutomationStatus } from "@/lib/types";
 
 const patchSchema = z.object({
-  name: z.string().trim().min(3).max(80).optional(),
   cadence: z.enum(["daily", "weekly", "manual"]).optional(),
-  status: z.enum(["ACTIVE", "PAUSED"]).optional(),
-  prompt: z.string().trim().max(2000).optional(),
-  preferredModel: z.string().trim().max(120).optional(),
-  preferredHour: z.number().int().min(0).max(23).optional(),
+  name: z.string().trim().min(3).max(80).optional(),
   preferredDay: z.number().int().min(0).max(6).optional(),
+  preferredHour: z.number().int().min(0).max(23).optional(),
+  preferredModel: z.string().trim().max(120).optional(),
+  prompt: z.string().trim().max(2000).optional(),
+  status: z.enum(["ACTIVE", "PAUSED"]).optional(),
 });
 
 function mapStatusToSkillStatus(status: string): UserSkillAutomationStatus {
   return status === "PAUSED" ? "paused" : "active";
 }
 
-type RouteContext = { params: Promise<{ id: string }> };
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
 
 export async function PATCH(request: Request, context: RouteContext) {
   return withApiUsage(
-    { route: "/api/automations/[id]", method: "PATCH", label: "Update automation" },
+    {
+      label: "Update automation",
+      method: "PATCH",
+      route: "/api/automations/[id]",
+    },
     async () => {
       try {
         const session = await requireActiveSubscription();
@@ -36,7 +48,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
         const skill = await getSkillBySlug(skillSlug);
         if (!skill?.automation) {
-          return Response.json({ error: "Automation not found." }, { status: 404 });
+          return Response.json(
+            { error: "Automation not found." },
+            { status: 404 }
+          );
         }
 
         if (!canSessionEditSkill(skill, session, sessionAuthor)) {
@@ -63,10 +78,16 @@ export async function PATCH(request: Request, context: RouteContext) {
         if (patch.preferredModel !== undefined) {
           updated.preferredModel = patch.preferredModel || undefined;
         }
-        if (patch.preferredHour !== undefined && isValidCronSlotHour(patch.preferredHour)) {
+        if (
+          patch.preferredHour !== undefined &&
+          isValidCronSlotHour(patch.preferredHour)
+        ) {
           updated.preferredHour = patch.preferredHour;
         }
-        if (patch.preferredDay !== undefined && isValidDayOfWeek(patch.preferredDay)) {
+        if (
+          patch.preferredDay !== undefined &&
+          isValidDayOfWeek(patch.preferredDay)
+        ) {
           updated.preferredDay = patch.preferredDay;
         }
 
@@ -76,16 +97,21 @@ export async function PATCH(request: Request, context: RouteContext) {
         revalidatePath("/");
         revalidatePath(`/skills/${skillSlug}`);
 
-        return Response.json({ ok: true, id: skillSlug });
+        return Response.json({ id: skillSlug, ok: true });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to update automation." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to update automation." },
+          { status: 400 }
+        );
       }
     }
   );
@@ -93,7 +119,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   return withApiUsage(
-    { route: "/api/automations/[id]", method: "DELETE", label: "Delete automation" },
+    {
+      label: "Delete automation",
+      method: "DELETE",
+      route: "/api/automations/[id]",
+    },
     async () => {
       try {
         const session = await requireActiveSubscription();
@@ -102,7 +132,10 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
         const skill = await getSkillBySlug(skillSlug);
         if (!skill?.automation) {
-          return Response.json({ error: "Automation not found." }, { status: 404 });
+          return Response.json(
+            { error: "Automation not found." },
+            { status: 404 }
+          );
         }
 
         if (!canSessionEditSkill(skill, session, sessionAuthor)) {
@@ -115,7 +148,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
         const disabled: SkillAutomationState = {
           ...(skill.automation as SkillAutomationState),
           enabled: false,
-          status: "paused"
+          status: "paused",
         };
 
         await updateSkill(skillSlug, { automation: disabled });
@@ -124,16 +157,21 @@ export async function DELETE(_request: Request, context: RouteContext) {
         revalidatePath("/");
         revalidatePath(`/skills/${skillSlug}`);
 
-        return Response.json({ ok: true, id: skillSlug });
+        return Response.json({ id: skillSlug, ok: true });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to delete automation." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to delete automation." },
+          { status: 400 }
+        );
       }
     }
   );

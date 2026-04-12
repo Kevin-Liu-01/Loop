@@ -1,11 +1,14 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import type { SVGProps } from "react";
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/cn";
-import { LOOP_GEAR_BODY_PATH, LOOP_GEAR_CHIP_PATH } from "@/lib/loop-logo-paths";
+import {
+  LOOP_GEAR_BODY_PATH,
+  LOOP_GEAR_CHIP_PATH,
+} from "@/lib/loop-logo-paths";
 
 type LoopLogoProps = SVGProps<SVGSVGElement> & {
   title?: string;
@@ -21,12 +24,7 @@ const ORIGIN = "64px 60px";
 const CHIP_FLOAT = { x: -12, y: 2.87 };
 
 function ChipPath({ className }: { className?: string }) {
-  return (
-    <path
-      d={LOOP_GEAR_CHIP_PATH}
-      className={className}
-    />
-  );
+  return <path d={LOOP_GEAR_CHIP_PATH} className={className} />;
 }
 
 /**
@@ -86,7 +84,7 @@ export function LoopLogo({
           animate={{ rotate: spin ? 360 : 0 }}
           transition={
             spin
-              ? { rotate: { repeat: Infinity, ease: "linear", duration: 3.8 } }
+              ? { rotate: { duration: 3.8, ease: "linear", repeat: Infinity } }
               : { rotate: { duration: 0.35, ease: "easeOut" } }
           }
         >
@@ -99,7 +97,7 @@ export function LoopLogo({
               x: chipSeated ? 0 : CHIP_FLOAT.x,
               y: chipSeated ? 0 : CHIP_FLOAT.y,
             }}
-            transition={{ type: "spring", stiffness: 420, damping: 28 }}
+            transition={{ damping: 28, stiffness: 420, type: "spring" }}
           >
             <ChipPath className={chipPathClass} />
           </motion.g>

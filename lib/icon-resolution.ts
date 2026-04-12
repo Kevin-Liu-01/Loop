@@ -11,15 +11,19 @@ function inferBrandKey(name: string): string | null {
     .toLowerCase()
     .replace(
       /\s+(skills|mcp|servers?|tools?|directory|community|labs?)\s*$/i,
-      "",
+      ""
     )
     .replace(/^awesome\s+/i, "")
     .trim();
 
-  if (lookupBrandLogoUrl(stripped)) return stripped;
+  if (lookupBrandLogoUrl(stripped)) {
+    return stripped;
+  }
 
-  const joined = stripped.replace(/[\s-]+/g, "");
-  if (lookupBrandLogoUrl(joined)) return joined;
+  const joined = stripped.replaceAll(/[\s-]+/g, "");
+  if (lookupBrandLogoUrl(joined)) {
+    return joined;
+  }
 
   return null;
 }
@@ -28,10 +32,10 @@ function inferBrandKey(name: string): string | null {
 // Author / publisher icon resolution
 // ---------------------------------------------------------------------------
 
-export type AuthorIconResult = {
+export interface AuthorIconResult {
   src: string | null;
   isMonochrome: boolean;
-};
+}
 
 /**
  * Resolve the best available icon URL for a skill's author/publisher.
@@ -48,19 +52,22 @@ export function resolveAuthorIcon(opts: {
   ownerName?: string;
 }): AuthorIconResult {
   if (opts.authorLogoUrl) {
-    return { src: opts.authorLogoUrl, isMonochrome: isMonochromeUrl(opts.authorLogoUrl) };
+    return {
+      isMonochrome: isMonochromeUrl(opts.authorLogoUrl),
+      src: opts.authorLogoUrl,
+    };
   }
   if (opts.iconUrl) {
-    return { src: opts.iconUrl, isMonochrome: isMonochromeUrl(opts.iconUrl) };
+    return { isMonochrome: isMonochromeUrl(opts.iconUrl), src: opts.iconUrl };
   }
   if (opts.ownerName) {
     const key = inferBrandKey(opts.ownerName);
     if (key) {
       const url = lookupBrandLogoUrl(key)!;
-      return { src: url, isMonochrome: isMonochromeUrl(url) };
+      return { isMonochrome: isMonochromeUrl(url), src: url };
     }
   }
-  return { src: null, isMonochrome: false };
+  return { isMonochrome: false, src: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -72,8 +79,5 @@ export function resolveAuthorIcon(opts: {
  * `brightness-0 dark:invert` to stay visible in both themes.
  */
 function isMonochromeUrl(url: string): boolean {
-  return (
-    url.includes("simpleicons.org") ||
-    url.startsWith("/brands/")
-  );
+  return url.includes("simpleicons.org") || url.startsWith("/brands/");
 }

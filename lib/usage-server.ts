@@ -1,9 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { recordUsageEvent } from "@/lib/system-state";
-import type { CategorySlug, UsageEventKind, UsageEventRecord, UsageEventSource } from "@/lib/types";
+import type {
+  CategorySlug,
+  UsageEventKind,
+  UsageEventRecord,
+  UsageEventSource,
+} from "@/lib/types";
 
-type UsageEventInput = {
+interface UsageEventInput {
   at?: string;
   kind: UsageEventKind;
   source: UsageEventSource;
@@ -17,34 +22,34 @@ type UsageEventInput = {
   skillSlug?: string;
   categorySlug?: CategorySlug;
   details?: string;
-};
+}
 
-type ApiUsageContext = {
+interface ApiUsageContext {
   route: string;
   method: string;
   label?: string;
   skillSlug?: string;
   categorySlug?: CategorySlug;
   details?: string;
-};
+}
 
 export async function logUsageEvent(input: UsageEventInput): Promise<void> {
   try {
     const entry: UsageEventRecord = {
-      id: randomUUID(),
       at: input.at ?? new Date().toISOString(),
+      categorySlug: input.categorySlug,
+      details: input.details,
+      durationMs: input.durationMs,
+      id: randomUUID(),
       kind: input.kind,
-      source: input.source,
       label: input.label,
+      method: input.method,
+      ok: input.ok,
       path: input.path,
       route: input.route,
-      method: input.method,
-      status: input.status,
-      durationMs: input.durationMs,
-      ok: input.ok,
       skillSlug: input.skillSlug,
-      categorySlug: input.categorySlug,
-      details: input.details
+      source: input.source,
+      status: input.status,
     };
 
     await recordUsageEvent(entry);
@@ -62,32 +67,32 @@ export async function withApiUsage(
   try {
     const response = await handler();
     await logUsageEvent({
-      kind: "api_call",
-      source: "api",
-      label: context.label ?? context.route,
-      route: context.route,
-      method: context.method,
-      status: response.status,
-      durationMs: Date.now() - startedAt,
-      ok: response.ok,
-      skillSlug: context.skillSlug,
       categorySlug: context.categorySlug,
-      details: context.details
+      details: context.details,
+      durationMs: Date.now() - startedAt,
+      kind: "api_call",
+      label: context.label ?? context.route,
+      method: context.method,
+      ok: response.ok,
+      route: context.route,
+      skillSlug: context.skillSlug,
+      source: "api",
+      status: response.status,
     });
     return response;
   } catch (error) {
     await logUsageEvent({
-      kind: "api_call",
-      source: "api",
-      label: context.label ?? context.route,
-      route: context.route,
-      method: context.method,
-      status: 500,
-      durationMs: Date.now() - startedAt,
-      ok: false,
-      skillSlug: context.skillSlug,
       categorySlug: context.categorySlug,
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
+      durationMs: Date.now() - startedAt,
+      kind: "api_call",
+      label: context.label ?? context.route,
+      method: context.method,
+      ok: false,
+      route: context.route,
+      skillSlug: context.skillSlug,
+      source: "api",
+      status: 500,
     });
     throw error;
   }

@@ -1,18 +1,24 @@
 import { CopyButton } from "@/components/copy-button";
-import { GlobeIcon, KeyIcon, PlayIcon, TerminalIcon } from "@/components/frontier-icons";
-import { VersionTimeline } from "@/components/version-timeline";
+import {
+  GlobeIcon,
+  KeyIcon,
+  PlayIcon,
+  TerminalIcon,
+} from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { VersionTimeline } from "@/components/version-timeline";
 import { buildMcpVersionHref } from "@/lib/format";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import type { ImportedMcpTransport, VersionReference } from "@/lib/types";
 
 const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
-const metaLabel = "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
+const metaLabel =
+  "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
 const metaValue = "text-sm font-semibold tracking-[-0.03em]";
 
-type McpDetailSidebarProps = {
+interface McpDetailSidebarProps {
   mcpName: string;
   currentVersion: number;
   sandboxHref: string;
@@ -24,7 +30,7 @@ type McpDetailSidebarProps = {
   tags: string[];
   versions: VersionReference[];
   timeZone?: string;
-};
+}
 
 export function McpDetailSidebar({
   mcpName,
@@ -39,7 +45,7 @@ export function McpDetailSidebar({
   timeZone,
   versions,
 }: McpDetailSidebarProps) {
-  const isRunnable = supportsSandboxMcp({ transport, sandboxSupported });
+  const isRunnable = supportsSandboxMcp({ sandboxSupported, transport });
 
   return (
     <aside className="grid content-start gap-4">

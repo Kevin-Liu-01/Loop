@@ -2,12 +2,15 @@
 
 import { cn } from "@/lib/cn";
 
-type OpenRunLogButtonProps = {
+interface OpenRunLogButtonProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
-export function OpenRunLogButton({ className, children }: OpenRunLogButtonProps) {
+export function OpenRunLogButton({
+  className,
+  children,
+}: OpenRunLogButtonProps) {
   return (
     <button
       className={cn(

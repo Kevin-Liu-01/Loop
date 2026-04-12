@@ -7,10 +7,10 @@ import type { SourceDefinition } from "@/lib/types";
 
 const stubSource: SourceDefinition = {
   id: "test-source",
-  label: "Test Source",
-  url: "https://example.com/feed.xml",
   kind: "rss",
+  label: "Test Source",
   tags: ["test"],
+  url: "https://example.com/feed.xml",
 };
 
 test("normalizeFeedItems parses a valid RSS 2.0 feed", () => {
@@ -72,7 +72,10 @@ test("normalizeFeedItems falls back to HTML link extraction for HTML pages", () 
 </html>`;
 
   const items = normalizeFeedItems(stubSource, html);
-  assert.ok(items.length >= 2, `Expected at least 2 items, got ${items.length}`);
+  assert.ok(
+    items.length >= 2,
+    `Expected at least 2 items, got ${items.length}`
+  );
   assert.ok(items.some((item) => item.title === "Getting Started Guide"));
   assert.ok(items.some((item) => item.title === "API Reference"));
   assert.ok(!items.some((item) => item.url.startsWith("#")));
@@ -96,8 +99,10 @@ test("normalizeFeedItems returns empty for very short or empty payloads", () => 
 });
 
 test("normalizeFeedItems caps at MAX_FEED_ITEMS", () => {
-  const entries = Array.from({ length: 20 }, (_, index) =>
-    `<item>
+  const entries = Array.from(
+    { length: 20 },
+    (_, index) =>
+      `<item>
       <title>Article ${index + 1}</title>
       <link>https://example.com/${index + 1}</link>
       <pubDate>Sat, ${String(28 - index).padStart(2, "0")} Mar 2026 10:00:00 GMT</pubDate>
@@ -162,8 +167,14 @@ test("normalizeFeedItems strips HTML from title and summary", () => {
 
   const items = normalizeFeedItems(stubSource, rss);
   assert.equal(items.length, 1);
-  assert.ok(!items[0].title.includes("<b>"), "Title should not contain HTML tags");
-  assert.ok(!items[0].summary.includes("<p>"), "Summary should not contain HTML tags");
+  assert.ok(
+    !items[0].title.includes("<b>"),
+    "Title should not contain HTML tags"
+  );
+  assert.ok(
+    !items[0].summary.includes("<p>"),
+    "Summary should not contain HTML tags"
+  );
 });
 
 test("all seeded sources expose discovery metadata", () => {
@@ -175,9 +186,9 @@ test("all seeded sources expose discovery metadata", () => {
           !source.trust ||
           !source.parser ||
           !source.searchQueries ||
-          source.searchQueries.length === 0,
+          source.searchQueries.length === 0
       )
-      .map((source) => `${config.slug}:${source.id}`),
+      .map((source) => `${config.slug}:${source.id}`)
   );
 
   assert.deepEqual(missing, []);
@@ -186,14 +197,14 @@ test("all seeded sources expose discovery metadata", () => {
 test("normalizeFeedItems ranks sitemap links against query hints", () => {
   const source: SourceDefinition = {
     id: "anthropic-docs",
-    label: "Anthropic Docs Index",
-    url: "https://docs.anthropic.com/en/sitemap.xml",
     kind: "sitemap",
-    tags: ["anthropic", "claude", "api"],
+    label: "Anthropic Docs Index",
     mode: "discover",
-    trust: "official",
     parser: "sitemap",
     searchQueries: ["tool use", "mcp", "json schema"],
+    tags: ["anthropic", "claude", "api"],
+    trust: "official",
+    url: "https://docs.anthropic.com/en/sitemap.xml",
   };
 
   const payload = `
@@ -215,6 +226,9 @@ test("normalizeFeedItems ranks sitemap links against query hints", () => {
 
   const items = normalizeFeedItems(source, payload);
 
-  assert.equal(items[0]?.url, "https://docs.anthropic.com/en/docs/build-with-claude/tool-use");
+  assert.equal(
+    items[0]?.url,
+    "https://docs.anthropic.com/en/docs/build-with-claude/tool-use"
+  );
   assert.match(items[1]?.url ?? "", /mcp/);
 });

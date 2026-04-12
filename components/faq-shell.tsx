@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useState, useCallback } from "react";
 
 import { ChevronDownIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 import type { FaqItem, FaqSection } from "@/lib/faq-data";
 
-type FaqDisclosureProps = {
+interface FaqDisclosureProps {
   item: FaqItem;
   open: boolean;
   onToggle: () => void;
-};
+}
 
 function FaqDisclosure({ item, open, onToggle }: FaqDisclosureProps) {
   return (
@@ -50,9 +50,9 @@ function FaqDisclosure({ item, open, onToggle }: FaqDisclosureProps) {
   );
 }
 
-type FaqSectionBlockProps = {
+interface FaqSectionBlockProps {
   section: FaqSection;
-};
+}
 
 function FaqSectionBlock({ section }: FaqSectionBlockProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -80,9 +80,9 @@ function FaqSectionBlock({ section }: FaqSectionBlockProps) {
   );
 }
 
-type FaqShellProps = {
+interface FaqShellProps {
   sections: FaqSection[];
-};
+}
 
 export function FaqShell({ sections }: FaqShellProps) {
   return (

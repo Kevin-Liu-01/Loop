@@ -1,7 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
@@ -47,7 +53,7 @@ import type {
   SourceDefinition,
 } from "@/lib/types";
 
-type SkillActivitySectionProps = {
+interface SkillActivitySectionProps {
   slug: string;
   skillTitle: string;
   iconUrl?: string | null;
@@ -58,7 +64,7 @@ type SkillActivitySectionProps = {
   latestRun?: LoopRunRecord | null;
   canManage?: boolean;
   sources?: SourceDefinition[];
-};
+}
 
 function MetricCard({
   icon,
@@ -77,7 +83,7 @@ function MetricCard({
         "grid gap-1 rounded-none border px-3.5 py-3",
         accent
           ? "border-accent/20 bg-accent/8"
-          : "border-line bg-paper-3/90 dark:bg-paper-2/40",
+          : "border-line bg-paper-3/90 dark:bg-paper-2/40"
       )}
     >
       <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
@@ -95,7 +101,8 @@ function PromptPreview({ prompt }: { prompt?: string }) {
   if (!prompt?.trim()) {
     return (
       <div className="rounded-none border border-dashed border-line bg-paper-3/70 px-4 py-3 text-sm text-ink-soft dark:bg-paper-2/30">
-        No automation brief yet. Add one in Studio so refreshes optimize for the right deltas.
+        No automation brief yet. Add one in Studio so refreshes optimize for the
+        right deltas.
       </div>
     );
   }
@@ -114,28 +121,43 @@ function PromptPreview({ prompt }: { prompt?: string }) {
 
 function formatTriggerLabel(trigger: LoopRunRecord["trigger"]): string {
   switch (trigger) {
-    case "manual": return "Manual";
-    case "automation": return "Automation";
-    case "import-sync": return "Import sync";
-    default: return trigger;
+    case "manual": {
+      return "Manual";
+    }
+    case "automation": {
+      return "Automation";
+    }
+    case "import-sync": {
+      return "Import sync";
+    }
+    default: {
+      return trigger;
+    }
   }
 }
 
 function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
   const statusColor =
-    source.status === "done" ? "bg-success" :
-    source.status === "running" ? "animate-pulse bg-warning" :
-    source.status === "error" ? "bg-danger" :
-    "bg-line-strong";
+    source.status === "done"
+      ? "bg-success"
+      : source.status === "running"
+        ? "animate-pulse bg-warning"
+        : source.status === "error"
+          ? "bg-danger"
+          : "bg-line-strong";
 
   return (
     <article className="grid gap-1.5 rounded-none border border-line bg-paper-3 px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)} />
+        <span
+          className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)}
+        />
         <strong className="text-sm text-ink">{source.label}</strong>
         <span className="ml-auto text-xs text-ink-faint">{source.status}</span>
       </div>
-      <p className="m-0 text-sm text-ink-soft">{source.note ?? `${source.itemCount} items found.`}</p>
+      <p className="m-0 text-sm text-ink-soft">
+        {source.note ?? `${source.itemCount} items found.`}
+      </p>
       {source.items.length > 0 ? (
         <div className="grid gap-1">
           {source.items.slice(0, 3).map((item) => (
@@ -156,7 +178,9 @@ function SourceCard({ source }: { source: LoopUpdateSourceLog }) {
 }
 
 function StepLog({ messages }: { messages: string[] }) {
-  if (messages.length === 0) return null;
+  if (messages.length === 0) {
+    return null;
+  }
 
   return (
     <div className="grid gap-0">
@@ -169,7 +193,9 @@ function StepLog({ messages }: { messages: string[] }) {
             <AutomationIcon />
           </div>
           <div className="grid gap-0.5 pt-1">
-            <span className="text-xs font-medium text-ink-faint">Step {index + 1}</span>
+            <span className="text-xs font-medium text-ink-faint">
+              Step {index + 1}
+            </span>
             <span className="text-sm text-ink-soft">{message}</span>
           </div>
         </article>
@@ -197,13 +223,18 @@ export function SkillActivitySection({
 
   const [isRunning, startTransition] = useTransition();
   const [liveMessages, setLiveMessages] = useState<string[]>([]);
-  const [liveSourceLogs, setLiveSourceLogs] = useState<LoopUpdateSourceLog[]>([]);
-  const [liveReasoningSteps, setLiveReasoningSteps] = useState<AgentReasoningStep[]>([]);
+  const [liveSourceLogs, setLiveSourceLogs] = useState<LoopUpdateSourceLog[]>(
+    []
+  );
+  const [liveReasoningSteps, setLiveReasoningSteps] = useState<
+    AgentReasoningStep[]
+  >([]);
   const [liveResult, setLiveResult] = useState<LoopUpdateResult | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
   const { run: runTrackedUpdate } = useTrackedLoopUpdate();
 
-  const hasLiveState = liveMessages.length > 0 || liveResult !== null || liveError !== null;
+  const hasLiveState =
+    liveMessages.length > 0 || liveResult !== null || liveError !== null;
 
   const handleRunUpdate = useCallback(() => {
     setLiveError(null);
@@ -216,41 +247,11 @@ export function SkillActivitySection({
     startTransition(async () => {
       try {
         await runTrackedUpdate({
-          slug,
-          origin,
-          label: slug,
-          href: `/skills/${slug}`,
-          trigger: "manual",
           callbacks: {
-            onStart(loop: LoopUpdateTarget) {
-              setLiveMessages((prev) => [
-                ...prev,
-                `Started agent run across ${loop.sources.length} tracked sources.`,
-              ]);
-              setLiveSourceLogs(
-                loop.sources.map((s) => ({
-                  ...s,
-                  status: "pending",
-                  itemCount: 0,
-                  items: [],
-                  note: "Queued for scan.",
-                })),
-              );
-            },
-            onSource(source: LoopUpdateSourceLog) {
-              setLiveSourceLogs((prev) => applySourceUpdate(prev, source));
-              setLiveMessages((prev) => [
-                ...prev,
-                `${source.label}: ${source.note ?? source.status}.`,
-              ]);
-            },
-            onMessage(message: string) {
-              setLiveMessages((prev) => [...prev, message]);
-            },
-            onReasoningStep(step: AgentReasoningStep) {
-              setLiveReasoningSteps((prev) => [...prev, step]);
-            },
-            onComplete(completeResult: LoopUpdateResult, completeSources: LoopUpdateSourceLog[]) {
+            onComplete(
+              completeResult: LoopUpdateResult,
+              completeSources: LoopUpdateSourceLog[]
+            ) {
               setLiveResult(completeResult);
               setLiveSourceLogs(completeSources);
               setLiveMessages((prev) => [
@@ -266,11 +267,46 @@ export function SkillActivitySection({
               setLiveError(message);
               setLiveMessages((prev) => [...prev, message]);
             },
+            onMessage(message: string) {
+              setLiveMessages((prev) => [...prev, message]);
+            },
+            onReasoningStep(step: AgentReasoningStep) {
+              setLiveReasoningSteps((prev) => [...prev, step]);
+            },
+            onSource(source: LoopUpdateSourceLog) {
+              setLiveSourceLogs((prev) => applySourceUpdate(prev, source));
+              setLiveMessages((prev) => [
+                ...prev,
+                `${source.label}: ${source.note ?? source.status}.`,
+              ]);
+            },
+            onStart(loop: LoopUpdateTarget) {
+              setLiveMessages((prev) => [
+                ...prev,
+                `Started agent run across ${loop.sources.length} tracked sources.`,
+              ]);
+              setLiveSourceLogs(
+                loop.sources.map((s) => ({
+                  ...s,
+                  itemCount: 0,
+                  items: [],
+                  note: "Queued for scan.",
+                  status: "pending",
+                }))
+              );
+            },
           },
+          href: `/skills/${slug}`,
+          label: slug,
+          origin,
+          slug,
+          trigger: "manual",
         });
       } catch (caughtError) {
         const message =
-          caughtError instanceof Error ? caughtError.message : "Manual update failed.";
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Manual update failed.";
         setLiveError(message);
         setLiveMessages((prev) => [...prev, message]);
       }
@@ -290,7 +326,8 @@ export function SkillActivitySection({
       }
     };
     window.addEventListener("loop:trigger-refresh", triggerHandler);
-    return () => window.removeEventListener("loop:trigger-refresh", triggerHandler);
+    return () =>
+      window.removeEventListener("loop:trigger-refresh", triggerHandler);
   }, [canManage, sourceCount, isRunning, handleRunUpdate]);
 
   const isTracked = origin === "user";
@@ -299,40 +336,61 @@ export function SkillActivitySection({
   const now = useMemo(() => new Date(), []);
 
   const skillMap = useMemo(
-    () => new Map([[slug, { slug, iconUrl, category } as SkillRecord]]),
-    [slug, iconUrl, category],
+    () => new Map([[slug, { category, iconUrl, slug } as SkillRecord]]),
+    [slug, iconUrl, category]
   );
   const monthlyRuns = automation
-    ? countMonthlyRuns(automation.cadence, now.getFullYear(), now.getMonth(), automation.preferredDay)
+    ? countMonthlyRuns(
+        automation.cadence,
+        now.getFullYear(),
+        now.getMonth(),
+        automation.preferredDay
+      )
     : 0;
-  const nextRun = automation ? formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay) : "On demand";
+  const nextRun = automation
+    ? formatNextRun(
+        automation.cadence,
+        automation.preferredHour ?? 12,
+        automation.preferredDay
+      )
+    : "On demand";
   const scheduleLabel = automation?.schedule?.trim() || "Manual only";
 
-  const runMessages = hasLiveState ? liveMessages : latestRun?.messages ?? [];
-  const runSourceLogs = hasLiveState ? liveSourceLogs : latestRun?.sources ?? [];
-  const runReasoningSteps = hasLiveState ? liveReasoningSteps : latestRun?.reasoningSteps ?? [];
-  const runError = hasLiveState ? liveError : latestRun?.errorMessage ?? null;
+  const runMessages = hasLiveState ? liveMessages : (latestRun?.messages ?? []);
+  const runSourceLogs = hasLiveState
+    ? liveSourceLogs
+    : (latestRun?.sources ?? []);
+  const runReasoningSteps = hasLiveState
+    ? liveReasoningSteps
+    : (latestRun?.reasoningSteps ?? []);
+  const runError = hasLiveState ? liveError : (latestRun?.errorMessage ?? null);
   const runDiffLines: DiffLine[] = hasLiveState
     ? (liveResult?.diffLines ?? [])
-    : latestRun?.diffLines ?? [];
+    : (latestRun?.diffLines ?? []);
   const runTrigger = hasLiveState
     ? "Manual"
-    : latestRun ? formatTriggerLabel(latestRun.trigger) : "–";
-  const runEditorModel = liveResult?.editorModel ?? latestRun?.editorModel ?? null;
+    : latestRun
+      ? formatTriggerLabel(latestRun.trigger)
+      : "–";
+  const runEditorModel =
+    liveResult?.editorModel ?? latestRun?.editorModel ?? null;
   const runStatus: "success" | "error" | "running" = isRunning
     ? "running"
     : runError
       ? "error"
       : liveResult
         ? "success"
-        : latestRun?.status ?? "success";
-  const historicalResult = useMemo(() => buildLoopRunResult(latestRun), [latestRun]);
+        : (latestRun?.status ?? "success");
+  const historicalResult = useMemo(
+    () => buildLoopRunResult(latestRun),
+    [latestRun]
+  );
   const runResult = liveResult ?? historicalResult;
   const latestOutcomeLabel = latestRun
     ? latestRun.status === "error"
       ? "Needs attention"
       : latestRun.bodyChanged
-        ? latestRun.nextVersionLabel ?? "Updated"
+        ? (latestRun.nextVersionLabel ?? "Updated")
         : "No material diff"
     : "No runs yet";
 
@@ -410,7 +468,9 @@ export function SkillActivitySection({
               <PanelHead className="items-start">
                 <div className="grid gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge color={isActive ? "green" : "neutral"}>{isActive ? "Active" : "Paused"}</Badge>
+                    <Badge color={isActive ? "green" : "neutral"}>
+                      {isActive ? "Active" : "Paused"}
+                    </Badge>
                     <Badge color="neutral">{scheduleLabel}</Badge>
                     <Badge color="blue">{sourceCount} sources</Badge>
                   </div>
@@ -431,17 +491,31 @@ export function SkillActivitySection({
                       size="sm"
                       type="button"
                     >
-                      <RefreshIcon className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+                      <RefreshIcon
+                        className={cn(
+                          "h-3.5 w-3.5",
+                          isRunning && "animate-spin"
+                        )}
+                      />
                       {isRunning ? "Running..." : "Run update now"}
                     </Button>
                   ) : null}
                   {canManage ? (
-                    <Button onClick={() => setEditOpen(true)} size="sm" type="button" variant="soft">
+                    <Button
+                      onClick={() => setEditOpen(true)}
+                      size="sm"
+                      type="button"
+                      variant="soft"
+                    >
                       <SettingsIcon className="h-3.5 w-3.5" />
                       Edit
                     </Button>
                   ) : null}
-                  <LinkButton href="/settings/automations" size="sm" variant="soft">
+                  <LinkButton
+                    href="/settings/automations"
+                    size="sm"
+                    variant="soft"
+                  >
                     <AutomationIcon className="h-3.5 w-3.5" />
                     {canManage ? "Automation desk" : "View automation desk"}
                   </LinkButton>
@@ -474,7 +548,11 @@ export function SkillActivitySection({
             </div>
 
             {automation.cadence !== "manual" && (
-              <AutomationCalendar automations={[automation]} skillMap={skillMap} variant="sidebar" />
+              <AutomationCalendar
+                automations={[automation]}
+                skillMap={skillMap}
+                variant="sidebar"
+              />
             )}
 
             <PromptPreview prompt={automation.prompt} />
@@ -521,32 +599,51 @@ export function SkillActivitySection({
               </div>
               <div className="flex items-center gap-2">
                 {isRunning ? (
-                  <Tip content="Results are streaming in real time" side="bottom">
-                    <span><Badge color="blue">streaming</Badge></span>
+                  <Tip
+                    content="Results are streaming in real time"
+                    side="bottom"
+                  >
+                    <span>
+                      <Badge color="blue">streaming</Badge>
+                    </span>
                   </Tip>
                 ) : latestRun ? (
                   <Tip content="When this run completed" side="bottom">
-                    <span><Badge color="neutral">{formatDateTime(latestRun.finishedAt, timeZone)}</Badge></span>
+                    <span>
+                      <Badge color="neutral">
+                        {formatDateTime(latestRun.finishedAt, timeZone)}
+                      </Badge>
+                    </span>
                   </Tip>
                 ) : null}
-                <Button onClick={() => setModalOpen(true)} size="sm" type="button" variant="soft">
+                <Button
+                  onClick={() => setModalOpen(true)}
+                  size="sm"
+                  type="button"
+                  variant="soft"
+                >
                   View details
                 </Button>
               </div>
             </PanelHead>
 
             <RunMetadataBar
-              addedSourceCount={liveResult?.addedSources?.length ?? latestRun?.addedSources?.length}
+              addedSourceCount={
+                liveResult?.addedSources?.length ??
+                latestRun?.addedSources?.length
+              }
               editorModel={runEditorModel}
-              finishedAt={hasLiveState ? null : latestRun?.finishedAt ?? null}
+              finishedAt={hasLiveState ? null : (latestRun?.finishedAt ?? null)}
               searchesUsed={liveResult?.searchesUsed ?? latestRun?.searchesUsed}
-              startedAt={hasLiveState ? null : latestRun?.startedAt ?? null}
+              startedAt={hasLiveState ? null : (latestRun?.startedAt ?? null)}
               status={runStatus}
               trigger={runTrigger}
               variant="compact"
             />
 
-            {runError ? <p className="m-0 text-sm text-danger">{runError}</p> : null}
+            {runError ? (
+              <p className="m-0 text-sm text-danger">{runError}</p>
+            ) : null}
 
             {latestRun && latestRun.status === "success" ? (
               <div className="grid gap-2 rounded-none border border-line bg-paper-3 p-4">
@@ -555,8 +652,16 @@ export function SkillActivitySection({
                     ? `Revision: ${latestRun.nextVersionLabel}`
                     : "No material changes"}
                 </strong>
-                {latestRun.summary ? <p className="m-0 text-sm text-ink-soft">{latestRun.summary}</p> : null}
-                {latestRun.whatChanged ? <p className="m-0 text-sm text-ink-soft">{latestRun.whatChanged}</p> : null}
+                {latestRun.summary ? (
+                  <p className="m-0 text-sm text-ink-soft">
+                    {latestRun.summary}
+                  </p>
+                ) : null}
+                {latestRun.whatChanged ? (
+                  <p className="m-0 text-sm text-ink-soft">
+                    {latestRun.whatChanged}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -595,7 +700,12 @@ export function SkillActivitySection({
                     Open full diff
                   </button>
                 </div>
-                <DiffViewer compact label="Latest skill diff" lines={runDiffLines} maxHeight={260} />
+                <DiffViewer
+                  compact
+                  label="Latest skill diff"
+                  lines={runDiffLines}
+                  maxHeight={260}
+                />
               </div>
             ) : null}
           </Panel>
@@ -610,11 +720,15 @@ export function SkillActivitySection({
                 size="sm"
                 type="button"
               >
-                <RefreshIcon className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+                <RefreshIcon
+                  className={cn("h-3.5 w-3.5", isRunning && "animate-spin")}
+                />
                 {isRunning ? "Running..." : "Run first update"}
               </Button>
             ) : (
-              <span className="mt-1 block text-xs text-ink-faint">Add sources and set up automation to get started.</span>
+              <span className="mt-1 block text-xs text-ink-faint">
+                Add sources and set up automation to get started.
+              </span>
             )}
           </EmptyCard>
         ) : null}
@@ -624,7 +738,7 @@ export function SkillActivitySection({
         diffLines={runDiffLines}
         editorModel={runEditorModel}
         error={runError}
-        finishedAt={hasLiveState ? null : latestRun?.finishedAt ?? null}
+        finishedAt={hasLiveState ? null : (latestRun?.finishedAt ?? null)}
         isLive={isRunning}
         messages={runMessages}
         onClose={() => setModalOpen(false)}
@@ -632,7 +746,7 @@ export function SkillActivitySection({
         reasoningSteps={runReasoningSteps}
         result={runResult}
         sourceLogs={runSourceLogs}
-        startedAt={hasLiveState ? null : latestRun?.startedAt ?? null}
+        startedAt={hasLiveState ? null : (latestRun?.startedAt ?? null)}
         status={runStatus}
         trigger={runTrigger}
       />

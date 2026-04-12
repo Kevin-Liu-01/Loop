@@ -1,72 +1,73 @@
-import { createGateway, type LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createGateway } from "ai";
+import type { LanguageModel } from "ai";
 
 import type {
   AgentProviderKind,
   AgentProviderPreset,
   ImportedMcpDocument,
   SkillRecord,
-  LoopSnapshot
+  LoopSnapshot,
 } from "@/lib/types";
 
 export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
   {
-    id: "gateway",
-    label: "Vercel AI Gateway",
-    kind: "gateway",
     apiKeyEnvVar: "AI_GATEWAY_API_KEY",
+    defaultModel: "openai/gpt-5-mini",
     docsUrl: "https://vercel.com/docs/ai-gateway",
+    id: "gateway",
+    kind: "gateway",
+    label: "Vercel AI Gateway",
     supportsModelListing: true,
-    defaultModel: "openai/gpt-5-mini"
   },
   {
-    id: "openai",
-    label: "OpenAI",
-    kind: "openai",
     apiKeyEnvVar: "OPENAI_API_KEY",
     baseURL: "https://api.openai.com/v1",
+    defaultModel: "gpt-5-mini",
     docsUrl: "https://platform.openai.com/docs/models",
-    defaultModel: "gpt-5-mini"
+    id: "openai",
+    kind: "openai",
+    label: "OpenAI",
   },
   {
-    id: "openrouter",
-    label: "OpenRouter",
-    kind: "compatible",
     apiKeyEnvVar: "OPENROUTER_API_KEY",
     baseURL: "https://openrouter.ai/api/v1",
+    defaultModel: "openai/gpt-5",
     docsUrl: "https://openrouter.ai/models",
-    defaultModel: "openai/gpt-5"
+    id: "openrouter",
+    kind: "compatible",
+    label: "OpenRouter",
   },
   {
-    id: "groq",
-    label: "Groq",
-    kind: "compatible",
     apiKeyEnvVar: "GROQ_API_KEY",
     baseURL: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
     docsUrl: "https://console.groq.com/docs/models",
-    defaultModel: "llama-3.3-70b-versatile"
+    id: "groq",
+    kind: "compatible",
+    label: "Groq",
   },
   {
-    id: "together",
-    label: "Together",
-    kind: "compatible",
     apiKeyEnvVar: "TOGETHER_API_KEY",
     baseURL: "https://api.together.xyz/v1",
+    defaultModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     docsUrl: "https://docs.together.ai/docs/inference-models",
-    defaultModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    id: "together",
+    kind: "compatible",
+    label: "Together",
   },
   {
-    id: "ollama",
-    label: "Ollama",
-    kind: "compatible",
     apiKeyEnvVar: "",
     baseURL: "http://127.0.0.1:11434/v1",
+    defaultModel: "llama3.2",
     docsUrl: "https://ollama.com/library",
-    defaultModel: "llama3.2"
-  }
+    id: "ollama",
+    kind: "compatible",
+    label: "Ollama",
+  },
 ];
 
-export type AgentRunInput = {
+export interface AgentRunInput {
   agentName?: string;
   systemPrompt?: string;
   providerId: string;
@@ -76,7 +77,7 @@ export type AgentRunInput = {
   headers?: Record<string, string>;
   selectedSkillSlugs?: string[];
   selectedMcpIds?: string[];
-};
+}
 
 function getPreset(providerId: string): AgentProviderPreset | undefined {
   return AGENT_PROVIDER_PRESETS.find((preset) => preset.id === providerId);
@@ -86,7 +87,9 @@ function resolveProviderKind(providerId: string): AgentProviderKind {
   return getPreset(providerId)?.kind ?? "compatible";
 }
 
-export function getProviderPreset(providerId: string): AgentProviderPreset | undefined {
+export function getProviderPreset(
+  providerId: string
+): AgentProviderPreset | undefined {
   return getPreset(providerId);
 }
 
@@ -99,7 +102,10 @@ export function resolveLanguageModel(input: AgentRunInput): LanguageModel {
   }
 
   if (kind === "gateway") {
-    const apiKey = process.env[input.apiKeyEnvVar || preset?.apiKeyEnvVar || "AI_GATEWAY_API_KEY"];
+    const apiKey =
+      process.env[
+        input.apiKeyEnvVar || preset?.apiKeyEnvVar || "AI_GATEWAY_API_KEY"
+      ];
     const provider = createGateway(apiKey ? { apiKey } : undefined);
     return provider(input.model);
   }
@@ -119,7 +125,7 @@ export function resolveLanguageModel(input: AgentRunInput): LanguageModel {
   const provider = createOpenAI({
     apiKey,
     baseURL,
-    headers: input.headers
+    headers: input.headers,
   });
 
   return provider(input.model);
@@ -133,12 +139,16 @@ export function serializeSkill(skill: SkillRecord): string {
     `- **Category**: ${skill.category}`,
     `- **Origin**: ${skill.origin}`,
     `- **Description**: ${skill.description}`,
-    skill.agents[0]?.defaultPrompt ? `- **Default prompt**: ${skill.agents[0].defaultPrompt}` : null,
+    skill.agents[0]?.defaultPrompt
+      ? `- **Default prompt**: ${skill.agents[0].defaultPrompt}`
+      : null,
     "",
     "```",
     skill.body.slice(0, 2400),
     "```",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function serializeMcp(mcp: ImportedMcpDocument): string {
@@ -149,12 +159,20 @@ export function serializeMcp(mcp: ImportedMcpDocument): string {
     `- **Manifest**: ${mcp.manifestUrl}`,
     mcp.docsUrl ? `- **Docs**: ${mcp.docsUrl}` : null,
     mcp.url ? `- **Endpoint**: ${mcp.url}` : null,
-    mcp.command ? `- **Command**: \`${mcp.command} ${mcp.args.join(" ")}\`` : null,
+    mcp.command
+      ? `- **Command**: \`${mcp.command} ${mcp.args.join(" ")}\``
+      : null,
     mcp.installStrategy ? `- **Install**: ${mcp.installStrategy}` : null,
     mcp.authType ? `- **Auth**: ${mcp.authType}` : null,
-    mcp.verificationStatus ? `- **Verification**: ${mcp.verificationStatus}` : null,
-    mcp.sandboxSupported !== undefined ? `- **Sandbox**: ${mcp.sandboxSupported ? "supported" : "not supported"}` : null,
-    mcp.envKeys.length > 0 ? `- **Env keys**: ${mcp.envKeys.map((k) => `\`${k}\``).join(", ")}` : null,
+    mcp.verificationStatus
+      ? `- **Verification**: ${mcp.verificationStatus}`
+      : null,
+    mcp.sandboxSupported !== undefined
+      ? `- **Sandbox**: ${mcp.sandboxSupported ? "supported" : "not supported"}`
+      : null,
+    mcp.envKeys.length > 0
+      ? `- **Env keys**: ${mcp.envKeys.map((k) => `\`${k}\``).join(", ")}`
+      : null,
     mcp.sandboxNotes ? `- **Sandbox notes**: ${mcp.sandboxNotes}` : null,
     "",
     mcp.description,
@@ -163,10 +181,15 @@ export function serializeMcp(mcp: ImportedMcpDocument): string {
     .join("\n");
 }
 
-export function buildAgentContext(snapshot: LoopSnapshot, input: AgentRunInput): string {
+export function buildAgentContext(
+  snapshot: LoopSnapshot,
+  input: AgentRunInput
+): string {
   const selectedSkills =
     input.selectedSkillSlugs && input.selectedSkillSlugs.length > 0
-      ? snapshot.skills.filter((skill) => input.selectedSkillSlugs?.includes(skill.slug))
+      ? snapshot.skills.filter((skill) =>
+          input.selectedSkillSlugs?.includes(skill.slug)
+        )
       : snapshot.skills.slice(0, 8);
   const selectedMcps =
     input.selectedMcpIds && input.selectedMcpIds.length > 0
@@ -192,7 +215,9 @@ export function buildAgentContext(snapshot: LoopSnapshot, input: AgentRunInput):
     "",
     "# Attached skills",
     "",
-    ...(selectedSkills.length > 0 ? selectedSkills.map(serializeSkill) : ["_No skills attached._"]),
+    ...(selectedSkills.length > 0
+      ? selectedSkills.map(serializeSkill)
+      : ["_No skills attached._"]),
     "",
     "# MCP definitions",
     "",
@@ -203,7 +228,9 @@ export function buildAgentContext(snapshot: LoopSnapshot, input: AgentRunInput):
     "# Daily briefs",
     "",
     ...(snapshot.dailyBriefs.length > 0
-      ? snapshot.dailyBriefs.map((brief) => `- **${brief.title}**: ${brief.summary}`)
+      ? snapshot.dailyBriefs.map(
+          (brief) => `- **${brief.title}**: ${brief.summary}`
+        )
       : ["_No briefs available._"]),
   ].join("\n");
 }
@@ -216,14 +243,18 @@ export function getGatewayEditorModel(): LanguageModel | null {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   if (!apiKey) {
     if (!_gatewayKeyWarnedOnce) {
-      console.warn("[agents] AI_GATEWAY_API_KEY not set – falling back to heuristic (no AI)");
+      console.warn(
+        "[agents] AI_GATEWAY_API_KEY not set – falling back to heuristic (no AI)"
+      );
       _gatewayKeyWarnedOnce = true;
     }
     return null;
   }
   const provider = createGateway({ apiKey });
   const model = provider(GATEWAY_EDITOR_MODEL);
-  console.info(`[agents] Resolved gateway editor model: ${GATEWAY_EDITOR_MODEL} (key: ${apiKey.slice(0, 6)}…)`);
+  console.info(
+    `[agents] Resolved gateway editor model: ${GATEWAY_EDITOR_MODEL} (key: ${apiKey.slice(0, 6)}…)`
+  );
   return model;
 }
 
@@ -231,29 +262,44 @@ export function getGatewayEditorModelId(preferredModel?: string): string {
   return preferredModel || GATEWAY_EDITOR_MODEL;
 }
 
-export function getGatewayModelForSkill(preferredModel?: string): LanguageModel | null {
+export function getGatewayModelForSkill(
+  preferredModel?: string
+): LanguageModel | null {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   const modelId = preferredModel || GATEWAY_EDITOR_MODEL;
   if (!apiKey) {
     console.error(
       `[agents] AI_GATEWAY_API_KEY is MISSING in process.env – cannot create model "${modelId}". ` +
-      `Env keys available: ${Object.keys(process.env).filter(k => k.includes("AI") || k.includes("GATEWAY") || k.includes("LOOP")).join(", ") || "(none matching)"}`
+        `Env keys available: ${
+          Object.keys(process.env)
+            .filter(
+              (k) =>
+                k.includes("AI") || k.includes("GATEWAY") || k.includes("LOOP")
+            )
+            .join(", ") || "(none matching)"
+        }`
     );
     return null;
   }
   try {
     const provider = createGateway({ apiKey });
     const model = provider(modelId);
-    console.info(`[agents] Resolved skill model: ${modelId} (preferred: ${preferredModel ?? "none"}, key: ${apiKey.slice(0, 6)}…)`);
+    console.info(
+      `[agents] Resolved skill model: ${modelId} (preferred: ${preferredModel ?? "none"}, key: ${apiKey.slice(0, 6)}…)`
+    );
     return model;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    console.error(`[agents] createGateway or provider() threw for model "${modelId}": ${msg}`);
+    console.error(
+      `[agents] createGateway or provider() threw for model "${modelId}": ${msg}`
+    );
     return null;
   }
 }
 
-export async function listGatewayModels(): Promise<Array<{ id: string; name: string; provider: string }>> {
+export async function listGatewayModels(): Promise<
+  { id: string; name: string; provider: string }[]
+> {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   if (!apiKey) {
     return [];
@@ -266,7 +312,7 @@ export async function listGatewayModels(): Promise<Array<{ id: string; name: str
     return metadata.models.map((model) => ({
       id: model.id,
       name: model.name,
-      provider: model.specification.provider
+      provider: model.specification.provider,
     }));
   } catch {
     return [];

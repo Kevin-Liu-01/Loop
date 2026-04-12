@@ -5,7 +5,7 @@
 
 import { resolveBrandIcon } from "@/lib/brand-icons";
 
-export type ExternalSkillSource = {
+export interface ExternalSkillSource {
   id: string;
   name: string;
   org: string;
@@ -23,89 +23,102 @@ export type ExternalSkillSource = {
   discoveryRationale: string;
   /** Slug in `skill_authors` table – skills from this source get linked to the verified author. */
   authorSlug?: string;
-};
+}
 
 export const EXTERNAL_SKILL_SOURCES: ExternalSkillSource[] = [
   {
+    authorSlug: "anthropic",
+    branch: "main",
+    description:
+      "Official Claude agent skills from Anthropic – PDF generation, MCP building, frontend design, and more.",
+    discoveryMode: "canonical",
+    discoveryRationale:
+      "Canonical upstream repo. Import bodies directly from the maintained skills directory.",
+    homepage: "https://github.com/anthropics/skills",
+    iconUrl: resolveBrandIcon("anthropic")!,
     id: "anthropic-skills",
     name: "Anthropic Skills",
     org: "anthropics",
     repo: "skills",
-    branch: "main",
-    skillsPath: "skills",
-    iconUrl: resolveBrandIcon("anthropic")!,
-    description: "Official Claude agent skills from Anthropic – PDF generation, MCP building, frontend design, and more.",
-    homepage: "https://github.com/anthropics/skills",
-    trustTier: "official",
-    discoveryMode: "canonical",
     searchQueries: ["anthropic skills github", "claude skills official"],
-    discoveryRationale: "Canonical upstream repo. Import bodies directly from the maintained skills directory.",
-    authorSlug: "anthropic",
+    skillsPath: "skills",
+    trustTier: "official",
   },
   {
+    authorSlug: "openai",
+    branch: "main",
+    description:
+      "Official Codex agent skills from OpenAI – curated skills for coding, research, and development.",
+    discoveryMode: "canonical",
+    discoveryRationale:
+      "Canonical upstream repo. Pull from the curated skills directory instead of scraping mirrors.",
+    homepage: "https://github.com/openai/skills",
+    iconUrl: resolveBrandIcon("openai")!,
     id: "openai-skills",
     name: "OpenAI Skills",
     org: "openai",
     repo: "skills",
-    branch: "main",
-    skillsPath: "skills/.curated",
-    iconUrl: resolveBrandIcon("openai")!,
-    description: "Official Codex agent skills from OpenAI – curated skills for coding, research, and development.",
-    homepage: "https://github.com/openai/skills",
-    trustTier: "official",
-    discoveryMode: "canonical",
     searchQueries: ["openai skills github", "codex skills official"],
-    discoveryRationale: "Canonical upstream repo. Pull from the curated skills directory instead of scraping mirrors.",
-    authorSlug: "openai",
+    skillsPath: "skills/.curated",
+    trustTier: "official",
   },
   {
+    authorSlug: "awesome-agent-skills",
+    branch: "main",
+    description:
+      "Community-curated list of agent skill repos – links parsed from the README.",
+    discoveryMode: "lead-list",
+    discoveryRationale:
+      "Lead-generation surface only. Use it to discover candidates, then verify and transplant from canonical upstreams.",
+    homepage: "https://github.com/heilcheng/awesome-agent-skills",
+    iconUrl: resolveBrandIcon("github")!,
     id: "awesome-agent-skills",
     name: "Awesome Agent Skills",
     org: "heilcheng",
     repo: "awesome-agent-skills",
-    branch: "main",
-    skillsPath: "__readme_links__",
-    iconUrl: resolveBrandIcon("github")!,
-    description: "Community-curated list of agent skill repos – links parsed from the README.",
-    homepage: "https://github.com/heilcheng/awesome-agent-skills",
-    trustTier: "community",
-    discoveryMode: "lead-list",
     searchQueries: ["awesome agent skills github", "mcp skills repos"],
-    discoveryRationale: "Lead-generation surface only. Use it to discover candidates, then verify and transplant from canonical upstreams.",
-    authorSlug: "awesome-agent-skills",
+    skillsPath: "__readme_links__",
+    trustTier: "community",
   },
   {
+    authorSlug: "cursor-directory",
+    branch: "main",
+    description:
+      "Community-curated Cursor rules from cursor.directory – the largest public collection of .cursorrules files.",
+    discoveryMode: "canonical",
+    discoveryRationale:
+      "Canonical upstream for the cursor.directory community collection. Import rules directly from the rules directory.",
+    fileExtensions: [".ts"],
+    homepage: "https://cursor.directory",
+    iconUrl: resolveBrandIcon("cursor")!,
     id: "cursor-directory",
     name: "Cursor Directory",
     org: "leerob",
     repo: "directories",
-    branch: "main",
-    skillsPath: "src/data/rules",
-    fileExtensions: [".ts"],
-    iconUrl: resolveBrandIcon("cursor")!,
-    description: "Community-curated Cursor rules from cursor.directory – the largest public collection of .cursorrules files.",
-    homepage: "https://cursor.directory",
-    trustTier: "community",
-    discoveryMode: "canonical",
     searchQueries: ["cursor.directory rules github", "cursor rules community"],
-    discoveryRationale: "Canonical upstream for the cursor.directory community collection. Import rules directly from the rules directory.",
-    authorSlug: "cursor-directory",
+    skillsPath: "src/data/rules",
+    trustTier: "community",
   },
   {
+    authorSlug: "awesome-mcp-servers",
+    branch: "main",
+    description:
+      "Community-curated list of MCP servers – the definitive awesome-list for Model Context Protocol integrations.",
+    discoveryMode: "lead-list",
+    discoveryRationale:
+      "Lead list for MCP server discovery. Parse README links to find repos with SKILL.md or MCP definitions.",
+    homepage: "https://github.com/appcypher/awesome-mcp-servers",
+    iconUrl: resolveBrandIcon("mcp")!,
     id: "awesome-mcp-servers",
     name: "Awesome MCP Servers",
     org: "appcypher",
     repo: "awesome-mcp-servers",
-    branch: "main",
+    searchQueries: [
+      "awesome mcp servers",
+      "model context protocol servers list",
+    ],
     skillsPath: "__readme_links__",
-    iconUrl: resolveBrandIcon("mcp")!,
-    description: "Community-curated list of MCP servers – the definitive awesome-list for Model Context Protocol integrations.",
-    homepage: "https://github.com/appcypher/awesome-mcp-servers",
     trustTier: "community",
-    discoveryMode: "lead-list",
-    searchQueries: ["awesome mcp servers", "model context protocol servers list"],
-    discoveryRationale: "Lead list for MCP server discovery. Parse README links to find repos with SKILL.md or MCP definitions.",
-    authorSlug: "awesome-mcp-servers",
   },
 ];
 
@@ -129,10 +142,14 @@ export function findSourceForUrl(url: string): ExternalSkillSource | undefined {
       return undefined;
     }
     const segments = pathname.split("/").filter(Boolean);
-    if (segments.length < 2) return undefined;
+    if (segments.length < 2) {
+      return undefined;
+    }
     const [org, repo] = segments;
     return EXTERNAL_SKILL_SOURCES.find(
-      (s) => s.org.toLowerCase() === org.toLowerCase() && s.repo.toLowerCase() === repo.toLowerCase(),
+      (s) =>
+        s.org.toLowerCase() === org.toLowerCase() &&
+        s.repo.toLowerCase() === repo.toLowerCase()
     );
   } catch {
     return undefined;

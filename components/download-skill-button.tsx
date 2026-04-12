@@ -4,12 +4,15 @@ import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-type DownloadSkillButtonProps = {
+interface DownloadSkillButtonProps {
   body: string;
   filename: string;
-};
+}
 
-export function DownloadSkillButton({ body, filename }: DownloadSkillButtonProps) {
+export function DownloadSkillButton({
+  body,
+  filename,
+}: DownloadSkillButtonProps) {
   function handleDownload() {
     const blob = new Blob([body], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);

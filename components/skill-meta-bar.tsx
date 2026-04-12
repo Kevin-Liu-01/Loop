@@ -19,14 +19,20 @@ export function SkillMetaBar({
 }) {
   const automation = skill.automations?.[0];
   const cadence = skill.automation?.cadence ?? automation?.cadence;
-  const preferredHour = skill.automation?.preferredHour ?? automation?.preferredHour ?? 12;
-  const preferredDay = skill.automation?.preferredDay ?? automation?.preferredDay;
+  const preferredHour =
+    skill.automation?.preferredHour ?? automation?.preferredHour ?? 12;
+  const preferredDay =
+    skill.automation?.preferredDay ?? automation?.preferredDay;
   const nextRun =
-    skill.automation?.enabled && cadence ? formatNextRun(cadence, preferredHour, preferredDay) : null;
+    skill.automation?.enabled && cadence
+      ? formatNextRun(cadence, preferredHour, preferredDay)
+      : null;
   const srcCount = skill.sources?.length ?? 0;
 
   const details = [originLabel(skill), freshness.label];
-  if (nextRun && nextRun !== "–") details.push(`Next ${nextRun}`);
+  if (nextRun && nextRun !== "–") {
+    details.push(`Next ${nextRun}`);
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6875rem] leading-none text-ink-faint">

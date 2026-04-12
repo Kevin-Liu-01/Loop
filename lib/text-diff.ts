@@ -1,9 +1,9 @@
 import type { DiffLine } from "@/lib/types";
 
-type Cell = {
+interface Cell {
   length: number;
   prev?: "up" | "left" | "diag";
-};
+}
 
 export function diffMultilineText(before: string, after: string): DiffLine[] {
   const left = before.split("\n");
@@ -17,7 +17,7 @@ export function diffMultilineText(before: string, after: string): DiffLine[] {
       if (left[i - 1] === right[j - 1]) {
         matrix[i][j] = {
           length: matrix[i - 1][j - 1].length + 1,
-          prev: "diag"
+          prev: "diag",
         };
         continue;
       }
@@ -25,14 +25,14 @@ export function diffMultilineText(before: string, after: string): DiffLine[] {
       if (matrix[i - 1][j].length >= matrix[i][j - 1].length) {
         matrix[i][j] = {
           length: matrix[i - 1][j].length,
-          prev: "up"
+          prev: "up",
         };
         continue;
       }
 
       matrix[i][j] = {
         length: matrix[i][j - 1].length,
-        prev: "left"
+        prev: "left",
       };
     }
   }
@@ -43,12 +43,17 @@ export function diffMultilineText(before: string, after: string): DiffLine[] {
 
   while (i > 0 || j > 0) {
     const cell = matrix[i]?.[j];
-    if (i > 0 && j > 0 && cell?.prev === "diag" && left[i - 1] === right[j - 1]) {
+    if (
+      i > 0 &&
+      j > 0 &&
+      cell?.prev === "diag" &&
+      left[i - 1] === right[j - 1]
+    ) {
       lines.push({
+        leftNumber: i,
+        rightNumber: j,
         type: "context",
         value: left[i - 1],
-        leftNumber: i,
-        rightNumber: j
       });
       i -= 1;
       j -= 1;
@@ -57,9 +62,9 @@ export function diffMultilineText(before: string, after: string): DiffLine[] {
 
     if (j > 0 && (i === 0 || cell?.prev === "left")) {
       lines.push({
+        rightNumber: j,
         type: "added",
         value: right[j - 1],
-        rightNumber: j
       });
       j -= 1;
       continue;
@@ -67,15 +72,15 @@ export function diffMultilineText(before: string, after: string): DiffLine[] {
 
     if (i > 0) {
       lines.push({
+        leftNumber: i,
         type: "removed",
         value: left[i - 1],
-        leftNumber: i
       });
       i -= 1;
     }
   }
 
-  const normalized = lines.reverse();
+  const normalized = lines.toReversed();
   const ordered: DiffLine[] = [];
 
   for (let index = 0; index < normalized.length; index += 1) {

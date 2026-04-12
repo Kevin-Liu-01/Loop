@@ -1,12 +1,13 @@
-import { smoothPath, scaleLinear, niceMax, type Point } from "./chart-utils";
+import { smoothPath, scaleLinear, niceMax } from "./chart-utils";
+import type { Point } from "./chart-utils";
 
-type SparklineProps = {
+interface SparklineProps {
   data: number[];
   className?: string;
   color?: string;
   height?: number;
   fill?: boolean;
-};
+}
 
 const VB_W = 100;
 const VB_H = 32;
@@ -19,7 +20,9 @@ export function Sparkline({
   height = 32,
   fill = true,
 }: SparklineProps) {
-  if (data.length < 2 || data.every((v) => v === 0)) return null;
+  if (data.length < 2 || data.every((v) => v === 0)) {
+    return null;
+  }
 
   const max = niceMax(Math.max(...data));
   const xScale = scaleLinear([0, data.length - 1], [PAD, VB_W - PAD]);
@@ -40,7 +43,7 @@ export function Sparkline({
       viewBox={`0 0 ${VB_W} ${VB_H}`}
       preserveAspectRatio="none"
       className={className}
-      style={{ height, display: "block", width: "100%" }}
+      style={{ display: "block", height, width: "100%" }}
       aria-hidden
     >
       {fill && <path d={areaPath} fill={color} opacity={0.1} />}

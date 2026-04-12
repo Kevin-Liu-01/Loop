@@ -1,4 +1,5 @@
-import { generateText, type LanguageModel } from "ai";
+import { generateText } from "ai";
+import type { LanguageModel } from "ai";
 
 import { getGatewayEditorModel } from "@/lib/agents";
 
@@ -14,11 +15,13 @@ const TITLE_SYSTEM_PROMPT = [
  * When `externalModel` is supplied it takes priority over the gateway editor model.
  */
 export async function generateConversationTitle(
-  messages: Array<{ role: string; content: string }>,
-  externalModel?: LanguageModel,
+  messages: { role: string; content: string }[],
+  externalModel?: LanguageModel
 ): Promise<string> {
   const model = externalModel ?? getGatewayEditorModel();
-  if (!model) return fallbackTitle(messages);
+  if (!model) {
+    return fallbackTitle(messages);
+  }
 
   const transcript = messages
     .slice(0, 6)
@@ -27,25 +30,28 @@ export async function generateConversationTitle(
 
   try {
     const { text } = await generateText({
-      model,
-      system: TITLE_SYSTEM_PROMPT,
-      prompt: transcript,
       maxOutputTokens: 30,
+      model,
+      prompt: transcript,
+      system: TITLE_SYSTEM_PROMPT,
       temperature: 0.3,
     });
 
-    const cleaned = text.trim().replace(/^["']|["']$/g, "").trim();
+    const cleaned = text
+      .trim()
+      .replaceAll(/^["']|["']$/g, "")
+      .trim();
     return cleaned || fallbackTitle(messages);
   } catch {
     return fallbackTitle(messages);
   }
 }
 
-function fallbackTitle(
-  messages: Array<{ role: string; content: string }>,
-): string {
+function fallbackTitle(messages: { role: string; content: string }[]): string {
   const first = messages.find((m) => m.role === "user");
-  if (!first) return "Untitled session";
+  if (!first) {
+    return "Untitled session";
+  }
   const text = first.content.trim();
   return text.length > 60 ? text.slice(0, 57) + "…" : text;
 }

@@ -1,21 +1,23 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createContext, useCallback, useEffect, useState } from "react";
 
 const COOKIE_NAME = "loop_tz";
 const MAX_AGE_SEC = 60 * 60 * 24 * 400;
 
-export type TimezoneContextValue = {
+export interface TimezoneContextValue {
   timeZone: string;
   setTimeZone: (iana: string) => void;
   browserTimeZone: string;
-};
+}
 
 export const TimezoneContext = createContext<TimezoneContextValue | null>(null);
 
 function readCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined") {
+    return null;
+  }
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
@@ -57,16 +59,18 @@ export function TimezoneProvider({
 
   const setTimeZone = useCallback(
     (iana: string) => {
-      if (!isValidIanaTimeZone(iana)) return;
+      if (!isValidIanaTimeZone(iana)) {
+        return;
+      }
       document.cookie = `${COOKIE_NAME}=${encodeURIComponent(iana)}; path=/; max-age=${MAX_AGE_SEC}; SameSite=Lax`;
       setClientTz(iana);
       router.refresh();
     },
-    [router],
+    [router]
   );
 
   return (
-    <TimezoneContext value={{ timeZone, setTimeZone, browserTimeZone }}>
+    <TimezoneContext value={{ browserTimeZone, setTimeZone, timeZone }}>
       {children}
     </TimezoneContext>
   );

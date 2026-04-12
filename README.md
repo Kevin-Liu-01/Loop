@@ -60,15 +60,15 @@ User and remote skills win over repo and Codex skills when slugs overlap. The tr
 
 Loop uses **Supabase (Postgres)** as the single source of truth. There are no local filesystem stores in production.
 
-| Table | What it holds |
-|-------|--------------|
-| `skills` | All skill data: body, metadata, `sources` JSONB, `automation` JSONB, `updates` JSONB |
-| `skill_versions` | Immutable version snapshots |
-| `categories` | Category definitions and source configs |
-| `mcps` | MCP server definitions |
-| `briefs` | Daily category signal briefs |
-| `loop_runs` | Refresh run logs and outcomes |
-| `usage_events` | Observability telemetry |
+| Table            | What it holds                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `skills`         | All skill data: body, metadata, `sources` JSONB, `automation` JSONB, `updates` JSONB |
+| `skill_versions` | Immutable version snapshots                                                          |
+| `categories`     | Category definitions and source configs                                              |
+| `mcps`           | MCP server definitions                                                               |
+| `briefs`         | Daily category signal briefs                                                         |
+| `loop_runs`      | Refresh run logs and outcomes                                                        |
+| `usage_events`   | Observability telemetry                                                              |
 
 Row-level security (RLS) is enabled on all tables. Anonymous access is blocked by default.
 
@@ -168,22 +168,22 @@ Relevant files:
 
 ### Creation paths
 
-| Flow | Endpoint | What happens |
-|------|----------|-------------|
-| User creates from scratch | `POST /api/skills` | Validates input, inserts into Supabase with `origin: "user"` |
-| User tracks a catalog skill | `POST /api/skills/track` | Merges skill + category sources, writes to Supabase |
-| Import a remote skill | `POST /api/imports` | Fetches, normalizes, inserts into Supabase |
-| Filesystem sync (dev only) | `refreshLoopSnapshot()` | Reads `SKILL.md` files, upserts into Supabase |
+| Flow                        | Endpoint                 | What happens                                                 |
+| --------------------------- | ------------------------ | ------------------------------------------------------------ |
+| User creates from scratch   | `POST /api/skills`       | Validates input, inserts into Supabase with `origin: "user"` |
+| User tracks a catalog skill | `POST /api/skills/track` | Merges skill + category sources, writes to Supabase          |
+| Import a remote skill       | `POST /api/imports`      | Fetches, normalizes, inserts into Supabase                   |
+| Filesystem sync (dev only)  | `refreshLoopSnapshot()`  | Reads `SKILL.md` files, upserts into Supabase                |
 
 ### Update paths
 
-| Flow | Trigger | What happens |
-|------|---------|-------------|
-| Daily cron | `GET /api/refresh` (Vercel cron) | Checks due automations, fetches signals, agent rewrites, saves to Supabase |
-| Manual refresh | `POST /api/admin/loops/update` | Same pipeline, triggered on demand |
-| Edit automation | `PATCH /api/automations/[slug]` | Updates `skills.automation` JSONB in Supabase |
-| Disable automation | `DELETE /api/automations/[slug]` | Sets `automation.enabled = false` in Supabase |
-| Create automation | `POST /api/automations` | Sets `skills.automation` JSONB in Supabase |
+| Flow               | Trigger                          | What happens                                                               |
+| ------------------ | -------------------------------- | -------------------------------------------------------------------------- |
+| Daily cron         | `GET /api/refresh` (Vercel cron) | Checks due automations, fetches signals, agent rewrites, saves to Supabase |
+| Manual refresh     | `POST /api/admin/loops/update`   | Same pipeline, triggered on demand                                         |
+| Edit automation    | `PATCH /api/automations/[slug]`  | Updates `skills.automation` JSONB in Supabase                              |
+| Disable automation | `DELETE /api/automations/[slug]` | Sets `automation.enabled = false` in Supabase                              |
+| Create automation  | `POST /api/automations`          | Sets `skills.automation` JSONB in Supabase                                 |
 
 ### Seed data (development only)
 
@@ -342,12 +342,12 @@ pnpm test
 
 ### Logos
 
-| File | Variant |
-|------|---------|
-| `public/brand/loop-mark.svg` | Gear mark — dark chip (for light backgrounds) |
-| `public/brand/loop-mark-light.svg` | Gear mark — light chip (for dark backgrounds) |
+| File                                | Variant                                             |
+| ----------------------------------- | --------------------------------------------------- |
+| `public/brand/loop-mark.svg`        | Gear mark — dark chip (for light backgrounds)       |
+| `public/brand/loop-mark-light.svg`  | Gear mark — light chip (for dark backgrounds)       |
 | `public/brand/loop-icon-accent.svg` | App icon — accent orange background with white gear |
-| `app/icon.svg` | Favicon — dark background with white gear |
+| `app/icon.svg`                      | Favicon — dark background with white gear           |
 
 The mark is a golden-ratio gear with a detachable chip. The animated React version lives in `components/loop-logo.tsx` (spinning gear + floating chip on hover), with path data in `lib/loop-logo-paths.ts`.
 

@@ -1,22 +1,22 @@
 import matter from "gray-matter";
 import YAML from "yaml";
 
+import { resolveBrandIcon, githubAvatar } from "@/lib/brand-icons";
+import {
+  listMcps as dbListMcps,
+  upsertMcp as dbUpsertMcp,
+} from "@/lib/db/mcps";
 import {
   createSkill as dbCreateSkill,
   getSkillBySlug as dbGetSkillBySlug,
   listSkills as dbListSkills,
-  updateSkill as dbUpdateSkill
+  updateSkill as dbUpdateSkill,
 } from "@/lib/db/skills";
-import {
-  listMcps as dbListMcps,
-  upsertMcp as dbUpsertMcp
-} from "@/lib/db/mcps";
-import { resolveAuthorIdForUrl } from "@/lib/source-authors";
-import { buildResearchProfile } from "@/lib/research-profile";
 import { buildVersionLabel, buildSkillVersionHref } from "@/lib/format";
 import { createExcerpt, slugify, stableHash } from "@/lib/markdown";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
-import { resolveBrandIcon, githubAvatar } from "@/lib/brand-icons";
+import { buildResearchProfile } from "@/lib/research-profile";
+import { resolveAuthorIdForUrl } from "@/lib/source-authors";
 import type {
   AgentPrompt,
   CategorySlug,
@@ -28,7 +28,7 @@ import type {
   ReferenceDoc,
   SkillRecord,
   SourceDefinition,
-  VersionReference
+  VersionReference,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -36,14 +36,14 @@ import type {
 // ---------------------------------------------------------------------------
 
 function normalizeTags(input: string[]): string[] {
-  return Array.from(
-    new Set(
+  return [
+    ...new Set(
       input
         .map((tag) => slugify(tag))
-        .map((tag) => tag.replace(/^-+|-+$/g, ""))
+        .map((tag) => tag.replaceAll(/^-+|-+$/g, ""))
         .filter(Boolean)
-    )
-  ).slice(0, 10);
+    ),
+  ].slice(0, 10);
 }
 
 function inferTags(opts: {
@@ -55,7 +55,9 @@ function inferTags(opts: {
 }): string[] {
   const tags: string[] = [opts.category, "imported"];
 
-  if (opts.ownerName) tags.push(opts.ownerName);
+  if (opts.ownerName) {
+    tags.push(opts.ownerName);
+  }
 
   if (opts.frontmatterTags?.length) {
     tags.push(...opts.frontmatterTags);
@@ -70,59 +72,76 @@ function inferTags(opts: {
       parsed.hostname === "github.com"
     ) {
       const [org, repo] = segments;
-      if (org) tags.push(org);
-      if (repo && repo !== org) tags.push(repo);
+      if (org) {
+        tags.push(org);
+      }
+      if (repo && repo !== org) {
+        tags.push(repo);
+      }
     } else {
       const hostname = parsed.hostname.replace(/^www\./, "");
       const domain = hostname.split(".").slice(0, -1).join("-");
-      if (domain && domain !== "raw") tags.push(domain);
+      if (domain && domain !== "raw") {
+        tags.push(domain);
+      }
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   if (opts.title) {
     const titleWords = opts.title
       .toLowerCase()
       .split(/[\s\-_]+/)
-      .filter((w) => w.length > 2 && !["the", "and", "for", "use", "with", "when", "skill"].includes(w));
+      .filter(
+        (w) =>
+          w.length > 2 &&
+          !["the", "and", "for", "use", "with", "when", "skill"].includes(w)
+      );
     tags.push(...titleWords.slice(0, 3));
   }
 
   return normalizeTags(tags);
 }
 
-function toVersionReference(version: { version: number; updatedAt: string }): VersionReference {
+function toVersionReference(version: {
+  version: number;
+  updatedAt: string;
+}): VersionReference {
   return {
-    version: version.version,
     label: buildVersionLabel(version.version),
-    updatedAt: version.updatedAt
+    updatedAt: version.updatedAt,
+    version: version.version,
   };
 }
 
 function decodeHtml(value: string): string {
   return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
 }
 
 function stripHtml(value: string): string {
   return decodeHtml(
     value
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<\/(p|div|section|article|h1|h2|h3|li|br)>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+\n/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .replace(/[ \t]{2,}/g, " ")
+      .replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
+      .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
+      .replaceAll(/<\/(p|div|section|article|h1|h2|h3|li|br)>/gi, "\n")
+      .replaceAll(/<[^>]+>/g, " ")
+      .replaceAll(/\s+\n/g, "\n")
+      .replaceAll(/\n{3,}/g, "\n\n")
+      .replaceAll(/[ \t]{2,}/g, " ")
       .trim()
   );
 }
 
 function looksLikeHtml(raw: string, url: string): boolean {
-  return raw.includes("<html") || raw.includes("<body") || /\.html?($|\?)/i.test(url);
+  return (
+    raw.includes("<html") || raw.includes("<body") || /\.html?($|\?)/i.test(url)
+  );
 }
 
 function normalizeImportUrl(input: string): string {
@@ -140,7 +159,11 @@ function normalizeImportUrl(input: string): string {
   return url.toString();
 }
 
-function inferCategory(title: string, content: string, url: string): CategorySlug {
+function inferCategory(
+  title: string,
+  content: string,
+  url: string
+): CategorySlug {
   const haystack = `${title}\n${content}\n${url}`.toLowerCase();
   const matchedCategory = CATEGORY_REGISTRY.find((category) =>
     category.keywords.some((keyword) => haystack.includes(keyword))
@@ -157,12 +180,16 @@ function inferOwnerName(url: string): string | undefined {
       parsed.hostname === "github.com"
     ) {
       const org = parsed.pathname.split("/").filter(Boolean)[0];
-      if (org) return org;
+      if (org) {
+        return org;
+      }
     }
 
     const hostname = parsed.hostname.replace(/^www\./, "");
     const root = hostname.split(".").slice(0, -1).join(" ");
-    if (!root) return undefined;
+    if (!root) {
+      return undefined;
+    }
 
     return root
       .split(/[-_]/g)
@@ -173,21 +200,44 @@ function inferOwnerName(url: string): string | undefined {
   }
 }
 
-function inferTitle(content: string, fallbackUrl: string, frontmatterName?: string): string {
+function inferTitle(
+  content: string,
+  fallbackUrl: string,
+  frontmatterName?: string
+): string {
   const markdownTitle = /^#\s+(.+)$/m.exec(content)?.[1]?.trim();
-  if (markdownTitle) return markdownTitle;
+  if (markdownTitle) {
+    return markdownTitle;
+  }
 
-  if (frontmatterName) return frontmatterName;
+  if (frontmatterName) {
+    return frontmatterName;
+  }
 
   const htmlTitle = /<title>([^<]+)<\/title>/i.exec(content)?.[1]?.trim();
-  if (htmlTitle) return decodeHtml(htmlTitle);
+  if (htmlTitle) {
+    return decodeHtml(htmlTitle);
+  }
 
-  const pathname = new URL(fallbackUrl).pathname.split("/").filter(Boolean).pop();
-  return pathname?.replace(/\.(md|markdown|txt|html)$/i, "").replace(/[-_]/g, " ") || "Imported skill";
+  const pathname = new URL(fallbackUrl).pathname
+    .split("/")
+    .filter(Boolean)
+    .pop();
+  return (
+    pathname
+      ?.replace(/\.(md|markdown|txt|html)$/i, "")
+      .replaceAll(/[-_]/g, " ") || "Imported skill"
+  );
 }
 
-function toMarkdownBody(content: string, title: string, sourceUrl: string): string {
-  if (!looksLikeHtml(content, sourceUrl)) return content.trim();
+function toMarkdownBody(
+  content: string,
+  title: string,
+  sourceUrl: string
+): string {
+  if (!looksLikeHtml(content, sourceUrl)) {
+    return content.trim();
+  }
   const plain = stripHtml(content);
   return [`# ${title}`, "", plain].join("\n");
 }
@@ -196,47 +246,60 @@ function toMarkdownBody(content: string, title: string, sourceUrl: string): stri
  * Parse YAML frontmatter from raw markdown.
  * Returns the frontmatter data and the body content with frontmatter stripped.
  */
-function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
+function parseFrontmatter(raw: string): {
+  data: Record<string, unknown>;
+  content: string;
+} {
   try {
     const parsed = matter(raw);
-    return { data: parsed.data as Record<string, unknown>, content: parsed.content };
+    return {
+      content: parsed.content,
+      data: parsed.data as Record<string, unknown>,
+    };
   } catch {
-    return { data: {}, content: raw };
+    return { content: raw, data: {} };
   }
 }
 
-export async function fetchRemoteText(inputUrl: string): Promise<{ raw: string; normalizedUrl: string }> {
+export async function fetchRemoteText(
+  inputUrl: string
+): Promise<{ raw: string; normalizedUrl: string }> {
   const normalizedUrl = normalizeImportUrl(inputUrl);
   const response = await fetch(normalizedUrl, {
+    cache: "no-store",
     headers: { "user-agent": "LoopImporter/0.1 (+https://loop.local)" },
-    signal: AbortSignal.timeout(10000),
-    cache: "no-store"
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!response.ok) {
     throw new Error(`Import failed with ${response.status}.`);
   }
 
-  return { raw: await response.text(), normalizedUrl };
+  return { normalizedUrl, raw: await response.text() };
 }
 
-function buildImportedSource(skill: ImportedSkillDocument | ImportedSkillVersion): SourceDefinition {
+function buildImportedSource(
+  skill: ImportedSkillDocument | ImportedSkillVersion
+): SourceDefinition {
   return {
     id: stableHash(skill.canonicalUrl),
-    label: "Canonical source",
-    url: skill.canonicalUrl,
     kind: "docs",
-    tags: normalizeTags([skill.category, "imported"])
+    label: "Canonical source",
+    tags: normalizeTags([skill.category, "imported"]),
+    url: skill.canonicalUrl,
   };
 }
 
-function buildImportedAgent(skill: ImportedSkillDocument | ImportedSkillVersion, slug: string): AgentPrompt {
+function buildImportedAgent(
+  skill: ImportedSkillDocument | ImportedSkillVersion,
+  slug: string
+): AgentPrompt {
   return {
-    provider: "loop-import",
-    displayName: "Imported skill prompt",
-    shortDescription: "Context synthesized from a remote skill import.",
     defaultPrompt: `Use $${slug}. Prefer the imported source at ${skill.canonicalUrl}.`,
-    path: `loop://imports/skills/${slug}`
+    displayName: "Imported skill prompt",
+    path: `loop://imports/skills/${slug}`,
+    provider: "loop-import",
+    shortDescription: "Context synthesized from a remote skill import.",
   };
 }
 
@@ -245,7 +308,7 @@ function buildImportedSkillVersion(
   version: number,
   updatedAt: string
 ): ImportedSkillVersion {
-  return { version, updatedAt, ...fields };
+  return { updatedAt, version, ...fields };
 }
 
 function materializeImportedSkillVersion(
@@ -253,12 +316,16 @@ function materializeImportedSkillVersion(
   requestedVersion?: number
 ): ImportedSkillVersion {
   if (!requestedVersion) {
-    return skill.versions.slice().sort((left, right) => right.version - left.version)[0];
+    return [...skill.versions].toSorted(
+      (left, right) => right.version - left.version
+    )[0];
   }
 
   return (
     skill.versions.find((version) => version.version === requestedVersion) ??
-    skill.versions.slice().sort((left, right) => right.version - left.version)[0]
+    [...skill.versions].toSorted(
+      (left, right) => right.version - left.version
+    )[0]
   );
 }
 
@@ -267,18 +334,38 @@ function buildImportedMcpVersion(
   version: number,
   updatedAt: string
 ): ImportedMcpVersion {
-  return { version, updatedAt, ...fields };
+  return { updatedAt, version, ...fields };
 }
 
 function guessTransport(config: Record<string, unknown>): ImportedMcpTransport {
-  const transport = typeof config.transport === "string" ? config.transport.toLowerCase() : "";
-  const endpoint = typeof config.url === "string" ? config.url.toLowerCase() : "";
+  const transport =
+    typeof config.transport === "string" ? config.transport.toLowerCase() : "";
+  const endpoint =
+    typeof config.url === "string" ? config.url.toLowerCase() : "";
 
-  if (transport === "stdio") return "stdio";
-  if (transport === "sse" || endpoint.includes("/sse")) return "sse";
-  if (transport === "http" || endpoint.startsWith("http://") || endpoint.startsWith("https://")) return "http";
-  if (transport === "ws" || endpoint.startsWith("ws://") || endpoint.startsWith("wss://")) return "ws";
-  if (config.command) return "stdio";
+  if (transport === "stdio") {
+    return "stdio";
+  }
+  if (transport === "sse" || endpoint.includes("/sse")) {
+    return "sse";
+  }
+  if (
+    transport === "http" ||
+    endpoint.startsWith("http://") ||
+    endpoint.startsWith("https://")
+  ) {
+    return "http";
+  }
+  if (
+    transport === "ws" ||
+    endpoint.startsWith("ws://") ||
+    endpoint.startsWith("wss://")
+  ) {
+    return "ws";
+  }
+  if (config.command) {
+    return "stdio";
+  }
 
   return "unknown";
 }
@@ -317,58 +404,62 @@ function normalizeMcpRecord(
 
   const version = buildImportedMcpVersion(
     {
+      args,
+      command,
       description,
-      manifestUrl,
+      envKeys: env,
+      headers:
+        config.headers &&
+        typeof config.headers === "object" &&
+        !Array.isArray(config.headers)
+          ? Object.fromEntries(
+              Object.entries(config.headers as Record<string, unknown>).map(
+                ([key, value]) => [key, String(value)]
+              )
+            )
+          : undefined,
       homepageUrl:
         typeof config.homepage === "string"
           ? config.homepage
           : typeof config.url === "string"
             ? config.url
             : undefined,
+      manifestUrl,
+      raw,
+      tags: normalizeTags([name, transport, new URL(manifestUrl).hostname]),
       transport,
       url: typeof config.url === "string" ? config.url : undefined,
-      command,
-      args,
-      envKeys: env,
-      headers:
-        config.headers && typeof config.headers === "object" && !Array.isArray(config.headers)
-          ? Object.fromEntries(
-              Object.entries(config.headers as Record<string, unknown>).map(([key, value]) => [key, String(value)])
-            )
-          : undefined,
-      tags: normalizeTags([name, transport, new URL(manifestUrl).hostname]),
-      raw
     },
     1,
     now
   );
 
   return {
-    id: stableHash(`${manifestUrl}:${name}`),
-    name,
-    description: version.description,
-    manifestUrl: version.manifestUrl,
-    homepageUrl: version.homepageUrl,
-    transport: version.transport,
-    url: version.url,
-    command: version.command,
     args: version.args,
+    command: version.command,
+    createdAt: now,
+    description: version.description,
     envKeys: version.envKeys,
     headers: version.headers,
-    tags: version.tags,
+    homepageUrl: version.homepageUrl,
+    id: stableHash(`${manifestUrl}:${name}`),
+    manifestUrl: version.manifestUrl,
+    name,
     raw: version.raw,
-    createdAt: now,
+    tags: version.tags,
+    transport: version.transport,
     updatedAt: now,
+    url: version.url,
     version: 1,
     versionLabel: buildVersionLabel(1),
-    versions: [version]
+    versions: [version],
   };
 }
 
 function extractManifestCandidate(raw: string): string {
-  const fencedBlocks = Array.from(raw.matchAll(/```(?:json|yaml|yml)?\n([\s\S]*?)```/g)).map(
-    (match) => match[1]
-  );
+  const fencedBlocks = [
+    ...raw.matchAll(/```(?:json|yaml|yml)?\n([\s\S]*?)```/g),
+  ].map((match) => match[1]);
   return fencedBlocks[0] ?? raw;
 }
 
@@ -389,7 +480,10 @@ function parseManifestObject(raw: string): unknown {
 // Public pure builders
 // ---------------------------------------------------------------------------
 
-export function extractMcpDocuments(raw: string, manifestUrl: string): ImportedMcpDocument[] {
+export function extractMcpDocuments(
+  raw: string,
+  manifestUrl: string
+): ImportedMcpDocument[] {
   const now = new Date().toISOString();
   const parsed = parseManifestObject(raw);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -397,24 +491,34 @@ export function extractMcpDocuments(raw: string, manifestUrl: string): ImportedM
   }
 
   const object = parsed as Record<string, unknown>;
-  const recordEntries: Array<[string, Record<string, unknown>]> =
-    object.mcpServers && typeof object.mcpServers === "object" && !Array.isArray(object.mcpServers)
+  const recordEntries: [string, Record<string, unknown>][] =
+    object.mcpServers &&
+    typeof object.mcpServers === "object" &&
+    !Array.isArray(object.mcpServers)
       ? Object.entries(object.mcpServers as Record<string, unknown>).filter(
           (entry): entry is [string, Record<string, unknown>] =>
-            Boolean(entry[1]) && typeof entry[1] === "object" && !Array.isArray(entry[1])
+            Boolean(entry[1]) &&
+            typeof entry[1] === "object" &&
+            !Array.isArray(entry[1])
         )
       : Array.isArray(object.servers)
-        ? (object.servers as Array<Record<string, unknown>>).map((server, index) => [
-            typeof server.name === "string" ? server.name : `server-${index + 1}`,
-            server
+        ? (object.servers as Record<string, unknown>[]).map((server, index) => [
+            typeof server.name === "string"
+              ? server.name
+              : `server-${index + 1}`,
+            server,
           ])
         : typeof object.name === "string"
           ? [[object.name, object]]
           : [];
 
-  const mcps = recordEntries.map(([name, config]) => normalizeMcpRecord(name, config, manifestUrl, raw, now));
+  const mcps = recordEntries.map(([name, config]) =>
+    normalizeMcpRecord(name, config, manifestUrl, raw, now)
+  );
   if (mcps.length === 0) {
-    throw new Error("The fetched file did not contain an MCP server definition.");
+    throw new Error(
+      "The fetched file did not contain an MCP server definition."
+    );
   }
 
   return mcps;
@@ -426,8 +530,15 @@ export function buildImportedSkillDraft(
   now = new Date()
 ): ImportedSkillDocument {
   const { data, content } = parseFrontmatter(raw);
-  const fmName = typeof data.name === "string" ? data.name.split("-").map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ") : undefined;
-  const fmDescription = typeof data.description === "string" ? data.description : undefined;
+  const fmName =
+    typeof data.name === "string"
+      ? data.name
+          .split("-")
+          .map((p: string) => p.charAt(0).toUpperCase() + p.slice(1))
+          .join(" ")
+      : undefined;
+  const fmDescription =
+    typeof data.description === "string" ? data.description : undefined;
 
   const title = inferTitle(content, sourceUrl, fmName);
   const body = toMarkdownBody(content, title, sourceUrl);
@@ -438,45 +549,47 @@ export function buildImportedSkillDraft(
 
   const version = buildImportedSkillVersion(
     {
-      title,
-      description,
-      category,
       body,
-      sourceUrl,
       canonicalUrl: sourceUrl,
+      category,
+      description,
+      lastSyncedAt: createdAt,
       ownerName: inferOwnerName(sourceUrl),
+      sourceUrl,
+      syncEnabled: true,
       tags: inferTags({
         category,
-        sourceUrl,
+        frontmatterTags: Array.isArray(data.tags)
+          ? data.tags.map(String)
+          : undefined,
         ownerName: inferOwnerName(sourceUrl),
+        sourceUrl,
         title,
-        frontmatterTags: Array.isArray(data.tags) ? data.tags.map(String) : undefined,
       }),
+      title,
       visibility: "public",
-      syncEnabled: true,
-      lastSyncedAt: createdAt
     },
     1,
     createdAt
   );
 
   return {
-    slug: `${slugBase}-${stableHash(sourceUrl).slice(0, 6)}`,
-    title: version.title,
-    description: version.description,
-    category: version.category,
     body: version.body,
-    sourceUrl: version.sourceUrl,
     canonicalUrl: version.canonicalUrl,
-    ownerName: version.ownerName,
-    tags: version.tags,
-    visibility: version.visibility,
+    category: version.category,
     createdAt,
-    updatedAt: createdAt,
-    syncEnabled: version.syncEnabled,
+    description: version.description,
     lastSyncedAt: version.lastSyncedAt,
+    ownerName: version.ownerName,
+    slug: `${slugBase}-${stableHash(sourceUrl).slice(0, 6)}`,
+    sourceUrl: version.sourceUrl,
+    syncEnabled: version.syncEnabled,
+    tags: version.tags,
+    title: version.title,
+    updatedAt: createdAt,
     version: 1,
-    versions: [version]
+    versions: [version],
+    visibility: version.visibility,
   };
 }
 
@@ -486,54 +599,55 @@ export function buildImportedSkillRecord(
 ): SkillRecord {
   const version = materializeImportedSkillVersion(skill, requestedVersion);
   const source = buildImportedSource(version);
-  const category = CATEGORY_REGISTRY.find((entry) => entry.slug === version.category);
+  const category = CATEGORY_REGISTRY.find(
+    (entry) => entry.slug === version.category
+  );
   const body = [
     version.body.trim(),
     "",
     "## Import metadata",
     `- Source: [${version.canonicalUrl}](${version.canonicalUrl})`,
     `- Sync: ${version.syncEnabled ? "enabled" : "manual"}`,
-    `- Last sync: ${version.lastSyncedAt ?? "not yet"}`
+    `- Last sync: ${version.lastSyncedAt ?? "not yet"}`,
   ].join("\n");
 
   const references: ReferenceDoc[] = [
     {
+      excerpt: version.description,
+      path: source.url,
       slug: source.id,
       title: "Canonical source",
-      path: source.url,
-      excerpt: version.description
-    }
+    },
   ];
 
   return {
-    slug: skill.slug,
-    title: version.title,
-    description: version.description,
-    category: version.category,
     accent: category?.accent ?? "signal-red",
-    featured: false,
-    visibility: version.visibility,
-    origin: "remote",
-    href: buildSkillVersionHref(skill.slug, version.version),
-    path: version.canonicalUrl,
-    relativeDir: `imports/${skill.slug}`,
-    updatedAt: version.updatedAt,
-    tags: normalizeTags(version.tags),
-    headings: [],
-    body,
-    excerpt: createExcerpt(body),
-    references,
     agents: [buildImportedAgent(version, skill.slug)],
+    authorId: skill.authorId,
     automations: [],
+    availableVersions: [...skill.versions]
+      .toSorted((left, right) => right.version - left.version)
+      .map(toVersionReference),
+    body,
+    category: version.category,
+    description: version.description,
+    excerpt: createExcerpt(body),
+    featured: false,
+    headings: [],
+    href: buildSkillVersionHref(skill.slug, version.version),
+    origin: "remote",
+    ownerName: version.ownerName,
+    path: version.canonicalUrl,
+    references,
+    relativeDir: `imports/${skill.slug}`,
+    slug: skill.slug,
+    sources: [source],
+    tags: normalizeTags(version.tags),
+    title: version.title,
+    updatedAt: version.updatedAt,
     version: version.version,
     versionLabel: buildVersionLabel(version.version),
-    availableVersions: skill.versions
-      .slice()
-      .sort((left, right) => right.version - left.version)
-      .map(toVersionReference),
-    ownerName: version.ownerName,
-    authorId: skill.authorId,
-    sources: [source]
+    visibility: version.visibility,
   };
 }
 
@@ -547,20 +661,22 @@ export function createNextImportedSkillVersion(
 
   return {
     ...skill,
-    title: snapshot.title,
-    description: snapshot.description,
-    category: snapshot.category,
     body: snapshot.body,
-    sourceUrl: snapshot.sourceUrl,
     canonicalUrl: snapshot.canonicalUrl,
-    ownerName: snapshot.ownerName,
-    tags: snapshot.tags,
-    visibility: snapshot.visibility,
-    updatedAt,
-    syncEnabled: snapshot.syncEnabled,
+    category: snapshot.category,
+    description: snapshot.description,
     lastSyncedAt: snapshot.lastSyncedAt,
+    ownerName: snapshot.ownerName,
+    sourceUrl: snapshot.sourceUrl,
+    syncEnabled: snapshot.syncEnabled,
+    tags: snapshot.tags,
+    title: snapshot.title,
+    updatedAt,
     version: versionNumber,
-    versions: [snapshot, ...skill.versions].sort((left, right) => right.version - left.version)
+    versions: [snapshot, ...skill.versions].toSorted(
+      (left, right) => right.version - left.version
+    ),
+    visibility: snapshot.visibility,
   };
 }
 
@@ -574,21 +690,23 @@ export function createNextImportedMcpVersion(
 
   return {
     ...mcp,
-    description: snapshot.description,
-    manifestUrl: snapshot.manifestUrl,
-    homepageUrl: snapshot.homepageUrl,
-    transport: snapshot.transport,
-    url: snapshot.url,
-    command: snapshot.command,
     args: snapshot.args,
+    command: snapshot.command,
+    description: snapshot.description,
     envKeys: snapshot.envKeys,
     headers: snapshot.headers,
-    tags: snapshot.tags,
+    homepageUrl: snapshot.homepageUrl,
+    manifestUrl: snapshot.manifestUrl,
     raw: snapshot.raw,
+    tags: snapshot.tags,
+    transport: snapshot.transport,
     updatedAt,
+    url: snapshot.url,
     version: versionNumber,
     versionLabel: buildVersionLabel(versionNumber),
-    versions: [snapshot, ...mcp.versions].sort((left, right) => right.version - left.version)
+    versions: [snapshot, ...mcp.versions].toSorted(
+      (left, right) => right.version - left.version
+    ),
   };
 }
 
@@ -597,16 +715,20 @@ export function getImportedMcpVersion(
   requestedVersion?: number
 ): ImportedMcpVersion {
   if (!requestedVersion) {
-    return mcp.versions.slice().sort((left, right) => right.version - left.version)[0];
+    return [...mcp.versions].toSorted(
+      (left, right) => right.version - left.version
+    )[0];
   }
 
   return (
     mcp.versions.find((version) => version.version === requestedVersion) ??
-    mcp.versions.slice().sort((left, right) => right.version - left.version)[0]
+    [...mcp.versions].toSorted((left, right) => right.version - left.version)[0]
   );
 }
 
-export async function syncImportedSkill(skill: ImportedSkillDocument): Promise<ImportedSkillDocument> {
+export async function syncImportedSkill(
+  skill: ImportedSkillDocument
+): Promise<ImportedSkillDocument> {
   const { raw, normalizedUrl } = await fetchRemoteText(skill.canonicalUrl);
   const refreshed = buildImportedSkillDraft(raw, normalizedUrl, new Date());
   const latest = materializeImportedSkillVersion(skill);
@@ -624,24 +746,24 @@ export async function syncImportedSkill(skill: ImportedSkillDocument): Promise<I
     return {
       ...skill,
       lastSyncedAt: refreshed.lastSyncedAt,
-      updatedAt: skill.updatedAt
+      updatedAt: skill.updatedAt,
     };
   }
 
   return createNextImportedSkillVersion(
     skill,
     {
-      title: refreshed.title,
-      description: refreshed.description,
-      category: refreshed.category,
       body: refreshed.body,
-      sourceUrl: refreshed.sourceUrl,
       canonicalUrl: refreshed.canonicalUrl,
+      category: refreshed.category,
+      description: refreshed.description,
+      lastSyncedAt: refreshed.lastSyncedAt,
       ownerName: refreshed.ownerName,
-      tags: refreshed.tags,
-      visibility: refreshed.visibility,
+      sourceUrl: refreshed.sourceUrl,
       syncEnabled: refreshed.syncEnabled,
-      lastSyncedAt: refreshed.lastSyncedAt
+      tags: refreshed.tags,
+      title: refreshed.title,
+      visibility: refreshed.visibility,
     },
     refreshed.updatedAt
   );
@@ -654,41 +776,43 @@ export async function syncImportedSkill(skill: ImportedSkillDocument): Promise<I
 function skillRecordToImportedDoc(record: SkillRecord): ImportedSkillDocument {
   const syncEnabled = record.syncEnabled ?? true;
 
-  const versions: ImportedSkillVersion[] = record.availableVersions.map((vRef) => ({
-    version: vRef.version,
-    updatedAt: vRef.updatedAt,
-    title: record.title,
-    description: record.description,
-    category: record.category,
-    body: record.body,
-    sourceUrl: record.path,
-    canonicalUrl: record.path,
-    ownerName: record.ownerName,
-    authorId: record.authorId,
-    tags: record.tags,
-    visibility: record.visibility,
-    syncEnabled,
-    lastSyncedAt: vRef.updatedAt
-  }));
+  const versions: ImportedSkillVersion[] = record.availableVersions.map(
+    (vRef) => ({
+      authorId: record.authorId,
+      body: record.body,
+      canonicalUrl: record.path,
+      category: record.category,
+      description: record.description,
+      lastSyncedAt: vRef.updatedAt,
+      ownerName: record.ownerName,
+      sourceUrl: record.path,
+      syncEnabled,
+      tags: record.tags,
+      title: record.title,
+      updatedAt: vRef.updatedAt,
+      version: vRef.version,
+      visibility: record.visibility,
+    })
+  );
 
   return {
-    slug: record.slug,
-    title: record.title,
-    description: record.description,
-    category: record.category,
-    body: record.body,
-    sourceUrl: record.path,
-    canonicalUrl: record.path,
-    ownerName: record.ownerName,
     authorId: record.authorId,
-    tags: record.tags,
-    visibility: record.visibility,
+    body: record.body,
+    canonicalUrl: record.path,
+    category: record.category,
     createdAt: record.updatedAt,
-    updatedAt: record.updatedAt,
-    syncEnabled,
+    description: record.description,
     lastSyncedAt: record.updatedAt,
+    ownerName: record.ownerName,
+    slug: record.slug,
+    sourceUrl: record.path,
+    syncEnabled,
+    tags: record.tags,
+    title: record.title,
+    updatedAt: record.updatedAt,
     version: record.version,
-    versions
+    versions,
+    visibility: record.visibility,
   };
 }
 
@@ -701,70 +825,82 @@ export async function listImportedMcps(): Promise<ImportedMcpDocument[]> {
   return dbListMcps();
 }
 
-export async function saveImportedSkills(skills: ImportedSkillDocument[]): Promise<void> {
+export async function saveImportedSkills(
+  skills: ImportedSkillDocument[]
+): Promise<void> {
   await Promise.all(
     skills.map(async (skill) => {
       await dbUpdateSkill(skill.slug, {
-        title: skill.title,
-        description: skill.description,
-        category: skill.category,
-        body: skill.body,
-        visibility: skill.visibility,
-        tags: skill.tags,
-        ownerName: skill.ownerName,
         authorId: skill.authorId,
-        sourceUrl: skill.sourceUrl,
+        body: skill.body,
         canonicalUrl: skill.canonicalUrl,
+        category: skill.category,
+        description: skill.description,
+        ownerName: skill.ownerName,
+        sourceUrl: skill.sourceUrl,
         syncEnabled: skill.syncEnabled,
-        version: skill.version
-      }).catch(() => {
-        return dbCreateSkill({
-          slug: skill.slug,
-          title: skill.title,
-          description: skill.description,
-          category: skill.category,
-          body: skill.body,
-          visibility: skill.visibility,
-          origin: "remote",
-          tags: skill.tags,
-          ownerName: skill.ownerName,
+        tags: skill.tags,
+        title: skill.title,
+        version: skill.version,
+        visibility: skill.visibility,
+      }).catch(() =>
+        dbCreateSkill({
           authorId: skill.authorId,
-          sourceUrl: skill.sourceUrl,
+          body: skill.body,
           canonicalUrl: skill.canonicalUrl,
+          category: skill.category,
+          description: skill.description,
+          origin: "remote",
+          ownerName: skill.ownerName,
+          slug: skill.slug,
+          sourceUrl: skill.sourceUrl,
           syncEnabled: skill.syncEnabled,
-          version: skill.version
-        });
-      });
+          tags: skill.tags,
+          title: skill.title,
+          version: skill.version,
+          visibility: skill.visibility,
+        })
+      );
     })
   );
 }
 
-async function fetchSiblingAgentDocs(sourceUrl: string): Promise<Record<string, string>> {
+async function fetchSiblingAgentDocs(
+  sourceUrl: string
+): Promise<Record<string, string>> {
   const isGitHubRaw = sourceUrl.includes("raw.githubusercontent.com");
-  if (!isGitHubRaw) return {};
+  if (!isGitHubRaw) {
+    return {};
+  }
 
   const dirUrl = sourceUrl.replace(/\/[^/]+$/, "");
   const SIBLING_FILENAMES: Record<string, string> = {
     "AGENTS.md": "agents",
-    "cursor.md": "cursor",
     "claude.md": "claude",
     "codex.md": "codex",
+    "cursor.md": "cursor",
   };
 
   const docs: Record<string, string> = {};
-  const fetches = Object.entries(SIBLING_FILENAMES).map(async ([filename, key]) => {
-    try {
-      const res = await fetch(`${dirUrl}/${filename}`, {
-        signal: AbortSignal.timeout(5000),
-        cache: "no-store",
-      });
-      if (!res.ok) return;
-      const text = await res.text();
-      if (text.trim()) docs[key] = text.trim();
-    } catch {
-      // silently skip
+  const fetches = Object.entries(SIBLING_FILENAMES).map(
+    async ([filename, key]) => {
+      try {
+        const res = await fetch(`${dirUrl}/${filename}`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) {
+          return;
+        }
+        const text = await res.text();
+        if (text.trim()) {
+          docs[key] = text.trim();
+        }
+      } catch {
+        // silently skip
+      }
     }
-  });
+  );
 
   await Promise.all(fetches);
   return docs;
@@ -790,7 +926,9 @@ function inferIconUrlFromSource(sourceUrl: string): string | undefined {
     if (hostname === "github.com" || hostname === "raw.githubusercontent.com") {
       const parts = sourceUrl.split("/");
       const org = parts[3];
-      if (org) return githubAvatar(org);
+      if (org) {
+        return githubAvatar(org);
+      }
     }
   } catch {
     // ignore
@@ -799,12 +937,12 @@ function inferIconUrlFromSource(sourceUrl: string): string | undefined {
   return undefined;
 }
 
-export type ImportSourceMeta = {
+export interface ImportSourceMeta {
   sourceName?: string;
   sourceIconUrl?: string;
   /** Pre-resolved verified author ID – skips URL-based author lookup when set. */
   authorId?: string;
-};
+}
 
 export async function importRemoteSkill(
   inputUrl: string,
@@ -831,60 +969,67 @@ export async function importRemoteSkill(
     canonicalUrl: draft.canonicalUrl,
   });
   const sources = [canonicalSource];
-  const researchProfile = buildResearchProfile({ title: draft.title, sources });
+  const researchProfile = buildResearchProfile({ sources, title: draft.title });
 
   await dbCreateSkill({
-    slug: draft.slug,
-    title: draft.title,
-    description: draft.description,
-    category: draft.category,
-    body: draft.body,
-    visibility: draft.visibility,
-    origin: "remote",
-    tags: draft.tags,
-    ownerName,
-    authorId,
-    sources,
-    researchProfile,
-    sourceUrl: draft.sourceUrl,
-    canonicalUrl: draft.canonicalUrl,
-    syncEnabled: draft.syncEnabled,
     agentDocs: hasAgentDocs ? agentDocs : undefined,
+    authorId,
+    body: draft.body,
+    canonicalUrl: draft.canonicalUrl,
+    category: draft.category,
+    description: draft.description,
     iconUrl,
+    origin: "remote",
+    ownerName,
+    researchProfile,
+    slug: draft.slug,
+    sourceUrl: draft.sourceUrl,
+    sources,
+    syncEnabled: draft.syncEnabled,
+    tags: draft.tags,
+    title: draft.title,
     version: 1,
+    visibility: draft.visibility,
   }).catch(async () => {
     await dbUpdateSkill(draft.slug, {
-      title: draft.title,
-      description: draft.description,
-      category: draft.category,
-      body: draft.body,
-      tags: draft.tags,
-      ownerName,
+      agentDocs: hasAgentDocs ? agentDocs : undefined,
       authorId,
-      sources,
+      body: draft.body,
+      canonicalUrl: draft.canonicalUrl,
+      category: draft.category,
+      description: draft.description,
+      iconUrl,
+      ownerName,
       researchProfile,
       sourceUrl: draft.sourceUrl,
-      canonicalUrl: draft.canonicalUrl,
+      sources,
       syncEnabled: draft.syncEnabled,
-      agentDocs: hasAgentDocs ? agentDocs : undefined,
-      iconUrl,
+      tags: draft.tags,
+      title: draft.title,
     });
   });
 
-  return { ...draft, ownerName, authorId };
+  return { ...draft, authorId, ownerName };
 }
 
-export async function importRemoteMcps(inputUrl: string): Promise<ImportedMcpDocument[]> {
+export async function importRemoteMcps(
+  inputUrl: string
+): Promise<ImportedMcpDocument[]> {
   const { raw, normalizedUrl } = await fetchRemoteText(inputUrl);
   const documents = extractMcpDocuments(raw, normalizedUrl);
   const existingMcps = await dbListMcps();
 
   const mergedDocuments = documents.map((incoming) => {
     const existing = existingMcps.find(
-      (entry) => entry.id === incoming.id || (entry.manifestUrl === incoming.manifestUrl && entry.name === incoming.name)
+      (entry) =>
+        entry.id === incoming.id ||
+        (entry.manifestUrl === incoming.manifestUrl &&
+          entry.name === incoming.name)
     );
 
-    if (!existing) return incoming;
+    if (!existing) {
+      return incoming;
+    }
 
     const latest = getImportedMcpVersion(existing);
     const changed =
@@ -896,26 +1041,29 @@ export async function importRemoteMcps(inputUrl: string): Promise<ImportedMcpDoc
       latest.command !== incoming.command ||
       JSON.stringify(latest.args) !== JSON.stringify(incoming.args) ||
       JSON.stringify(latest.envKeys) !== JSON.stringify(incoming.envKeys) ||
-      JSON.stringify(latest.headers ?? {}) !== JSON.stringify(incoming.headers ?? {}) ||
+      JSON.stringify(latest.headers ?? {}) !==
+        JSON.stringify(incoming.headers ?? {}) ||
       JSON.stringify(latest.tags) !== JSON.stringify(incoming.tags) ||
       latest.raw !== incoming.raw;
 
-    if (!changed) return existing;
+    if (!changed) {
+      return existing;
+    }
 
     return createNextImportedMcpVersion(
       existing,
       {
-        description: incoming.description,
-        manifestUrl: incoming.manifestUrl,
-        homepageUrl: incoming.homepageUrl,
-        transport: incoming.transport,
-        url: incoming.url,
-        command: incoming.command,
         args: incoming.args,
+        command: incoming.command,
+        description: incoming.description,
         envKeys: incoming.envKeys,
         headers: incoming.headers,
+        homepageUrl: incoming.homepageUrl,
+        manifestUrl: incoming.manifestUrl,
+        raw: incoming.raw,
         tags: incoming.tags,
-        raw: incoming.raw
+        transport: incoming.transport,
+        url: incoming.url,
       },
       incoming.updatedAt
     );

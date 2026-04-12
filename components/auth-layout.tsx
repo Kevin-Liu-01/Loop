@@ -10,10 +10,10 @@ const OPERATOR_BENEFITS = [
   "Priority support",
 ] as const;
 
-export type AuthSplitLayoutProps = {
+export interface AuthSplitLayoutProps {
   mode: "sign-in" | "sign-up";
   children: ReactNode;
-};
+}
 
 const panelSurfaceStyle = {
   "--loop-auth-grad-from": "#141312",
@@ -58,7 +58,10 @@ export function AuthSplitLayout({ mode, children }: AuthSplitLayoutProps) {
 
         <div className="relative z-10 grid gap-6 lg:gap-8">
           <div className="flex items-center gap-2.5">
-            <LoopLogo className="h-8 w-8 text-[#e8650a]" chipClassName="fill-white" />
+            <LoopLogo
+              className="h-8 w-8 text-[#e8650a]"
+              chipClassName="fill-white"
+            />
             <span className="font-serif text-lg font-medium tracking-[-0.03em] text-white">
               Loop
             </span>
@@ -68,7 +71,9 @@ export function AuthSplitLayout({ mode, children }: AuthSplitLayoutProps) {
             <h2 className="text-balance font-serif text-xl font-medium tracking-[-0.02em] text-white sm:text-2xl lg:text-3xl">
               {title}
             </h2>
-            <p className="text-pretty text-sm leading-relaxed text-white/72 lg:text-base">{subtitle}</p>
+            <p className="text-pretty text-sm leading-relaxed text-white/72 lg:text-base">
+              {subtitle}
+            </p>
           </div>
 
           <div className="grid gap-2 sm:gap-2.5">
@@ -90,9 +95,12 @@ export function AuthSplitLayout({ mode, children }: AuthSplitLayoutProps) {
         </div>
 
         <p className="relative z-10 mt-6 text-xs leading-relaxed text-white/38 lg:mt-10">
-          <span className="lg:hidden">Skills, models, and support -- built for shipping fast.</span>
+          <span className="lg:hidden">
+            Skills, models, and support -- built for shipping fast.
+          </span>
           <span className="hidden lg:inline">
-            Skills, model choice, and priority support -- so you can ship automation without friction.
+            Skills, model choice, and priority support -- so you can ship
+            automation without friction.
           </span>
         </p>
       </section>

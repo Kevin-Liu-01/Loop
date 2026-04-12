@@ -1,54 +1,56 @@
 "use client";
 
-import { DownloadIcon } from "@/components/frontier-icons";
 import { CopyButton } from "@/components/copy-button";
+import { DownloadIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 
 const BRAND_COLORS = [
-  { name: "Accent", hex: "#E8650A", oklch: "oklch(0.62 0.19 47)" },
-  { name: "Background", hex: "#0A0A09", oklch: "oklch(0.10 0.00 0)" },
-  { name: "Surface", hex: "#050505", oklch: "oklch(0.07 0.00 0)" },
-  { name: "Foreground", hex: "#F5F5F5", oklch: "oklch(0.97 0.00 0)" },
+  { hex: "#E8650A", name: "Accent", oklch: "oklch(0.62 0.19 47)" },
+  { hex: "#0A0A09", name: "Background", oklch: "oklch(0.10 0.00 0)" },
+  { hex: "#050505", name: "Surface", oklch: "oklch(0.07 0.00 0)" },
+  { hex: "#F5F5F5", name: "Foreground", oklch: "oklch(0.97 0.00 0)" },
 ] as const;
 
 const PREVIEW_BG = "bg-[#e8e8e6] dark:bg-[#1a1a19]";
 
 const LOGO_ASSETS = [
   {
-    label: "Loop mark",
-    description: "Standalone gear in accent orange with dark chip. Default mark.",
-    src: "/brand/loop-mark.svg",
+    description:
+      "Standalone gear in accent orange with dark chip. Default mark.",
     download: "loop-mark.svg",
-    width: 134,
     height: 120,
+    label: "Loop mark",
     previewBg: PREVIEW_BG,
+    src: "/brand/loop-mark.svg",
+    width: 134,
   },
   {
-    label: "Loop mark (light chip)",
     description: "Accent gear with white chip. Use on dark backgrounds.",
-    src: "/brand/loop-mark-light.svg",
     download: "loop-mark-light.svg",
-    width: 134,
     height: 120,
+    label: "Loop mark (light chip)",
     previewBg: PREVIEW_BG,
+    src: "/brand/loop-mark-light.svg",
+    width: 134,
   },
   {
-    label: "App icon (dark)",
     description: "Gear mark on dark container. Favicon and PWA icon.",
-    src: "/icon.svg",
     download: "loop-icon.svg",
-    width: 64,
     height: 64,
+    label: "App icon (dark)",
     previewBg: PREVIEW_BG,
+    src: "/icon.svg",
+    width: 64,
   },
   {
-    label: "App icon (accent)",
-    description: "Gear mark on accent-orange container. Social and marketing use.",
-    src: "/brand/loop-icon-accent.svg",
+    description:
+      "Gear mark on accent-orange container. Social and marketing use.",
     download: "loop-icon-accent.svg",
-    width: 64,
     height: 64,
+    label: "App icon (accent)",
     previewBg: PREVIEW_BG,
+    src: "/brand/loop-icon-accent.svg",
+    width: 64,
   },
 ] as const;
 
@@ -65,12 +67,7 @@ function AssetCard({
 
   return (
     <div className="grid gap-0 overflow-hidden border border-line">
-      <div
-        className={cn(
-          "flex items-center justify-center p-8",
-          previewBg,
-        )}
-      >
+      <div className={cn("flex items-center justify-center p-8", previewBg)}>
         <div className="flex items-end gap-6">
           {[80, 40, 20].map((h) => (
             <img
@@ -98,7 +95,7 @@ function AssetCard({
           download={download}
           className={cn(
             "flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors",
-            "border border-line hover:border-line-strong hover:bg-paper-3 hover:text-ink",
+            "border border-line hover:border-line-strong hover:bg-paper-3 hover:text-ink"
           )}
         >
           <DownloadIcon className="h-3.5 w-3.5" />
@@ -122,7 +119,13 @@ function ColorSwatch({ name, hex, oklch }: (typeof BRAND_COLORS)[number]) {
           <code className="text-[0.6875rem] tabular-nums text-ink-faint">
             {hex}
           </code>
-          <CopyButton value={hex} iconOnly iconSize="sm" size="icon-sm" variant="ghost" />
+          <CopyButton
+            value={hex}
+            iconOnly
+            iconSize="sm"
+            size="icon-sm"
+            variant="ghost"
+          />
         </div>
         <code className="text-[0.625rem] tabular-nums text-ink-faint/60">
           {oklch}
@@ -160,10 +163,11 @@ export function BrandAssetsPanel() {
           </h2>
           <p className="m-0 text-[0.8125rem] text-ink-faint">
             Social preview card generated dynamically at{" "}
-            <code className="text-[0.75rem] text-ink-muted">/og</code>.
-            Accepts optional{" "}
+            <code className="text-[0.75rem] text-ink-muted">/og</code>. Accepts
+            optional{" "}
             <code className="text-[0.75rem] text-ink-muted">?title=</code>,{" "}
-            <code className="text-[0.75rem] text-ink-muted">&description=</code>, and{" "}
+            <code className="text-[0.75rem] text-ink-muted">&description=</code>
+            , and{" "}
             <code className="text-[0.75rem] text-ink-muted">&category=</code>{" "}
             query parameters.
           </p>

@@ -25,7 +25,7 @@ export async function GET(
 
   const frontmatter = [
     "---",
-    `title: "${skill.title.replace(/"/g, '\\"')}"`,
+    `title: "${skill.title.replaceAll('"', '\\"')}"`,
     `slug: ${skill.slug}`,
     `version: v${skill.version}`,
     `category: ${skill.category}`,
@@ -41,8 +41,8 @@ export async function GET(
 
   return new Response(body, {
     headers: {
-      "content-type": "text/markdown; charset=utf-8",
       "cache-control": "public, max-age=300, s-maxage=3600",
+      "content-type": "text/markdown; charset=utf-8",
       "x-skill-version": String(skill.version),
     },
   });

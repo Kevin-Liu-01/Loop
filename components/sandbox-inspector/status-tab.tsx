@@ -2,23 +2,30 @@
 
 import { useEffect, useReducer } from "react";
 
-import { NodeIcon, PythonIcon, TerminalIcon, TimerIcon } from "@/components/frontier-icons";
+import {
+  NodeIcon,
+  PythonIcon,
+  TerminalIcon,
+  TimerIcon,
+} from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 import { sandboxEyebrow } from "@/lib/sandbox-ui";
 
-type StatusTabProps = {
+interface StatusTabProps {
   sandboxId: string | null;
   runtime: string;
   uptimeSeconds: number;
   timeoutMs: number;
   runtimeVersion: string;
   sandboxState: string;
-};
+}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  if (m === 0) return `${s}s`;
+  if (m === 0) {
+    return `${s}s`;
+  }
   return `${m}m ${s}s`;
 }
 
@@ -37,7 +44,7 @@ function StatusRow({
       <span
         className={cn(
           "text-right text-sm font-medium text-ink",
-          mono && "font-mono tabular-nums",
+          mono && "font-mono tabular-nums"
         )}
       >
         {value}
@@ -47,11 +54,11 @@ function StatusRow({
 }
 
 const stateColors: Record<string, string> = {
-  idle: "bg-ink-faint/40",
   creating: "animate-pulse bg-warning",
+  error: "bg-danger",
+  idle: "bg-ink-faint/40",
   running: "bg-success",
   stopped: "bg-ink-faint/40",
-  error: "bg-danger",
 };
 
 export function StatusTab({
@@ -65,8 +72,10 @@ export function StatusTab({
   const [, tick] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
-    if (sandboxState !== "running") return;
-    const id = setInterval(tick, 1_000);
+    if (sandboxState !== "running") {
+      return;
+    }
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [sandboxState]);
 
@@ -81,7 +90,7 @@ export function StatusTab({
         <span
           className={cn(
             "inline-block h-2 w-2 rounded-full",
-            stateColors[sandboxState] ?? "bg-ink-faint/40",
+            stateColors[sandboxState] ?? "bg-ink-faint/40"
           )}
         />
         <span className="text-sm font-semibold capitalize text-ink">
@@ -114,7 +123,7 @@ export function StatusTab({
                   ? "bg-success"
                   : remainingPct > 10
                     ? "bg-warning"
-                    : "bg-danger",
+                    : "bg-danger"
               )}
               style={{ width: `${remainingPct}%` }}
             />
@@ -132,7 +141,11 @@ export function StatusTab({
             ) : (
               <NodeIcon className="h-3.5 w-3.5 text-ink-faint" />
             )}
-            {runtime === "node24" ? "Node.js 24" : runtime === "python3.13" ? "Python 3.13" : runtime}
+            {runtime === "node24"
+              ? "Node.js 24"
+              : runtime === "python3.13"
+                ? "Python 3.13"
+                : runtime}
           </span>
         </div>
         {runtimeVersion && (

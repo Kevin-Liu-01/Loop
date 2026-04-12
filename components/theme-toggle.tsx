@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 import { buttonBase, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
-type ThemeToggleProps = {
+interface ThemeToggleProps {
   className?: string;
-};
+}
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
@@ -21,7 +21,13 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
 
   return (
     <button
-      aria-label={mounted ? (isLight ? "Switch to dark mode" : "Switch to light mode") : "Toggle theme"}
+      aria-label={
+        mounted
+          ? isLight
+            ? "Switch to dark mode"
+            : "Switch to light mode"
+          : "Toggle theme"
+      }
       className={cn(
         buttonBase,
         buttonVariants.soft,

@@ -6,31 +6,34 @@ import {
   importRemoteMcps,
   importRemoteSkill,
   listImportedMcps,
-  listImportedSkills
+  listImportedSkills,
 } from "@/lib/imports";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const importSchema = z.object({
   kind: z.enum(["skill", "mcp"]),
-  url: z.string().url(),
-  sourceName: z.string().optional(),
   sourceIconUrl: z.string().url().optional(),
+  sourceName: z.string().optional(),
+  url: z.string().url(),
 });
 
 export async function GET() {
   return withApiUsage(
     {
-      route: "/api/imports",
+      label: "List imports",
       method: "GET",
-      label: "List imports"
+      route: "/api/imports",
     },
     async () => {
-      const [skills, mcps] = await Promise.all([listImportedSkills(), listImportedMcps()]);
+      const [skills, mcps] = await Promise.all([
+        listImportedSkills(),
+        listImportedMcps(),
+      ]);
 
       return Response.json({
+        mcps,
         ok: true,
         skills,
-        mcps
       });
     }
   );
@@ -39,9 +42,9 @@ export async function GET() {
 export async function POST(request: Request) {
   return withApiUsage(
     {
-      route: "/api/imports",
+      label: "Import remote asset",
       method: "POST",
-      label: "Import remote asset"
+      route: "/api/imports",
     },
     async () => {
       try {
@@ -49,8 +52,8 @@ export async function POST(request: Request) {
 
         if (payload.kind === "skill") {
           const skill = await importRemoteSkill(payload.url, {
-            sourceName: payload.sourceName,
             sourceIconUrl: payload.sourceIconUrl,
+            sourceName: payload.sourceName,
           });
           const record = buildImportedSkillRecord(skill);
 
@@ -61,19 +64,19 @@ export async function POST(request: Request) {
           revalidatePath(record.href);
 
           await logUsageEvent({
+            categorySlug: skill.category,
+            details: payload.url,
             kind: "skill_import",
-            source: "api",
             label: "Imported skill",
             path: record.href,
             skillSlug: skill.slug,
-            categorySlug: skill.category,
-            details: payload.url
+            source: "api",
           });
 
           return Response.json({
-            ok: true,
             kind: "skill",
-            skill
+            ok: true,
+            skill,
           });
         }
 
@@ -83,9 +86,9 @@ export async function POST(request: Request) {
         revalidatePath("/agents");
 
         return Response.json({
-          ok: true,
           kind: "mcp",
-          mcps
+          mcps,
+          ok: true,
         });
       } catch (error) {
         if (error instanceof Error) {

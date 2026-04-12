@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import type { LoopUpdateSourceLog } from "@/lib/types";
 
-type RunMetadataBarProps = {
+interface RunMetadataBarProps {
   trigger: string;
   editorModel: string | null;
   startedAt: string | null;
@@ -14,16 +14,19 @@ type RunMetadataBarProps = {
   /** "compact" = 2x2 grid (inline), "full" = wider grid with sources/signals. */
   variant?: "compact" | "full";
   className?: string;
-};
+}
 
 const statCell = "grid gap-1 bg-paper-3 p-3";
 const statCellBordered = "grid gap-1 border border-line bg-paper-3 p-3";
-const label = "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
+const label =
+  "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
 const value = "text-sm font-semibold tracking-[-0.03em]";
 
 function formatDuration(startedAt: string, finishedAt: string): string {
   const ms = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
-  if (ms < 1000) return `${ms}ms`;
+  if (ms < 1000) {
+    return `${ms}ms`;
+  }
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
@@ -45,12 +48,16 @@ function CompactBar({
       </div>
       <div className={statCellBordered}>
         <small className={label}>editor</small>
-        <strong className={cn(value, "truncate")}>{editorModel ?? "pending"}</strong>
+        <strong className={cn(value, "truncate")}>
+          {editorModel ?? "pending"}
+        </strong>
       </div>
       <div className={statCellBordered}>
         <small className={label}>duration</small>
         <strong className={value}>
-          {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : "running..."}
+          {startedAt && finishedAt
+            ? formatDuration(startedAt, finishedAt)
+            : "running..."}
         </strong>
       </div>
       <div className={statCellBordered}>
@@ -59,7 +66,7 @@ function CompactBar({
           className={cn(
             value,
             status === "error" && "text-danger",
-            status === "running" && "text-warning",
+            status === "running" && "text-warning"
           )}
         >
           {status}
@@ -74,7 +81,9 @@ function CompactBar({
       {(addedSourceCount ?? 0) > 0 && (
         <div className={statCellBordered}>
           <small className={label}>sources discovered</small>
-          <strong className={cn(value, "text-emerald-600 dark:text-emerald-400")}>
+          <strong
+            className={cn(value, "text-emerald-600 dark:text-emerald-400")}
+          >
             +{addedSourceCount}
           </strong>
         </div>
@@ -96,7 +105,8 @@ function FullBar({
 }: RunMetadataBarProps) {
   const totalSignals = sourceLogs.reduce((acc, s) => acc + s.itemCount, 0);
   const sourcesDone = sourceLogs.filter((s) => s.status === "done").length;
-  const hasSearchMetrics = (searchesUsed ?? 0) > 0 || (addedSourceCount ?? 0) > 0;
+  const hasSearchMetrics =
+    (searchesUsed ?? 0) > 0 || (addedSourceCount ?? 0) > 0;
 
   return (
     <div
@@ -111,12 +121,16 @@ function FullBar({
       </div>
       <div className={statCell}>
         <small className={label}>editor</small>
-        <strong className={cn(value, "truncate")}>{editorModel ?? "pending"}</strong>
+        <strong className={cn(value, "truncate")}>
+          {editorModel ?? "pending"}
+        </strong>
       </div>
       <div className={statCell}>
         <small className={label}>duration</small>
         <strong className={value}>
-          {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : "running..."}
+          {startedAt && finishedAt
+            ? formatDuration(startedAt, finishedAt)
+            : "running..."}
         </strong>
       </div>
       <div className={statCell}>
@@ -153,7 +167,9 @@ function FullBar({
           {(addedSourceCount ?? 0) > 0 && (
             <div className={statCell}>
               <small className={label}>sources discovered</small>
-              <strong className={cn(value, "text-emerald-600 dark:text-emerald-400")}>
+              <strong
+                className={cn(value, "text-emerald-600 dark:text-emerald-400")}
+              >
                 +{addedSourceCount}
               </strong>
             </div>
@@ -166,5 +182,9 @@ function FullBar({
 
 export function RunMetadataBar(props: RunMetadataBarProps) {
   const { variant = "compact" } = props;
-  return variant === "full" ? <FullBar {...props} /> : <CompactBar {...props} />;
+  return variant === "full" ? (
+    <FullBar {...props} />
+  ) : (
+    <CompactBar {...props} />
+  );
 }

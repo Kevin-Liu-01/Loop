@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-
 import Image from "next/image";
+import { useState } from "react";
 
 import { AutomationIcon, GlobeIcon } from "@/components/frontier-icons";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
-import { EXTERNAL_SKILL_SOURCES, type ExternalSkillSource } from "@/lib/external-skill-sources";
+import { EXTERNAL_SKILL_SOURCES } from "@/lib/external-skill-sources";
+import type { ExternalSkillSource } from "@/lib/external-skill-sources";
 import { formatShortDate } from "@/lib/format";
 import { getNextWeeklyImportRunUtc } from "@/lib/weekly-import-schedule";
 
@@ -15,14 +15,18 @@ function formatRelativeDate(date: Date): string {
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Tomorrow";
+  if (diffDays <= 0) {
+    return "Today";
+  }
+  if (diffDays === 1) {
+    return "Tomorrow";
+  }
   return `In ${diffDays} days`;
 }
 
-type ImportSourcesListProps = {
+interface ImportSourcesListProps {
   isAdmin?: boolean;
-};
+}
 
 export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
   const { timeZone } = useAppTimezone();
@@ -38,12 +42,14 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
       const res = await fetch("/api/admin/imports", { method: "POST" });
       const data = await res.json();
       if (data.ok) {
-        setLastResult(`Imported ${data.imported}, skipped ${data.skipped}, errors ${data.errors}`);
+        setLastResult(
+          `Imported ${data.imported}, skipped ${data.skipped}, errors ${data.errors}`
+        );
       } else {
         setLastResult(data.error ?? "Import failed");
       }
-    } catch (err) {
-      setLastResult(err instanceof Error ? err.message : "Network error");
+    } catch (error) {
+      setLastResult(error instanceof Error ? error.message : "Network error");
     } finally {
       setRunning(false);
     }
@@ -53,7 +59,10 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
     <div className="grid gap-3">
       {/* Next import ribbon */}
       <div className="flex items-center gap-2.5 rounded-lg border border-accent/15 bg-accent/[0.04] px-3 py-2.5 dark:bg-accent/[0.06]">
-        <AutomationIcon className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+        <AutomationIcon
+          className="h-3.5 w-3.5 shrink-0 text-accent"
+          aria-hidden
+        />
         <div className="min-w-0 flex-1">
           <span className="text-xs font-medium text-ink">
             Next import: {formatRelativeDate(nextImport)}
@@ -80,12 +89,14 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
                 <span className="truncate text-[0.8125rem] font-medium text-ink group-hover:text-accent transition-colors">
                   {source.name}
                 </span>
-                <span className={cn(
-                  "shrink-0 rounded-sm px-1 py-px text-[0.5625rem] font-semibold uppercase tracking-wide",
-                  source.trustTier === "official"
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "bg-paper-2 text-ink-faint dark:bg-paper-2/80"
-                )}>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-sm px-1 py-px text-[0.5625rem] font-semibold uppercase tracking-wide",
+                    source.trustTier === "official"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-paper-2 text-ink-faint dark:bg-paper-2/80"
+                  )}
+                >
                   {source.trustTier}
                 </span>
               </div>
@@ -122,7 +133,7 @@ export function ImportSourcesList({ isAdmin }: ImportSourcesListProps) {
 const MONO_ICON_CLASS = "h-4 w-4 brightness-0 dark:invert";
 
 function SourceIcon({ source }: { source: ExternalSkillSource }) {
-  const iconUrl = source.iconUrl;
+  const { iconUrl } = source;
   const isLocal = iconUrl.startsWith("/");
 
   return (

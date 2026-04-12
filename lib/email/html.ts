@@ -11,10 +11,10 @@ export const BRAND_COLOR_HOVER = "#ff7a1a";
 
 export function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 export function emailWrapper(bodyContent: string): string {

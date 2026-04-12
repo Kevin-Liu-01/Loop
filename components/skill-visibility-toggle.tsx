@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { SkillVisibility } from "@/lib/types";
 
-type SkillVisibilityToggleProps = {
+interface SkillVisibilityToggleProps {
   slug: string;
   currentVisibility: SkillVisibility;
   canEdit: boolean;
-};
+}
 
 export function SkillVisibilityToggle({
   slug,
@@ -33,9 +33,9 @@ export function SkillVisibilityToggle({
       const response = await fetch(
         `/api/skills/${encodeURIComponent(slug)}/visibility`,
         {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
           body: JSON.stringify({ visibility: nextVisibility }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
         }
       );
 
@@ -55,9 +55,7 @@ export function SkillVisibilityToggle({
   }
 
   if (!canEdit) {
-    return (
-      <Badge color={isPublic ? "green" : "neutral"}>{label}</Badge>
-    );
+    return <Badge color={isPublic ? "green" : "neutral"}>{label}</Badge>;
   }
 
   return (

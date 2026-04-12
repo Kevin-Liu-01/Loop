@@ -1,9 +1,8 @@
+import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 
-import { auth } from "@clerk/nextjs/server";
-
-import { HomeShell } from "@/components/home-shell";
 import { LandingShell } from "@/components/home-landing/landing-shell";
+import { HomeShell } from "@/components/home-shell";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { listRecentImports } from "@/lib/db/recent-imports";
 import {
@@ -29,22 +28,22 @@ const LANDING_DESCRIPTION =
   "Loop monitors, evaluates, and updates your agent playbooks. Every skill stays optimal, every parameter stays current.";
 
 export const metadata: Metadata = {
-  title: { absolute: SEO_DEFAULT_TITLE },
   description: LANDING_DESCRIPTION,
   openGraph: {
-    title: SEO_DEFAULT_TITLE,
     description: LANDING_DESCRIPTION,
-    url: buildSiteUrl("/").toString(),
-    siteName: SITE_NAME,
-    type: "website",
-    locale: "en_US",
     images: buildDefaultOpenGraphImages(),
+    locale: "en_US",
+    siteName: SITE_NAME,
+    title: SEO_DEFAULT_TITLE,
+    type: "website",
+    url: buildSiteUrl("/").toString(),
   },
+  title: { absolute: SEO_DEFAULT_TITLE },
   twitter: {
     card: "summary_large_image",
-    title: SEO_DEFAULT_TITLE,
     description: LANDING_DESCRIPTION,
     images: buildDefaultTwitterImageUrls(),
+    title: SEO_DEFAULT_TITLE,
   },
 };
 
@@ -70,7 +69,9 @@ async function AuthenticatedDashboard() {
     getSystemSnapshot({ timeZone }),
     listRecentImports(20),
   ]);
-  const usageOverview = buildUsageOverview(systemState.usageEvents, { timeZone });
+  const usageOverview = buildUsageOverview(systemState.usageEvents, {
+    timeZone,
+  });
 
   return (
     <>

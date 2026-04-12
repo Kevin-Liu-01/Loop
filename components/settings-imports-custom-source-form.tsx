@@ -5,15 +5,20 @@ import { FieldGroup, FieldLabel, textFieldBase } from "@/components/ui/field";
 import { LinkButton } from "@/components/ui/link-button";
 import { cn } from "@/lib/cn";
 
-type SettingsImportsCustomSourceFormProps = {
+interface SettingsImportsCustomSourceFormProps {
   isOperator: boolean;
-};
+}
 
-export function SettingsImportsCustomSourceForm({ isOperator }: SettingsImportsCustomSourceFormProps) {
+export function SettingsImportsCustomSourceForm({
+  isOperator,
+}: SettingsImportsCustomSourceFormProps) {
   return (
     <>
       <form
-        className={cn("grid gap-4", !isOperator && "pointer-events-none opacity-60")}
+        className={cn(
+          "grid gap-4",
+          !isOperator && "pointer-events-none opacity-60"
+        )}
         id="settings-imports-custom-source"
         onSubmit={(e) => {
           e.preventDefault();
@@ -69,7 +74,11 @@ export function SettingsImportsCustomSourceForm({ isOperator }: SettingsImportsC
       </form>
 
       <div className="relative z-[1] flex flex-wrap items-center gap-3">
-        <Button disabled={!isOperator} form="settings-imports-custom-source" type="submit">
+        <Button
+          disabled={!isOperator}
+          form="settings-imports-custom-source"
+          type="submit"
+        >
           Add import source
         </Button>
         {!isOperator ? (
@@ -77,7 +86,9 @@ export function SettingsImportsCustomSourceForm({ isOperator }: SettingsImportsC
             View plans
           </LinkButton>
         ) : (
-          <p className="m-0 text-xs text-ink-faint">Saving custom sources will ship in a follow-up release.</p>
+          <p className="m-0 text-xs text-ink-faint">
+            Saving custom sources will ship in a follow-up release.
+          </p>
         )}
       </div>
     </>

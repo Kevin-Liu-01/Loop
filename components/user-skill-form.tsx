@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
 import { ImageIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { AgentDocsEditor } from "@/components/agent-docs-editor";
 import {
@@ -15,7 +14,6 @@ import {
   ResetIcon,
   WalletIcon,
 } from "@/components/frontier-icons";
-import { Panel, PanelHead } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import {
   FieldGroup,
@@ -24,9 +22,9 @@ import {
   textFieldBase,
   textFieldCode,
 } from "@/components/ui/field";
+import { Panel, PanelHead } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { Tip } from "@/components/ui/tip";
-import { cn } from "@/lib/cn";
 import {
   CADENCE_ALL_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
@@ -34,15 +32,20 @@ import {
   DEFAULT_PREFERRED_HOUR,
   PREFERRED_HOUR_SELECT_OPTIONS,
 } from "@/lib/automation-constants";
+import { cn } from "@/lib/cn";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
+import type {
+  AgentDocs,
+  CategoryDefinition,
+  UserSkillCadence,
+} from "@/lib/types";
 import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
-import type { AgentDocs, CategoryDefinition, UserSkillCadence } from "@/lib/types";
 
-type UserSkillFormProps = {
+interface UserSkillFormProps {
   categories: CategoryDefinition[];
-};
+}
 
-type FormState = {
+interface FormState {
   title: string;
   description: string;
   category: string;
@@ -56,11 +59,11 @@ type FormState = {
   price: string;
   visibility: "public" | "private";
   agentDocs: AgentDocs;
-};
+}
 
 const VISIBILITY_OPTIONS = [
-  { value: "private", label: "Private -- only you can see it" },
-  { value: "public", label: "Public -- visible in catalog" },
+  { label: "Private -- only you can see it", value: "private" },
+  { label: "Public -- visible in catalog", value: "public" },
 ];
 
 const STORAGE_KEY = "loop.user-skill-draft";
@@ -70,18 +73,8 @@ const fieldLabel =
 
 function createInitialState(categories: CategoryDefinition[]): FormState {
   return {
-    title: "",
-    description: "",
-    category: categories[0]?.slug ?? "frontend",
-    tags: "",
-    sourceUrls: "",
-    cadence: "daily",
-    preferredHour: DEFAULT_PREFERRED_HOUR,
-    preferredDay: DEFAULT_PREFERRED_DAY,
-    automationPrompt: "",
-    price: "",
-    visibility: "private",
     agentDocs: {},
+    automationPrompt: "",
     body: [
       "# Skill Title",
       "",
@@ -134,15 +127,25 @@ function createInitialState(categories: CategoryDefinition[]): FormState {
       "- [ ] Are edge cases handled?",
       "- [ ] Is the guidance actionable and specific?",
     ].join("\n"),
+    cadence: "daily",
+    category: categories[0]?.slug ?? "frontend",
+    description: "",
+    preferredDay: DEFAULT_PREFERRED_DAY,
+    preferredHour: DEFAULT_PREFERRED_HOUR,
+    price: "",
+    sourceUrls: "",
+    tags: "",
+    title: "",
+    visibility: "private",
   };
 }
 
 function slugifyPreview(input: string): string {
   return input
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
+    .replaceAll(/[^\w\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-");
+    .replaceAll(/\s+/g, "-");
 }
 
 function SchedulePreview({
@@ -154,7 +157,9 @@ function SchedulePreview({
   preferredHour: number;
   preferredDay: number;
 }) {
-  if (cadence === "manual") return null;
+  if (cadence === "manual") {
+    return null;
+  }
 
   const now = new Date();
   const nextRun = formatNextRun(cadence, preferredHour, preferredDay);
@@ -162,7 +167,7 @@ function SchedulePreview({
     cadence,
     now.getFullYear(),
     now.getMonth(),
-    preferredDay,
+    preferredDay
   );
 
   return (
@@ -185,7 +190,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<FormState>(() =>
-    createInitialState(categories),
+    createInitialState(categories)
   );
   const [error, setError] = useState<string | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
@@ -193,7 +198,9 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
 
   useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
 
     try {
       const parsed = JSON.parse(raw) as Partial<FormState>;
@@ -213,7 +220,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
         .split("\n")
         .map((value) => value.trim())
         .filter(Boolean),
-    [state.sourceUrls],
+    [state.sourceUrls]
   );
   const tagList = useMemo(
     () =>
@@ -221,11 +228,11 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean),
-    [state.tags],
+    [state.tags]
   );
   const slugPreview = useMemo(
     () => slugifyPreview(state.title) || "your-skill-slug",
-    [state.title],
+    [state.title]
   );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -234,7 +241,9 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
 
   function handleIconSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const ALLOWED = new Set([
       "image/png",
@@ -265,34 +274,34 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
 
     startTransition(async () => {
       const response = await fetch("/api/skills", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          title: state.title,
-          description: state.description,
-          category: state.category,
-          ownerName: "",
-          tags: tagList,
-          sourceUrls: sourceList,
-          autoUpdate: state.cadence !== "manual",
-          automationCadence: state.cadence,
-          automationPrompt: state.automationPrompt,
-          preferredHour: state.preferredHour,
-          preferredDay:
-            state.cadence === "weekly" ? state.preferredDay : undefined,
-          body: state.body,
-          visibility: state.visibility,
           agentDocs:
             Object.keys(state.agentDocs).length > 0
               ? state.agentDocs
               : undefined,
+          autoUpdate: state.cadence !== "manual",
+          automationCadence: state.cadence,
+          automationPrompt: state.automationPrompt,
+          body: state.body,
+          category: state.category,
+          description: state.description,
+          ownerName: "",
+          preferredDay:
+            state.cadence === "weekly" ? state.preferredDay : undefined,
+          preferredHour: state.preferredHour,
           price: state.price
             ? {
-                amount: Math.round(parseFloat(state.price) * 100),
+                amount: Math.round(Number.parseFloat(state.price) * 100),
                 currency: "usd",
               }
             : null,
+          sourceUrls: sourceList,
+          tags: tagList,
+          title: state.title,
+          visibility: state.visibility,
         }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
       const payload = (await response.json().catch(() => ({}))) as {
@@ -309,8 +318,8 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
         const formData = new FormData();
         formData.append("icon", iconFile);
         await fetch(`/api/skills/${encodeURIComponent(payload.slug)}/icon`, {
-          method: "POST",
           body: formData,
+          method: "POST",
         });
       }
 
@@ -371,8 +380,8 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
               price
             </small>
             <strong className="text-sm font-semibold text-ink">
-              {state.price && parseFloat(state.price) > 0
-                ? `$${parseFloat(state.price).toFixed(2)}`
+              {state.price && Number.parseFloat(state.price) > 0
+                ? `$${Number.parseFloat(state.price).toFixed(2)}`
                 : "Free"}
             </strong>
           </div>
@@ -452,8 +461,8 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
             <Select
               onChange={(v) => update("category", v)}
               options={categories.map((c) => ({
-                value: c.slug,
                 label: c.title,
+                value: c.slug,
               }))}
               value={state.category}
             />
@@ -488,7 +497,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
             "grid gap-4 max-sm:grid-cols-1",
             state.cadence === "weekly"
               ? "grid-cols-[1fr_1fr_1.5fr]"
-              : "grid-cols-[1fr_1.5fr]",
+              : "grid-cols-[1fr_1.5fr]"
           )}
         >
           <FieldGroup>
@@ -506,8 +515,8 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
               <Select
                 onChange={(v) => update("preferredDay", Number(v))}
                 options={DAY_OF_WEEK_OPTIONS.map((o) => ({
-                  value: o.value,
                   label: o.label,
+                  value: o.value,
                 }))}
                 value={String(state.preferredDay)}
               />

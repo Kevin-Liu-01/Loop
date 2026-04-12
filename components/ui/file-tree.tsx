@@ -1,35 +1,46 @@
-import { FileCodeIcon, FileIcon, FolderIcon, FolderOpenIcon } from "@/components/frontier-icons";
+import {
+  FileCodeIcon,
+  FileIcon,
+  FolderIcon,
+  FolderOpenIcon,
+} from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 
-export type FileTreeEntry = {
+export interface FileTreeEntry {
   name: string;
   type: "file" | "folder";
   icon?: "markdown" | "code" | "generic";
   children?: FileTreeEntry[];
-};
+}
 
-type FileTreeProps = {
+interface FileTreeProps {
   entries: FileTreeEntry[];
   className?: string;
-};
+}
 
-type FileTreeNodeProps = {
+interface FileTreeNodeProps {
   entry: FileTreeEntry;
   depth: number;
   isLast: boolean;
   parentPrefixes: boolean[];
-};
+}
 
 const ICON_CLASS = "h-3.5 w-3.5 shrink-0";
 
 function getFileIcon(entry: FileTreeEntry) {
   if (entry.type === "folder") {
-    return entry.children && entry.children.length > 0
-      ? <FolderOpenIcon className={cn(ICON_CLASS, "text-accent")} />
-      : <FolderIcon className={cn(ICON_CLASS, "text-ink-soft")} />;
+    return entry.children && entry.children.length > 0 ? (
+      <FolderOpenIcon className={cn(ICON_CLASS, "text-accent")} />
+    ) : (
+      <FolderIcon className={cn(ICON_CLASS, "text-ink-soft")} />
+    );
   }
   if (entry.icon === "markdown" || entry.name.endsWith(".md")) {
-    return <FileCodeIcon className={cn(ICON_CLASS, "text-blue-500 dark:text-blue-400")} />;
+    return (
+      <FileCodeIcon
+        className={cn(ICON_CLASS, "text-blue-500 dark:text-blue-400")}
+      />
+    );
   }
   if (entry.icon === "code") {
     return <FileCodeIcon className={cn(ICON_CLASS, "text-ink-soft")} />;
@@ -37,7 +48,13 @@ function getFileIcon(entry: FileTreeEntry) {
   return <FileIcon className={cn(ICON_CLASS, "text-ink-faint")} />;
 }
 
-function TreePrefix({ parentPrefixes, isLast }: { parentPrefixes: boolean[]; isLast: boolean }) {
+function TreePrefix({
+  parentPrefixes,
+  isLast,
+}: {
+  parentPrefixes: boolean[];
+  isLast: boolean;
+}) {
   return (
     <span className="inline-flex select-none text-line" aria-hidden>
       {parentPrefixes.map((isParentLast, i) => (
@@ -52,18 +69,27 @@ function TreePrefix({ parentPrefixes, isLast }: { parentPrefixes: boolean[]; isL
   );
 }
 
-function FileTreeNode({ entry, depth, isLast, parentPrefixes }: FileTreeNodeProps) {
+function FileTreeNode({
+  entry,
+  depth,
+  isLast,
+  parentPrefixes,
+}: FileTreeNodeProps) {
   const children = entry.children ?? [];
 
   return (
     <>
       <div className="flex items-center gap-1.5 py-1 font-mono text-[0.8rem] leading-none">
-        {depth > 0 && <TreePrefix parentPrefixes={parentPrefixes} isLast={isLast} />}
+        {depth > 0 && (
+          <TreePrefix parentPrefixes={parentPrefixes} isLast={isLast} />
+        )}
         {getFileIcon(entry)}
-        <span className={cn(
-          "truncate",
-          entry.type === "folder" ? "font-medium text-ink" : "text-ink-soft"
-        )}>
+        <span
+          className={cn(
+            "truncate",
+            entry.type === "folder" ? "font-medium text-ink" : "text-ink-soft"
+          )}
+        >
           {entry.name}
         </span>
       </div>
@@ -81,7 +107,9 @@ function FileTreeNode({ entry, depth, isLast, parentPrefixes }: FileTreeNodeProp
 }
 
 export function FileTree({ entries, className }: FileTreeProps) {
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return null;
+  }
 
   return (
     <div

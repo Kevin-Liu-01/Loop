@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 import { AutomationIcon, GlobeIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FieldGroup, textFieldBase, textFieldArea } from "@/components/ui/field";
+import {
+  FieldGroup,
+  textFieldBase,
+  textFieldArea,
+} from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
-import { SkillIcon } from "@/components/ui/skill-icon";
 import {
   Dialog,
   DialogContent,
@@ -18,25 +21,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
+import { SkillIcon } from "@/components/ui/skill-icon";
 import { Tip } from "@/components/ui/tip";
+import {
+  CADENCE_ALL_OPTIONS,
+  DAY_OF_WEEK_OPTIONS,
+  DEFAULT_PREFERRED_DAY,
+  DEFAULT_PREFERRED_HOUR,
+  PREFERRED_HOUR_SELECT_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
-import { formatNextRun, formatScheduleLabel, countMonthlyRuns } from "@/lib/schedule";
-import type { AutomationSummary, SourceDefinition, UserSkillCadence } from "@/lib/types";
+import {
+  formatNextRun,
+  formatScheduleLabel,
+  countMonthlyRuns,
+} from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
-import { CADENCE_ALL_OPTIONS, DAY_OF_WEEK_OPTIONS, DEFAULT_PREFERRED_DAY, DEFAULT_PREFERRED_HOUR, PREFERRED_HOUR_SELECT_OPTIONS, STATUS_OPTIONS } from "@/lib/automation-constants";
+import type {
+  AutomationSummary,
+  SourceDefinition,
+  UserSkillCadence,
+} from "@/lib/types";
 import type { CategorySlug } from "@/lib/types";
 
 const MODEL_OPTIONS = [
-  { value: "", label: "Default (auto)" },
-  { value: "gpt-4o", label: "GPT-4o" },
-  { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-  { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
-  { value: "claude-haiku-3.5", label: "Claude Haiku 3.5" },
+  { label: "Default (auto)", value: "" },
+  { label: "GPT-4o", value: "gpt-4o" },
+  { label: "GPT-4o Mini", value: "gpt-4o-mini" },
+  { label: "Claude Sonnet 4", value: "claude-sonnet-4-20250514" },
+  { label: "Claude Haiku 3.5", value: "claude-haiku-3.5" },
 ] as const;
 
-const fieldLabel = "text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-ink-faint";
+const fieldLabel =
+  "text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-ink-faint";
 
-type AutomationEditModalProps = {
+interface AutomationEditModalProps {
   automation: AutomationSummary;
   open: boolean;
   onClose: () => void;
@@ -48,7 +68,7 @@ type AutomationEditModalProps = {
   canManage?: boolean;
   isOperator?: boolean;
   initialPreferredHour?: number;
-};
+}
 
 export function AutomationEditModal({
   automation,
@@ -65,12 +85,22 @@ export function AutomationEditModal({
 }: AutomationEditModalProps) {
   const router = useRouter();
   const [name, setName] = useState(automation.name);
-  const [cadence, setCadence] = useState<UserSkillCadence>(automation.cadence ?? "daily");
-  const [status, setStatus] = useState<"ACTIVE" | "PAUSED">(automation.status as "ACTIVE" | "PAUSED");
+  const [cadence, setCadence] = useState<UserSkillCadence>(
+    automation.cadence ?? "daily"
+  );
+  const [status, setStatus] = useState<"ACTIVE" | "PAUSED">(
+    automation.status as "ACTIVE" | "PAUSED"
+  );
   const [prompt, setPrompt] = useState(automation.prompt);
-  const [preferredModel, setPreferredModel] = useState(automation.preferredModel ?? "");
-  const [preferredHour, setPreferredHour] = useState(initialPreferredHour ?? DEFAULT_PREFERRED_HOUR);
-  const [preferredDay, setPreferredDay] = useState(automation.preferredDay ?? DEFAULT_PREFERRED_DAY);
+  const [preferredModel, setPreferredModel] = useState(
+    automation.preferredModel ?? ""
+  );
+  const [preferredHour, setPreferredHour] = useState(
+    initialPreferredHour ?? DEFAULT_PREFERRED_HOUR
+  );
+  const [preferredDay, setPreferredDay] = useState(
+    automation.preferredDay ?? DEFAULT_PREFERRED_DAY
+  );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -95,12 +125,22 @@ export function AutomationEditModal({
 
     startTransition(async () => {
       const response = await fetch(`/api/automations/${automation.id}`, {
-        method: "PATCH",
+        body: JSON.stringify({
+          cadence,
+          name,
+          preferredDay,
+          preferredHour,
+          preferredModel: preferredModel || undefined,
+          prompt,
+          status,
+        }),
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, cadence, status, prompt, preferredModel: preferredModel || undefined, preferredHour, preferredDay })
+        method: "PATCH",
       });
 
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
       if (!response.ok) {
         setError(payload.error ?? "Unable to update automation.");
         return;
@@ -112,15 +152,23 @@ export function AutomationEditModal({
   }
 
   function handleDelete() {
-    if (!confirm(`Disable automation for "${linkedSkillLabel || automation.name}"?`)) return;
+    if (
+      !confirm(
+        `Disable automation for "${linkedSkillLabel || automation.name}"?`
+      )
+    ) {
+      return;
+    }
 
     startDeleteTransition(async () => {
       const response = await fetch(`/api/automations/${automation.id}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
         setError(payload.error ?? "Unable to disable automation.");
         return;
       }
@@ -131,22 +179,43 @@ export function AutomationEditModal({
   }
 
   const now = new Date();
-  const monthlyRuns = countMonthlyRuns(cadence, now.getFullYear(), now.getMonth(), preferredDay);
-  const nextRunLabel = status === "PAUSED" ? "Paused" : formatNextRun(cadence, preferredHour, preferredDay);
-  const previewScheduleLabel = formatScheduleLabel(cadence, preferredHour, preferredDay);
+  const monthlyRuns = countMonthlyRuns(
+    cadence,
+    now.getFullYear(),
+    now.getMonth(),
+    preferredDay
+  );
+  const nextRunLabel =
+    status === "PAUSED"
+      ? "Paused"
+      : formatNextRun(cadence, preferredHour, preferredDay);
+  const previewScheduleLabel = formatScheduleLabel(
+    cadence,
+    preferredHour,
+    preferredDay
+  );
   const isActive = status === "ACTIVE";
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="2xl">
         <DialogHeader className="gap-3">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden border",
-              isActive
-                ? "border-accent/25"
-                : "border-line bg-paper-3 text-ink-faint"
-            )}>
+            <div
+              className={cn(
+                "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden border",
+                isActive
+                  ? "border-accent/25"
+                  : "border-line bg-paper-3 text-ink-faint"
+              )}
+            >
               {skillSlug || linkedSlug ? (
                 <SkillIcon
                   flush
@@ -166,14 +235,22 @@ export function AutomationEditModal({
                 {linkedSkillLabel ? (
                   <>
                     {linkedSlug ? (
-                      <Link className="font-medium text-ink hover:text-accent transition-colors" href={`/skills/${linkedSlug}`}>
+                      <Link
+                        className="font-medium text-ink hover:text-accent transition-colors"
+                        href={`/skills/${linkedSlug}`}
+                      >
                         {linkedSkillLabel}
                       </Link>
                     ) : (
-                      <span className="font-medium text-ink">{linkedSkillLabel}</span>
+                      <span className="font-medium text-ink">
+                        {linkedSkillLabel}
+                      </span>
                     )}
                     {skillCategory ? (
-                      <Badge color={getTagColorForCategory(skillCategory)} size="sm">
+                      <Badge
+                        color={getTagColorForCategory(skillCategory)}
+                        size="sm"
+                      >
                         {formatTagLabel(skillCategory)}
                       </Badge>
                     ) : null}
@@ -186,18 +263,42 @@ export function AutomationEditModal({
           </div>
         </DialogHeader>
 
-        <form className="flex min-h-0 flex-1 flex-col gap-0" onSubmit={handleSave}>
+        <form
+          className="flex min-h-0 flex-1 flex-col gap-0"
+          onSubmit={handleSave}
+        >
           <div className="min-h-0 flex-1 overflow-y-auto">
             {/* Stats ribbon */}
             <div className="grid grid-cols-3 divide-x divide-line border-b border-line bg-paper-2/40 dark:bg-paper-2/20">
               <Tip content="When the next scheduled run fires" side="bottom">
-                <div><StatCell label="Next run" value={nextRunLabel} muted={!isActive} /></div>
+                <div>
+                  <StatCell
+                    label="Next run"
+                    value={nextRunLabel}
+                    muted={!isActive}
+                  />
+                </div>
               </Tip>
               <Tip content="Estimated runs this calendar month" side="bottom">
-                <div><StatCell label="This month" value={`${monthlyRuns} runs`} /></div>
+                <div>
+                  <StatCell label="This month" value={`${monthlyRuns} runs`} />
+                </div>
               </Tip>
-              <Tip content={isActive ? "Automation is running on schedule" : "Automation is paused – no runs will fire"} side="bottom">
-                <div><StatCell label="Status" value={isActive ? "Active" : "Paused"} accent={isActive} /></div>
+              <Tip
+                content={
+                  isActive
+                    ? "Automation is running on schedule"
+                    : "Automation is paused – no runs will fire"
+                }
+                side="bottom"
+              >
+                <div>
+                  <StatCell
+                    label="Status"
+                    value={isActive ? "Active" : "Paused"}
+                    accent={isActive}
+                  />
+                </div>
               </Tip>
             </div>
 
@@ -215,10 +316,14 @@ export function AutomationEditModal({
               </FieldGroup>
 
               {/* Schedule + Preferred Time + Day (when weekly) */}
-              <div className={cn(
-                "grid gap-4 max-sm:grid-cols-1",
-                cadence === "weekly" ? "grid-cols-[1fr_1fr_1.5fr]" : "grid-cols-[1fr_1.5fr]",
-              )}>
+              <div
+                className={cn(
+                  "grid gap-4 max-sm:grid-cols-1",
+                  cadence === "weekly"
+                    ? "grid-cols-[1fr_1fr_1.5fr]"
+                    : "grid-cols-[1fr_1.5fr]"
+                )}
+              >
                 <FieldGroup>
                   <span className={fieldLabel}>Schedule</span>
                   <Select
@@ -237,14 +342,20 @@ export function AutomationEditModal({
                       className="min-h-11 py-3 text-sm"
                       disabled={!canManage}
                       onChange={(v) => setPreferredDay(Number(v))}
-                      options={DAY_OF_WEEK_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                      options={DAY_OF_WEEK_OPTIONS.map((o) => ({
+                        label: o.label,
+                        value: o.value,
+                      }))}
                       value={String(preferredDay)}
                     />
                   </FieldGroup>
                 )}
 
                 <FieldGroup>
-                  <Tip content="The UTC time slot when this automation runs" side="top">
+                  <Tip
+                    content="The UTC time slot when this automation runs"
+                    side="top"
+                  >
                     <span className={fieldLabel}>Preferred time</span>
                   </Tip>
                   <Select
@@ -265,23 +376,39 @@ export function AutomationEditModal({
                     className="min-h-11 py-3 text-sm"
                     disabled={!canManage}
                     onChange={(v) => setStatus(v as "ACTIVE" | "PAUSED")}
-                    options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                    options={STATUS_OPTIONS.map((o) => ({
+                      label: o.label,
+                      value: o.value,
+                    }))}
                     value={status}
                   />
                 </FieldGroup>
 
                 <FieldGroup>
-                  <Tip content="Override the default model for this automation. Requires Operator subscription." side="top">
+                  <Tip
+                    content="Override the default model for this automation. Requires Operator subscription."
+                    side="top"
+                  >
                     <span className={fieldLabel}>
                       AI Model
-                      {!isOperator && <span className="ml-1 normal-case tracking-normal text-ink-faint/60">(Operator)</span>}
+                      {!isOperator && (
+                        <span className="ml-1 normal-case tracking-normal text-ink-faint/60">
+                          (Operator)
+                        </span>
+                      )}
                     </span>
                   </Tip>
                   <Select
-                    className={cn("min-h-11 py-3 text-sm", !isOperator && "opacity-40")}
+                    className={cn(
+                      "min-h-11 py-3 text-sm",
+                      !isOperator && "opacity-40"
+                    )}
                     disabled={!canManage || !isOperator}
                     onChange={setPreferredModel}
-                    options={MODEL_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                    options={MODEL_OPTIONS.map((o) => ({
+                      label: o.label,
+                      value: o.value,
+                    }))}
                     value={preferredModel}
                   />
                 </FieldGroup>
@@ -291,7 +418,11 @@ export function AutomationEditModal({
               <FieldGroup>
                 <span className={fieldLabel}>Prompt</span>
                 <textarea
-                  className={cn(textFieldBase, textFieldArea, "min-h-28 py-3 text-sm leading-relaxed")}
+                  className={cn(
+                    textFieldBase,
+                    textFieldArea,
+                    "min-h-28 py-3 text-sm leading-relaxed"
+                  )}
                   maxLength={2000}
                   onChange={(e) => setPrompt(e.target.value)}
                   readOnly={!canManage}
@@ -350,13 +481,18 @@ export function AutomationEditModal({
                 </div>
               )}
 
-              {error && <p className="m-0 text-sm font-medium text-danger">{error}</p>}
+              {error && (
+                <p className="m-0 text-sm font-medium text-danger">{error}</p>
+              )}
             </div>
           </div>
 
           {canManage ? (
             <DialogFooter className="justify-between sm:justify-between">
-              <Tip content="Permanently disable this automation for this skill" side="top">
+              <Tip
+                content="Permanently disable this automation for this skill"
+                side="top"
+              >
                 <Button
                   disabled={isDeleting || isPending}
                   onClick={handleDelete}
@@ -369,10 +505,19 @@ export function AutomationEditModal({
               </Tip>
 
               <div className="flex items-center gap-2">
-                <Button onClick={onClose} type="button" variant="ghost" size="sm">
+                <Button
+                  onClick={onClose}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                >
                   Cancel
                 </Button>
-                <Button disabled={isPending || !prompt.trim() || !name.trim()} size="sm" type="submit">
+                <Button
+                  disabled={isPending || !prompt.trim() || !name.trim()}
+                  size="sm"
+                  type="submit"
+                >
                   {isPending ? "Saving…" : "Save changes"}
                 </Button>
               </div>
@@ -406,10 +551,12 @@ function StatCell({
       <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint/70">
         {label}
       </span>
-      <span className={cn(
-        "text-sm font-medium tabular-nums",
-        accent ? "text-accent" : muted ? "text-ink-faint" : "text-ink",
-      )}>
+      <span
+        className={cn(
+          "text-sm font-medium tabular-nums",
+          accent ? "text-accent" : muted ? "text-ink-faint" : "text-ink"
+        )}
+      >
         {value}
       </span>
     </div>

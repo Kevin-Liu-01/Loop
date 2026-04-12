@@ -1,56 +1,60 @@
 "use client";
 
+import { AnimatePresence, motion, useTransform } from "motion/react";
+import type { MotionValue } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
 
-import { cn } from "@/lib/cn";
-import { formatTagLabel } from "@/lib/tag-utils";
-import {
-  DIFF_SCENES,
-  type DiffScene,
-  type DiffSceneLine,
-} from "@/lib/home-landing/skill-diff-scenes";
 import { useMouseParallax } from "@/hooks/use-mouse-parallax";
+import { cn } from "@/lib/cn";
+import { DIFF_SCENES } from "@/lib/home-landing/skill-diff-scenes";
+import type {
+  DiffScene,
+  DiffSceneLine,
+} from "@/lib/home-landing/skill-diff-scenes";
+import { formatTagLabel } from "@/lib/tag-utils";
 
 const CATEGORY_ACCENT: Record<string, string> = {
-  frontend: "oklch(0.72 0.16 55)",
   a2a: "oklch(0.68 0.14 265)",
-  security: "oklch(0.68 0.16 25)",
-  ops: "oklch(0.70 0.14 155)",
+  frontend: "oklch(0.72 0.16 55)",
   infra: "oklch(0.65 0.12 230)",
+  ops: "oklch(0.70 0.14 155)",
+  security: "oklch(0.68 0.16 25)",
   social: "oklch(0.70 0.15 330)",
 };
 
-const SCENE_INTERVAL_MS = 5_500;
+const SCENE_INTERVAL_MS = 5500;
 
 /* ── Line metadata helper ─────────────────────────────────── */
 
-type LineMeta = { lineNum: number; isOddContext: boolean };
+interface LineMeta {
+  lineNum: number;
+  isOddContext: boolean;
+}
 
 function computeLineMeta(lines: DiffSceneLine[]): LineMeta[] {
   let num = 1;
   let ctxIndex = 0;
   return lines.map((line) => {
     const isEmpty = line.type === "context" && !line.value;
-    if (isEmpty) return { lineNum: num, isOddContext: false };
+    if (isEmpty) {
+      return { isOddContext: false, lineNum: num };
+    }
     const current = num;
     num++;
     const isCtx = line.type === "context";
     const odd = isCtx ? ctxIndex % 2 === 1 : false;
-    if (isCtx) ctxIndex++;
-    else ctxIndex = 0;
-    return { lineNum: current, isOddContext: odd };
+    if (isCtx) {
+      ctxIndex++;
+    } else {
+      ctxIndex = 0;
+    }
+    return { isOddContext: odd, lineNum: current };
   });
 }
 
 /* ── Card placement presets ─────────────────────────────────── */
 
-type CardPlacement = {
+interface CardPlacement {
   xPx: number;
   yPx: number;
   zPx: number;
@@ -59,38 +63,38 @@ type CardPlacement = {
   scale: number;
   baseOpacity: number;
   parallaxStrength: number;
-};
+}
 
 const CARD_PLACEMENTS: CardPlacement[] = [
   {
-    xPx: -320,
-    yPx: 6,
-    zPx: -180,
+    baseOpacity: 0.6,
+    parallaxStrength: 0.3,
     rotateYDeg: 28,
     rotateZDeg: 0,
     scale: 1,
-    baseOpacity: 0.6,
-    parallaxStrength: 0.3,
+    xPx: -320,
+    yPx: 6,
+    zPx: -180,
   },
   {
-    xPx: 0,
-    yPx: 0,
-    zPx: 60,
+    baseOpacity: 1,
+    parallaxStrength: 0.7,
     rotateYDeg: 0,
     rotateZDeg: 0,
     scale: 1,
-    baseOpacity: 1,
-    parallaxStrength: 0.7,
+    xPx: 0,
+    yPx: 0,
+    zPx: 60,
   },
   {
-    xPx: 320,
-    yPx: 6,
-    zPx: -180,
+    baseOpacity: 0.6,
+    parallaxStrength: 0.3,
     rotateYDeg: -28,
     rotateZDeg: 0,
     scale: 1,
-    baseOpacity: 0.6,
-    parallaxStrength: 0.3,
+    xPx: 320,
+    yPx: 6,
+    zPx: -180,
   },
 ];
 
@@ -127,13 +131,13 @@ function HeroDiffLine({
       style={{ background: rowBg }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.22, delay: index * 0.018 }}
+      transition={{ delay: index * 0.018, duration: 0.22 }}
     >
       <span
         className="select-none self-stretch pr-1.5 text-right text-[0.5rem] leading-[1.85] tabular-nums"
         style={{
-          color: "var(--hdc-ln)",
           borderRight: "1px solid var(--hdc-ln-border)",
+          color: "var(--hdc-ln)",
         }}
       >
         {isEmpty ? "" : lineNum}
@@ -164,7 +168,7 @@ function HeroDiffLine({
         className={cn(
           "truncate pr-3 text-[0.6rem] leading-[1.7]",
           isRemoved && "line-through",
-          isHeading && "font-semibold",
+          isHeading && "font-semibold"
         )}
         style={{
           color: isAdded
@@ -193,7 +197,10 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
   return (
     <div
       className="border-b"
-      style={{ borderColor: "var(--hdc-divider)", background: "var(--hdc-tint)" }}
+      style={{
+        background: "var(--hdc-tint)",
+        borderColor: "var(--hdc-divider)",
+      }}
     >
       <div className="flex items-center gap-2.5 px-3.5 py-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -214,8 +221,8 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
           className="inline-flex h-[1.15rem] shrink-0 items-center rounded-full px-2 text-[0.55rem] font-semibold uppercase tracking-wide"
           style={{
             background: `color-mix(in oklch, ${accent}, transparent 85%)`,
-            color: accent,
             boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${accent}, transparent 72%)`,
+            color: accent,
           }}
         >
           {formatTagLabel(scene.category)}
@@ -227,18 +234,30 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
             border: "1px solid var(--hdc-ver-border)",
           }}
         >
-          <span style={{ color: "var(--hdc-ver-old)" }}>{scene.versionFrom}</span>
-          <span className="text-[0.5rem]" style={{ color: "var(--hdc-ver-arrow)" }}>→</span>
-          <span className="font-semibold" style={{ color: "var(--hdc-ver-new)" }}>{scene.versionTo}</span>
+          <span style={{ color: "var(--hdc-ver-old)" }}>
+            {scene.versionFrom}
+          </span>
+          <span
+            className="text-[0.5rem]"
+            style={{ color: "var(--hdc-ver-arrow)" }}
+          >
+            →
+          </span>
+          <span
+            className="font-semibold"
+            style={{ color: "var(--hdc-ver-new)" }}
+          >
+            {scene.versionTo}
+          </span>
         </span>
         <div className="ml-auto flex items-center gap-1">
           {added > 0 && (
             <span
               className="inline-flex h-[1.15rem] items-center rounded-[3px] px-1.5 text-[0.55rem] font-bold tabular-nums border"
               style={{
-                color: "var(--hdc-badge-add-text)",
                 background: "var(--hdc-badge-add-bg)",
                 borderColor: "var(--hdc-badge-add-border)",
+                color: "var(--hdc-badge-add-text)",
               }}
             >
               +{added}
@@ -248,9 +267,9 @@ function HeroCardHeader({ scene }: { scene: DiffScene }) {
             <span
               className="inline-flex h-[1.15rem] items-center rounded-[3px] px-1.5 text-[0.55rem] font-bold tabular-nums border"
               style={{
-                color: "var(--hdc-badge-rem-text)",
                 background: "var(--hdc-badge-rem-bg)",
                 borderColor: "var(--hdc-badge-rem-border)",
+                color: "var(--hdc-badge-rem-text)",
               }}
             >
               −{removed}
@@ -304,7 +323,10 @@ function DiffCardBody({ children }: { children: React.ReactNode }) {
       <div className="h-full overflow-hidden py-1">{children}</div>
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
-        style={{ background: "linear-gradient(to top, var(--hdc-fade-to), transparent)" }}
+        style={{
+          background:
+            "linear-gradient(to top, var(--hdc-fade-to), transparent)",
+        }}
       />
     </div>
   );
@@ -346,25 +368,25 @@ function FloatingCard({
 }) {
   const pxVal = useTransform(
     mouseX,
-    (v) => placement.xPx + v * placement.parallaxStrength * 20,
+    (v) => placement.xPx + v * placement.parallaxStrength * 20
   );
   const pyVal = useTransform(
     mouseY,
-    (v) => placement.yPx + v * placement.parallaxStrength * 12,
+    (v) => placement.yPx + v * placement.parallaxStrength * 12
   );
 
   return (
     <motion.div
       className={cn("col-start-1 row-start-1 w-full max-w-[380px]", className)}
       style={{
+        opacity: placement.baseOpacity,
+        rotateY: placement.rotateYDeg,
+        rotateZ: placement.rotateZDeg,
+        scale: placement.scale,
         x: pxVal,
         y: pyVal,
         z: placement.zPx,
         zIndex: placement.zPx > 0 ? 2 : 1,
-        rotateY: placement.rotateYDeg,
-        rotateZ: placement.rotateZDeg,
-        scale: placement.scale,
-        opacity: placement.baseOpacity,
       }}
     >
       {children}
@@ -386,7 +408,10 @@ function SceneDots({
   return (
     <div
       className="flex items-center justify-center gap-1.5 border-t py-2"
-      style={{ borderColor: "var(--hdc-divider)", background: "var(--hdc-tint)" }}
+      style={{
+        background: "var(--hdc-tint)",
+        borderColor: "var(--hdc-divider)",
+      }}
     >
       {Array.from({ length: count }, (_, i) => (
         <button
@@ -395,12 +420,10 @@ function SceneDots({
           onClick={() => onSelect(i)}
           className={cn(
             "h-1 rounded-full transition-all duration-300",
-            i === active ? "w-5 bg-accent/70" : "w-1",
+            i === active ? "w-5 bg-accent/70" : "w-1"
           )}
           style={
-            i !== active
-              ? { background: "var(--hdc-dot-inactive)" }
-              : undefined
+            i !== active ? { background: "var(--hdc-dot-inactive)" } : undefined
           }
           aria-label={`Show diff scene ${i + 1}`}
         />
@@ -418,16 +441,20 @@ export function HeroDiffField() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
+      "(prefers-reduced-motion: reduce)"
     ).matches;
-    if (reducedMotion) return;
+    if (reducedMotion) {
+      return;
+    }
 
     intervalRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % DIFF_SCENES.length);
     }, SCENE_INTERVAL_MS);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, []);
 
@@ -445,7 +472,8 @@ export function HeroDiffField() {
   const leftScene = DIFF_SCENES[(activeIndex + 1) % DIFF_SCENES.length]!;
   const rightScene = DIFF_SCENES[(activeIndex + 2) % DIFF_SCENES.length]!;
 
-  const centerAccent = CATEGORY_ACCENT[activeScene.category] ?? "oklch(0.70 0.12 55)";
+  const centerAccent =
+    CATEGORY_ACCENT[activeScene.category] ?? "oklch(0.70 0.12 55)";
 
   return (
     <motion.div
@@ -453,10 +481,10 @@ export function HeroDiffField() {
       style={{ perspective: "1600px", transformStyle: "preserve-3d" as const }}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
+      viewport={{ amount: 0.15, once: true }}
       transition={{
-        duration: 0.8,
         delay: 0.35,
+        duration: 0.8,
         ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
       }}
     >

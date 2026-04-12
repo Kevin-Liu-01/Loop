@@ -8,17 +8,17 @@ import {
   listUsageEventsSince as dbListUsageEventsSince,
   recordBillingEvent as dbRecordBillingEvent,
   upsertSubscription as dbUpsertSubscription,
-  listSubscriptions as dbListSubscriptions
+  listSubscriptions as dbListSubscriptions,
 } from "@/lib/db/system-state";
-import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
-import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 import type {
   BillingEventRecord,
   LoopRunRecord,
   RefreshRunRecord,
   StripeSubscriptionRecord,
-  UsageEventRecord
+  UsageEventRecord,
 } from "@/lib/types";
+import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
+import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 
 export async function recordRefreshRun(entry: RefreshRunRecord): Promise<void> {
   await dbRecordRefreshRun(entry);
@@ -28,11 +28,15 @@ export async function recordLoopRun(entry: LoopRunRecord): Promise<void> {
   await dbRecordLoopRun(entry);
 }
 
-export async function recordBillingEvent(entry: BillingEventRecord): Promise<void> {
+export async function recordBillingEvent(
+  entry: BillingEventRecord
+): Promise<void> {
   await dbRecordBillingEvent(entry);
 }
 
-export async function upsertSubscription(entry: StripeSubscriptionRecord): Promise<void> {
+export async function upsertSubscription(
+  entry: StripeSubscriptionRecord
+): Promise<void> {
   await dbUpsertSubscription(entry);
 }
 
@@ -47,16 +51,22 @@ export async function listLoopRuns(options?: {
   return dbListLoopRuns(options);
 }
 
-export async function listRefreshRuns(limit?: number): Promise<RefreshRunRecord[]> {
+export async function listRefreshRuns(
+  limit?: number
+): Promise<RefreshRunRecord[]> {
   return dbListRefreshRuns(limit);
 }
 
-export async function listUsageEvents(limit?: number): Promise<UsageEventRecord[]> {
+export async function listUsageEvents(
+  limit?: number
+): Promise<UsageEventRecord[]> {
   return dbListUsageEvents(limit);
 }
 
 /** Enough history for calendar “today vs yesterday” + rolling 24h charts. */
-export async function listUsageEventsForOverview(timeZone = "UTC"): Promise<UsageEventRecord[]> {
+export async function listUsageEventsForOverview(
+  timeZone = "UTC"
+): Promise<UsageEventRecord[]> {
   return dbListUsageEventsSince(
     usageEventsSinceIsoForOverview(new Date(), timeZone),
     USAGE_OVERVIEW_EVENTS_LIMIT

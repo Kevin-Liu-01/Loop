@@ -5,17 +5,17 @@ import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
 
 test("buildSkillAutomationSummaries maps tracked skill automation to editable summaries", () => {
   const summaries = buildSkillAutomationSummaries({
-    slug: "frontend-frontier",
-    title: "Frontend Frontier",
-    origin: "user",
     automation: {
-      enabled: true,
       cadence: "daily",
-      status: "active",
-      prompt: "Refresh the skill from trusted sources.",
+      enabled: true,
       preferredHour: 9,
+      prompt: "Refresh the skill from trusted sources.",
+      status: "active",
     },
     automations: [],
+    origin: "user",
+    slug: "frontend-frontier",
+    title: "Frontend Frontier",
   });
 
   assert.equal(summaries.length, 1);
@@ -27,16 +27,16 @@ test("buildSkillAutomationSummaries maps tracked skill automation to editable su
 
 test("buildSkillAutomationSummaries preserves paused/manual tracked automations", () => {
   const summaries = buildSkillAutomationSummaries({
-    slug: "security-best-practices",
-    title: "Security Best Practices",
-    origin: "user",
     automation: {
-      enabled: false,
       cadence: "manual",
-      status: "paused",
+      enabled: false,
       prompt: "Only refresh when asked.",
+      status: "paused",
     },
     automations: [],
+    origin: "user",
+    slug: "security-best-practices",
+    title: "Security Best Practices",
   });
 
   assert.equal(summaries[0]?.id, "security-best-practices");
@@ -47,18 +47,18 @@ test("buildSkillAutomationSummaries preserves paused/manual tracked automations"
 
 test("buildSkillAutomationSummaries includes preferredDay for weekly", () => {
   const summaries = buildSkillAutomationSummaries({
-    slug: "weekly-review",
-    title: "Weekly Review",
-    origin: "user",
     automation: {
-      enabled: true,
       cadence: "weekly",
-      status: "active",
-      prompt: "Run weekly review.",
-      preferredHour: 14,
+      enabled: true,
       preferredDay: 5,
+      preferredHour: 14,
+      prompt: "Run weekly review.",
+      status: "active",
     },
     automations: [],
+    origin: "user",
+    slug: "weekly-review",
+    title: "Weekly Review",
   });
 
   assert.equal(summaries[0]?.schedule, "Friday · 2:00 PM");

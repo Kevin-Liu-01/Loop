@@ -7,16 +7,18 @@
 
 import { SEED_MCP_DEFINITIONS } from "@/lib/db/seed-data/mcp-definitions";
 
-type CheckResult = {
+interface CheckResult {
   name: string;
   field: "manifestUrl" | "homepageUrl";
   url: string;
   status: number | "error";
   ok: boolean;
   redirect?: string;
-};
+}
 
-async function checkUrl(url: string): Promise<{ status: number | "error"; ok: boolean; redirect?: string }> {
+async function checkUrl(
+  url: string
+): Promise<{ status: number | "error"; ok: boolean; redirect?: string }> {
   try {
     const res = await fetch(url, {
       method: "HEAD",
@@ -24,7 +26,7 @@ async function checkUrl(url: string): Promise<{ status: number | "error"; ok: bo
       signal: AbortSignal.timeout(10_000),
     });
     const redirect = res.redirected ? res.url : undefined;
-    return { status: res.status, ok: res.ok, redirect };
+    return { ok: res.ok, redirect, status: res.status };
   } catch {
     try {
       const res = await fetch(url, {
@@ -33,9 +35,9 @@ async function checkUrl(url: string): Promise<{ status: number | "error"; ok: bo
         signal: AbortSignal.timeout(10_000),
       });
       const redirect = res.redirected ? res.url : undefined;
-      return { status: res.status, ok: res.ok, redirect };
+      return { ok: res.ok, redirect, status: res.status };
     } catch {
-      return { status: "error", ok: false };
+      return { ok: false, status: "error" };
     }
   }
 }
@@ -45,22 +47,22 @@ async function main() {
 
   const results: CheckResult[] = [];
   const CONCURRENCY = 8;
-  const tasks: Array<() => Promise<void>> = [];
+  const tasks: (() => Promise<void>)[] = [];
 
   for (const mcp of SEED_MCP_DEFINITIONS) {
     tasks.push(async () => {
       const manifest = await checkUrl(mcp.manifestUrl);
       results.push({
-        name: mcp.name,
         field: "manifestUrl",
+        name: mcp.name,
         url: mcp.manifestUrl,
         ...manifest,
       });
       if (mcp.homepageUrl) {
         const homepage = await checkUrl(mcp.homepageUrl);
         results.push({
-          name: mcp.name,
           field: "homepageUrl",
+          name: mcp.name,
           url: mcp.homepageUrl,
           ...homepage,
         });

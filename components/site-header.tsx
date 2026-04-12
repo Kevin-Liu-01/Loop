@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { MenuIcon } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
-import { PlusIcon, SearchIcon, SettingsIcon, TerminalIcon } from "@/components/frontier-icons";
+import {
+  PlusIcon,
+  SearchIcon,
+  SettingsIcon,
+  TerminalIcon,
+} from "@/components/frontier-icons";
 import { LoopLogo } from "@/components/loop-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -17,7 +21,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/shadcn/sheet";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/shadcn/tooltip";
 
 function openNewSkillModal() {
   window.dispatchEvent(new Event("loop:open-new-skill"));
@@ -41,15 +49,15 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
             className="h-8 w-8 text-accent"
             interactionActive={brandHover}
           />
-          <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em]">Loop</strong>
+          <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em]">
+            Loop
+          </strong>
         </Link>
 
         <div className="flex-1" />
 
         <Button
-          onClick={() =>
-            window.dispatchEvent(new Event("loop:open-palette"))
-          }
+          onClick={() => window.dispatchEvent(new Event("loop:open-palette"))}
           size="sm"
           type="button"
           variant="soft"
@@ -140,11 +148,21 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
                 New skill
               </Button>
             </Show>
-            <LinkButton className="w-full justify-start" href="/sandbox" size="sm" variant="soft">
+            <LinkButton
+              className="w-full justify-start"
+              href="/sandbox"
+              size="sm"
+              variant="soft"
+            >
               <TerminalIcon className="h-4 w-4" />
               Sandbox
             </LinkButton>
-            <LinkButton className="w-full justify-start" href="/settings" size="sm" variant="soft">
+            <LinkButton
+              className="w-full justify-start"
+              href="/settings"
+              size="sm"
+              variant="soft"
+            >
               <SettingsIcon className="h-4 w-4" />
               Settings
             </LinkButton>

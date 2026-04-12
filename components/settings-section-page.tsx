@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
+
 import { ChevronDownIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 import type { SettingsNavId } from "@/lib/settings-nav";
-import { SETTINGS_SECTION_META, type SettingsInfoBlock } from "@/lib/settings-section-meta";
+import { SETTINGS_SECTION_META } from "@/lib/settings-section-meta";
+import type { SettingsInfoBlock } from "@/lib/settings-section-meta";
 import { pageHeaderSub } from "@/lib/ui-layout";
 
-type SettingsSectionPageProps = {
+interface SettingsSectionPageProps {
   sectionId: SettingsNavId;
   children: React.ReactNode;
-};
+}
 
 function InfoAccordion({ blocks }: { blocks: SettingsInfoBlock[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -58,7 +60,10 @@ function InfoAccordion({ blocks }: { blocks: SettingsInfoBlock[] }) {
   );
 }
 
-export function SettingsSectionPage({ sectionId, children }: SettingsSectionPageProps) {
+export function SettingsSectionPage({
+  sectionId,
+  children,
+}: SettingsSectionPageProps) {
   const meta = SETTINGS_SECTION_META[sectionId];
   const allInfo = [...meta.beforePrimary, ...meta.afterPrimary];
 
@@ -68,7 +73,9 @@ export function SettingsSectionPage({ sectionId, children }: SettingsSectionPage
         <h1 className="m-0 font-serif text-[clamp(1.75rem,3vw,2.25rem)] font-medium tracking-[-0.03em] text-balance text-ink">
           {meta.heading}
         </h1>
-        <p className={cn(pageHeaderSub, "max-w-[min(100%,56ch)]")}>{meta.lead}</p>
+        <p className={cn(pageHeaderSub, "max-w-[min(100%,56ch)]")}>
+          {meta.lead}
+        </p>
       </header>
 
       {children}

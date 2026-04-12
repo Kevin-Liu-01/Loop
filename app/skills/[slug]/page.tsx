@@ -2,11 +2,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { getSkillRecordBySlug } from "@/lib/content";
 
-type SkillPageProps = {
+interface SkillPageProps {
   params: Promise<{
     slug: string;
   }>;
-};
+}
 
 export default async function SkillPage({ params }: SkillPageProps) {
   const { slug } = await params;

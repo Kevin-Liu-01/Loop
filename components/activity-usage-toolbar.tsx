@@ -5,42 +5,46 @@ import { useMemo } from "react";
 import { Select } from "@/components/ui/select";
 import { useUsageComparisonOptional } from "@/components/usage-comparison-context";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
+import { cn } from "@/lib/cn";
+import type { UsageOverview } from "@/lib/usage";
 import {
   USAGE_COMPARISON_LABELS,
   USAGE_COMPARISON_MODES,
-  type UsageComparisonMode,
 } from "@/lib/usage-comparison-modes";
+import type { UsageComparisonMode } from "@/lib/usage-comparison-modes";
 import { SUGGESTED_TIME_ZONES } from "@/lib/usage-timezones";
-import type { UsageOverview } from "@/lib/usage";
-import { cn } from "@/lib/cn";
 
 const compactSelect =
   "min-h-0 h-8 rounded-none border-line bg-paper-3 px-2 py-0 text-xs dark:bg-paper-2/90";
 
-export function ActivityUsageToolbar({ overview }: { overview: UsageOverview }) {
+export function ActivityUsageToolbar({
+  overview,
+}: {
+  overview: UsageOverview;
+}) {
   const ctx = useUsageComparisonOptional();
   const mode = ctx?.mode ?? "yesterday_same_time";
   const setMode = ctx?.setMode;
   const { timeZone, setTimeZone, browserTimeZone } = useAppTimezone();
 
   const zoneOptions = useMemo(() => {
-    const set = new Set<string>([...SUGGESTED_TIME_ZONES]);
+    const set = new Set<string>(SUGGESTED_TIME_ZONES);
     set.add(browserTimeZone);
     set.add(timeZone);
     set.add(overview.timeZone);
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return [...set].toSorted((a, b) => a.localeCompare(b));
   }, [browserTimeZone, timeZone, overview.timeZone]);
 
   const footnote = overview.comparisonFootnotes[mode];
 
   const comparisonOptions = USAGE_COMPARISON_MODES.map((m) => ({
-    value: m,
     label: USAGE_COMPARISON_LABELS[m],
+    value: m,
   }));
 
   const zoneSelectOptions = zoneOptions.map((z) => ({
-    value: z,
     label: z === browserTimeZone ? `${z} (browser)` : z,
+    value: z,
   }));
 
   return (
@@ -71,7 +75,9 @@ export function ActivityUsageToolbar({ overview }: { overview: UsageOverview }) 
         </div>
       </div>
       {footnote ? (
-        <p className="m-0 text-[0.62rem] leading-snug text-ink-faint">{footnote}</p>
+        <p className="m-0 text-[0.62rem] leading-snug text-ink-faint">
+          {footnote}
+        </p>
       ) : null}
     </div>
   );

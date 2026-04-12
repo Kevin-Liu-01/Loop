@@ -5,10 +5,10 @@ import { useEffect, useReducer } from "react";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { formatRelativeDate } from "@/lib/format";
 
-type RelativeTimeProps = {
+interface RelativeTimeProps {
   date: string;
   className?: string;
-};
+}
 
 export function RelativeTime({ date, className }: RelativeTimeProps) {
   const { timeZone } = useAppTimezone();
@@ -18,7 +18,6 @@ export function RelativeTime({ date, className }: RelativeTimeProps) {
     tick();
     const id = setInterval(tick, 60_000);
     return () => clearInterval(id);
-
   }, [date]);
 
   return (

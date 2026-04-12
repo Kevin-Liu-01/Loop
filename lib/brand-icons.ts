@@ -15,9 +15,9 @@ export { lookupBrandLogoUrl };
 // ---------------------------------------------------------------------------
 
 export const LOCAL_BRAND_SVGS: Record<string, string> = {
-  openai: "/brands/openai.svg",
   cursor: "/brands/cursor.svg",
   mcp: "/brands/mcp.svg",
+  openai: "/brands/openai.svg",
 };
 
 // ---------------------------------------------------------------------------
@@ -38,10 +38,14 @@ export function githubAvatar(org: string, size = 64): string {
 
 export function brandIconForDarkBg(key: string): string | undefined {
   const siUrl = lookupBrandLogoUrl(key);
-  if (siUrl?.includes("simpleicons.org")) return `${siUrl}/white`;
+  if (siUrl?.includes("simpleicons.org")) {
+    return `${siUrl}/white`;
+  }
 
   const local = LOCAL_BRAND_SVGS[key];
-  if (local) return local;
+  if (local) {
+    return local;
+  }
 
   return siUrl;
 }

@@ -1,9 +1,9 @@
-type SeoJsonLdProps = {
+interface SeoJsonLdProps {
   data: Record<string, unknown> | Record<string, unknown>[];
-};
+}
 
 function safeJsonLdStringify(payload: unknown): string {
-  return JSON.stringify(payload).replace(/</g, "\\u003c");
+  return JSON.stringify(payload).replaceAll("<", "\\u003c");
 }
 
 export function SeoJsonLd({ data }: SeoJsonLdProps) {

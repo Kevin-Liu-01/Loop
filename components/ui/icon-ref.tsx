@@ -1,18 +1,25 @@
 "use client";
 
 import { icons as lucideIcons } from "lucide-react";
-import type { IconRef } from "@/lib/skill-icons";
-import { cn } from "@/lib/cn";
 
-type IconRefViewProps = {
+import { cn } from "@/lib/cn";
+import type { IconRef } from "@/lib/skill-icons";
+
+interface IconRefViewProps {
   icon: IconRef;
   size?: number;
   className?: string;
   flush?: boolean;
   invert?: boolean;
-};
+}
 
-export function IconRefView({ icon, size = 20, className, flush, invert }: IconRefViewProps) {
+export function IconRefView({
+  icon,
+  size = 20,
+  className,
+  flush,
+  invert,
+}: IconRefViewProps) {
   if (icon.kind === "url") {
     const pad = Math.max(2, Math.round(size * 0.14));
     return (
@@ -20,13 +27,16 @@ export function IconRefView({ icon, size = 20, className, flush, invert }: IconR
         className={cn(
           "inline-flex shrink-0 items-center justify-center bg-white",
           flush ? "overflow-hidden" : "rounded-lg ring-1 ring-black/10",
-          className,
+          className
         )}
-        style={{ width: size, height: size }}
+        style={{ height: size, width: size }}
       >
         <img
           alt={icon.alt}
-          className={cn("shrink-0 object-contain", invert && "brightness-0 invert")}
+          className={cn(
+            "shrink-0 object-contain",
+            invert && "brightness-0 invert"
+          )}
           height={size - pad * 2}
           loading="lazy"
           src={icon.url}
@@ -42,7 +52,14 @@ export function IconRefView({ icon, size = 20, className, flush, invert }: IconR
     .join("") as keyof typeof lucideIcons;
 
   const LucideIcon = lucideIcons[pascalName];
-  if (!LucideIcon) return null;
+  if (!LucideIcon) {
+    return null;
+  }
 
-  return <LucideIcon className={cn("shrink-0 text-ink-soft", className)} size={size} />;
+  return (
+    <LucideIcon
+      className={cn("shrink-0 text-ink-soft", className)}
+      size={size}
+    />
+  );
 }

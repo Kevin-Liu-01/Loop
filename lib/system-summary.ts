@@ -1,12 +1,12 @@
 import { getLoopSnapshot } from "@/lib/refresh";
 import { listLoopRuns, listUsageEventsForOverview } from "@/lib/system-state";
 
-export type GetSystemSnapshotOptions = {
+export interface GetSystemSnapshotOptions {
   /** IANA timezone for usage fetch window + overview (default UTC). */
   timeZone?: string;
   /** Include private skills (for settings/admin views). */
   includePrivate?: boolean;
-};
+}
 
 export async function getSystemSnapshot(options?: GetSystemSnapshotOptions) {
   const timeZone = options?.timeZone ?? "UTC";

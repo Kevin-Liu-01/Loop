@@ -1,10 +1,14 @@
 "use client";
 
-import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
+import * as React from "react";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/shadcn/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/shadcn/dialog";
 import { cn } from "@/lib/cn";
 
 const Command = React.forwardRef<
@@ -28,7 +32,10 @@ function CommandDialog({
 }: React.ComponentPropsWithoutRef<typeof Dialog>) {
   return (
     <Dialog {...props}>
-      <DialogContent maxWidth="lg" className="overflow-hidden p-0 [&>.dialog-close]:hidden">
+      <DialogContent
+        maxWidth="lg"
+        className="overflow-hidden p-0 [&>.dialog-close]:hidden"
+      >
         <DialogTitle className="sr-only">Command palette</DialogTitle>
         <Command className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-ink-faint **:[[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3">
           {children}
@@ -42,7 +49,10 @@ const CommandInput = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b border-line px-3" cmdk-input-wrapper="">
+  <div
+    className="flex items-center border-b border-line px-3"
+    cmdk-input-wrapper=""
+  >
     <SearchIcon className="mr-2 h-4 w-4 shrink-0 text-ink-faint" />
     <CommandPrimitive.Input
       ref={ref}
@@ -125,10 +135,16 @@ const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-function CommandShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+function CommandShortcut({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn("ml-auto text-xs tracking-widest text-ink-faint", className)}
+      className={cn(
+        "ml-auto text-xs tracking-widest text-ink-faint",
+        className
+      )}
       {...props}
     />
   );

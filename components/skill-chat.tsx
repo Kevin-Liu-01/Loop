@@ -1,24 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { BotIcon, PlusIcon, ResetIcon, SendIcon, StopIcon } from "@/components/frontier-icons";
 import { ChatMessageBubble } from "@/components/chat-message-bubble";
 import { ConversationHistory } from "@/components/conversation-history";
+import {
+  BotIcon,
+  PlusIcon,
+  ResetIcon,
+  SendIcon,
+  StopIcon,
+} from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 import { textFieldArea, textFieldBase } from "@/components/ui/field";
-import { messageToText } from "@/lib/chat";
 import { Tip } from "@/components/ui/tip";
+import { messageToText } from "@/lib/chat";
 import { cn } from "@/lib/cn";
 
 const DRAFT_KEY = "loop.chat.draft";
 const CONVERSATION_KEY = "loop.chat.conversationId";
 
-type SkillChatProps = {
+interface SkillChatProps {
   starterPrompt: string;
   enabled: boolean;
-};
+}
 
 export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
   const { messages, sendMessage, status } = useChat();
@@ -49,25 +55,27 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
   }, [input]);
 
   const saveConversation = useCallback(async () => {
-    if (messages.length === 0) return;
+    if (messages.length === 0) {
+      return;
+    }
 
     const serialized = messages.map((m) => ({
+      content: messageToText(m),
+      createdAt: getTimestamp(m.id),
       id: m.id,
       role: m.role,
-      content: messageToText(m),
-      createdAt: getTimestamp(m.id)
     }));
 
     try {
       const response = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          id: conversationIdRef.current,
           channel: "copilot",
+          id: conversationIdRef.current,
+          messages: serialized,
           title: serialized[0]?.content.slice(0, 80) || "Copilot chat",
-          messages: serialized
-        })
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
       if (response.ok) {
@@ -107,16 +115,31 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
             onSelect={async (id) => {
               try {
                 const res = await fetch(`/api/conversations/${id}`);
-                if (!res.ok) return;
+                if (!res.ok) {
+                  return;
+                }
                 const { conversation } = await res.json();
                 conversationIdRef.current = conversation.id;
                 window.localStorage.setItem(CONVERSATION_KEY, conversation.id);
                 window.location.reload();
-              } catch { /* silent */ }
+              } catch {
+                /* silent */
+              }
             }}
           />
-          <Tip content={enabled ? "Copilot is connected and ready" : "Set the OPENAI_API_KEY environment variable to enable"} side="bottom">
-            <small className="text-ink-soft">{enabled ? "AI SDK online" : "Add OPENAI_API_KEY to enable answers"}</small>
+          <Tip
+            content={
+              enabled
+                ? "Copilot is connected and ready"
+                : "Set the OPENAI_API_KEY environment variable to enable"
+            }
+            side="bottom"
+          >
+            <small className="text-ink-soft">
+              {enabled
+                ? "AI SDK online"
+                : "Add OPENAI_API_KEY to enable answers"}
+            </small>
           </Tip>
         </div>
       </div>
@@ -124,7 +147,8 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
       <div className="chat-transcript">
         {messages.length === 0 ? (
           <div className="chat-message chat-message--assistant">
-            Ask for a skill, a category brief, or the next move. Answers use the local snapshot, not live web search.
+            Ask for a skill, a category brief, or the next move. Answers use the
+            local snapshot, not live web search.
           </div>
         ) : null}
 
@@ -142,7 +166,9 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
         className="grid gap-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!enabled || !input.trim()) return;
+          if (!enabled || !input.trim()) {
+            return;
+          }
           sendMessage({ text: input });
           setInput("");
         }}
@@ -173,7 +199,11 @@ export function SkillChat({ starterPrompt, enabled }: SkillChatProps) {
             </Button>
           </Tip>
           <Tip content="Restore the default starter prompt" side="top">
-            <Button onClick={() => setInput(starterPrompt)} type="button" variant="ghost">
+            <Button
+              onClick={() => setInput(starterPrompt)}
+              type="button"
+              variant="ghost"
+            >
               <ResetIcon className="h-3.5 w-3.5" />
               Reset prompt
             </Button>

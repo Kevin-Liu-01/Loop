@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { LOOP_GEAR_BODY_PATH, LOOP_GEAR_CHIP_PATH } from "@/lib/loop-logo-paths";
+import {
+  LOOP_GEAR_BODY_PATH,
+  LOOP_GEAR_CHIP_PATH,
+} from "@/lib/loop-logo-paths";
 
 test("loop logo paths are stable non-empty SVG d strings", () => {
   assert.match(LOOP_GEAR_BODY_PATH, /^M[\d .A-Za-z,-]+Z$/);

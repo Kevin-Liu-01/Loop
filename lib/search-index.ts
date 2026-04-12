@@ -7,70 +7,70 @@ import type {
   SearchIndex,
 } from "@/lib/types";
 
-type SearchIndexOptions = {
+interface SearchIndexOptions {
   kind?: SearchDocumentKind;
   limit?: number;
-};
+}
 
 export function buildSearchIndex(snapshot: LoopSnapshot): SearchIndex {
   const documents: SearchDocument[] = [];
 
   for (const skill of snapshot.skills) {
     documents.push({
-      id: `skill:${skill.slug}`,
-      kind: "skill",
-      title: skill.title,
+      category: skill.category,
       description: skill.description,
       href: skill.href,
-      category: skill.category,
-      tags: skill.tags,
-      updatedAt: skill.updatedAt,
+      id: `skill:${skill.slug}`,
+      kind: "skill",
       origin: skill.origin,
+      tags: skill.tags,
+      title: skill.title,
+      updatedAt: skill.updatedAt,
       versionLabel: skill.versionLabel,
     });
   }
 
   for (const cat of snapshot.categories) {
     documents.push({
-      id: `category:${cat.slug}`,
-      kind: "category",
-      title: cat.title,
+      category: cat.slug,
       description: cat.description,
       href: `/categories/${cat.slug}`,
-      category: cat.slug,
+      id: `category:${cat.slug}`,
+      kind: "category",
       tags: cat.keywords,
+      title: cat.title,
       updatedAt: snapshot.generatedAt,
     });
   }
 
   for (const mcp of snapshot.mcps) {
     documents.push({
-      id: `mcp:${mcp.id}:${mcp.version}`,
-      kind: "mcp",
-      title: mcp.name,
       description: mcp.description,
       href: buildMcpVersionHref(mcp.name, mcp.version),
-      tags: mcp.tags,
-      updatedAt: mcp.updatedAt,
+      id: `mcp:${mcp.id}:${mcp.version}`,
+      kind: "mcp",
       origin: "system",
+      tags: mcp.tags,
+      title: mcp.name,
+      updatedAt: mcp.updatedAt,
       versionLabel: mcp.versionLabel,
     });
   }
 
   for (const brief of snapshot.dailyBriefs) {
     documents.push({
-      id: `brief:${brief.slug}`,
-      kind: "brief",
-      title: brief.title,
+      category: brief.slug,
       description: brief.summary,
       href: `/categories/${brief.slug}`,
-      category: brief.slug,
+      id: `brief:${brief.slug}`,
+      kind: "brief",
       tags: brief.items.flatMap((item) => item.tags),
+      title: brief.title,
       updatedAt: brief.generatedAt,
     });
   }
 
-  const tokens: Record<string, Array<{ id: string; score: number }>> = {};
+  const tokens: Record<string, { id: string; score: number }[]> = {};
 
   for (const doc of documents) {
     const docTokens = tokenize(
@@ -83,16 +83,18 @@ export function buildSearchIndex(snapshot: LoopSnapshot): SearchIndex {
     for (const [token, count] of seen) {
       const titleBoost = doc.title.toLowerCase().includes(token) ? 10 : 0;
       const score = count + titleBoost;
-      if (!tokens[token]) tokens[token] = [];
+      if (!tokens[token]) {
+        tokens[token] = [];
+      }
       tokens[token].push({ id: doc.id, score });
     }
   }
 
   return {
-    version: 1,
-    generatedAt: snapshot.generatedAt,
     documents,
+    generatedAt: snapshot.generatedAt,
     tokens,
+    version: 1,
   };
 }
 
@@ -111,7 +113,7 @@ export function searchIndex(
   const q = query.trim().toLowerCase();
   if (!q) {
     return candidates
-      .sort(
+      .toSorted(
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
@@ -124,7 +126,9 @@ export function searchIndex(
 
   for (const token of queryTokens) {
     const entries = index.tokens[token];
-    if (!entries) continue;
+    if (!entries) {
+      continue;
+    }
     for (const entry of entries) {
       scoreMap.set(entry.id, (scoreMap.get(entry.id) ?? 0) + entry.score);
     }
@@ -135,7 +139,7 @@ export function searchIndex(
 
   return [...scoreMap.entries()]
     .filter(([id]) => candidateIds.has(id))
-    .sort((a, b) => b[1] - a[1])
+    .toSorted((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([id, score]) => ({ ...docMap.get(id)!, score }));
 }

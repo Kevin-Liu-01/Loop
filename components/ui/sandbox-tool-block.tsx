@@ -21,12 +21,12 @@ import { cn } from "@/lib/cn";
 
 type ToolState = "partial-call" | "call" | "result";
 
-type ToolBlockProps = {
+interface ToolBlockProps {
   toolName: string;
   input: Record<string, unknown>;
   output?: Record<string, unknown>;
   state?: ToolState;
-};
+}
 
 const TOOL_META: Record<
   string,
@@ -37,37 +37,37 @@ const TOOL_META: Record<
     label: "Execute code",
     verb: "Executing code",
   },
-  runCommand: {
-    icon: TerminalIcon,
-    label: "Run command",
-    verb: "Running command",
-  },
-  writeFile: {
-    icon: FileCodeIcon,
-    label: "Write file",
-    verb: "Writing file",
-  },
-  readFile: { icon: FileIcon, label: "Read file", verb: "Reading file" },
-  listFiles: {
-    icon: FileIcon,
-    label: "List files",
-    verb: "Listing files",
-  },
-  searchFiles: {
-    icon: SearchIcon,
-    label: "Search files",
-    verb: "Searching files",
+  fetchUrl: { icon: GlobeIcon, label: "Fetch URL", verb: "Fetching URL" },
+  httpRequest: {
+    icon: GlobeIcon,
+    label: "HTTP request",
+    verb: "Sending request",
   },
   installPackage: {
     icon: PackageIcon,
     label: "Install package",
     verb: "Installing package",
   },
-  fetchUrl: { icon: GlobeIcon, label: "Fetch URL", verb: "Fetching URL" },
-  httpRequest: {
-    icon: GlobeIcon,
-    label: "HTTP request",
-    verb: "Sending request",
+  listFiles: {
+    icon: FileIcon,
+    label: "List files",
+    verb: "Listing files",
+  },
+  readFile: { icon: FileIcon, label: "Read file", verb: "Reading file" },
+  runCommand: {
+    icon: TerminalIcon,
+    label: "Run command",
+    verb: "Running command",
+  },
+  searchFiles: {
+    icon: SearchIcon,
+    label: "Search files",
+    verb: "Searching files",
+  },
+  writeFile: {
+    icon: FileCodeIcon,
+    label: "Write file",
+    verb: "Writing file",
   },
 };
 
@@ -77,15 +77,13 @@ function fallbackMeta(toolName: string): {
   verb: string;
 } {
   if (toolName.startsWith("mcp_")) {
-    const cleaned = toolName
-      .replace(/^mcp_/, "")
-      .replace(/_/g, " ");
+    const cleaned = toolName.replace(/^mcp_/, "").replaceAll("_", " ");
     return { icon: ZapIcon, label: cleaned, verb: cleaned };
   }
   return {
     icon: TerminalIcon,
-    label: toolName.replace(/_/g, " "),
-    verb: `Running ${toolName.replace(/_/g, " ")}`,
+    label: toolName.replaceAll("_", " "),
+    verb: `Running ${toolName.replaceAll("_", " ")}`,
   };
 }
 
@@ -108,7 +106,7 @@ function formatOutput(output: Record<string, unknown>): string {
   }
   if ("success" in output && typeof output.path === "string") {
     parts.push(
-      output.success ? `wrote ${output.path}` : `failed ${output.path}`,
+      output.success ? `wrote ${output.path}` : `failed ${output.path}`
     );
   }
   return parts.join("\n") || JSON.stringify(output, null, 2);
@@ -116,11 +114,12 @@ function formatOutput(output: Record<string, unknown>): string {
 
 function formatSummary(
   toolName: string,
-  input: Record<string, unknown>,
+  input: Record<string, unknown>
 ): string {
   if (toolName === "executeCode") {
     const code = typeof input.code === "string" ? input.code : "";
-    const lang = typeof input.language === "string" ? `[${input.language}] ` : "";
+    const lang =
+      typeof input.language === "string" ? `[${input.language}] ` : "";
     const line = code.split("\n")[0] ?? "";
     return lang + (line.length > 60 ? line.slice(0, 60) + "…" : line);
   }
@@ -140,16 +139,19 @@ function formatSummary(
     const method = typeof input.method === "string" ? `${input.method} ` : "";
     return `${method}${url}`;
   }
-  if (typeof input.query === "string") return input.query;
-  if (typeof input.name === "string") return input.name;
-  if (typeof input.path === "string") return input.path;
+  if (typeof input.query === "string") {
+    return input.query;
+  }
+  if (typeof input.name === "string") {
+    return input.name;
+  }
+  if (typeof input.path === "string") {
+    return input.path;
+  }
   return "";
 }
 
-function formatInput(
-  toolName: string,
-  input: Record<string, unknown>,
-): string {
+function formatInput(toolName: string, input: Record<string, unknown>): string {
   if (toolName === "executeCode" && typeof input.code === "string") {
     return input.code;
   }
@@ -180,7 +182,7 @@ function StatusIndicator({
       <span
         className={cn(
           "flex h-[18px] w-[18px] shrink-0 items-center justify-center",
-          ok ? "text-success" : "text-danger",
+          ok ? "text-success" : "text-danger"
         )}
       >
         {ok ? (
@@ -244,8 +246,7 @@ export function SandboxToolBlock({
   const hasError =
     state === "result" && exitCode !== undefined && exitCode !== 0;
   const summary = formatSummary(toolName, input);
-  const lang =
-    typeof input.language === "string" ? input.language : null;
+  const lang = typeof input.language === "string" ? input.language : null;
   const outputText = output ? formatOutput(output) : "";
 
   return (
@@ -256,14 +257,14 @@ export function SandboxToolBlock({
           ? "border-accent/20 bg-accent/[0.02]"
           : hasError
             ? "border-danger/20"
-            : "border-line",
+            : "border-line"
       )}
     >
       {/* Header */}
       <button
         className={cn(
           "flex w-full items-center gap-2 px-3 py-2 text-left text-[0.75rem] transition-colors",
-          "bg-paper-2/40 hover:bg-paper-2/70 dark:bg-paper-2/50 dark:hover:bg-paper-2/70",
+          "bg-paper-2/40 hover:bg-paper-2/70 dark:bg-paper-2/50 dark:hover:bg-paper-2/70"
         )}
         onClick={() => setOpen((p) => !p)}
         type="button"
@@ -289,7 +290,7 @@ export function SandboxToolBlock({
               "ml-auto shrink-0 px-1.5 py-px font-mono text-[0.5625rem] font-semibold tabular-nums",
               exitCode === 0
                 ? "bg-success/10 text-success"
-                : "bg-danger/10 text-danger",
+                : "bg-danger/10 text-danger"
             )}
           >
             exit {exitCode}
@@ -317,7 +318,7 @@ export function SandboxToolBlock({
               <pre
                 className={cn(
                   "max-h-48 overflow-auto px-3 py-2 pr-8 font-mono text-[0.7rem] leading-relaxed",
-                  hasError ? "text-danger" : "text-ink",
+                  hasError ? "text-danger" : "text-ink"
                 )}
               >
                 {outputText}

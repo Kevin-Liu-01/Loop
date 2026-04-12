@@ -32,8 +32,8 @@ interface PageMeta {
 
 function slugToTitle(slug: string): string {
   return decodeURIComponent(slug)
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replaceAll("-", " ")
+    .replaceAll(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function resolvePageMeta(pathname: string): PageMeta {
@@ -41,12 +41,12 @@ function resolvePageMeta(pathname: string): PageMeta {
   if (skillMatch) {
     const name = slugToTitle(skillMatch[1]);
     return {
-      title: `${name} · ${SITE_NAME}`,
-      description: `Skill details for ${name} on ${SITE_NAME}.`,
-      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=Skill`,
-      ogImageAlt: name,
-      ogType: "article",
       canonicalPath: pathname,
+      description: `Skill details for ${name} on ${SITE_NAME}.`,
+      ogImageAlt: name,
+      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=Skill`,
+      ogType: "article",
+      title: `${name} · ${SITE_NAME}`,
     };
   }
 
@@ -54,33 +54,33 @@ function resolvePageMeta(pathname: string): PageMeta {
   if (mcpMatch) {
     const name = decodeURIComponent(mcpMatch[1]);
     return {
-      title: `${name} · ${SITE_NAME}`,
-      description: `MCP server details for ${name} on ${SITE_NAME}.`,
-      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=MCP`,
-      ogImageAlt: name,
-      ogType: "article",
       canonicalPath: pathname,
+      description: `MCP server details for ${name} on ${SITE_NAME}.`,
+      ogImageAlt: name,
+      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=MCP`,
+      ogType: "article",
+      title: `${name} · ${SITE_NAME}`,
     };
   }
 
   if (pathname === "/faq") {
     return {
-      title: `FAQ · ${SITE_NAME}`,
-      description: DEFAULT_DESCRIPTION,
-      ogImagePath: STATIC_OG_IMAGE_PATH,
-      ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
-      ogType: "website",
       canonicalPath: "/faq",
+      description: DEFAULT_DESCRIPTION,
+      ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      ogImagePath: STATIC_OG_IMAGE_PATH,
+      ogType: "website",
+      title: `FAQ · ${SITE_NAME}`,
     };
   }
 
   return {
-    title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION,
-    ogImagePath: STATIC_OG_IMAGE_PATH,
-    ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
-    ogType: "website",
     canonicalPath: "/",
+    description: DEFAULT_DESCRIPTION,
+    ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+    ogImagePath: STATIC_OG_IMAGE_PATH,
+    ogType: "website",
+    title: DEFAULT_TITLE,
   };
 }
 
@@ -94,7 +94,9 @@ function getSiteOrigin(): string {
   ];
   for (const raw of candidates) {
     const trimmed = raw?.trim();
-    if (trimmed) return trimmed.replace(/\/+$/, "");
+    if (trimmed) {
+      return trimmed.replace(/\/+$/, "");
+    }
   }
   return "http://localhost:3000";
 }
@@ -135,20 +137,20 @@ export function buildBotResponse(req: NextRequest): Response {
   const body = new TextEncoder().encode(html);
 
   return new Response(body, {
-    status: 200,
     headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Content-Length": String(body.byteLength),
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      "Content-Length": String(body.byteLength),
+      "Content-Type": "text/html; charset=utf-8",
       Vary: "User-Agent",
     },
+    status: 200,
   });
 }
 
 function esc(str: string): string {
   return str
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }

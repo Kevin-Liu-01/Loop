@@ -1,25 +1,25 @@
 import { cn } from "@/lib/cn";
 import { pageHeaderSub } from "@/lib/ui-layout";
 
-type PageHeaderProps = {
+interface PageHeaderProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
-type PageHeaderLeadProps = {
+interface PageHeaderLeadProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
-type PageHeaderSubProps = {
+interface PageHeaderSubProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
-type PageHeaderActionsProps = {
+interface PageHeaderActionsProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
 export function PageHeader({ className, children }: PageHeaderProps) {
   return (
@@ -35,10 +35,18 @@ export function PageHeader({ className, children }: PageHeaderProps) {
 }
 
 export function PageHeaderLead({ className, children }: PageHeaderLeadProps) {
-  return <div className={cn("grid max-w-[56rem] gap-2", className)}>{children}</div>;
+  return (
+    <div className={cn("grid max-w-[56rem] gap-2", className)}>{children}</div>
+  );
 }
 
-export function PageHeaderTitle({ className, children }: { className?: string; children: React.ReactNode }) {
+export function PageHeaderTitle({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <h1
       className={cn(
@@ -55,6 +63,13 @@ export function PageHeaderSub({ className, children }: PageHeaderSubProps) {
   return <p className={cn(pageHeaderSub, className)}>{children}</p>;
 }
 
-export function PageHeaderActions({ className, children }: PageHeaderActionsProps) {
-  return <div className={cn("flex shrink-0 flex-wrap gap-2", className)}>{children}</div>;
+export function PageHeaderActions({
+  className,
+  children,
+}: PageHeaderActionsProps) {
+  return (
+    <div className={cn("flex shrink-0 flex-wrap gap-2", className)}>
+      {children}
+    </div>
+  );
 }

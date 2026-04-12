@@ -6,67 +6,67 @@ import type { LoopSnapshot, SearchHit } from "@/lib/types";
 
 test("searchIndex ranks matching skills and categories from the persisted corpus", () => {
   const snapshot = {
-    generatedAt: "2026-03-27T12:00:00.000Z",
-    generatedFrom: "local-scan",
+    automations: [],
     categories: [
       {
-        slug: "frontend",
-        title: "Frontend",
-        strapline: "UI systems",
+        accent: "signal-red",
         description: "Frontend category",
         hero: "Frontend hero",
-        accent: "signal-red",
-        status: "live",
         keywords: ["frontend", "react"],
-        sources: []
-      }
+        slug: "frontend",
+        sources: [],
+        status: "live",
+        strapline: "UI systems",
+        title: "Frontend",
+      },
     ],
-    skills: [
-      {
-        slug: "frontend-frontier",
-        title: "Frontend Frontier",
-        description: "Sharp frontend systems and motion.",
-        category: "frontend",
-        accent: "signal-red",
-        featured: true,
-        visibility: "public",
-        origin: "repo",
-        href: "/skills/frontend-frontier/v1",
-        path: "/tmp/frontend",
-        relativeDir: "tmp/frontend",
-        updatedAt: "2026-03-27T12:00:00.000Z",
-        tags: ["frontend", "motion"],
-        headings: [],
-        body: "Do sharp frontend work.",
-        excerpt: "Do sharp frontend work.",
-        references: [],
-        agents: [],
-        automations: [],
-        version: 1,
-        versionLabel: "v1",
-        availableVersions: [
-          {
-            version: 1,
-            label: "v1",
-            updatedAt: "2026-03-27T12:00:00.000Z"
-          }
-        ]
-      }
-    ],
-    mcps: [],
-    automations: [],
     dailyBriefs: [
       {
-        slug: "frontend",
-        title: "Frontend brief",
-        summary: "Frontend changed.",
-        whatChanged: "React shipped a thing.",
         experiments: ["Ship it"],
+        generatedAt: "2026-03-27T12:00:00.000Z",
         items: [],
-        generatedAt: "2026-03-27T12:00:00.000Z"
-      }
+        slug: "frontend",
+        summary: "Frontend changed.",
+        title: "Frontend brief",
+        whatChanged: "React shipped a thing.",
+      },
     ],
-    plans: []
+    generatedAt: "2026-03-27T12:00:00.000Z",
+    generatedFrom: "local-scan",
+    mcps: [],
+    plans: [],
+    skills: [
+      {
+        accent: "signal-red",
+        agents: [],
+        automations: [],
+        availableVersions: [
+          {
+            label: "v1",
+            updatedAt: "2026-03-27T12:00:00.000Z",
+            version: 1,
+          },
+        ],
+        body: "Do sharp frontend work.",
+        category: "frontend",
+        description: "Sharp frontend systems and motion.",
+        excerpt: "Do sharp frontend work.",
+        featured: true,
+        headings: [],
+        href: "/skills/frontend-frontier/v1",
+        origin: "repo",
+        path: "/tmp/frontend",
+        references: [],
+        relativeDir: "tmp/frontend",
+        slug: "frontend-frontier",
+        tags: ["frontend", "motion"],
+        title: "Frontend Frontier",
+        updatedAt: "2026-03-27T12:00:00.000Z",
+        version: 1,
+        versionLabel: "v1",
+        visibility: "public",
+      },
+    ],
   } satisfies LoopSnapshot;
 
   const index = buildSearchIndex(snapshot);
@@ -79,103 +79,106 @@ test("searchIndex ranks matching skills and categories from the persisted corpus
 
 test("searchIndex can return only skills for blank queries", () => {
   const snapshot = {
-    generatedAt: "2026-03-27T12:00:00.000Z",
-    generatedFrom: "local-scan",
+    automations: [],
     categories: [
       {
-        slug: "frontend",
-        title: "Frontend",
-        strapline: "UI systems",
+        accent: "signal-red",
         description: "Frontend category",
         hero: "Frontend hero",
-        accent: "signal-red",
-        status: "live",
         keywords: ["frontend", "react"],
-        sources: []
-      }
+        slug: "frontend",
+        sources: [],
+        status: "live",
+        strapline: "UI systems",
+        title: "Frontend",
+      },
     ],
-    skills: [
+    dailyBriefs: [
       {
-        slug: "frontend-frontier",
-        title: "Frontend Frontier",
-        description: "Sharp frontend systems and motion.",
-        category: "frontend",
-        accent: "signal-red",
-        featured: true,
-        visibility: "public",
-        origin: "repo",
-        href: "/skills/frontend-frontier/v1",
-        path: "/tmp/frontend",
-        relativeDir: "tmp/frontend",
-        updatedAt: "2026-03-27T12:00:00.000Z",
-        tags: ["frontend", "motion"],
-        headings: [],
-        body: "Do sharp frontend work.",
-        excerpt: "Do sharp frontend work.",
-        references: [],
-        agents: [],
-        automations: [],
-        version: 1,
-        versionLabel: "v1",
-        availableVersions: [
-          {
-            version: 1,
-            label: "v1",
-            updatedAt: "2026-03-27T12:00:00.000Z"
-          }
-        ]
-      }
+        experiments: ["Ship it"],
+        generatedAt: "2026-03-27T12:00:00.000Z",
+        items: [],
+        slug: "frontend",
+        summary: "Frontend changed.",
+        title: "Frontend brief",
+        whatChanged: "React shipped a thing.",
+      },
     ],
+    generatedAt: "2026-03-27T12:00:00.000Z",
+    generatedFrom: "local-scan",
     mcps: [
       {
-        id: "linear",
-        name: "Linear",
-        description: "Issue tracking MCP.",
-        manifestUrl: "https://example.com/mcp.json",
-        transport: "http",
-        url: "https://mcp.linear.app/mcp",
         args: [],
-        envKeys: [],
-        tags: ["linear"],
-        raw: "{}",
         createdAt: "2026-03-27T12:00:00.000Z",
+        description: "Issue tracking MCP.",
+        envKeys: [],
+        id: "linear",
+        manifestUrl: "https://example.com/mcp.json",
+        name: "Linear",
+        raw: "{}",
+        tags: ["linear"],
+        transport: "http",
         updatedAt: "2026-03-27T12:00:00.000Z",
+        url: "https://mcp.linear.app/mcp",
         version: 1,
         versionLabel: "v1",
         versions: [
           {
-            version: 1,
-            updatedAt: "2026-03-27T12:00:00.000Z",
-            description: "Issue tracking MCP.",
-            manifestUrl: "https://example.com/mcp.json",
-            transport: "http",
-            url: "https://mcp.linear.app/mcp",
             args: [],
+            description: "Issue tracking MCP.",
             envKeys: [],
+            manifestUrl: "https://example.com/mcp.json",
+            raw: "{}",
             tags: ["linear"],
-            raw: "{}"
-          }
-        ]
-      }
+            transport: "http",
+            updatedAt: "2026-03-27T12:00:00.000Z",
+            url: "https://mcp.linear.app/mcp",
+            version: 1,
+          },
+        ],
+      },
     ],
-    automations: [],
-    dailyBriefs: [
+    plans: [],
+    skills: [
       {
-        slug: "frontend",
-        title: "Frontend brief",
-        summary: "Frontend changed.",
-        whatChanged: "React shipped a thing.",
-        experiments: ["Ship it"],
-        items: [],
-        generatedAt: "2026-03-27T12:00:00.000Z"
-      }
+        accent: "signal-red",
+        agents: [],
+        automations: [],
+        availableVersions: [
+          {
+            label: "v1",
+            updatedAt: "2026-03-27T12:00:00.000Z",
+            version: 1,
+          },
+        ],
+        body: "Do sharp frontend work.",
+        category: "frontend",
+        description: "Sharp frontend systems and motion.",
+        excerpt: "Do sharp frontend work.",
+        featured: true,
+        headings: [],
+        href: "/skills/frontend-frontier/v1",
+        origin: "repo",
+        path: "/tmp/frontend",
+        references: [],
+        relativeDir: "tmp/frontend",
+        slug: "frontend-frontier",
+        tags: ["frontend", "motion"],
+        title: "Frontend Frontier",
+        updatedAt: "2026-03-27T12:00:00.000Z",
+        version: 1,
+        versionLabel: "v1",
+        visibility: "public",
+      },
     ],
-    plans: []
   } satisfies LoopSnapshot;
 
   const index = buildSearchIndex(snapshot);
   const hits = searchIndex(index, "", { kind: "skill", limit: 50 });
 
-  assert.deepEqual(hits.map((hit: SearchHit) => hit.kind), ["skill"]);
+  assert.deepEqual(
+    hits.map((hit: SearchHit) => hit.kind),
+    ["skill"]
+  );
   assert.equal(hits[0]?.title, "Frontend Frontier");
 });

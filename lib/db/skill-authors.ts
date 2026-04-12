@@ -1,7 +1,7 @@
 import { getServerSupabase } from "@/lib/db/client";
 import type { SkillAuthorRecord } from "@/lib/types";
 
-type SkillAuthorRow = {
+interface SkillAuthorRow {
   id: string;
   slug: string;
   display_name: string;
@@ -13,25 +13,27 @@ type SkillAuthorRow = {
   verified: boolean;
   is_official: boolean;
   badge_label: string;
-};
+}
 
 function rowToSkillAuthor(row: SkillAuthorRow): SkillAuthorRecord {
   return {
-    id: row.id,
-    slug: row.slug,
-    displayName: row.display_name,
+    badgeLabel: row.badge_label,
     bio: row.bio,
-    logoUrl: row.logo_url ?? undefined,
-    websiteUrl: row.website_url ?? undefined,
-    primaryEmail: row.primary_email ?? undefined,
     clerkUserId: row.clerk_user_id ?? undefined,
-    verified: row.verified,
+    displayName: row.display_name,
+    id: row.id,
     isOfficial: row.is_official,
-    badgeLabel: row.badge_label
+    logoUrl: row.logo_url ?? undefined,
+    primaryEmail: row.primary_email ?? undefined,
+    slug: row.slug,
+    verified: row.verified,
+    websiteUrl: row.website_url ?? undefined,
   };
 }
 
-export async function listSkillAuthorsByIds(ids: string[]): Promise<SkillAuthorRecord[]> {
+export async function listSkillAuthorsByIds(
+  ids: string[]
+): Promise<SkillAuthorRecord[]> {
   if (ids.length === 0) {
     return [];
   }
@@ -49,7 +51,9 @@ export async function listSkillAuthorsByIds(ids: string[]): Promise<SkillAuthorR
   return (data ?? []).map((row) => rowToSkillAuthor(row as SkillAuthorRow));
 }
 
-export async function getSkillAuthorBySlug(slug: string): Promise<SkillAuthorRecord | null> {
+export async function getSkillAuthorBySlug(
+  slug: string
+): Promise<SkillAuthorRecord | null> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("skill_authors")
@@ -71,13 +75,13 @@ export async function findSkillAuthorForSession(session: {
   const db = getServerSupabase();
   const normalizedEmail = session.email.trim().toLowerCase();
 
-  let query = db
+  const query = db
     .from("skill_authors")
     .select("*")
     .eq("clerk_user_id", session.userId)
     .maybeSingle();
 
-  let { data, error } = await query;
+  const { data, error } = await query;
   if (error) {
     throw new Error(`findSkillAuthorForSession failed: ${error.message}`);
   }
@@ -97,8 +101,12 @@ export async function findSkillAuthorForSession(session: {
     .maybeSingle();
 
   if (emailMatches.error) {
-    throw new Error(`findSkillAuthorForSession failed: ${emailMatches.error.message}`);
+    throw new Error(
+      `findSkillAuthorForSession failed: ${emailMatches.error.message}`
+    );
   }
 
-  return emailMatches.data ? rowToSkillAuthor(emailMatches.data as SkillAuthorRow) : null;
+  return emailMatches.data
+    ? rowToSkillAuthor(emailMatches.data as SkillAuthorRow)
+    : null;
 }

@@ -2,10 +2,10 @@ import { send } from "@vercel/queue";
 
 export const SKILL_REFRESH_TOPIC = "skill-refresh";
 
-export type SkillRefreshMessage = {
+export interface SkillRefreshMessage {
   slug: string;
   trigger: "automation" | "manual";
-};
+}
 
 export async function publishSkillRefresh(
   slug: string,
@@ -14,7 +14,9 @@ export async function publishSkillRefresh(
   const { messageId } = await send(
     SKILL_REFRESH_TOPIC,
     { slug, trigger } satisfies SkillRefreshMessage,
-    { idempotencyKey: `${slug}-${trigger}-${new Date().toISOString().slice(0, 10)}` }
+    {
+      idempotencyKey: `${slug}-${trigger}-${new Date().toISOString().slice(0, 10)}`,
+    }
   );
   return messageId;
 }

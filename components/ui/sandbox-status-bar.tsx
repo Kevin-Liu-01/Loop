@@ -2,11 +2,18 @@
 
 import { useEffect, useReducer } from "react";
 
-import { CpuIcon, NodeIcon, PythonIcon, StopIcon, TerminalIcon, TimerIcon } from "@/components/frontier-icons";
+import {
+  CpuIcon,
+  NodeIcon,
+  PythonIcon,
+  StopIcon,
+  TerminalIcon,
+  TimerIcon,
+} from "@/components/frontier-icons";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
 
-type SandboxStatusBarProps = {
+interface SandboxStatusBarProps {
   sandboxId: string | null;
   runtime: string;
   status: "idle" | "creating" | "running" | "stopped" | "error";
@@ -15,28 +22,30 @@ type SandboxStatusBarProps = {
   processCount?: number;
   onStop?: () => void;
   className?: string;
-};
+}
 
 const statusLabel: Record<SandboxStatusBarProps["status"], string> = {
-  idle: "No sandbox",
   creating: "Starting…",
+  error: "Error",
+  idle: "No sandbox",
   running: "Running",
   stopped: "Stopped",
-  error: "Error",
 };
 
 const statusDotColor: Record<SandboxStatusBarProps["status"], string> = {
-  idle: "bg-ink-faint/40",
   creating: "animate-pulse bg-warning",
+  error: "bg-danger",
+  idle: "bg-ink-faint/40",
   running: "bg-success",
   stopped: "bg-ink-faint/40",
-  error: "bg-danger",
 };
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  if (m === 0) return `${s}s`;
+  if (m === 0) {
+    return `${s}s`;
+  }
   return `${m}m ${s}s`;
 }
 
@@ -53,8 +62,10 @@ export function SandboxStatusBar({
   const [, tick] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
-    if (status !== "running") return;
-    const id = setInterval(tick, 1_000);
+    if (status !== "running") {
+      return;
+    }
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [status]);
 
@@ -66,7 +77,7 @@ export function SandboxStatusBar({
       <div
         className={cn(
           "flex items-center gap-2 px-1 text-xs text-ink-faint/60",
-          className,
+          className
         )}
       >
         <TerminalIcon className="h-3 w-3" />
@@ -80,15 +91,18 @@ export function SandboxStatusBar({
       className={cn(
         "flex w-full flex-wrap items-center gap-x-3 gap-y-1 border border-line bg-paper-2/50 px-3 py-2 text-xs text-ink-soft",
         "dark:bg-paper-2/40",
-        className,
+        className
       )}
     >
-      <Tip content={`Sandbox is ${statusLabel[status].toLowerCase()}`} side="top">
+      <Tip
+        content={`Sandbox is ${statusLabel[status].toLowerCase()}`}
+        side="top"
+      >
         <span
           aria-hidden
           className={cn(
             "inline-block h-2 w-2 shrink-0 rounded-full",
-            statusDotColor[status],
+            statusDotColor[status]
           )}
         />
       </Tip>
@@ -100,7 +114,11 @@ export function SandboxStatusBar({
         ) : (
           <NodeIcon className="h-3 w-3" />
         )}
-        {runtime === "node24" ? "Node.js 24" : runtime === "python3.13" ? "Python 3.13" : runtime}
+        {runtime === "node24"
+          ? "Node.js 24"
+          : runtime === "python3.13"
+            ? "Python 3.13"
+            : runtime}
       </span>
 
       {sandboxId && (

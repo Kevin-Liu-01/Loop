@@ -27,7 +27,7 @@ describe("parseProcesses", () => {
     assert.equal(result.length, 3);
 
     assert.equal(result[0].pid, 1);
-    assert.equal(result[0].cpuPercent, 0.0);
+    assert.equal(result[0].cpuPercent, 0);
     assert.equal(result[0].memPercent, 0.1);
     assert.ok(result[0].command.includes("/sbin/init"));
 
@@ -98,7 +98,7 @@ describe("parseDf", () => {
     ].join("\n");
 
     const result = parseDf(raw);
-    assert.equal(result.totalMb, 10240);
+    assert.equal(result.totalMb, 10_240);
     assert.equal(result.usedMb, 3277);
     assert.equal(result.freeMb, 6656);
   });
@@ -146,11 +146,11 @@ describe("parseUptime", () => {
 describe("parseNpmPackages", () => {
   it("parses npm ls --json output", () => {
     const raw = JSON.stringify({
-      name: "sandbox",
       dependencies: {
         express: { version: "4.18.2" },
         lodash: { version: "4.17.21" },
       },
+      name: "sandbox",
     });
 
     const result = parseNpmPackages(raw);
@@ -162,7 +162,7 @@ describe("parseNpmPackages", () => {
   });
 
   it("handles empty dependencies", () => {
-    const raw = JSON.stringify({ name: "empty", dependencies: {} });
+    const raw = JSON.stringify({ dependencies: {}, name: "empty" });
     assert.deepEqual(parseNpmPackages(raw), []);
   });
 

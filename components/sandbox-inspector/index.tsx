@@ -10,27 +10,31 @@ import {
   PulseIcon,
   RefreshIcon,
 } from "@/components/frontier-icons";
-import { StatusTab } from "@/components/sandbox-inspector/status-tab";
-import { ProcessesTab } from "@/components/sandbox-inspector/processes-tab";
 import { FilesTab } from "@/components/sandbox-inspector/files-tab";
-import { ResourcesTab } from "@/components/sandbox-inspector/resources-tab";
 import { PackagesTab } from "@/components/sandbox-inspector/packages-tab";
+import { ProcessesTab } from "@/components/sandbox-inspector/processes-tab";
+import { ResourcesTab } from "@/components/sandbox-inspector/resources-tab";
+import { StatusTab } from "@/components/sandbox-inspector/status-tab";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/cn";
-import { sandboxHeaderHeight, sandboxHeaderBase, sandboxEyebrow } from "@/lib/sandbox-ui";
 import type { SandboxInspectResponse } from "@/lib/sandbox-inspect-types";
+import {
+  sandboxHeaderHeight,
+  sandboxHeaderBase,
+  sandboxEyebrow,
+} from "@/lib/sandbox-ui";
 
 const TAB_DESCRIPTIONS: Record<string, string> = {
-  status: "Sandbox lifecycle and uptime",
-  processes: "Running processes in the VM",
   files: "Browse the sandbox filesystem",
-  resources: "Memory and disk usage",
   packages: "Installed packages and versions",
+  processes: "Running processes in the VM",
+  resources: "Memory and disk usage",
+  status: "Sandbox lifecycle and uptime",
 };
 
 type InspectorTab = "status" | "processes" | "files" | "resources" | "packages";
 
-type SandboxInspectorProps = {
+interface SandboxInspectorProps {
   sandboxId: string | null;
   runtime: string;
   sandboxState: string;
@@ -40,30 +44,30 @@ type SandboxInspectorProps = {
   currentPath: string;
   onRefresh: () => void;
   onBrowsePath: (path: string) => void;
-};
+}
 
-const TABS: Array<{
+const TABS: {
   id: InspectorTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: "status", label: "Status", icon: PulseIcon },
-  { id: "processes", label: "Procs", icon: CpuIcon },
-  { id: "files", label: "Files", icon: FileIcon },
-  { id: "resources", label: "Res", icon: HardDriveIcon },
-  { id: "packages", label: "Pkgs", icon: PackageIcon },
+}[] = [
+  { icon: PulseIcon, id: "status", label: "Status" },
+  { icon: CpuIcon, id: "processes", label: "Procs" },
+  { icon: FileIcon, id: "files", label: "Files" },
+  { icon: HardDriveIcon, id: "resources", label: "Res" },
+  { icon: PackageIcon, id: "packages", label: "Pkgs" },
 ];
 
 const emptyData: SandboxInspectResponse = {
-  sandboxId: "",
-  uptimeSeconds: 0,
-  timeoutMs: 120_000,
-  runtimeVersion: "",
-  memory: { totalMb: 0, usedMb: 0, freeMb: 0 },
-  disk: { totalMb: 0, usedMb: 0, freeMb: 0 },
-  processes: [],
+  disk: { freeMb: 0, totalMb: 0, usedMb: 0 },
   files: [],
+  memory: { freeMb: 0, totalMb: 0, usedMb: 0 },
   packages: [],
+  processes: [],
+  runtimeVersion: "",
+  sandboxId: "",
+  timeoutMs: 120_000,
+  uptimeSeconds: 0,
 };
 
 export function SandboxInspector({
@@ -83,7 +87,13 @@ export function SandboxInspector({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       {/* Header */}
-      <div className={cn(sandboxHeaderBase, sandboxHeaderHeight, "justify-between")}>
+      <div
+        className={cn(
+          sandboxHeaderBase,
+          sandboxHeaderHeight,
+          "justify-between"
+        )}
+      >
         <div className="flex items-center gap-2">
           <CpuIcon className="h-3.5 w-3.5 text-accent" />
           <span className={sandboxEyebrow}>VM Inspector</span>
@@ -118,7 +128,7 @@ export function SandboxInspector({
                   "flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-[0.625rem] font-medium transition-colors",
                   active
                     ? "border-accent text-accent"
-                    : "border-transparent text-ink-faint/60 hover:text-ink-soft",
+                    : "border-transparent text-ink-faint/60 hover:text-ink-soft"
                 )}
                 onClick={() => setActiveTab(tab.id)}
                 type="button"
@@ -161,11 +171,7 @@ export function SandboxInspector({
           />
         )}
         {activeTab === "resources" && (
-          <ResourcesTab
-            memory={d.memory}
-            disk={d.disk}
-            isLoading={isLoading}
-          />
+          <ResourcesTab memory={d.memory} disk={d.disk} isLoading={isLoading} />
         )}
         {activeTab === "packages" && (
           <PackagesTab packages={d.packages} isLoading={isLoading} />

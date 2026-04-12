@@ -6,20 +6,23 @@ import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
-import { buildResearchProfile } from "@/lib/research-profile";
 import { runTrackedUserSkillUpdate } from "@/lib/refresh";
+import { buildResearchProfile } from "@/lib/research-profile";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
-import { getManualUpdateCooldown, isAutomationImminent } from "@/lib/skill-limits";
+import {
+  getManualUpdateCooldown,
+  isAutomationImminent,
+} from "@/lib/skill-limits";
 import { recordLoopRun } from "@/lib/system-state";
+import type { LoopUpdateStreamEvent } from "@/lib/types";
+import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   applyUserEditsToSkill,
   buildUserSkillRecord,
   saveUserSkillDocuments,
   skillRecordToUserDoc,
-  updateUserSkillInputSchema
+  updateUserSkillInputSchema,
 } from "@/lib/user-skills";
-import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
-import type { LoopUpdateStreamEvent } from "@/lib/types";
 
 export const maxDuration = 300;
 
@@ -37,9 +40,9 @@ export async function POST(
 ) {
   return withApiUsage(
     {
-      route: "/api/skills/[slug]/refresh",
+      label: "Fused save + refresh",
       method: "POST",
-      label: "Fused save + refresh"
+      route: "/api/skills/[slug]/refresh",
     },
     async () => {
       let session;
@@ -47,7 +50,9 @@ export async function POST(
         session = await requireAuth();
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
 
@@ -61,7 +66,9 @@ export async function POST(
 
       if (!canSessionEditSkill(skillRecord, session, sessionAuthor)) {
         return Response.json(
-          { error: "Only the skill author or an admin can refresh this skill." },
+          {
+            error: "Only the skill author or an admin can refresh this skill.",
+          },
           { status: 403 }
         );
       }
@@ -70,28 +77,36 @@ export async function POST(
       if (!cooldown.allowed) {
         const minutesLeft = Math.ceil(cooldown.remainingMs / 60_000);
         return Response.json(
-          { error: `Manual updates are rate-limited. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.` },
+          {
+            error: `Manual updates are rate-limited. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+          },
           { status: 429 }
         );
       }
 
       let body: Record<string, unknown>;
       try {
-        body = await request.json() as Record<string, unknown>;
+        body = (await request.json()) as Record<string, unknown>;
       } catch {
         return Response.json({ error: "Invalid JSON body." }, { status: 400 });
       }
 
-      const parseResult = updateUserSkillInputSchema.safeParse({ ...body, slug });
+      const parseResult = updateUserSkillInputSchema.safeParse({
+        ...body,
+        slug,
+      });
       if (!parseResult.success) {
         return Response.json(
-          { error: "Validation failed.", details: parseResult.error.issues },
+          { details: parseResult.error.issues, error: "Validation failed." },
           { status: 400 }
         );
       }
 
       const currentSkill = skillRecordToUserDoc(skillRecord);
-      const { skill: editedSkill } = applyUserEditsToSkill(currentSkill, parseResult.data);
+      const { skill: editedSkill } = applyUserEditsToSkill(
+        currentSkill,
+        parseResult.data
+      );
 
       if (editedSkill.sources.length === 0) {
         return Response.json(
@@ -109,43 +124,53 @@ export async function POST(
           try {
             if (automationWarning.imminent) {
               sendEvent(controller, encoder, {
+                message: `Heads up: a scheduled automation is due ${automationWarning.nextRunAt ? "at " + new Date(automationWarning.nextRunAt).toLocaleString() : "soon"}. This manual run will take its place.`,
                 type: "analysis",
-                message: `Heads up: a scheduled automation is due ${automationWarning.nextRunAt ? "at " + new Date(automationWarning.nextRunAt).toLocaleString() : "soon"}. This manual run will take its place.`
               });
             }
 
             sendEvent(controller, encoder, {
+              message: "Applying author edits and running refresh.",
               type: "analysis",
-              message: "Applying author edits and running refresh."
             });
 
-            const cycle = await runTrackedUserSkillUpdate(editedSkill, "manual", {
-              onStart(loop) {
-                sendEvent(controller, encoder, { type: "start", loop });
-              },
-              onSource(source) {
-                sendEvent(controller, encoder, { type: "source", source });
-              },
-              onMessage(message) {
-                sendEvent(controller, encoder, { type: "analysis", message });
-              },
-              onReasoningStep(step) {
-                sendEvent(controller, encoder, { type: "reasoning-step", step });
+            const cycle = await runTrackedUserSkillUpdate(
+              editedSkill,
+              "manual",
+              {
+                onMessage(message) {
+                  sendEvent(controller, encoder, { message, type: "analysis" });
+                },
+                onReasoningStep(step) {
+                  sendEvent(controller, encoder, {
+                    step,
+                    type: "reasoning-step",
+                  });
+                },
+                onSource(source) {
+                  sendEvent(controller, encoder, { source, type: "source" });
+                },
+                onStart(loop) {
+                  sendEvent(controller, encoder, { loop, type: "start" });
+                },
               }
-            });
+            );
 
             await saveUserSkillDocuments([cycle.nextSkill]);
 
             const researchProfile = buildResearchProfile({
-              title: cycle.nextSkill.title,
               sources: cycle.nextSkill.sources,
+              title: cycle.nextSkill.title,
             });
             await updateSkill(slug, { researchProfile }).catch(() => {});
 
             try {
               await recordLoopRun(cycle.loopRun);
             } catch (recordError) {
-              console.error(`[skills/refresh] Failed to record loop run for "${slug}":`, recordError);
+              console.error(
+                `[skills/refresh] Failed to record loop run for "${slug}":`,
+                recordError
+              );
             }
 
             try {
@@ -157,63 +182,75 @@ export async function POST(
               revalidatePath(`/skills/${slug}`);
               revalidatePath(cycle.result.href);
             } catch (revalidateError) {
-              console.error("[skills/refresh] Cache revalidation failed:", revalidateError);
+              console.error(
+                "[skills/refresh] Cache revalidation failed:",
+                revalidateError
+              );
             }
 
             try {
               await logUsageEvent({
+                categorySlug: cycle.nextSkill.category,
+                details: cycle.result.changed
+                  ? cycle.result.nextVersionLabel
+                  : "No diff",
                 kind: "skill_refresh",
-                source: "api",
                 label: "Fused save + refresh",
                 path: cycle.result.href,
                 skillSlug: slug,
-                categorySlug: cycle.nextSkill.category,
-                details: cycle.result.changed ? cycle.result.nextVersionLabel : "No diff"
+                source: "api",
               });
             } catch (usageError) {
-              console.error(`[skills/refresh] Failed to log usage event for "${slug}":`, usageError);
+              console.error(
+                `[skills/refresh] Failed to log usage event for "${slug}":`,
+                usageError
+              );
             }
 
             sendEvent(controller, encoder, {
-              type: "complete",
               result: cycle.result,
-              sources: cycle.sourceLogs
+              sources: cycle.sourceLogs,
+              type: "complete",
             });
           } catch (error) {
-            const message = error instanceof Error ? error.message : "Save + refresh failed.";
+            const message =
+              error instanceof Error ? error.message : "Save + refresh failed.";
             try {
               await recordLoopRun({
-                id: randomUUID(),
-                slug,
-                title: editedSkill.title,
-                origin: "user",
-                trigger: "manual",
-                status: "error",
-                startedAt,
-                finishedAt: new Date().toISOString(),
                 changedSections: [],
-                sourceCount: editedSkill.sources.length,
-                signalCount: 0,
-                messages: [message],
-                sources: [],
                 diffLines: [],
-                errorMessage: message
+                errorMessage: message,
+                finishedAt: new Date().toISOString(),
+                id: randomUUID(),
+                messages: [message],
+                origin: "user",
+                signalCount: 0,
+                slug,
+                sourceCount: editedSkill.sources.length,
+                sources: [],
+                startedAt,
+                status: "error",
+                title: editedSkill.title,
+                trigger: "manual",
               });
             } catch (recordError) {
-              console.error(`[skills/refresh] Failed to record error loop run for "${slug}":`, recordError);
+              console.error(
+                `[skills/refresh] Failed to record error loop run for "${slug}":`,
+                recordError
+              );
             }
-            sendEvent(controller, encoder, { type: "error", message });
+            sendEvent(controller, encoder, { message, type: "error" });
           } finally {
             controller.close();
           }
-        }
+        },
       });
 
       return new Response(stream, {
         headers: {
+          "cache-control": "no-store",
           "content-type": "application/x-ndjson; charset=utf-8",
-          "cache-control": "no-store"
-        }
+        },
       });
     }
   );

@@ -5,10 +5,10 @@ import type { SkillHeading } from "@/lib/types";
 export function slugify(input: string): string {
   return input
     .toLowerCase()
-    .replace(/[`*_~]/g, "")
-    .replace(/[^\w\s-]/g, "")
+    .replaceAll(/[`*_~]/g, "")
+    .replaceAll(/[^\w\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-");
+    .replaceAll(/\s+/g, "-");
 }
 
 export function extractHeadings(markdown: string): SkillHeading[] {
@@ -21,9 +21,9 @@ export function extractHeadings(markdown: string): SkillHeading[] {
       }
 
       return {
+        anchor: slugify(match[2]),
         depth: match[1].length,
         title: match[2].trim(),
-        anchor: slugify(match[2])
       } satisfies SkillHeading;
     })
     .filter((entry): entry is SkillHeading => entry !== null);
@@ -32,10 +32,10 @@ export function extractHeadings(markdown: string): SkillHeading[] {
 export function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/^---[\s\S]*?---/, "")
-    .replace(/`{1,3}[^`]*`{1,3}/g, "")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_>#-]/g, " ")
-    .replace(/\s+/g, " ")
+    .replaceAll(/`{1,3}[^`]*`{1,3}/g, "")
+    .replaceAll(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replaceAll(/[*_>#-]/g, " ")
+    .replaceAll(/\s+/g, " ")
     .trim();
 }
 

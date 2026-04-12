@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-
 import { SignUp } from "@clerk/nextjs";
+import type { Metadata } from "next";
 
 import { AuthSplitLayout } from "@/components/auth-layout";
 
 export const metadata: Metadata = {
+  description:
+    "Create your Loop account and unlock the full operator toolkit for agent skills.",
   title: "Sign up",
-  description: "Create your Loop account and unlock the full operator toolkit for agent skills.",
 };
 
 export default function SignUpPage() {

@@ -1,13 +1,13 @@
-import type { LoopRunRecord, SkillRecord } from "@/lib/types";
 import type { StatusDotTone } from "@/components/ui/status-dot";
+import type { LoopRunRecord, SkillRecord } from "@/lib/types";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
 
-export type FreshnessInfo = {
+export interface FreshnessInfo {
   tone: StatusDotTone;
   label: string;
-};
+}
 
 export function computeFreshness(
   skill: SkillRecord,
@@ -16,11 +16,11 @@ export function computeFreshness(
   const latestRun = loopRuns.find((run) => run.slug === skill.slug);
 
   if (latestRun?.status === "error") {
-    return { tone: "error", label: "Last update failed" };
+    return { label: "Last update failed", tone: "error" };
   }
 
   if (skill.origin !== "user") {
-    return { tone: "idle", label: "Catalog skill" };
+    return { label: "Catalog skill", tone: "idle" };
   }
 
   const ageMs = Date.now() - new Date(skill.updatedAt).valueOf();
@@ -33,18 +33,18 @@ export function computeFreshness(
       : true;
 
     if (overdue) {
-      return { tone: "stale", label: "Update due" };
+      return { label: "Update due", tone: "stale" };
     }
-    return { tone: "fresh", label: "Up to date" };
+    return { label: "Up to date", tone: "fresh" };
   }
 
   if (ageMs < ONE_DAY_MS) {
-    return { tone: "fresh", label: "Updated recently" };
+    return { label: "Updated recently", tone: "fresh" };
   }
 
   if (ageMs < SEVEN_DAYS_MS) {
-    return { tone: "idle", label: "No automation" };
+    return { label: "No automation", tone: "idle" };
   }
 
-  return { tone: "stale", label: "Stale" };
+  return { label: "Stale", tone: "stale" };
 }

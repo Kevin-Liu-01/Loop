@@ -4,7 +4,7 @@ export type ProgressBarSize = "sm" | "md" | "lg";
 export type ProgressBarVariant = "accent" | "success" | "danger" | "neutral";
 export type ProgressBarStatus = "active" | "done" | "error";
 
-type ProgressBarProps = {
+interface ProgressBarProps {
   /** 0-100. Pass `undefined` for indeterminate mode. */
   progress?: number;
   status?: ProgressBarStatus;
@@ -13,28 +13,34 @@ type ProgressBarProps = {
   /** Use rounded-full (banner) vs rounded-none (panel). Default: true. */
   rounded?: boolean;
   className?: string;
-};
+}
 
 const SIZE_CLASSES: Record<ProgressBarSize, string> = {
-  sm: "h-px",
-  md: "h-1.5",
   lg: "h-2.5",
+  md: "h-1.5",
+  sm: "h-px",
 };
 
 const FILL_VARIANTS: Record<ProgressBarVariant, string> = {
   accent: "bg-accent",
-  success: "bg-success",
   danger: "bg-danger",
   neutral: "bg-ink-muted",
+  success: "bg-success",
 };
 
 function resolveVariant(
   status: ProgressBarStatus | undefined,
   variant: ProgressBarVariant | undefined
 ): ProgressBarVariant {
-  if (variant) return variant;
-  if (status === "done") return "success";
-  if (status === "error") return "danger";
+  if (variant) {
+    return variant;
+  }
+  if (status === "done") {
+    return "success";
+  }
+  if (status === "error") {
+    return "danger";
+  }
   return "accent";
 }
 

@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { buildAgentContext } from "@/lib/agents";
-import { buildImportedSkillDraft, buildImportedSkillRecord, extractMcpDocuments } from "@/lib/imports";
+import {
+  buildImportedSkillDraft,
+  buildImportedSkillRecord,
+  extractMcpDocuments,
+} from "@/lib/imports";
 import type { LoopSnapshot } from "@/lib/types";
 
 test("buildImportedSkillDraft normalizes markdown imports into remote skills", () => {
@@ -17,7 +21,10 @@ test("buildImportedSkillDraft normalizes markdown imports into remote skills", (
   assert.equal(skill.syncEnabled, true);
   assert.equal(skill.ownerName, "acme");
   assert.equal(skill.version, 1);
-  assert.deepEqual(skill.versions.map((version) => version.version), [1]);
+  assert.deepEqual(
+    skill.versions.map((version) => version.version),
+    [1]
+  );
 });
 
 test("extractMcpDocuments parses common mcpServers JSON", () => {
@@ -25,14 +32,14 @@ test("extractMcpDocuments parses common mcpServers JSON", () => {
     JSON.stringify({
       mcpServers: {
         linear: {
+          description: "Linear tools",
           url: "https://mcp.linear.app/mcp",
-          description: "Linear tools"
         },
         playwright: {
+          args: ["-y", "@playwright/mcp@latest"],
           command: "npx",
-          args: ["-y", "@playwright/mcp@latest"]
-        }
-      }
+        },
+      },
     }),
     "https://example.com/mcp.json"
   );
@@ -45,92 +52,92 @@ test("extractMcpDocuments parses common mcpServers JSON", () => {
 
 test("buildAgentContext includes selected skills and mcps", () => {
   const snapshot = {
+    automations: [],
+    categories: [],
+    dailyBriefs: [],
     generatedAt: "2026-03-27T12:00:00.000Z",
     generatedFrom: "local-scan",
-    categories: [],
-    skills: [
-      {
-        slug: "frontend-frontier",
-        title: "Frontend Frontier",
-        description: "Design engineering skill.",
-        category: "frontend",
-        accent: "signal-red",
-        featured: true,
-        visibility: "public",
-        origin: "repo",
-        href: "/skills/frontend-frontier/v1",
-        path: "/tmp/frontend",
-        relativeDir: "tmp/frontend",
-        updatedAt: "2026-03-27T12:00:00.000Z",
-        tags: ["frontend"],
-        headings: [],
-        body: "Do sharp frontend work.",
-        excerpt: "Do sharp frontend work.",
-        references: [],
-        version: 1,
-        versionLabel: "v1",
-        availableVersions: [
-          {
-            version: 1,
-            label: "v1",
-            updatedAt: "2026-03-27T12:00:00.000Z"
-          }
-        ],
-        agents: [
-          {
-            provider: "loop",
-            displayName: "Default",
-            shortDescription: "default",
-            defaultPrompt: "Use $frontend-frontier",
-            path: "/tmp/default"
-          }
-        ],
-        automations: []
-      }
-    ],
     mcps: [
       {
-        id: "linear",
-        name: "Linear",
-        description: "Issue tracking MCP.",
-        manifestUrl: "https://example.com/mcp.json",
-        transport: "http",
-        url: "https://mcp.linear.app/mcp",
         args: [],
-        envKeys: [],
-        tags: ["linear"],
-        raw: "{}",
         createdAt: "2026-03-27T12:00:00.000Z",
+        description: "Issue tracking MCP.",
+        envKeys: [],
+        id: "linear",
+        manifestUrl: "https://example.com/mcp.json",
+        name: "Linear",
+        raw: "{}",
+        tags: ["linear"],
+        transport: "http",
         updatedAt: "2026-03-27T12:00:00.000Z",
+        url: "https://mcp.linear.app/mcp",
         version: 1,
         versionLabel: "v1",
         versions: [
           {
-            version: 1,
-            updatedAt: "2026-03-27T12:00:00.000Z",
-            description: "Issue tracking MCP.",
-            manifestUrl: "https://example.com/mcp.json",
-            transport: "http",
-            url: "https://mcp.linear.app/mcp",
             args: [],
+            description: "Issue tracking MCP.",
             envKeys: [],
+            manifestUrl: "https://example.com/mcp.json",
+            raw: "{}",
             tags: ["linear"],
-            raw: "{}"
-          }
-        ]
-      }
+            transport: "http",
+            updatedAt: "2026-03-27T12:00:00.000Z",
+            url: "https://mcp.linear.app/mcp",
+            version: 1,
+          },
+        ],
+      },
     ],
-    automations: [],
-    dailyBriefs: [],
-    plans: []
+    plans: [],
+    skills: [
+      {
+        accent: "signal-red",
+        agents: [
+          {
+            defaultPrompt: "Use $frontend-frontier",
+            displayName: "Default",
+            path: "/tmp/default",
+            provider: "loop",
+            shortDescription: "default",
+          },
+        ],
+        automations: [],
+        availableVersions: [
+          {
+            label: "v1",
+            updatedAt: "2026-03-27T12:00:00.000Z",
+            version: 1,
+          },
+        ],
+        body: "Do sharp frontend work.",
+        category: "frontend",
+        description: "Design engineering skill.",
+        excerpt: "Do sharp frontend work.",
+        featured: true,
+        headings: [],
+        href: "/skills/frontend-frontier/v1",
+        origin: "repo",
+        path: "/tmp/frontend",
+        references: [],
+        relativeDir: "tmp/frontend",
+        slug: "frontend-frontier",
+        tags: ["frontend"],
+        title: "Frontend Frontier",
+        updatedAt: "2026-03-27T12:00:00.000Z",
+        version: 1,
+        versionLabel: "v1",
+        visibility: "public",
+      },
+    ],
   } satisfies LoopSnapshot;
 
   const context = buildAgentContext(snapshot, {
-    providerId: "gateway",
     model: "openai/gpt-5.4-mini",
-    selectedSkillSlugs: ["frontend-frontier"],
+    providerId: "gateway",
     selectedMcpIds: ["linear"],
-    systemPrompt: "Use attached context first."
+    selectedSkillSlugs: ["frontend-frontier"],
+    systemPrompt: "Use attached context first.",
   });
 
   assert.match(context, /Frontend Frontier/);

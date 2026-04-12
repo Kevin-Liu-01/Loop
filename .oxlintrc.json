@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": [
+    "./node_modules/ultracite/config/oxlint/core/.oxlintrc.json",
+    "./node_modules/ultracite/config/oxlint/react/.oxlintrc.json",
+    "./node_modules/ultracite/config/oxlint/next/.oxlintrc.json"
+  ],
+  "rules": {
+    "func-style": "off",
+    "no-plusplus": "off",
+    "no-negated-condition": "off",
+    "no-nested-ternary": "off",
+    "no-use-before-define": "off",
+    "no-inline-comments": "off",
+    "sort-keys": "off",
+    "eslint-plugin-unicorn/no-nested-ternary": "off",
+    "eslint-plugin-react-perf/jsx-no-new-function-as-prop": "warn",
+    "require-await": "off",
+    "complexity": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn"
+  }
+}

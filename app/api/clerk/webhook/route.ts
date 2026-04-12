@@ -3,25 +3,29 @@ import { Webhook } from "svix";
 
 import { sendWelcomeEmail } from "@/lib/email/welcome";
 
-type ClerkUserCreatedEvent = {
+interface ClerkUserCreatedEvent {
   type: "user.created";
   data: {
     id: string;
     first_name: string | null;
     last_name: string | null;
-    email_addresses: Array<{
+    email_addresses: {
       id: string;
       email_address: string;
-    }>;
+    }[];
     primary_email_address_id: string | null;
   };
-};
+}
 
-type ClerkWebhookEvent = ClerkUserCreatedEvent | { type: string; data: unknown };
+type ClerkWebhookEvent =
+  | ClerkUserCreatedEvent
+  | { type: string; data: unknown };
 
 function getWebhookSecret(): string {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
-  if (!secret) throw new Error("CLERK_WEBHOOK_SECRET is not configured");
+  if (!secret) {
+    throw new Error("CLERK_WEBHOOK_SECRET is not configured");
+  }
   return secret;
 }
 
@@ -42,11 +46,11 @@ export async function POST(req: Request) {
     const wh = new Webhook(getWebhookSecret());
     event = wh.verify(body, {
       "svix-id": svixId,
-      "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
+      "svix-timestamp": svixTimestamp,
     }) as ClerkWebhookEvent;
-  } catch (err) {
-    console.error("[clerk-webhook] Verification failed:", err);
+  } catch (error) {
+    console.error("[clerk-webhook] Verification failed:", error);
     return new Response("Webhook verification failed", { status: 400 });
   }
 
@@ -55,7 +59,8 @@ export async function POST(req: Request) {
     const primaryEmail = data.email_addresses.find(
       (e) => e.id === data.primary_email_address_id
     );
-    const email = primaryEmail?.email_address ?? data.email_addresses[0]?.email_address;
+    const email =
+      primaryEmail?.email_address ?? data.email_addresses[0]?.email_address;
 
     if (email) {
       try {
@@ -63,8 +68,8 @@ export async function POST(req: Request) {
           email,
           firstName: data.first_name ?? undefined,
         });
-      } catch (err) {
-        console.error("[clerk-webhook] Failed to send welcome email:", err);
+      } catch (error) {
+        console.error("[clerk-webhook] Failed to send welcome email:", error);
       }
     }
   }

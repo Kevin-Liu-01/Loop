@@ -2,17 +2,17 @@ import { revalidatePath } from "next/cache";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
-import { deleteSkill } from "@/lib/db/skills";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { deleteSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
+import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   buildUserSkillRecord,
   saveUserSkillDocuments,
   skillRecordToUserDoc,
   updateUserSkillDocument,
-  updateUserSkillInputSchema
+  updateUserSkillInputSchema,
 } from "@/lib/user-skills";
-import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 export async function PATCH(
   request: Request,
@@ -20,9 +20,9 @@ export async function PATCH(
 ) {
   return withApiUsage(
     {
-      route: "/api/skills/[slug]",
+      label: "Author edit skill",
       method: "PATCH",
-      label: "Author edit skill"
+      route: "/api/skills/[slug]",
     },
     async () => {
       try {
@@ -44,10 +44,13 @@ export async function PATCH(
 
         const payload = updateUserSkillInputSchema.parse({
           ...(await request.json()),
-          slug
+          slug,
         });
 
-        const result = updateUserSkillDocument(skillRecordToUserDoc(skill), payload);
+        const result = updateUserSkillDocument(
+          skillRecordToUserDoc(skill),
+          payload
+        );
         if (result.changed) {
           await saveUserSkillDocuments([result.skill]);
         }
@@ -63,30 +66,37 @@ export async function PATCH(
         revalidatePath(record.href);
 
         await logUsageEvent({
+          categorySlug: result.skill.category,
+          details: result.changed ? `Saved ${record.href}` : "No setup change",
           kind: "skill_save",
-          source: "api",
-          label: result.changed ? "Edited published skill" : "Checked published skill",
+          label: result.changed
+            ? "Edited published skill"
+            : "Checked published skill",
           path: record.href,
           skillSlug: result.skill.slug,
-          categorySlug: result.skill.category,
-          details: result.changed ? `Saved ${record.href}` : "No setup change"
+          source: "api",
         });
 
         return Response.json({
+          changed: result.changed,
+          href: record.href,
           ok: true,
           slug: result.skill.slug,
-          href: record.href,
-          changed: result.changed
         });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to update skill." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to update skill." },
+          { status: 400 }
+        );
       }
     }
   );
@@ -98,9 +108,9 @@ export async function DELETE(
 ) {
   return withApiUsage(
     {
-      route: "/api/skills/[slug]",
+      label: "Delete skill",
       method: "DELETE",
-      label: "Delete skill"
+      route: "/api/skills/[slug]",
     },
     async () => {
       try {
@@ -115,7 +125,9 @@ export async function DELETE(
 
         if (!canSessionEditSkill(skill, session, sessionAuthor)) {
           return Response.json(
-            { error: "Only the skill author or an admin can delete this skill." },
+            {
+              error: "Only the skill author or an admin can delete this skill.",
+            },
             { status: 403 }
           );
         }
@@ -130,25 +142,30 @@ export async function DELETE(
         revalidatePath(skill.href);
 
         await logUsageEvent({
+          categorySlug: skill.category,
+          details: `Deleted ${skill.title}`,
           kind: "skill_delete",
-          source: "api",
           label: "Deleted skill",
           path: skill.href,
           skillSlug: slug,
-          categorySlug: skill.category,
-          details: `Deleted ${skill.title}`
+          source: "api",
         });
 
         return Response.json({ ok: true, slug });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to delete skill." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to delete skill." },
+          { status: 400 }
+        );
       }
     }
   );

@@ -16,7 +16,7 @@ import type {
 } from "@/lib/active-operations";
 import { createOperationId, isTerminalStatus } from "@/lib/active-operations";
 
-type ActiveOperationsContextValue = {
+interface ActiveOperationsContextValue {
   operations: ActiveOperation[];
   activeOperations: ActiveOperation[];
   addOperation: (
@@ -47,25 +47,36 @@ type ActiveOperationsContextValue = {
   ) => void;
   removeOperation: (id: string) => void;
   clearCompleted: () => void;
-};
+}
 
-const ActiveOperationsContext = createContext<ActiveOperationsContextValue | null>(null);
+const ActiveOperationsContext =
+  createContext<ActiveOperationsContextValue | null>(null);
 
-const TERMINAL_LINGER_MS = 4_000;
+const TERMINAL_LINGER_MS = 4000;
 
-export function ActiveOperationsProvider({ children }: { children: React.ReactNode }) {
+export function ActiveOperationsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [operations, setOperations] = useState<ActiveOperation[]>([]);
-  const lingerTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const lingerTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   useEffect(() => {
     const timers = lingerTimers.current;
     return () => {
-      for (const timer of timers.values()) clearTimeout(timer);
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
     };
   }, []);
 
   const scheduleRemoval = useCallback((id: string) => {
-    if (lingerTimers.current.has(id)) return;
+    if (lingerTimers.current.has(id)) {
+      return;
+    }
     const timer = setTimeout(() => {
       setOperations((prev) => prev.filter((op) => op.id !== id));
       lingerTimers.current.delete(id);
@@ -87,17 +98,17 @@ export function ActiveOperationsProvider({ children }: { children: React.ReactNo
     ): string => {
       const id = createOperationId(kind);
       const op: ActiveOperation = {
+        completedSteps: 0,
+        description: opts.description,
+        href: opts.href,
         id,
         kind,
         label: opts.label,
-        description: opts.description,
-        status: "queued",
         progress: 0,
-        totalSteps: opts.totalSteps ?? 0,
-        completedSteps: 0,
-        startedAt: Date.now(),
         slug: opts.slug,
-        href: opts.href,
+        startedAt: Date.now(),
+        status: "queued",
+        totalSteps: opts.totalSteps ?? 0,
         trigger: opts.trigger ?? "manual",
       };
       setOperations((prev) => [op, ...prev]);
@@ -124,7 +135,9 @@ export function ActiveOperationsProvider({ children }: { children: React.ReactNo
     ) => {
       setOperations((prev) =>
         prev.map((op) => {
-          if (op.id !== id) return op;
+          if (op.id !== id) {
+            return op;
+          }
           const updated = { ...op, ...patch };
           if (patch.status && isTerminalStatus(patch.status)) {
             scheduleRemoval(id);
@@ -153,15 +166,17 @@ export function ActiveOperationsProvider({ children }: { children: React.ReactNo
     }
   }, []);
 
-  const activeOperations = operations.filter((op) => !isTerminalStatus(op.status));
+  const activeOperations = operations.filter(
+    (op) => !isTerminalStatus(op.status)
+  );
 
   const value: ActiveOperationsContextValue = {
-    operations,
     activeOperations,
     addOperation,
-    updateOperation,
-    removeOperation,
     clearCompleted,
+    operations,
+    removeOperation,
+    updateOperation,
   };
 
   return (
@@ -174,7 +189,9 @@ export function ActiveOperationsProvider({ children }: { children: React.ReactNo
 export function useActiveOperations(): ActiveOperationsContextValue {
   const ctx = useContext(ActiveOperationsContext);
   if (!ctx) {
-    throw new Error("useActiveOperations must be used within an ActiveOperationsProvider");
+    throw new Error(
+      "useActiveOperations must be used within an ActiveOperationsProvider"
+    );
   }
   return ctx;
 }

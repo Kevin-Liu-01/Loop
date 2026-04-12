@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
-import { GitFork } from "lucide-react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
+import { GitFork } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 
-type ForkSkillButtonProps = {
+interface ForkSkillButtonProps {
   slug: string;
   label?: string;
-};
+}
 
 export function ForkSkillButton({
   slug,
@@ -37,9 +36,9 @@ export function ForkSkillButton({
     setError(null);
     startTransition(async () => {
       const response = await fetch("/api/skills/fork", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
       const payload = (await response.json().catch(() => ({}))) as {

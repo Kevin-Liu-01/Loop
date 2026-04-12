@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 
 import { AppGridShell } from "@/components/app-grid-shell";
-import { SiteHeader } from "@/components/site-header";
-import { UsageBeacon } from "@/components/usage-beacon";
-import { PageShell } from "@/components/ui/page-shell";
 import { SettingsShell } from "@/components/settings-shell";
+import { SiteHeader } from "@/components/site-header";
+import { PageShell } from "@/components/ui/page-shell";
+import { UsageBeacon } from "@/components/usage-beacon";
 
 export const metadata: Metadata = {
+  robots: { follow: false, index: false },
   title: "Settings",
-  robots: { index: false, follow: false },
 };
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+export default function SettingsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <AppGridShell header={<SiteHeader />}>
       <UsageBeacon

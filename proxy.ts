@@ -1,6 +1,5 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
-
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 
 import {
   buildBotResponse,
@@ -17,7 +16,9 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
 });
 
 export async function proxy(req: NextRequest, event: NextFetchEvent) {

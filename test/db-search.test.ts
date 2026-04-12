@@ -5,17 +5,17 @@ import type { SearchHit } from "@/lib/types";
 
 test("SearchHit shape matches expected DB search result fields", () => {
   const hit: SearchHit = {
-    id: "skill:test-skill:1",
-    kind: "skill",
-    title: "Test Skill",
+    category: "frontend",
     description: "A test skill for validation.",
     href: "/skills/test-skill/v1",
-    category: "frontend",
-    tags: ["frontend", "test"],
-    updatedAt: "2026-03-28T00:00:00.000Z",
+    id: "skill:test-skill:1",
+    kind: "skill",
     origin: "repo",
+    score: 0.95,
+    tags: ["frontend", "test"],
+    title: "Test Skill",
+    updatedAt: "2026-03-28T00:00:00.000Z",
     versionLabel: "v1",
-    score: 0.95
   };
 
   assert.equal(hit.kind, "skill");
@@ -27,27 +27,27 @@ test("SearchHit shape matches expected DB search result fields", () => {
 
 test("SearchHit supports category, brief, and mcp kinds", () => {
   const categoryHit: SearchHit = {
-    id: "category:frontend",
-    kind: "category",
-    title: "Frontend",
+    category: "frontend",
     description: "Frontend development skills.",
     href: "/categories/frontend",
-    category: "frontend",
+    id: "category:frontend",
+    kind: "category",
+    score: 1,
     tags: ["frontend"],
+    title: "Frontend",
     updatedAt: "2026-03-28T00:00:00.000Z",
-    score: 1
   };
 
   const briefHit: SearchHit = {
-    id: "brief:frontend",
-    kind: "brief",
-    title: "Daily Frontend Brief",
+    category: "frontend",
     description: "Today's frontend changes.",
     href: "/categories/frontend",
-    category: "frontend",
+    id: "brief:frontend",
+    kind: "brief",
+    score: 0.8,
     tags: ["react", "css"],
+    title: "Daily Frontend Brief",
     updatedAt: "2026-03-28T00:00:00.000Z",
-    score: 0.8
   };
 
   assert.equal(categoryHit.kind, "category");

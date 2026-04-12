@@ -3,11 +3,11 @@ import { getSiteUrlString } from "@/lib/seo";
 
 function xmlEscape(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
 
 export async function GET() {
@@ -42,7 +42,7 @@ export async function GET() {
 
   return new Response(xml, {
     headers: {
-      "content-type": "application/xml; charset=utf-8"
-    }
+      "content-type": "application/xml; charset=utf-8",
+    },
   });
 }

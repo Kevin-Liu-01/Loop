@@ -2,7 +2,7 @@ import { getServerSupabase } from "@/lib/db/client";
 import { buildVersionLabel } from "@/lib/format";
 import type { ImportedMcpDocument, ImportedMcpVersion } from "@/lib/types";
 
-type McpRow = {
+interface McpRow {
   id: string;
   name: string;
   description: string;
@@ -31,74 +31,79 @@ type McpRow = {
   sandbox_supported: boolean;
   sandbox_notes: string;
   normalized_config: unknown;
-};
+}
 
-function rowToMcpDocument(row: McpRow, versions?: ImportedMcpVersion[]): ImportedMcpDocument {
+function rowToMcpDocument(
+  row: McpRow,
+  versions?: ImportedMcpVersion[]
+): ImportedMcpDocument {
   return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    slug: row.slug ?? undefined,
-    manifestUrl: row.manifest_url,
-    homepageUrl: row.homepage_url ?? undefined,
-    docsUrl: row.docs_url ?? undefined,
-    transport: row.transport as ImportedMcpDocument["transport"],
-    url: row.url ?? undefined,
-    command: row.command ?? undefined,
     args: row.args,
+    authType: row.auth_type as ImportedMcpDocument["authType"],
+    command: row.command ?? undefined,
+    createdAt: row.created_at,
+    description: row.description,
+    docsUrl: row.docs_url ?? undefined,
     envKeys: row.env_keys,
     headers: (row.headers ?? undefined) as Record<string, string> | undefined,
-    tags: row.tags,
+    homepageUrl: row.homepage_url ?? undefined,
+    iconUrl: row.icon_url ?? undefined,
+    id: row.id,
+    installStrategy:
+      row.install_strategy as ImportedMcpDocument["installStrategy"],
+    manifestUrl: row.manifest_url,
+    name: row.name,
+    normalizedConfig: (row.normalized_config ?? {}) as Record<string, unknown>,
+    packageName: row.package_name ?? undefined,
+    packageRegistry: row.package_registry ?? undefined,
     raw: row.raw,
-    createdAt: row.created_at,
+    sandboxNotes: row.sandbox_notes,
+    sandboxSupported: row.sandbox_supported,
+    slug: row.slug ?? undefined,
+    tags: row.tags,
+    transport: row.transport as ImportedMcpDocument["transport"],
     updatedAt: row.updated_at,
+    url: row.url ?? undefined,
+    verificationStatus:
+      row.verification_status as ImportedMcpDocument["verificationStatus"],
     version: row.version,
     versionLabel: row.version_label,
     versions: versions ?? [],
-    iconUrl: row.icon_url ?? undefined,
-    packageName: row.package_name ?? undefined,
-    packageRegistry: row.package_registry ?? undefined,
-    installStrategy: row.install_strategy as ImportedMcpDocument["installStrategy"],
-    authType: row.auth_type as ImportedMcpDocument["authType"],
-    verificationStatus: row.verification_status as ImportedMcpDocument["verificationStatus"],
-    sandboxSupported: row.sandbox_supported,
-    sandboxNotes: row.sandbox_notes,
-    normalizedConfig: (row.normalized_config ?? {}) as Record<string, unknown>
   };
 }
 
 function mcpToRow(mcp: ImportedMcpDocument): Record<string, unknown> {
   return {
-    id: mcp.id,
-    name: mcp.name,
-    description: mcp.description,
-    slug: mcp.slug ?? null,
-    manifest_url: mcp.manifestUrl,
-    homepage_url: mcp.homepageUrl ?? null,
-    docs_url: mcp.docsUrl ?? null,
-    transport: mcp.transport,
-    url: mcp.url ?? null,
-    command: mcp.command ?? null,
     args: mcp.args,
+    auth_type: mcp.authType ?? "none",
+    command: mcp.command ?? null,
+    description: mcp.description,
+    docs_url: mcp.docsUrl ?? null,
     env_keys: mcp.envKeys,
     headers: mcp.headers ?? null,
-    tags: mcp.tags,
-    raw: mcp.raw,
-    version: mcp.version,
-    version_label: mcp.versionLabel,
+    homepage_url: mcp.homepageUrl ?? null,
     icon_url: mcp.iconUrl ?? null,
+    id: mcp.id,
+    install_strategy: mcp.installStrategy ?? "manual",
+    manifest_url: mcp.manifestUrl,
+    name: mcp.name,
+    normalized_config: mcp.normalizedConfig ?? {},
     package_name: mcp.packageName ?? null,
     package_registry: mcp.packageRegistry ?? null,
-    install_strategy: mcp.installStrategy ?? "manual",
-    auth_type: mcp.authType ?? "none",
-    verification_status: mcp.verificationStatus ?? "unverified",
-    sandbox_supported: mcp.sandboxSupported ?? false,
+    raw: mcp.raw,
     sandbox_notes: mcp.sandboxNotes ?? "",
-    normalized_config: mcp.normalizedConfig ?? {}
+    sandbox_supported: mcp.sandboxSupported ?? false,
+    slug: mcp.slug ?? null,
+    tags: mcp.tags,
+    transport: mcp.transport,
+    url: mcp.url ?? null,
+    verification_status: mcp.verificationStatus ?? "unverified",
+    version: mcp.version,
+    version_label: mcp.versionLabel,
   };
 }
 
-type McpVersionRow = {
+interface McpVersionRow {
   mcp_id: string;
   version: number;
   description: string;
@@ -122,32 +127,34 @@ type McpVersionRow = {
   sandbox_supported: boolean;
   sandbox_notes: string;
   normalized_config: unknown;
-};
+}
 
 function parseVersionRows(rows: McpVersionRow[]): ImportedMcpVersion[] {
   return rows.map((v) => ({
-    version: v.version,
-    updatedAt: v.created_at,
-    description: v.description,
-    manifestUrl: v.manifest_url,
-    homepageUrl: v.homepage_url ?? undefined,
-    docsUrl: v.docs_url ?? undefined,
-    transport: v.transport as ImportedMcpVersion["transport"],
-    url: v.url ?? undefined,
-    command: v.command ?? undefined,
     args: v.args,
+    authType: v.auth_type as ImportedMcpVersion["authType"],
+    command: v.command ?? undefined,
+    description: v.description,
+    docsUrl: v.docs_url ?? undefined,
     envKeys: v.env_keys,
     headers: (v.headers ?? undefined) as Record<string, string> | undefined,
-    tags: v.tags,
-    raw: v.raw,
+    homepageUrl: v.homepage_url ?? undefined,
+    installStrategy:
+      v.install_strategy as ImportedMcpVersion["installStrategy"],
+    manifestUrl: v.manifest_url,
+    normalizedConfig: (v.normalized_config ?? {}) as Record<string, unknown>,
     packageName: v.package_name ?? undefined,
     packageRegistry: v.package_registry ?? undefined,
-    installStrategy: v.install_strategy as ImportedMcpVersion["installStrategy"],
-    authType: v.auth_type as ImportedMcpVersion["authType"],
-    verificationStatus: v.verification_status as ImportedMcpVersion["verificationStatus"],
-    sandboxSupported: v.sandbox_supported,
+    raw: v.raw,
     sandboxNotes: v.sandbox_notes,
-    normalizedConfig: (v.normalized_config ?? {}) as Record<string, unknown>
+    sandboxSupported: v.sandbox_supported,
+    tags: v.tags,
+    transport: v.transport as ImportedMcpVersion["transport"],
+    updatedAt: v.created_at,
+    url: v.url ?? undefined,
+    verificationStatus:
+      v.verification_status as ImportedMcpVersion["verificationStatus"],
+    version: v.version,
   }));
 }
 
@@ -158,17 +165,20 @@ export async function listMcps(): Promise<ImportedMcpDocument[]> {
     .select("*")
     .order("name");
 
-  if (error) throw new Error(`listMcps failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listMcps failed: ${error.message}`);
+  }
 
   const mcpIds = (data as McpRow[]).map((row) => row.id);
 
-  const { data: allVersions } = mcpIds.length > 0
-    ? await db
-        .from("imported_mcp_versions")
-        .select("*")
-        .in("mcp_id", mcpIds)
-        .order("version", { ascending: false })
-    : { data: [] };
+  const { data: allVersions } =
+    mcpIds.length > 0
+      ? await db
+          .from("imported_mcp_versions")
+          .select("*")
+          .in("mcp_id", mcpIds)
+          .order("version", { ascending: false })
+      : { data: [] };
 
   const versionsByMcp = new Map<string, ImportedMcpVersion[]>();
   for (const v of (allVersions ?? []) as McpVersionRow[]) {
@@ -182,7 +192,9 @@ export async function listMcps(): Promise<ImportedMcpDocument[]> {
   );
 }
 
-export async function getMcpByName(name: string): Promise<ImportedMcpDocument | null> {
+export async function getMcpByName(
+  name: string
+): Promise<ImportedMcpDocument | null> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("imported_mcps")
@@ -190,8 +202,12 @@ export async function getMcpByName(name: string): Promise<ImportedMcpDocument | 
     .eq("name", name)
     .maybeSingle();
 
-  if (error) throw new Error(`getMcpByName failed: ${error.message}`);
-  if (!data) return null;
+  if (error) {
+    throw new Error(`getMcpByName failed: ${error.message}`);
+  }
+  if (!data) {
+    return null;
+  }
 
   const row = data as McpRow;
 
@@ -218,8 +234,12 @@ export async function getMcpAtVersion(
     .eq("name", name)
     .maybeSingle();
 
-  if (lookupError) throw new Error(`getMcpAtVersion lookup failed: ${lookupError.message}`);
-  if (!mcpData) return null;
+  if (lookupError) {
+    throw new Error(`getMcpAtVersion lookup failed: ${lookupError.message}`);
+  }
+  if (!mcpData) {
+    return null;
+  }
   const currentRow = mcpData as McpRow;
 
   if (currentRow.version === version) {
@@ -233,35 +253,37 @@ export async function getMcpAtVersion(
     .eq("version", version)
     .maybeSingle();
 
-  if (error || !versionData) return null;
+  if (error || !versionData) {
+    return null;
+  }
 
   const v = versionData as McpVersionRow;
 
   const versionRow: McpRow = {
     ...currentRow,
-    version: v.version,
-    version_label: buildVersionLabel(v.version),
-    description: v.description,
-    manifest_url: v.manifest_url,
-    homepage_url: v.homepage_url,
-    docs_url: v.docs_url,
-    transport: v.transport,
-    url: v.url,
-    command: v.command,
     args: v.args,
+    auth_type: v.auth_type,
+    command: v.command,
+    description: v.description,
+    docs_url: v.docs_url,
     env_keys: v.env_keys,
     headers: v.headers,
-    tags: v.tags,
-    raw: v.raw,
-    updated_at: v.created_at,
+    homepage_url: v.homepage_url,
+    install_strategy: v.install_strategy,
+    manifest_url: v.manifest_url,
+    normalized_config: v.normalized_config,
     package_name: v.package_name,
     package_registry: v.package_registry,
-    install_strategy: v.install_strategy,
-    auth_type: v.auth_type,
-    verification_status: v.verification_status,
-    sandbox_supported: v.sandbox_supported,
+    raw: v.raw,
     sandbox_notes: v.sandbox_notes,
-    normalized_config: v.normalized_config
+    sandbox_supported: v.sandbox_supported,
+    tags: v.tags,
+    transport: v.transport,
+    updated_at: v.created_at,
+    url: v.url,
+    verification_status: v.verification_status,
+    version: v.version,
+    version_label: buildVersionLabel(v.version),
   };
 
   return rowToMcpDocument(versionRow);
@@ -273,35 +295,42 @@ export async function upsertMcp(mcp: ImportedMcpDocument): Promise<void> {
     .from("imported_mcps")
     .upsert(mcpToRow(mcp) as never, { onConflict: "id" });
 
-  if (error) throw new Error(`upsertMcp failed: ${error.message}`);
+  if (error) {
+    throw new Error(`upsertMcp failed: ${error.message}`);
+  }
 }
 
-export async function createMcpVersion(mcpId: string, version: ImportedMcpVersion): Promise<void> {
+export async function createMcpVersion(
+  mcpId: string,
+  version: ImportedMcpVersion
+): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("imported_mcp_versions").insert({
-    mcp_id: mcpId,
-    version: version.version,
-    description: version.description,
-    manifest_url: version.manifestUrl,
-    homepage_url: version.homepageUrl ?? null,
-    docs_url: version.docsUrl ?? null,
-    transport: version.transport,
-    url: version.url ?? null,
-    command: version.command ?? null,
     args: version.args,
+    auth_type: version.authType ?? "none",
+    command: version.command ?? null,
+    description: version.description,
+    docs_url: version.docsUrl ?? null,
     env_keys: version.envKeys,
     headers: version.headers ?? null,
-    tags: version.tags,
-    raw: version.raw,
+    homepage_url: version.homepageUrl ?? null,
+    install_strategy: version.installStrategy ?? "manual",
+    manifest_url: version.manifestUrl,
+    mcp_id: mcpId,
+    normalized_config: version.normalizedConfig ?? {},
     package_name: version.packageName ?? null,
     package_registry: version.packageRegistry ?? null,
-    install_strategy: version.installStrategy ?? "manual",
-    auth_type: version.authType ?? "none",
-    verification_status: version.verificationStatus ?? "unverified",
-    sandbox_supported: version.sandboxSupported ?? false,
+    raw: version.raw,
     sandbox_notes: version.sandboxNotes ?? "",
-    normalized_config: version.normalizedConfig ?? {}
+    sandbox_supported: version.sandboxSupported ?? false,
+    tags: version.tags,
+    transport: version.transport,
+    url: version.url ?? null,
+    verification_status: version.verificationStatus ?? "unverified",
+    version: version.version,
   } as never);
 
-  if (error) throw new Error(`createMcpVersion failed: ${error.message}`);
+  if (error) {
+    throw new Error(`createMcpVersion failed: ${error.message}`);
+  }
 }

@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-type EmptyCardProps = {
+interface EmptyCardProps {
   className?: string;
   icon?: ReactNode;
   children: React.ReactNode;
-};
+}
 
 export function EmptyCard({ className, icon, children }: EmptyCardProps) {
   return (

@@ -1,10 +1,10 @@
 "use client";
 
+import { IconRefView } from "@/components/ui/icon-ref";
 import { cn } from "@/lib/cn";
 import { getSkillIcon, getMcpIcon } from "@/lib/skill-icons";
-import { IconRefView } from "@/components/ui/icon-ref";
 
-type SkillIconProps = {
+interface SkillIconProps {
   slug: string;
   iconUrl?: string | null;
   size?: number;
@@ -13,26 +13,55 @@ type SkillIconProps = {
   flush?: boolean;
   /** Force the icon image to white (brightness-0 invert) for use on colored backgrounds. */
   invert?: boolean;
-};
+}
 
-export function SkillIcon({ slug, iconUrl, size = 24, className, flush, invert }: SkillIconProps) {
+export function SkillIcon({
+  slug,
+  iconUrl,
+  size = 24,
+  className,
+  flush,
+  invert,
+}: SkillIconProps) {
   if (iconUrl) {
-    return <IconTile className={className} flush={flush} invert={invert} size={size} src={iconUrl} />;
+    return (
+      <IconTile
+        className={className}
+        flush={flush}
+        invert={invert}
+        size={size}
+        src={iconUrl}
+      />
+    );
   }
 
   const fallback = getSkillIcon(slug);
-  return <IconRefView className={className} flush={flush} invert={invert} icon={fallback} size={size} />;
+  return (
+    <IconRefView
+      className={className}
+      flush={flush}
+      invert={invert}
+      icon={fallback}
+      size={size}
+    />
+  );
 }
 
-type McpIconProps = {
+interface McpIconProps {
   name: string;
   iconUrl?: string | null;
   homepageUrl?: string;
   size?: number;
   className?: string;
-};
+}
 
-export function McpIcon({ name, iconUrl, homepageUrl, size = 24, className }: McpIconProps) {
+export function McpIcon({
+  name,
+  iconUrl,
+  homepageUrl,
+  size = 24,
+  className,
+}: McpIconProps) {
   if (iconUrl) {
     return <IconTile className={className} size={size} src={iconUrl} />;
   }
@@ -41,13 +70,13 @@ export function McpIcon({ name, iconUrl, homepageUrl, size = 24, className }: Mc
   return <IconRefView className={className} icon={fallback} size={size} />;
 }
 
-type IconTileProps = {
+interface IconTileProps {
   src: string;
   size: number;
   className?: string;
   flush?: boolean;
   invert?: boolean;
-};
+}
 
 function IconTile({ src, size, className, flush, invert }: IconTileProps) {
   const pad = Math.max(2, Math.round(size * 0.14));
@@ -57,13 +86,16 @@ function IconTile({ src, size, className, flush, invert }: IconTileProps) {
       className={cn(
         "inline-flex shrink-0 items-center justify-center bg-white",
         flush ? "overflow-hidden" : "rounded-lg ring-1 ring-black/10",
-        className,
+        className
       )}
-      style={{ width: size, height: size }}
+      style={{ height: size, width: size }}
     >
       <img
         alt=""
-        className={cn("shrink-0 object-contain", invert && "brightness-0 invert")}
+        className={cn(
+          "shrink-0 object-contain",
+          invert && "brightness-0 invert"
+        )}
         height={size - pad * 2}
         loading="lazy"
         src={src}

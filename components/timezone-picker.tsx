@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 
-import { Select } from "@/components/ui/select";
 import { Panel } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { SUGGESTED_TIME_ZONES } from "@/lib/usage-timezones";
 
@@ -14,7 +14,7 @@ export function TimezonePicker() {
   const { timeZone, setTimeZone, browserTimeZone } = useAppTimezone();
 
   const options = useMemo(() => {
-    const set = new Set<string>([...SUGGESTED_TIME_ZONES]);
+    const set = new Set<string>(SUGGESTED_TIME_ZONES);
     set.add(browserTimeZone);
     set.add(timeZone);
 
@@ -22,22 +22,22 @@ export function TimezonePicker() {
     try {
       allZones = Intl.supportedValuesOf("timeZone");
     } catch {
-      allZones = Array.from(set);
+      allZones = [...set];
     }
 
     const suggested = new Set(SUGGESTED_TIME_ZONES as readonly string[]);
     suggested.add(browserTimeZone);
 
-    const suggestedOptions = Array.from(suggested)
-      .sort((a, b) => a.localeCompare(b))
+    const suggestedOptions = [...suggested]
+      .toSorted((a, b) => a.localeCompare(b))
       .map((z) => ({
-        value: z,
         label: z === browserTimeZone ? `${z} (browser default)` : z,
+        value: z,
       }));
 
     const otherOptions = allZones
       .filter((z) => !suggested.has(z))
-      .map((z) => ({ value: z, label: z }));
+      .map((z) => ({ label: z, value: z }));
 
     return [...suggestedOptions, ...otherOptions];
   }, [browserTimeZone, timeZone]);
@@ -57,7 +57,8 @@ export function TimezonePicker() {
         value={timeZone}
       />
       <p className="m-0 text-xs text-ink-faint">
-        Browser detected: <strong className="font-medium text-ink-soft">{browserTimeZone}</strong>
+        Browser detected:{" "}
+        <strong className="font-medium text-ink-soft">{browserTimeZone}</strong>
       </p>
     </Panel>
   );

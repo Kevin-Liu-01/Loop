@@ -4,10 +4,10 @@ import { PackageIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 import type { PackageInfo } from "@/lib/sandbox-inspect-types";
 
-type PackagesTabProps = {
+interface PackagesTabProps {
   packages: PackageInfo[];
   isLoading: boolean;
-};
+}
 
 export function PackagesTab({ packages, isLoading }: PackagesTabProps) {
   if (isLoading && packages.length === 0) {
@@ -42,7 +42,7 @@ export function PackagesTab({ packages, isLoading }: PackagesTabProps) {
             key={pkg.name}
             className={cn(
               "flex items-center justify-between gap-2 px-3 py-2 text-[0.8125rem] transition-colors hover:bg-paper-2/50",
-              i < packages.length - 1 && "border-b border-line/60",
+              i < packages.length - 1 && "border-b border-line/60"
             )}
           >
             <span className="min-w-0 truncate font-medium text-ink">

@@ -5,14 +5,14 @@ import { inspectSandbox } from "@/lib/sandbox-inspect";
 import { withApiUsage } from "@/lib/usage-server";
 
 const inspectSchema = z.object({
-  sandboxId: z.string().min(1),
-  runtime: z.string().default("node24"),
   path: z.string().optional(),
+  runtime: z.string().default("node24"),
+  sandboxId: z.string().min(1),
 });
 
 export async function POST(request: Request) {
   return withApiUsage(
-    { route: "/api/sandbox/inspect", method: "POST", label: "Inspect sandbox" },
+    { label: "Inspect sandbox", method: "POST", route: "/api/sandbox/inspect" },
     async () => {
       try {
         const payload = inspectSchema.parse(await request.json());
@@ -21,13 +21,14 @@ export async function POST(request: Request) {
           sandbox,
           payload.sandboxId,
           payload.runtime,
-          payload.path,
+          payload.path
         );
         return Response.json(data);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to inspect sandbox";
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to inspect sandbox";
         return Response.json({ error: message }, { status: 400 });
       }
-    },
+    }
   );
 }

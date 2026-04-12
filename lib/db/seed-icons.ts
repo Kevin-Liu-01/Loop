@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+
 import { lookupBrandLogoUrl, githubAvatar } from "@/lib/brand-icons";
 
 // -------------------------------------------------------------------------
@@ -20,7 +21,9 @@ const SIMPLEICONS_CDN = "https://cdn.simpleicons.org";
 
 function getEnvOrThrow(key: string): string {
   const v = process.env[key];
-  if (!v) throw new Error(`Missing env var: ${key}`);
+  if (!v) {
+    throw new Error(`Missing env var: ${key}`);
+  }
   return v;
 }
 
@@ -28,121 +31,142 @@ function getEnvOrThrow(key: string): string {
 // SimpleIcons slug → brand mapping for skills
 // -------------------------------------------------------------------------
 
-const SKILL_ICON_MAP: Record<string, { simpleIcon?: string; color?: string; fallbackUrl?: string }> = {
-  "frontend-frontier": { simpleIcon: "figma" },
-  "motion-framer": { simpleIcon: "framer" },
-  "gsap-scrolltrigger": { simpleIcon: "greensock" },
-  "react-three-fiber": { simpleIcon: "threedotjs" },
-  "tailwind-design-system": { simpleIcon: "tailwindcss" },
-  "web-performance": { simpleIcon: "lighthouse" },
-  "accessible-ui": { fallbackUrl: "https://www.google.com/s2/favicons?domain=w3.org&sz=64" },
-  "nextjs-patterns": { simpleIcon: "nextdotjs" },
-  "responsive-layouts": { simpleIcon: "css" },
+const SKILL_ICON_MAP: Record<
+  string,
+  { simpleIcon?: string; color?: string; fallbackUrl?: string }
+> = {
+  "accessible-ui": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=w3.org&sz=64",
+  },
+  "agent-orchestration": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+  },
+  "ai-citability": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+  },
+  "api-security": { simpleIcon: "auth0" },
+  "audience-growth": { simpleIcon: "youtube" },
+  "auth-patterns": { simpleIcon: "clerk" },
+  "cdn-caching": { simpleIcon: "cloudflare" },
   "component-architecture": { simpleIcon: "react" },
+  "container-security": { simpleIcon: "snyk" },
+  "content-repurposing": { simpleIcon: "notion" },
 
-  "seo-geo": { simpleIcon: "google" },
-  "schema-markup": { fallbackUrl: "https://www.google.com/s2/favicons?domain=schema.org&sz=64" },
-  "technical-seo-audit": { simpleIcon: "google" },
-  "ai-citability": { fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64" },
-  "keyword-research": { simpleIcon: "semrush" },
   "content-seo-strategy": { simpleIcon: "google" },
+  "database-patterns": { simpleIcon: "supabase" },
+  "dockerfile-mastery": { simpleIcon: "docker" },
+  "edge-compute": { simpleIcon: "cloudflare" },
+  "frontend-frontier": { simpleIcon: "figma" },
+  "gh-actions-ci": { simpleIcon: "githubactions" },
+
+  "gsap-scrolltrigger": { simpleIcon: "greensock" },
+  "keyword-research": { simpleIcon: "semrush" },
+  "kubernetes-essentials": { simpleIcon: "kubernetes" },
+  "mcp-development": { simpleIcon: "anthropic" },
+  "motion-framer": { simpleIcon: "framer" },
+
+  "newsletter-craft": { simpleIcon: "substack" },
+  "nextjs-patterns": { simpleIcon: "nextdotjs" },
+  "observability-stack": { simpleIcon: "grafana" },
+  "prompt-engineering": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+  },
+  "rag-pipelines": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+  },
+
+  "react-three-fiber": { simpleIcon: "threedotjs" },
+  "release-management": { simpleIcon: "github" },
+  "responsive-layouts": { simpleIcon: "css" },
+
+  "schema-markup": {
+    fallbackUrl: "https://www.google.com/s2/favicons?domain=schema.org&sz=64",
+  },
+  "security-best-practices": { simpleIcon: "owasp" },
+  "security-threat-model": { simpleIcon: "owasp" },
+  "seo-geo": { simpleIcon: "google" },
+  "serverless-architecture": { simpleIcon: "vercel" },
 
   "social-content-os": { simpleIcon: "x" },
   "social-draft": { simpleIcon: "buffer" },
-  "audience-growth": { simpleIcon: "youtube" },
-  "content-repurposing": { simpleIcon: "notion" },
-  "newsletter-craft": { simpleIcon: "substack" },
+  "tailwind-design-system": { simpleIcon: "tailwindcss" },
+  "technical-seo-audit": { simpleIcon: "google" },
 
-  "edge-compute": { simpleIcon: "cloudflare" },
-  "database-patterns": { simpleIcon: "supabase" },
-  "observability-stack": { simpleIcon: "grafana" },
-  "serverless-architecture": { simpleIcon: "vercel" },
-  "cdn-caching": { simpleIcon: "cloudflare" },
-
-  "dockerfile-mastery": { simpleIcon: "docker" },
-  "kubernetes-essentials": { simpleIcon: "kubernetes" },
-  "container-security": { simpleIcon: "snyk" },
-
-  "agent-orchestration": { fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64" },
-  "mcp-development": { simpleIcon: "anthropic" },
-  "prompt-engineering": { fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64" },
   "tool-use-patterns": { simpleIcon: "anthropic" },
-  "rag-pipelines": { fallbackUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=64" },
-
-  "security-best-practices": { simpleIcon: "owasp" },
-  "security-threat-model": { simpleIcon: "owasp" },
-  "auth-patterns": { simpleIcon: "clerk" },
-  "api-security": { simpleIcon: "auth0" },
-
-  "gh-actions-ci": { simpleIcon: "githubactions" },
-  "release-management": { simpleIcon: "github" },
+  "web-performance": { simpleIcon: "lighthouse" },
 };
 
 // -------------------------------------------------------------------------
 // SimpleIcons slug → brand mapping for MCPs
 // -------------------------------------------------------------------------
 
-const MCP_ICON_MAP: Record<string, { simpleIcon?: string; color?: string; fallbackUrl?: string }> = {
-  "Filesystem": { simpleIcon: "files" },
-  "Memory": { simpleIcon: "databricks" },
-  "Sequential Thinking": { simpleIcon: "openmined" },
-  "Fetch": { simpleIcon: "curl" },
-  "Git": { simpleIcon: "git" },
-
-  "GitHub": { simpleIcon: "github" },
-  "Vercel": { simpleIcon: "vercel" },
-  "Cloudflare": { simpleIcon: "cloudflare" },
-  "Sentry": { simpleIcon: "sentry" },
-
-  "Supabase": { simpleIcon: "supabase" },
-  "Neon": { fallbackUrl: lookupBrandLogoUrl("neon") },
-  "Prisma": { simpleIcon: "prisma" },
-  "Turso": { simpleIcon: "turso" },
-  "Upstash": { simpleIcon: "upstash" },
-
-  "Context7": { fallbackUrl: lookupBrandLogoUrl("context7") },
+const MCP_ICON_MAP: Record<
+  string,
+  { simpleIcon?: string; color?: string; fallbackUrl?: string }
+> = {
+  AWS: { fallbackUrl: lookupBrandLogoUrl("aws") },
+  "AWS API": { fallbackUrl: lookupBrandLogoUrl("aws") },
   "Brave Search": { simpleIcon: "brave" },
-  "Exa": { fallbackUrl: lookupBrandLogoUrl("exa") },
-  "Firecrawl": { fallbackUrl: lookupBrandLogoUrl("firecrawl") },
+  Cloudflare: { simpleIcon: "cloudflare" },
+  Context7: { fallbackUrl: lookupBrandLogoUrl("context7") },
 
-  "Playwright": { fallbackUrl: lookupBrandLogoUrl("playwright") },
-  "Puppeteer": { simpleIcon: "puppeteer" },
+  Docker: { simpleIcon: "docker" },
+  Exa: { fallbackUrl: lookupBrandLogoUrl("exa") },
+  Fetch: { simpleIcon: "curl" },
+  Figma: { simpleIcon: "figma" },
 
-  "Notion": { simpleIcon: "notion" },
-  "Slack": { fallbackUrl: githubAvatar("slackapi") },
-  "Linear": { simpleIcon: "linear" },
-  "Todoist": { simpleIcon: "todoist" },
+  Filesystem: { simpleIcon: "files" },
+  Firecrawl: { fallbackUrl: lookupBrandLogoUrl("firecrawl") },
+  Git: { simpleIcon: "git" },
+  GitHub: { simpleIcon: "github" },
+  Grafana: { simpleIcon: "grafana" },
 
-  "Stripe": { simpleIcon: "stripe" },
+  Kubernetes: { simpleIcon: "kubernetes" },
+  Linear: { simpleIcon: "linear" },
+  "MCP Proxy": { simpleIcon: "fastapi" },
+  Memory: { simpleIcon: "databricks" },
 
-  "Figma": { simpleIcon: "figma" },
-
-  "Resend": { fallbackUrl: lookupBrandLogoUrl("resend") },
-
-  "Grafana": { simpleIcon: "grafana" },
+  Neon: { fallbackUrl: lookupBrandLogoUrl("neon") },
+  Notion: { simpleIcon: "notion" },
 
   "OpenAI Agents": { fallbackUrl: lookupBrandLogoUrl("openai") },
+  Playwright: { fallbackUrl: lookupBrandLogoUrl("playwright") },
+  PostgreSQL: { simpleIcon: "postgresql" },
+  Prisma: { simpleIcon: "prisma" },
 
-  "PostgreSQL": { simpleIcon: "postgresql" },
-  "SQLite": { simpleIcon: "sqlite" },
+  Puppeteer: { simpleIcon: "puppeteer" },
 
-  "AWS": { fallbackUrl: lookupBrandLogoUrl("aws") },
-  "AWS API": { fallbackUrl: lookupBrandLogoUrl("aws") },
-  "Terraform": { simpleIcon: "terraform" },
-  "Docker": { simpleIcon: "docker" },
-  "Kubernetes": { simpleIcon: "kubernetes" },
+  Resend: { fallbackUrl: lookupBrandLogoUrl("resend") },
 
-  "Snyk": { simpleIcon: "snyk" },
+  SQLite: { simpleIcon: "sqlite" },
 
-  "MCP Proxy": { simpleIcon: "fastapi" },
-  "Time": { simpleIcon: "clockify" },
+  Sentry: { simpleIcon: "sentry" },
+
+  "Sequential Thinking": { simpleIcon: "openmined" },
+
+  Slack: { fallbackUrl: githubAvatar("slackapi") },
+  Snyk: { simpleIcon: "snyk" },
+
+  Stripe: { simpleIcon: "stripe" },
+  Supabase: { simpleIcon: "supabase" },
+  Terraform: { simpleIcon: "terraform" },
+  Time: { simpleIcon: "clockify" },
+  Todoist: { simpleIcon: "todoist" },
+
+  Turso: { simpleIcon: "turso" },
+
+  Upstash: { simpleIcon: "upstash" },
+  Vercel: { simpleIcon: "vercel" },
 };
 
 // -------------------------------------------------------------------------
 // Core logic
 // -------------------------------------------------------------------------
 
-async function fetchSvg(simpleIcon: string, color?: string): Promise<Buffer | null> {
+async function fetchSvg(
+  simpleIcon: string,
+  color?: string
+): Promise<Buffer | null> {
   const url = color
     ? `${SIMPLEICONS_CDN}/${simpleIcon}/${color}`
     : `${SIMPLEICONS_CDN}/${simpleIcon}`;
@@ -153,8 +177,8 @@ async function fetchSvg(simpleIcon: string, color?: string): Promise<Buffer | nu
       return null;
     }
     return Buffer.from(await res.arrayBuffer());
-  } catch (err) {
-    console.warn(`  ⚠ Failed to fetch ${simpleIcon}:`, err);
+  } catch (error) {
+    console.warn(`  ⚠ Failed to fetch ${simpleIcon}:`, error);
     return null;
   }
 }
@@ -162,7 +186,9 @@ async function fetchSvg(simpleIcon: string, color?: string): Promise<Buffer | nu
 async function fetchFallback(fallbackUrl: string): Promise<Buffer | null> {
   try {
     const res = await fetch(fallbackUrl);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     return Buffer.from(await res.arrayBuffer());
   } catch {
     return null;
@@ -178,9 +204,14 @@ async function main() {
 
   console.log("🔧 Ensuring storage bucket exists...");
   const { error: bucketErr } = await db.storage.createBucket(BUCKET, {
-    public: true,
-    allowedMimeTypes: ["image/svg+xml", "image/png", "image/webp", "image/jpeg"],
+    allowedMimeTypes: [
+      "image/svg+xml",
+      "image/png",
+      "image/webp",
+      "image/jpeg",
+    ],
     fileSizeLimit: 1_048_576,
+    public: true,
   });
   if (bucketErr && !bucketErr.message.includes("already exists")) {
     throw new Error(`Bucket creation failed: ${bucketErr.message}`);
@@ -253,7 +284,7 @@ async function main() {
       continue;
     }
 
-    const safeName = name.toLowerCase().replace(/\s+/g, "-");
+    const safeName = name.toLowerCase().replaceAll(/\s+/g, "-");
     const path = `mcps/${safeName}/icon.${ext}`;
     const { error: uploadErr } = await db.storage
       .from(BUCKET)
@@ -282,7 +313,7 @@ async function main() {
   console.log(`\n✅ Done – ${skillCount} skills, ${mcpCount} MCPs updated.`);
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
+main().catch((error) => {
+  console.error("Fatal error:", error);
   process.exit(1);
 });

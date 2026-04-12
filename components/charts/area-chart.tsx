@@ -1,34 +1,37 @@
 "use client";
 
 import { useState } from "react";
+
 import { cn } from "@/lib/cn";
+
+import { ChartTooltipContent } from "./chart-tooltip";
+import type { TooltipRow } from "./chart-tooltip";
 import {
   smoothPath,
   scaleLinear,
   niceMax,
   findNearestIndex,
-  type Point,
 } from "./chart-utils";
-import { ChartTooltipContent, type TooltipRow } from "./chart-tooltip";
+import type { Point } from "./chart-utils";
 
-export type AreaChartDatum = {
+export interface AreaChartDatum {
   label: string;
   value: number;
   secondary?: number;
-};
+}
 
-type AreaChartProps = {
+interface AreaChartProps {
   id: string;
   data: AreaChartDatum[];
   height?: number;
   color?: string;
   secondaryColor?: string;
   className?: string;
-};
+}
 
 const VB_W = 600;
 const VB_H = 180;
-const PAD = { top: 12, right: 12, bottom: 28, left: 40 };
+const PAD = { bottom: 28, left: 40, right: 12, top: 12 };
 
 export function AreaChart({
   id,
@@ -40,11 +43,11 @@ export function AreaChart({
 }: AreaChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return null;
+  }
 
-  const allZero = data.every(
-    (d) => d.value === 0 && (d.secondary ?? 0) === 0
-  );
+  const allZero = data.every((d) => d.value === 0 && (d.secondary ?? 0) === 0);
   if (allZero) {
     return (
       <div
@@ -105,14 +108,14 @@ export function AreaChart({
 
   const tooltipRows: TooltipRow[] = hovered
     ? [
-        { label: "total", value: hovered.value, color },
+        { color, label: "total", value: hovered.value },
         ...(hasSecondary
           ? [
               {
-                label: "api",
-                value: hovered.secondary ?? 0,
                 color: secondaryColor,
                 dashed: true,
+                label: "api",
+                value: hovered.secondary ?? 0,
               },
             ]
           : []),

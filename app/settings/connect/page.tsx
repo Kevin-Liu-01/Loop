@@ -10,8 +10,8 @@ export default async function SettingsConnectPage() {
   const { userId } = await auth();
   const user = await currentUser();
   const subscription = userId ? await getUserSubscription(userId) : null;
-  const connectAccountId =
-    (user?.publicMetadata as Record<string, unknown>)?.stripeConnectAccountId as string | undefined;
+  const connectAccountId = (user?.publicMetadata as Record<string, unknown>)
+    ?.stripeConnectAccountId as string | undefined;
 
   return (
     <SettingsSectionPage sectionId="connect">

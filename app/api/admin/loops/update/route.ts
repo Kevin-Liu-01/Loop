@@ -1,36 +1,69 @@
 import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
-
 import { z } from "zod";
 
-import { requireAuth, AuthError, type SessionUser } from "@/lib/auth";
-import { getManualUpdateCooldown, isAutomationImminent } from "@/lib/skill-limits";
-import { getSkillBySlug } from "@/lib/db/skills";
+import { requireAuth, AuthError } from "@/lib/auth";
+import type { SessionUser } from "@/lib/auth";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
-import { buildImportedSkillDraft, buildImportedSkillRecord, createNextImportedSkillVersion, fetchRemoteText, listImportedSkills, saveImportedSkills } from "@/lib/imports";
-import { buildLoopUpdateSourceLog, buildLoopUpdateTarget } from "@/lib/loop-updates";
+import { getSkillBySlug } from "@/lib/db/skills";
+import {
+  buildImportedSkillDraft,
+  buildImportedSkillRecord,
+  createNextImportedSkillVersion,
+  fetchRemoteText,
+  listImportedSkills,
+  saveImportedSkills,
+} from "@/lib/imports";
+import {
+  buildLoopUpdateSourceLog,
+  buildLoopUpdateTarget,
+} from "@/lib/loop-updates";
 import { runTrackedUserSkillUpdate } from "@/lib/refresh";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
-import { diffMultilineText } from "@/lib/text-diff";
-import { listUserSkillDocuments, saveUserSkillDocuments } from "@/lib/user-skills";
+import {
+  getManualUpdateCooldown,
+  isAutomationImminent,
+} from "@/lib/skill-limits";
 import { recordLoopRun } from "@/lib/system-state";
+import { diffMultilineText } from "@/lib/text-diff";
+import type {
+  DailySignal,
+  ImportedSkillDocument,
+  LoopRunRecord,
+  LoopUpdateResult,
+  LoopUpdateSourceLog,
+  LoopUpdateStreamEvent,
+  SourceDefinition,
+} from "@/lib/types";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
-import type { DailySignal, ImportedSkillDocument, LoopRunRecord, LoopUpdateResult, LoopUpdateSourceLog, LoopUpdateStreamEvent, SourceDefinition } from "@/lib/types";
+import {
+  listUserSkillDocuments,
+  saveUserSkillDocuments,
+} from "@/lib/user-skills";
 
 export const runtime = "nodejs";
 
 const bodySchema = z.object({
+  origin: z.enum(["user", "remote"]),
   slug: z.string().min(1),
-  origin: z.enum(["user", "remote"])
 });
 
-function sendEvent(controller: ReadableStreamDefaultController<Uint8Array>, encoder: TextEncoder, event: LoopUpdateStreamEvent) {
+function sendEvent(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder,
+  event: LoopUpdateStreamEvent
+) {
   controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
 }
 
-function buildImportedNoopRefresh(skill: ImportedSkillDocument, lastSyncedAt?: string): ImportedSkillDocument {
-  const latestVersionNumber = Math.max(...skill.versions.map((version) => version.version));
+function buildImportedNoopRefresh(
+  skill: ImportedSkillDocument,
+  lastSyncedAt?: string
+): ImportedSkillDocument {
+  const latestVersionNumber = Math.max(
+    ...skill.versions.map((version) => version.version)
+  );
 
   return {
     ...skill,
@@ -39,10 +72,10 @@ function buildImportedNoopRefresh(skill: ImportedSkillDocument, lastSyncedAt?: s
       version.version === latestVersionNumber
         ? {
             ...version,
-            lastSyncedAt
+            lastSyncedAt,
           }
         : version
-    )
+    ),
   };
 }
 
@@ -63,30 +96,30 @@ async function runUserLoopUpdate(
   }
 
   const cycle = await runTrackedUserSkillUpdate(skill, "manual", {
-    onStart(loop) {
-      sendEvent(controller, encoder, {
-        type: "start",
-        loop
-      });
-    },
-    onSource(source) {
-      sendEvent(controller, encoder, {
-        type: "source",
-        source
-      });
-    },
     onMessage(message) {
       sendEvent(controller, encoder, {
+        message,
         type: "analysis",
-        message
       });
     },
     onReasoningStep(step) {
       sendEvent(controller, encoder, {
+        step,
         type: "reasoning-step",
-        step
       });
-    }
+    },
+    onSource(source) {
+      sendEvent(controller, encoder, {
+        source,
+        type: "source",
+      });
+    },
+    onStart(loop) {
+      sendEvent(controller, encoder, {
+        loop,
+        type: "start",
+      });
+    },
   });
 
   await saveUserSkillDocuments([cycle.nextSkill]);
@@ -94,32 +127,43 @@ async function runUserLoopUpdate(
   try {
     await recordLoopRun(cycle.loopRun);
   } catch (recordError) {
-    console.error(`[loops/update] Failed to record loop run for "${slug}":`, recordError);
+    console.error(
+      `[loops/update] Failed to record loop run for "${slug}":`,
+      recordError
+    );
   }
 
   try {
     await logUsageEvent({
+      categorySlug: cycle.nextSkill.category,
+      details: cycle.result.changed ? cycle.result.nextVersionLabel : "No diff",
       kind: "skill_refresh",
-      source: "api",
       label: "Refreshed skill",
       path: cycle.result.href,
       skillSlug: cycle.result.slug,
-      categorySlug: cycle.nextSkill.category,
-      details: cycle.result.changed ? cycle.result.nextVersionLabel : "No diff"
+      source: "api",
     });
   } catch (usageError) {
-    console.error(`[loops/update] Failed to log usage event for "${slug}":`, usageError);
+    console.error(
+      `[loops/update] Failed to log usage event for "${slug}":`,
+      usageError
+    );
   }
 
   sendEvent(controller, encoder, {
-    type: "complete",
     result: cycle.result,
-    sources: cycle.sourceLogs
+    sources: cycle.sourceLogs,
+    type: "complete",
   });
 }
 
-function importedSkillChanged(current: ImportedSkillDocument, incoming: ImportedSkillDocument): boolean {
-  const latest = current.versions.find((version) => version.version === current.version) ?? current.versions[0];
+function importedSkillChanged(
+  current: ImportedSkillDocument,
+  incoming: ImportedSkillDocument
+): boolean {
+  const latest =
+    current.versions.find((version) => version.version === current.version) ??
+    current.versions[0];
 
   return (
     latest.title !== incoming.title ||
@@ -132,12 +176,16 @@ function importedSkillChanged(current: ImportedSkillDocument, incoming: Imported
   );
 }
 
-function buildImportedSourceLog(source: SourceDefinition, items: DailySignal[], note: string): LoopUpdateSourceLog {
+function buildImportedSourceLog(
+  source: SourceDefinition,
+  items: DailySignal[],
+  note: string
+): LoopUpdateSourceLog {
   return {
     ...buildLoopUpdateSourceLog(source, "done"),
     itemCount: items.length,
     items,
-    note
+    note,
   };
 }
 
@@ -155,13 +203,22 @@ async function assertManualUpdateAccess(
     }
 
     if (!canSessionEditSkill(skill, session, sessionAuthor)) {
-      throw new AuthError("Only the skill owner can trigger manual refreshes.", 403);
+      throw new AuthError(
+        "Only the skill owner can trigger manual refreshes.",
+        403
+      );
     }
 
     return;
   }
 
-  if (!canSessionEditSkill({ authorId: undefined, creatorClerkUserId: undefined }, session, null)) {
+  if (
+    !canSessionEditSkill(
+      { authorId: undefined, creatorClerkUserId: undefined },
+      session,
+      null
+    )
+  ) {
     throw new AuthError(
       "Track the skill or use the owner account before triggering manual refreshes.",
       403
@@ -191,30 +248,30 @@ async function runImportedLoopUpdate(
   }
 
   sendEvent(controller, encoder, {
+    loop: target,
     type: "start",
-    loop: target
   });
 
   const running = {
     ...buildLoopUpdateSourceLog(canonicalSource, "running"),
-    note: "Fetching remote source."
+    note: "Fetching remote source.",
   } satisfies LoopUpdateSourceLog;
   sendEvent(controller, encoder, {
+    source: running,
     type: "source",
-    source: running
   });
 
   const { raw, normalizedUrl } = await fetchRemoteText(skill.canonicalUrl);
   const refreshed = buildImportedSkillDraft(raw, normalizedUrl, new Date());
   const logItems: DailySignal[] = [
     {
+      publishedAt: refreshed.updatedAt,
+      source: canonicalSource.label,
+      summary: refreshed.description,
+      tags: refreshed.tags,
       title: refreshed.title,
       url: refreshed.canonicalUrl,
-      source: canonicalSource.label,
-      publishedAt: refreshed.updatedAt,
-      summary: refreshed.description,
-      tags: refreshed.tags
-    }
+    },
   ];
   const fetchedSourceLog = buildImportedSourceLog(
     canonicalSource,
@@ -222,13 +279,14 @@ async function runImportedLoopUpdate(
     `Fetched ${raw.length.toLocaleString()} bytes from the canonical source.`
   );
   sendEvent(controller, encoder, {
+    source: fetchedSourceLog,
     type: "source",
-    source: fetchedSourceLog
   });
 
   sendEvent(controller, encoder, {
+    message:
+      "Comparing the fetched source against the current imported loop revision.",
     type: "analysis",
-    message: "Comparing the fetched source against the current imported loop revision."
   });
 
   const changed = importedSkillChanged(skill, refreshed);
@@ -236,17 +294,17 @@ async function runImportedLoopUpdate(
     ? createNextImportedSkillVersion(
         skill,
         {
-          title: refreshed.title,
-          description: refreshed.description,
-          category: refreshed.category,
           body: refreshed.body,
-          sourceUrl: refreshed.sourceUrl,
           canonicalUrl: refreshed.canonicalUrl,
+          category: refreshed.category,
+          description: refreshed.description,
+          lastSyncedAt: refreshed.lastSyncedAt,
           ownerName: refreshed.ownerName,
-          tags: refreshed.tags,
-          visibility: refreshed.visibility,
+          sourceUrl: refreshed.sourceUrl,
           syncEnabled: refreshed.syncEnabled,
-          lastSyncedAt: refreshed.lastSyncedAt
+          tags: refreshed.tags,
+          title: refreshed.title,
+          visibility: refreshed.visibility,
         },
         refreshed.updatedAt
       )
@@ -256,85 +314,95 @@ async function runImportedLoopUpdate(
 
   const afterRecord = buildImportedSkillRecord(nextSkill);
   const result: LoopUpdateResult = {
-    slug,
-    title: afterRecord.title,
-    origin: "remote",
     changed,
-    previousVersionLabel: beforeRecord.versionLabel,
-    nextVersionLabel: afterRecord.versionLabel,
-    updatedAt: afterRecord.updatedAt,
-    href: afterRecord.href,
     diffLines: diffMultilineText(beforeRecord.body, afterRecord.body),
+    href: afterRecord.href,
+    items: logItems,
+    nextVersionLabel: afterRecord.versionLabel,
+    origin: "remote",
+    previousVersionLabel: beforeRecord.versionLabel,
+    slug,
     summary: changed
       ? `A fresh imported revision landed from ${canonicalSource.label}.`
       : `No structural diff landed from ${canonicalSource.label}.`,
+    title: afterRecord.title,
+    updatedAt: afterRecord.updatedAt,
     whatChanged: changed
       ? `The imported loop content changed and a new version was minted.`
       : `The source was fetched successfully, but the imported loop body stayed materially the same.`,
-    items: logItems
   };
 
   const loopRun: LoopRunRecord = {
-    id: randomUUID(),
-    slug,
-    title: afterRecord.title,
-    origin: "remote",
-    trigger: "manual",
-    status: "success",
-    startedAt,
-    finishedAt: new Date().toISOString(),
-    previousVersionLabel: beforeRecord.versionLabel,
-    nextVersionLabel: afterRecord.versionLabel,
-    href: afterRecord.href,
-    summary: result.summary,
-    whatChanged: result.whatChanged,
     bodyChanged: changed,
     changedSections: changed ? ["Canonical import"] : [],
+    diffLines: result.diffLines.slice(0, 120),
     editorModel: "canonical-import",
-    sourceCount: 1,
-    signalCount: logItems.length,
+    finishedAt: new Date().toISOString(),
+    href: afterRecord.href,
+    id: randomUUID(),
     messages: [
       "Fetched the canonical source.",
-      changed ? "Detected a structural diff against the current imported revision." : "No structural diff detected.",
-      changed ? `Saved ${afterRecord.versionLabel}.` : `Kept ${afterRecord.versionLabel}.`
+      changed
+        ? "Detected a structural diff against the current imported revision."
+        : "No structural diff detected.",
+      changed
+        ? `Saved ${afterRecord.versionLabel}.`
+        : `Kept ${afterRecord.versionLabel}.`,
     ],
+    nextVersionLabel: afterRecord.versionLabel,
+    origin: "remote",
+    previousVersionLabel: beforeRecord.versionLabel,
+    signalCount: logItems.length,
+    slug,
+    sourceCount: 1,
     sources: [fetchedSourceLog],
-    diffLines: result.diffLines.slice(0, 120)
+    startedAt,
+    status: "success",
+    summary: result.summary,
+    title: afterRecord.title,
+    trigger: "manual",
+    whatChanged: result.whatChanged,
   };
 
   try {
     await recordLoopRun(loopRun);
   } catch (recordError) {
-    console.error(`[loops/update] Failed to record imported loop run for "${slug}":`, recordError);
+    console.error(
+      `[loops/update] Failed to record imported loop run for "${slug}":`,
+      recordError
+    );
   }
 
   try {
     await logUsageEvent({
+      categorySlug: afterRecord.category,
+      details: changed ? afterRecord.versionLabel : "No diff",
       kind: "skill_refresh",
-      source: "api",
       label: "Refreshed imported skill",
       path: afterRecord.href,
       skillSlug: afterRecord.slug,
-      categorySlug: afterRecord.category,
-      details: changed ? afterRecord.versionLabel : "No diff"
+      source: "api",
     });
   } catch (usageError) {
-    console.error(`[loops/update] Failed to log usage event for imported "${slug}":`, usageError);
+    console.error(
+      `[loops/update] Failed to log usage event for imported "${slug}":`,
+      usageError
+    );
   }
 
   sendEvent(controller, encoder, {
-    type: "complete",
     result,
-    sources: [fetchedSourceLog]
+    sources: [fetchedSourceLog],
+    type: "complete",
   });
 }
 
 export async function POST(request: Request) {
   return withApiUsage(
     {
-      route: "/api/admin/loops/update",
+      label: "Manual loop update",
       method: "POST",
-      label: "Manual loop update"
+      route: "/api/admin/loops/update",
     },
     async () => {
       let session: SessionUser;
@@ -342,21 +410,34 @@ export async function POST(request: Request) {
         session = await requireAuth();
       } catch (error) {
         if (error instanceof AuthError) {
-          return NextResponse.json({ error: error.message }, { status: error.status });
+          return NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          );
         }
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
       const payload = bodySchema.safeParse(await request.json());
       if (!payload.success) {
-        return NextResponse.json({ error: "Invalid update payload." }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid update payload." },
+          { status: 400 }
+        );
       }
 
       try {
-        await assertManualUpdateAccess(session, payload.data.slug, payload.data.origin);
+        await assertManualUpdateAccess(
+          session,
+          payload.data.slug,
+          payload.data.origin
+        );
       } catch (error) {
         if (error instanceof AuthError) {
-          return NextResponse.json({ error: error.message }, { status: error.status });
+          return NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          );
         }
         if (error instanceof Error) {
           return NextResponse.json({ error: error.message }, { status: 400 });
@@ -368,14 +449,17 @@ export async function POST(request: Request) {
       if (!cooldown.allowed) {
         const minutesLeft = Math.ceil(cooldown.remainingMs / 60_000);
         return NextResponse.json(
-          { error: `Manual updates are rate-limited. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.` },
+          {
+            error: `Manual updates are rate-limited. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+          },
           { status: 429 }
         );
       }
 
-      const skill = payload.data.origin === "user"
-        ? await getSkillBySlug(payload.data.slug)
-        : null;
+      const skill =
+        payload.data.origin === "user"
+          ? await getSkillBySlug(payload.data.slug)
+          : null;
       const automationWarning = skill?.automation
         ? isAutomationImminent(skill.automation)
         : { imminent: false, nextRunAt: null };
@@ -387,17 +471,24 @@ export async function POST(request: Request) {
           try {
             if (automationWarning.imminent) {
               sendEvent(controller, encoder, {
+                message: `Heads up: a scheduled automation is due ${automationWarning.nextRunAt ? "at " + new Date(automationWarning.nextRunAt).toLocaleString() : "soon"}. This manual run will take its place.`,
                 type: "analysis",
-                message: `Heads up: a scheduled automation is due ${automationWarning.nextRunAt ? "at " + new Date(automationWarning.nextRunAt).toLocaleString() : "soon"}. This manual run will take its place.`
               });
             }
             if (payload.data.origin === "user") {
               await runUserLoopUpdate(payload.data.slug, controller, encoder);
             } else {
-              await runImportedLoopUpdate(payload.data.slug, controller, encoder);
+              await runImportedLoopUpdate(
+                payload.data.slug,
+                controller,
+                encoder
+              );
             }
           } catch (error) {
-            const message = error instanceof Error ? error.message : "Manual loop update failed.";
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Manual loop update failed.";
             const elapsedMs = Date.now() - new Date(startedAt).getTime();
             console.error(
               `[loops/update] Manual update FAILED for "${payload.data.slug}" after ${(elapsedMs / 1000).toFixed(1)}s: ${message}`,
@@ -405,40 +496,43 @@ export async function POST(request: Request) {
             );
             try {
               await recordLoopRun({
-                id: randomUUID(),
-                slug: payload.data.slug,
-                title: payload.data.slug,
-                origin: payload.data.origin,
-                trigger: "manual",
-                status: "error",
-                startedAt,
-                finishedAt: new Date().toISOString(),
                 changedSections: [],
-                sourceCount: 0,
-                signalCount: 0,
-                messages: [message],
-                sources: [],
                 diffLines: [],
-                errorMessage: message
+                errorMessage: message,
+                finishedAt: new Date().toISOString(),
+                id: randomUUID(),
+                messages: [message],
+                origin: payload.data.origin,
+                signalCount: 0,
+                slug: payload.data.slug,
+                sourceCount: 0,
+                sources: [],
+                startedAt,
+                status: "error",
+                title: payload.data.slug,
+                trigger: "manual",
               });
             } catch (recordError) {
-              console.error(`[loops/update] Failed to record error loop run for "${payload.data.slug}":`, recordError);
+              console.error(
+                `[loops/update] Failed to record error loop run for "${payload.data.slug}":`,
+                recordError
+              );
             }
             sendEvent(controller, encoder, {
+              message,
               type: "error",
-              message
             });
           } finally {
             controller.close();
           }
-        }
+        },
       });
 
       return new Response(stream, {
         headers: {
+          "cache-control": "no-store",
           "content-type": "application/x-ndjson; charset=utf-8",
-          "cache-control": "no-store"
-        }
+        },
       });
     }
   );

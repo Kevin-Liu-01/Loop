@@ -2,19 +2,19 @@ import { Sandbox } from "@vercel/sandbox";
 
 export type SandboxRuntime = "node24" | "node22" | "python3.13";
 
-export type SandboxSessionInfo = {
+export interface SandboxSessionInfo {
   sandboxId: string;
   runtime: SandboxRuntime;
   status: string;
-};
+}
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
-export type SandboxAuthError = {
+export interface SandboxAuthError {
   code: "SANDBOX_AUTH_FAILED";
   message: string;
   steps: string[];
-};
+}
 
 function isSandboxAuthError(msg: string): boolean {
   return (
@@ -41,27 +41,27 @@ export function buildSandboxAuthError(): SandboxAuthError {
 
 export async function createSandboxSession(
   runtime: SandboxRuntime,
-  env?: Record<string, string>,
+  env?: Record<string, string>
 ): Promise<SandboxSessionInfo> {
   try {
     const sandbox = await Sandbox.create({
+      env,
       runtime,
       timeout: DEFAULT_TIMEOUT_MS,
-      env,
     });
 
     return {
-      sandboxId: sandbox.sandboxId,
       runtime,
+      sandboxId: sandbox.sandboxId,
       status: sandbox.status,
     };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     if (isSandboxAuthError(msg)) {
       const authErr = buildSandboxAuthError();
-      throw new Error(JSON.stringify(authErr));
+      throw new Error(JSON.stringify(authErr), { cause: error });
     }
-    throw err;
+    throw error;
   }
 }
 
@@ -75,9 +75,9 @@ export async function getSandboxStatus(
   try {
     const sandbox = await Sandbox.get({ sandboxId });
     return {
-      sandboxId: sandbox.sandboxId,
       runtime: "node24",
-      status: sandbox.status
+      sandboxId: sandbox.sandboxId,
+      status: sandbox.status,
     };
   } catch {
     return null;

@@ -1,27 +1,30 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { canSessionEditSkill, getSkillPublisherName } from "@/lib/skill-authoring";
+import {
+  canSessionEditSkill,
+  getSkillPublisherName,
+} from "@/lib/skill-authoring";
 
 test("canSessionEditSkill allows the verified attached author", () => {
   const allowed = canSessionEditSkill(
     {
       authorId: "author-loop",
-      creatorClerkUserId: undefined
+      creatorClerkUserId: undefined,
     },
     {
-      userId: "user_123",
       email: "kk23907751@gmail.com",
-      stripeConnectAccountId: null
+      stripeConnectAccountId: null,
+      userId: "user_123",
     },
     {
-      id: "author-loop",
-      slug: "loop",
-      displayName: "Loop",
+      badgeLabel: "Verified",
       bio: "",
-      verified: true,
+      displayName: "Loop",
+      id: "author-loop",
       isOfficial: true,
-      badgeLabel: "Verified"
+      slug: "loop",
+      verified: true,
     }
   );
 
@@ -32,12 +35,12 @@ test("canSessionEditSkill falls back to the legacy creator id", () => {
   const allowed = canSessionEditSkill(
     {
       authorId: undefined,
-      creatorClerkUserId: "user_legacy"
+      creatorClerkUserId: "user_legacy",
     },
     {
-      userId: "user_legacy",
       email: "someone@example.com",
-      stripeConnectAccountId: null
+      stripeConnectAccountId: null,
+      userId: "user_legacy",
     },
     null
   );
@@ -47,16 +50,16 @@ test("canSessionEditSkill falls back to the legacy creator id", () => {
 
 test("getSkillPublisherName prefers the attached author profile", () => {
   const name = getSkillPublisherName({
-    ownerName: "Fallback Name",
     author: {
-      id: "author-loop",
-      slug: "loop",
-      displayName: "Loop",
+      badgeLabel: "Verified",
       bio: "",
-      verified: true,
+      displayName: "Loop",
+      id: "author-loop",
       isOfficial: true,
-      badgeLabel: "Verified"
-    }
+      slug: "loop",
+      verified: true,
+    },
+    ownerName: "Fallback Name",
   });
 
   assert.equal(name, "Loop");

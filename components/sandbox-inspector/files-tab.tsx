@@ -9,22 +9,28 @@ import {
 import { cn } from "@/lib/cn";
 import type { FileEntry } from "@/lib/sandbox-inspect-types";
 
-type FilesTabProps = {
+interface FilesTabProps {
   files: FileEntry[];
   currentPath: string;
   isLoading: boolean;
   onBrowse: (path: string) => void;
-};
+}
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function parentPath(path: string): string {
   const parts = path.split("/").filter(Boolean);
-  if (parts.length <= 1) return "/";
+  if (parts.length <= 1) {
+    return "/";
+  }
   return "/" + parts.slice(0, -1).join("/");
 }
 
@@ -41,9 +47,7 @@ function FileRow({
     <button
       className={cn(
         "flex w-full items-center gap-2.5 border-b border-line/60 px-3 py-2 text-left text-[0.8125rem] transition-colors last:border-b-0",
-        entry.isDir
-          ? "cursor-pointer hover:bg-paper-2/50"
-          : "cursor-default",
+        entry.isDir ? "cursor-pointer hover:bg-paper-2/50" : "cursor-default"
       )}
       onClick={() => entry.isDir && onBrowse(entry.path)}
       type="button"
@@ -52,13 +56,13 @@ function FileRow({
       <Icon
         className={cn(
           "h-3.5 w-3.5 shrink-0",
-          entry.isDir ? "text-accent" : "text-ink-faint/50",
+          entry.isDir ? "text-accent" : "text-ink-faint/50"
         )}
       />
       <span
         className={cn(
           "min-w-0 flex-1 truncate",
-          entry.isDir ? "font-medium text-ink" : "text-ink-soft",
+          entry.isDir ? "font-medium text-ink" : "text-ink-soft"
         )}
       >
         {entry.name}
@@ -93,8 +97,10 @@ export function FilesTab({
     );
   }
 
-  const sortedFiles = [...files].sort((a, b) => {
-    if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+  const sortedFiles = [...files].toSorted((a, b) => {
+    if (a.isDir !== b.isDir) {
+      return a.isDir ? -1 : 1;
+    }
     return a.name.localeCompare(b.name);
   });
 

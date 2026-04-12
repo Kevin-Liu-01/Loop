@@ -10,24 +10,24 @@ type AutomationSourceSkill = Pick<SkillRecord, "automation" | "title" | "slug">;
  * skill surfaces automation controls immediately.
  */
 export function buildPausedAutomationFromSource(
-  source: AutomationSourceSkill,
+  source: AutomationSourceSkill
 ): SkillAutomationState {
   if (source.automation) {
     return {
       ...source.automation,
-      enabled: false,
-      status: "paused",
-      lastRunAt: undefined,
       consecutiveFailures: undefined,
+      enabled: false,
+      lastRunAt: undefined,
       preferredHour: source.automation.preferredHour ?? DEFAULT_PREFERRED_HOUR,
+      status: "paused",
     };
   }
 
   return {
-    enabled: false,
     cadence: "daily",
-    status: "paused",
-    prompt: `Refresh $${source.slug}: search the web for recent developments, cross-reference with tracked sources, and update the skill with concrete changes. Prioritize new versions, deprecations, and revised best practices. Stay terse and operational.`,
+    enabled: false,
     preferredHour: DEFAULT_PREFERRED_HOUR,
+    prompt: `Refresh $${source.slug}: search the web for recent developments, cross-reference with tracked sources, and update the skill with concrete changes. Prioritize new versions, deprecations, and revised best practices. Stay terse and operational.`,
+    status: "paused",
   };
 }

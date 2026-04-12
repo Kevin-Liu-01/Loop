@@ -2,9 +2,9 @@ import { SettingsNavSidebar } from "@/components/settings-nav-sidebar";
 import { cn } from "@/lib/cn";
 import { pageInsetPadX } from "@/lib/ui-layout";
 
-type SettingsShellProps = {
+interface SettingsShellProps {
   children: React.ReactNode;
-};
+}
 
 /**
  * Sidebar + main column for settings routes (`/settings/*`).

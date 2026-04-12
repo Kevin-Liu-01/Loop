@@ -6,13 +6,18 @@
  */
 
 import { seedCategories } from "@/lib/db/categories";
-import { updateSkill } from "@/lib/db/skills";
-import { computeSourceLogoUrl } from "@/lib/skill-icons";
 import { SKILL_SOURCE_CONFIGS } from "@/lib/db/seed-data/skill-sources";
+import { updateSkill } from "@/lib/db/skills";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
+import { computeSourceLogoUrl } from "@/lib/skill-icons";
 
-async function applySourceLogos(): Promise<{ updated: number; errors: number }> {
-  console.log(`\n[1/2] Applying source logos to ${SKILL_SOURCE_CONFIGS.length} skills...`);
+async function applySourceLogos(): Promise<{
+  updated: number;
+  errors: number;
+}> {
+  console.log(
+    `\n[1/2] Applying source logos to ${SKILL_SOURCE_CONFIGS.length} skills...`
+  );
 
   let updated = 0;
   let errors = 0;
@@ -21,11 +26,13 @@ async function applySourceLogos(): Promise<{ updated: number; errors: number }> 
     try {
       const sourcesWithLogos = cfg.sources.map((source) => ({
         ...source,
-        logoUrl: source.logoUrl || computeSourceLogoUrl(source.url)
+        logoUrl: source.logoUrl || computeSourceLogoUrl(source.url),
       }));
 
       await updateSkill(cfg.slug, { sources: sourcesWithLogos });
-      console.log(`  [ok]   ${cfg.slug} – ${sourcesWithLogos.length} sources with logos`);
+      console.log(
+        `  [ok]   ${cfg.slug} – ${sourcesWithLogos.length} sources with logos`
+      );
       updated++;
     } catch (error) {
       console.error(`  [err]  ${cfg.slug}: ${(error as Error).message}`);
@@ -33,11 +40,13 @@ async function applySourceLogos(): Promise<{ updated: number; errors: number }> 
     }
   }
 
-  return { updated, errors };
+  return { errors, updated };
 }
 
 async function applyCategoryLogos(): Promise<void> {
-  console.log(`\n[2/2] Re-seeding ${CATEGORY_REGISTRY.length} categories with source logos + icons...`);
+  console.log(
+    `\n[2/2] Re-seeding ${CATEGORY_REGISTRY.length} categories with source logos + icons...`
+  );
   await seedCategories(CATEGORY_REGISTRY);
   console.log(`  ${CATEGORY_REGISTRY.length} categories updated`);
 }

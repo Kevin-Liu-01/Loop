@@ -8,48 +8,55 @@
  */
 
 import { getServerSupabase } from "@/lib/db/client";
+import { SEED_MCP_DEFINITIONS } from "@/lib/db/seed-data/mcp-definitions";
+import type { SeedMcp } from "@/lib/db/seed-data/mcp-definitions";
 import { buildVersionLabel } from "@/lib/format";
-import { SEED_MCP_DEFINITIONS, type SeedMcp } from "@/lib/db/seed-data/mcp-definitions";
 
 function seedToRow(seed: SeedMcp): Record<string, unknown> {
   const now = new Date().toISOString();
   return {
-    name: seed.name,
-    description: seed.description,
-    manifest_url: seed.manifestUrl,
-    homepage_url: seed.homepageUrl ?? null,
-    transport: seed.transport,
-    url: seed.url ?? null,
-    command: seed.command ?? null,
     args: seed.args,
+    command: seed.command ?? null,
+    created_at: now,
+    description: seed.description,
     env_keys: seed.envKeys,
     headers: seed.headers ?? null,
-    tags: seed.tags,
+    homepage_url: seed.homepageUrl ?? null,
+    manifest_url: seed.manifestUrl,
+    name: seed.name,
     raw: "",
+    tags: seed.tags,
+    transport: seed.transport,
+    updated_at: now,
+    url: seed.url ?? null,
     version: 1,
     version_label: buildVersionLabel(1),
-    created_at: now,
-    updated_at: now,
   };
 }
 
 async function getExistingNames(): Promise<Set<string>> {
   const db = getServerSupabase();
-  const { data, error } = await db
-    .from("imported_mcps")
-    .select("name");
+  const { data, error } = await db.from("imported_mcps").select("name");
 
-  if (error) throw new Error(`Failed to list existing MCPs: ${error.message}`);
+  if (error) {
+    throw new Error(`Failed to list existing MCPs: ${error.message}`);
+  }
   return new Set((data ?? []).map((row: { name: string }) => row.name));
 }
 
 async function insertMcp(row: Record<string, unknown>): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db.from("imported_mcps").insert(row as never);
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
-async function seedMcps(): Promise<{ inserted: number; skipped: number; errors: number }> {
+async function seedMcps(): Promise<{
+  inserted: number;
+  skipped: number;
+  errors: number;
+}> {
   const existing = await getExistingNames();
   let inserted = 0;
   let skipped = 0;
@@ -67,13 +74,13 @@ async function seedMcps(): Promise<{ inserted: number; skipped: number; errors: 
       await insertMcp(row);
       console.log(`  [ok]   ${seed.name}`);
       inserted++;
-    } catch (err) {
-      console.error(`  [err]  ${seed.name}: ${(err as Error).message}`);
+    } catch (error) {
+      console.error(`  [err]  ${seed.name}: ${(error as Error).message}`);
       errors++;
     }
   }
 
-  return { inserted, skipped, errors };
+  return { errors, inserted, skipped };
 }
 
 async function main(): Promise<void> {

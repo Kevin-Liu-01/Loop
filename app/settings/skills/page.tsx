@@ -13,14 +13,18 @@ export default async function SettingsSkillsPage() {
   const timeZone = await getUsageTimeZoneFromCookie();
   const [session, { snapshot }, loopRuns] = await Promise.all([
     getSessionUser(),
-    getSystemSnapshot({ timeZone, includePrivate: true }),
-    listLoopRuns({ limit: 200 })
+    getSystemSnapshot({ includePrivate: true, timeZone }),
+    listLoopRuns({ limit: 200 }),
   ]);
 
-  const sessionAuthor = session ? await findSkillAuthorForSession(session) : null;
+  const sessionAuthor = session
+    ? await findSkillAuthorForSession(session)
+    : null;
 
   const userSkills = snapshot.skills.filter(
-    (skill) => skill.origin === "user" && canSessionEditSkill(skill, session, sessionAuthor)
+    (skill) =>
+      skill.origin === "user" &&
+      canSessionEditSkill(skill, session, sessionAuthor)
   );
 
   const latestRunBySlug = new Map<string, (typeof loopRuns)[number]>();

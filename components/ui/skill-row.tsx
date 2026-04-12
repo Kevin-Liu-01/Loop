@@ -1,9 +1,9 @@
 import { cn } from "@/lib/cn";
 
-type SkillRowProps = {
+interface SkillRowProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
 export function SkillRow({ className, children }: SkillRowProps) {
   return (
@@ -18,27 +18,72 @@ export function SkillRow({ className, children }: SkillRowProps) {
   );
 }
 
-export function SkillRowContent({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("grid min-w-0 gap-1.5", className)}>{children}</div>;
-}
-
-export function SkillRowHead({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("flex flex-wrap items-center gap-2", className)}>{children}</div>;
-}
-
-export function SkillRowTitle({ className, children, ...rest }: { className?: string; children: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+export function SkillRowContent({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <a className={cn("text-base font-semibold text-ink hover:text-ink-soft", className)} {...rest}>
+    <div className={cn("grid min-w-0 gap-1.5", className)}>{children}</div>
+  );
+}
+
+export function SkillRowHead({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function SkillRowTitle({
+  className,
+  children,
+  ...rest
+}: {
+  className?: string;
+  children: React.ReactNode;
+} & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a
+      className={cn(
+        "text-base font-semibold text-ink hover:text-ink-soft",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </a>
   );
 }
 
-export function SkillRowBadges({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <span className={cn("flex flex-wrap gap-1.5", className)}>{children}</span>;
+export function SkillRowBadges({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={cn("flex flex-wrap gap-1.5", className)}>{children}</span>
+  );
 }
 
-export function SkillRowDesc({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SkillRowDesc({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <p
       className={cn(
@@ -51,11 +96,25 @@ export function SkillRowDesc({ className, children }: { className?: string; chil
   );
 }
 
-export function SkillRowMeta({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <span className={cn("text-xs text-ink-faint", className)}>{children}</span>;
+export function SkillRowMeta({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={cn("text-xs text-ink-faint", className)}>{children}</span>
+  );
 }
 
-export function SkillRowAction({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SkillRowAction({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className={cn("shrink-0 pt-0.5 max-lg:justify-self-start", className)}>
       {children}

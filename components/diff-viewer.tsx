@@ -8,18 +8,17 @@ import {
   computeInlineSegments,
   groupIntoHunks,
   pairChangedLines,
-  type DiffHunk,
-  type InlineSegment,
 } from "@/lib/diff-utils";
+import type { DiffHunk, InlineSegment } from "@/lib/diff-utils";
 import type { DiffLine } from "@/lib/types";
 
-type DiffViewerProps = {
+interface DiffViewerProps {
   lines: DiffLine[];
   compact?: boolean;
   maxHeight?: number;
   label?: string;
   truncatedTotal?: number;
-};
+}
 
 export function DiffViewer({
   lines,
@@ -33,7 +32,9 @@ export function DiffViewer({
   const stats = useMemo(() => computeDiffStats(lines), [lines]);
   const hunks = useMemo(() => groupIntoHunks(lines), [lines]);
 
-  if (lines.length === 0) return null;
+  if (lines.length === 0) {
+    return null;
+  }
 
   return (
     <div className={cn("diff-viewer", compact && "diff-viewer--compact")}>
@@ -100,10 +101,7 @@ function HunkBlock({
   isFirst: boolean;
   compact: boolean;
 }) {
-  const pairedLines = useMemo(
-    () => pairChangedLines(hunk.lines),
-    [hunk.lines]
-  );
+  const pairedLines = useMemo(() => pairChangedLines(hunk.lines), [hunk.lines]);
 
   const inlineCache = useMemo(() => {
     const cache = new Map<
@@ -199,7 +197,9 @@ function findInlineCacheForAdded(
   >
 ): { oldSegments: InlineSegment[]; newSegments: InlineSegment[] } | undefined {
   for (const [removedIdx, pairedAdded] of pairs.entries()) {
-    if (pairedAdded === addedIdx) return cache.get(removedIdx);
+    if (pairedAdded === addedIdx) {
+      return cache.get(removedIdx);
+    }
   }
   return undefined;
 }
@@ -216,12 +216,8 @@ function InlineHighlight({
       {segments.map((seg, i) => (
         <span
           className={cn(
-            seg.highlight &&
-              type === "added" &&
-              "diff-viewer__word--added",
-            seg.highlight &&
-              type === "removed" &&
-              "diff-viewer__word--removed"
+            seg.highlight && type === "added" && "diff-viewer__word--added",
+            seg.highlight && type === "removed" && "diff-viewer__word--removed"
           )}
           key={i}
         >

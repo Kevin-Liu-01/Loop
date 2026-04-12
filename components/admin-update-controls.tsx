@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { KeyIcon, LogOutIcon, RefreshIcon } from "@/components/frontier-icons";
 import { Badge, EyebrowPill } from "@/components/ui/badge";
@@ -11,19 +11,22 @@ import { Panel } from "@/components/ui/panel";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { formatDateTime } from "@/lib/format";
 
-type RefreshResponse = {
+interface RefreshResponse {
   error?: string;
   generatedAt?: string;
   skills?: number;
   dailyBriefs?: number;
-};
+}
 
-type AdminUpdateControlsProps = {
+interface AdminUpdateControlsProps {
   currentAdminEmail: string | null;
   primaryAdminEmail: string;
-};
+}
 
-export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: AdminUpdateControlsProps) {
+export function AdminUpdateControls({
+  currentAdminEmail,
+  primaryAdminEmail,
+}: AdminUpdateControlsProps) {
   const { timeZone } = useAppTimezone();
   const router = useRouter();
   const [email, setEmail] = useState(currentAdminEmail ?? primaryAdminEmail);
@@ -42,20 +45,25 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
 
     startClaimTransition(async () => {
       const response = await fetch("/api/admin/session", {
-        method: "POST",
+        body: JSON.stringify({ email }),
         headers: {
-          "content-type": "application/json"
+          "content-type": "application/json",
         },
-        body: JSON.stringify({ email })
+        method: "POST",
       });
 
-      const payload = (await response.json()) as { error?: string; email?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        email?: string;
+      };
       if (!response.ok) {
         setErrorMessage(payload.error ?? "Unable to claim admin access.");
         return;
       }
 
-      setStatusMessage(`Operator access claimed for ${payload.email ?? email}.`);
+      setStatusMessage(
+        `Operator access claimed for ${payload.email ?? email}.`
+      );
       router.refresh();
     });
   }
@@ -66,7 +74,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
 
     startRefreshTransition(async () => {
       const response = await fetch("/api/refresh?mode=full", {
-        method: "POST"
+        method: "POST",
       });
 
       const payload = (await response.json()) as RefreshResponse;
@@ -75,7 +83,9 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
         return;
       }
 
-      const generatedAt = payload.generatedAt ? formatDateTime(payload.generatedAt, timeZone) : "just now";
+      const generatedAt = payload.generatedAt
+        ? formatDateTime(payload.generatedAt, timeZone)
+        : "just now";
       setStatusMessage(
         `Refresh finished at ${generatedAt}. ${payload.skills ?? 0} skills and ${payload.dailyBriefs ?? 0} briefs updated.`
       );
@@ -89,7 +99,7 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
 
     startSignOutTransition(async () => {
       const response = await fetch("/api/admin/session", {
-        method: "DELETE"
+        method: "DELETE",
       });
 
       if (!response.ok) {
@@ -107,16 +117,22 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <EyebrowPill>Access</EyebrowPill>
-          <h2 className="m-0 text-[1.15rem] font-semibold tracking-[-0.03em]">Manual refresh</h2>
+          <h2 className="m-0 text-[1.15rem] font-semibold tracking-[-0.03em]">
+            Manual refresh
+          </h2>
         </div>
-        <small className="text-sm text-ink-soft">{hasAccess ? currentAdminEmail : primaryAdminEmail}</small>
+        <small className="text-sm text-ink-soft">
+          {hasAccess ? currentAdminEmail : primaryAdminEmail}
+        </small>
       </div>
 
       {hasAccess ? (
         <div className="grid gap-4">
           <div className="flex flex-wrap items-center gap-3 text-ink-soft">
             <Badge color="green">Signed in</Badge>
-            <span className="text-ink-soft leading-7">This session can run a full refresh.</span>
+            <span className="text-ink-soft leading-7">
+              This session can run a full refresh.
+            </span>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -155,7 +171,10 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
             />
           </FieldGroup>
           <div className="flex flex-wrap gap-3">
-            <Button disabled={isClaimPending || isRefreshPending || isSignOutPending} type="submit">
+            <Button
+              disabled={isClaimPending || isRefreshPending || isSignOutPending}
+              type="submit"
+            >
               <KeyIcon className="h-3.5 w-3.5" />
               {isClaimPending ? "Claiming..." : "Claim access"}
             </Button>
@@ -163,8 +182,12 @@ export function AdminUpdateControls({ currentAdminEmail, primaryAdminEmail }: Ad
         </form>
       )}
 
-      {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
-      {statusMessage ? <p className="text-ink-soft leading-7">{statusMessage}</p> : null}
+      {errorMessage ? (
+        <p className="text-sm text-danger">{errorMessage}</p>
+      ) : null}
+      {statusMessage ? (
+        <p className="text-ink-soft leading-7">{statusMessage}</p>
+      ) : null}
     </Panel>
   );
 }

@@ -1,22 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
 import { DownloadSkillButton } from "@/components/download-skill-button";
-import {
-  BotIcon,
-  CodeIcon,
-  UserIcon,
-} from "@/components/frontier-icons";
-import { Select } from "@/components/ui/select";
+import { BotIcon, CodeIcon, UserIcon } from "@/components/frontier-icons";
 import { Panel } from "@/components/ui/panel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
+import { Select } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/shadcn/tabs";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
 
-type SkillInstallPanelProps = {
+interface SkillInstallPanelProps {
   slug: string;
   skillHref: string;
   agentPrompt: string;
@@ -24,20 +25,20 @@ type SkillInstallPanelProps = {
   body: string;
   downloadFilename: string;
   agentDocs?: AgentDocs;
-};
+}
 
 const PLATFORM_LABELS: Record<string, string> = {
-  cursor: "Cursor",
+  agents: "AGENTS.md",
   claude: "Claude Code",
   codex: "Codex CLI",
-  agents: "AGENTS.md",
+  cursor: "Cursor",
 };
 
 const PLATFORM_STEPS: Record<string, string[]> = {
-  cursor: [
-    "Copy the agent prompt below and paste it into Cursor chat.",
-    "The skill will be immediately available to your agent.",
-    "Read the SKILL.md content for usage instructions.",
+  agents: [
+    "Copy the AGENTS.md content into your project root.",
+    "Any compatible agent will pick it up automatically.",
+    "Customize the rules to fit your project needs.",
   ],
   claude: [
     "Run the install command below in your terminal.",
@@ -49,16 +50,22 @@ const PLATFORM_STEPS: Record<string, string[]> = {
     "Codex will fetch and apply the skill automatically.",
     "The skill is ready to use in your next session.",
   ],
-  agents: [
-    "Copy the AGENTS.md content into your project root.",
-    "Any compatible agent will pick it up automatically.",
-    "Customize the rules to fit your project needs.",
+  cursor: [
+    "Copy the agent prompt below and paste it into Cursor chat.",
+    "The skill will be immediately available to your agent.",
+    "Read the SKILL.md content for usage instructions.",
   ],
 };
 
 const LOGO_MONO = "shrink-0 brightness-0 dark:invert";
 
-function PlatformIcon({ platformKey, size = 14 }: { platformKey: string; size?: number }) {
+function PlatformIcon({
+  platformKey,
+  size = 14,
+}: {
+  platformKey: string;
+  size?: number;
+}) {
   const brand = getPlatformDocIcon(platformKey);
   if (brand) {
     return (
@@ -77,15 +84,21 @@ function PlatformIcon({ platformKey, size = 14 }: { platformKey: string; size?: 
 
 function PlatformLogoRow({ agentDocs }: { agentDocs?: AgentDocs }) {
   const platforms = agentDocs
-    ? Object.keys(agentDocs).filter((k) => k !== "agents" && agentDocs[k]?.trim())
+    ? Object.keys(agentDocs).filter(
+        (k) => k !== "agents" && agentDocs[k]?.trim()
+      )
     : [];
-  if (platforms.length === 0) return <BotIcon className="h-3.5 w-3.5" />;
+  if (platforms.length === 0) {
+    return <BotIcon className="h-3.5 w-3.5" />;
+  }
 
   return (
     <span className="flex items-center -space-x-1">
       {platforms.map((key) => {
         const brand = getPlatformDocIcon(key);
-        if (!brand) return null;
+        if (!brand) {
+          return null;
+        }
         return (
           <Image
             key={key}
@@ -192,9 +205,9 @@ function HumanTab({
           className="min-h-0 rounded-none bg-paper-3/60 px-4 py-2.5 text-sm font-medium dark:bg-paper-2/30"
           onChange={setActivePlatform}
           options={platformKeys.map((key) => ({
-            value: key,
-            label: PLATFORM_LABELS[key] ?? key,
             icon: <PlatformIcon platformKey={key} />,
+            label: PLATFORM_LABELS[key] ?? key,
+            value: key,
           }))}
           value={activePlatform}
         />
@@ -222,7 +235,9 @@ function HumanTab({
 
       <div className="overflow-hidden rounded-none border border-line">
         <div className="flex items-center justify-between border-b border-line bg-paper-3/60 px-4 py-2.5 dark:bg-paper-2/30">
-          <span className="text-xs font-medium text-ink-soft">Install command</span>
+          <span className="text-xs font-medium text-ink-soft">
+            Install command
+          </span>
           <CopyButton
             iconOnly
             label="Copy install command"

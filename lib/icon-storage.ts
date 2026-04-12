@@ -9,16 +9,16 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
 ]);
 const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
   "image/png": "png",
   "image/svg+xml": "svg",
   "image/webp": "webp",
-  "image/jpeg": "jpg",
 };
 
-export type IconUploadResult = {
+export interface IconUploadResult {
   publicUrl: string;
   storagePath: string;
-};
+}
 
 export function validateIconFile(file: File): string | null {
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
@@ -69,7 +69,9 @@ export async function updateSkillIconUrl(
     .update({ icon_url: iconUrl } as never)
     .eq("slug", slug);
 
-  if (error) throw new Error(`updateSkillIconUrl failed: ${error.message}`);
+  if (error) {
+    throw new Error(`updateSkillIconUrl failed: ${error.message}`);
+  }
 }
 
 export async function updateMcpIconUrl(
@@ -82,5 +84,7 @@ export async function updateMcpIconUrl(
     .update({ icon_url: iconUrl } as never)
     .eq("name", mcpName);
 
-  if (error) throw new Error(`updateMcpIconUrl failed: ${error.message}`);
+  if (error) {
+    throw new Error(`updateMcpIconUrl failed: ${error.message}`);
+  }
 }

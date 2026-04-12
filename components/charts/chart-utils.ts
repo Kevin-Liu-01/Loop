@@ -1,4 +1,7 @@
-export type Point = { x: number; y: number };
+export interface Point {
+  x: number;
+  y: number;
+}
 
 function r(n: number): number {
   return Math.round(n * 100) / 100;
@@ -10,8 +13,12 @@ function r(n: number): number {
  * overshooting, which matters for non-negative chart data.
  */
 export function smoothPath(points: Point[]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) return `M${r(points[0].x)},${r(points[0].y)}`;
+  if (points.length === 0) {
+    return "";
+  }
+  if (points.length === 1) {
+    return `M${r(points[0].x)},${r(points[0].y)}`;
+  }
   if (points.length === 2) {
     return `M${r(points[0].x)},${r(points[0].y)}L${r(points[1].x)},${r(points[1].y)}`;
   }
@@ -67,14 +74,24 @@ export function findNearestIndex(
 }
 
 export function niceMax(value: number): number {
-  if (value <= 0) return 4;
-  if (value <= 4) return 4;
-  if (value <= 10) return 10;
+  if (value <= 0) {
+    return 4;
+  }
+  if (value <= 4) {
+    return 4;
+  }
+  if (value <= 10) {
+    return 10;
+  }
 
-  const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+  const magnitude = 10 ** Math.floor(Math.log10(value));
   const normalized = value / magnitude;
 
-  if (normalized <= 2) return 2 * magnitude;
-  if (normalized <= 5) return 5 * magnitude;
+  if (normalized <= 2) {
+    return 2 * magnitude;
+  }
+  if (normalized <= 5) {
+    return 5 * magnitude;
+  }
   return 10 * magnitude;
 }

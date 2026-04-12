@@ -1,15 +1,17 @@
-import { SKILL_HEADER_SHADER_EMBED_URL } from "@/lib/skill-header-shader";
 import { cn } from "@/lib/cn";
+import { SKILL_HEADER_SHADER_EMBED_URL } from "@/lib/skill-header-shader";
 
-type SkillHeaderShaderEmbedProps = {
+interface SkillHeaderShaderEmbedProps {
   className?: string;
-};
+}
 
 /**
  * Decorative Shader.com player in the skill detail header (top-left).
  * Pointer-events disabled so header links and buttons stay usable.
  */
-export function SkillHeaderShaderEmbed({ className }: SkillHeaderShaderEmbedProps) {
+export function SkillHeaderShaderEmbed({
+  className,
+}: SkillHeaderShaderEmbedProps) {
   return (
     <div
       aria-hidden

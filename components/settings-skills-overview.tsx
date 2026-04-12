@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { SkillInline } from "@/components/skill-inline";
 import { Badge } from "@/components/ui/badge";
@@ -12,27 +12,49 @@ import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 import type { LoopRunRecord, SkillRecord } from "@/lib/types";
 
-type SettingsSkillsOverviewProps = {
+interface SettingsSkillsOverviewProps {
   skills: SkillRecord[];
   latestRuns: Record<string, LoopRunRecord>;
-};
+}
 
 type SortKey = "title" | "updated" | "status";
 
-function automationStatusLabel(skill: SkillRecord): { label: string; color: "green" | "neutral" | "orange" | "red" } {
-  if (!skill.automation?.enabled) return { label: "Disabled", color: "neutral" };
-  if (skill.automation.status === "paused") return { label: "Paused", color: "orange" };
-  if ((skill.automation.consecutiveFailures ?? 0) >= 3) return { label: "Failing", color: "red" };
-  return { label: "Active", color: "green" };
+function automationStatusLabel(skill: SkillRecord): {
+  label: string;
+  color: "green" | "neutral" | "orange" | "red";
+} {
+  if (!skill.automation?.enabled) {
+    return { color: "neutral", label: "Disabled" };
+  }
+  if (skill.automation.status === "paused") {
+    return { color: "orange", label: "Paused" };
+  }
+  if ((skill.automation.consecutiveFailures ?? 0) >= 3) {
+    return { color: "red", label: "Failing" };
+  }
+  return { color: "green", label: "Active" };
 }
 
-function runStatusLabel(run?: LoopRunRecord): { label: string; color: "green" | "neutral" | "red" } {
-  if (!run) return { label: "No runs", color: "neutral" };
-  if (run.status === "error") return { label: "Error", color: "red" };
-  return { label: run.bodyChanged ? run.nextVersionLabel ?? "Updated" : "No diff", color: "green" };
+function runStatusLabel(run?: LoopRunRecord): {
+  label: string;
+  color: "green" | "neutral" | "red";
+} {
+  if (!run) {
+    return { color: "neutral", label: "No runs" };
+  }
+  if (run.status === "error") {
+    return { color: "red", label: "Error" };
+  }
+  return {
+    color: "green",
+    label: run.bodyChanged ? (run.nextVersionLabel ?? "Updated") : "No diff",
+  };
 }
 
-export function SettingsSkillsOverview({ skills, latestRuns }: SettingsSkillsOverviewProps) {
+export function SettingsSkillsOverview({
+  skills,
+  latestRuns,
+}: SettingsSkillsOverviewProps) {
   const { timeZone } = useAppTimezone();
   const [sortKey, setSortKey] = useState<SortKey>("updated");
   const [filter, setFilter] = useState("");
@@ -47,23 +69,30 @@ export function SettingsSkillsOverview({ skills, latestRuns }: SettingsSkillsOve
     );
   }, [skills, filter]);
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      switch (sortKey) {
-        case "title":
-          return a.title.localeCompare(b.title);
-        case "updated":
-          return new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf();
-        case "status": {
-          const aStatus = automationStatusLabel(a).label;
-          const bStatus = automationStatusLabel(b).label;
-          return aStatus.localeCompare(bStatus);
+  const sorted = useMemo(
+    () =>
+      [...filtered].toSorted((a, b) => {
+        switch (sortKey) {
+          case "title": {
+            return a.title.localeCompare(b.title);
+          }
+          case "updated": {
+            return (
+              new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf()
+            );
+          }
+          case "status": {
+            const aStatus = automationStatusLabel(a).label;
+            const bStatus = automationStatusLabel(b).label;
+            return aStatus.localeCompare(bStatus);
+          }
+          default: {
+            return 0;
+          }
         }
-        default:
-          return 0;
-      }
-    });
-  }, [filtered, sortKey]);
+      }),
+    [filtered, sortKey]
+  );
 
   if (skills.length === 0) {
     return (
@@ -150,7 +179,9 @@ export function SettingsSkillsOverview({ skills, latestRuns }: SettingsSkillsOve
               </div>
 
               <span className="hidden text-xs tabular-nums text-ink-soft sm:block">
-                {latestRun ? formatRelativeDate(latestRun.finishedAt, timeZone) : "–"}
+                {latestRun
+                  ? formatRelativeDate(latestRun.finishedAt, timeZone)
+                  : "–"}
               </span>
 
               <div className="flex gap-2">

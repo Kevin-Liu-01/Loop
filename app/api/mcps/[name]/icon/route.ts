@@ -1,7 +1,11 @@
-import { requireAuth, authErrorResponse } from "@/lib/auth";
 import { getAuthorizedAdminEmail } from "@/lib/admin";
-import { uploadIcon, validateIconFile, updateMcpIconUrl } from "@/lib/icon-storage";
+import { requireAuth, authErrorResponse } from "@/lib/auth";
 import { listMcps } from "@/lib/db/mcps";
+import {
+  uploadIcon,
+  validateIconFile,
+  updateMcpIconUrl,
+} from "@/lib/icon-storage";
 
 export async function POST(
   request: Request,
@@ -28,7 +32,10 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get("icon") as File | null;
     if (!file) {
-      return Response.json({ error: "Missing 'icon' file field." }, { status: 400 });
+      return Response.json(
+        { error: "Missing 'icon' file field." },
+        { status: 400 }
+      );
     }
 
     const validationError = validateIconFile(file);
@@ -39,14 +46,13 @@ export async function POST(
     const { publicUrl } = await uploadIcon("mcps", name, file);
     await updateMcpIconUrl(name, publicUrl);
 
-    return Response.json({ ok: true, iconUrl: publicUrl });
+    return Response.json({ iconUrl: publicUrl, ok: true });
   } catch (error) {
     const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
+    if (authResp) {
+      return authResp;
+    }
     console.error("[mcp-icon] Upload failed:", error);
-    return Response.json(
-      { error: "Icon upload failed." },
-      { status: 500 }
-    );
+    return Response.json({ error: "Icon upload failed." }, { status: 500 });
   }
 }

@@ -5,17 +5,17 @@ import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
 
 test("buildPausedAutomationFromSource copies source automation but forces paused state", () => {
   const result = buildPausedAutomationFromSource({
+    automation: {
+      cadence: "weekly",
+      consecutiveFailures: 2,
+      enabled: true,
+      lastRunAt: "2026-03-30T12:00:00Z",
+      preferredModel: "gpt-4o",
+      prompt: "Watch for new patterns in the React ecosystem.",
+      status: "active",
+    },
     slug: "react-patterns",
     title: "React Patterns",
-    automation: {
-      enabled: true,
-      cadence: "weekly",
-      status: "active",
-      prompt: "Watch for new patterns in the React ecosystem.",
-      lastRunAt: "2026-03-30T12:00:00Z",
-      consecutiveFailures: 2,
-      preferredModel: "gpt-4o",
-    },
   });
 
   assert.equal(result.enabled, false);
@@ -29,9 +29,9 @@ test("buildPausedAutomationFromSource copies source automation but forces paused
 
 test("buildPausedAutomationFromSource creates default paused automation when source has none", () => {
   const result = buildPausedAutomationFromSource({
+    automation: undefined,
     slug: "my-custom-skill",
     title: "My Custom Skill",
-    automation: undefined,
   });
 
   assert.equal(result.enabled, false);

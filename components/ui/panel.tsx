@@ -8,12 +8,18 @@ type PanelProps = {
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>;
 
-type PanelHeadProps = {
+interface PanelHeadProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
-export function Panel({ compact, square, className, children, ...rest }: PanelProps) {
+export function Panel({
+  compact,
+  square,
+  className,
+  children,
+  ...rest
+}: PanelProps) {
   return (
     <div
       className={cn(
@@ -32,7 +38,12 @@ export function Panel({ compact, square, className, children, ...rest }: PanelPr
 
 export function PanelHead({ className, children }: PanelHeadProps) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
+    <div
+      className={cn(
+        "flex flex-wrap items-end justify-between gap-3",
+        className
+      )}
+    >
       {children}
     </div>
   );

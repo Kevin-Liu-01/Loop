@@ -6,10 +6,10 @@ import type {
   SkillUpdateEntry,
   SkillVisibility,
   SourceDefinition,
-  VersionReference
+  VersionReference,
 } from "@/lib/types";
 
-export type CreateSkillVersionInput = {
+export interface CreateSkillVersionInput {
   skillId: string;
   version: number;
   title: string;
@@ -23,30 +23,36 @@ export type CreateSkillVersionInput = {
   automation?: SkillAutomationState;
   updates?: SkillUpdateEntry[];
   agentDocs?: AgentDocs;
-};
-
-export async function createSkillVersion(input: CreateSkillVersionInput): Promise<void> {
-  const db = getServerSupabase();
-  const { error } = await db.from("skill_versions").insert({
-    skill_id: input.skillId,
-    version: input.version,
-    title: input.title,
-    description: input.description,
-    category: input.category,
-    body: input.body,
-    tags: input.tags ?? [],
-    owner_name: input.ownerName ?? null,
-    visibility: input.visibility ?? "public",
-    sources: input.sources ?? [],
-    automation: input.automation ?? null,
-    updates: input.updates ?? [],
-    agent_docs: input.agentDocs ?? {}
-  } as never);
-
-  if (error) throw new Error(`createSkillVersion failed: ${error.message}`);
 }
 
-export async function getSkillVersions(skillId: string): Promise<VersionReference[]> {
+export async function createSkillVersion(
+  input: CreateSkillVersionInput
+): Promise<void> {
+  const db = getServerSupabase();
+  const { error } = await db.from("skill_versions").insert({
+    agent_docs: input.agentDocs ?? {},
+    automation: input.automation ?? null,
+    body: input.body,
+    category: input.category,
+    description: input.description,
+    owner_name: input.ownerName ?? null,
+    skill_id: input.skillId,
+    sources: input.sources ?? [],
+    tags: input.tags ?? [],
+    title: input.title,
+    updates: input.updates ?? [],
+    version: input.version,
+    visibility: input.visibility ?? "public",
+  } as never);
+
+  if (error) {
+    throw new Error(`createSkillVersion failed: ${error.message}`);
+  }
+}
+
+export async function getSkillVersions(
+  skillId: string
+): Promise<VersionReference[]> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("skill_versions")
@@ -54,11 +60,13 @@ export async function getSkillVersions(skillId: string): Promise<VersionReferenc
     .eq("skill_id", skillId)
     .order("version", { ascending: false });
 
-  if (error) throw new Error(`getSkillVersions failed: ${error.message}`);
+  if (error) {
+    throw new Error(`getSkillVersions failed: ${error.message}`);
+  }
 
   return (data ?? []).map((row: { version: number; created_at: string }) => ({
-    version: row.version,
     label: buildVersionLabel(row.version),
-    updatedAt: row.created_at
+    updatedAt: row.created_at,
+    version: row.version,
   }));
 }

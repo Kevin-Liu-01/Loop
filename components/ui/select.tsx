@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { ChevronDownIcon } from "lucide-react";
+import * as React from "react";
 
 import {
   DropdownMenu,
@@ -12,15 +12,15 @@ import {
 } from "@/components/ui/shadcn/dropdown-menu";
 import { cn } from "@/lib/cn";
 
-export type SelectOption = {
+export interface SelectOption {
   value: string;
   label: string;
   disabled?: boolean;
   badge?: string;
   icon?: React.ReactNode;
-};
+}
 
-type SelectProps = {
+interface SelectProps {
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
@@ -28,7 +28,7 @@ type SelectProps = {
   className?: string;
   contentClassName?: string;
   placeholder?: string;
-};
+}
 
 export function Select({
   options,
@@ -51,7 +51,7 @@ export function Select({
             "hover:border-ink-faint/35 focus:border-accent/40 focus:shadow-[0_0_0_3px_rgba(232,101,10,0.06)]",
             "dark:bg-paper-2/60",
             disabled && "cursor-not-allowed opacity-50",
-            className,
+            className
           )}
           type="button"
         >
@@ -66,7 +66,7 @@ export function Select({
         align="start"
         className={cn(
           "max-h-[min(50vh,320px)] min-w-[var(--radix-dropdown-menu-trigger-width)] w-max max-w-[min(90vw,400px)] overflow-y-auto",
-          contentClassName,
+          contentClassName
         )}
       >
         <DropdownMenuRadioGroup onValueChange={onChange} value={value}>

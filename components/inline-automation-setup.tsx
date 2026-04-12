@@ -1,24 +1,31 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { AutomationIcon, SparkIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FieldGroup, textFieldBase, textFieldArea } from "@/components/ui/field";
+import {
+  FieldGroup,
+  textFieldBase,
+  textFieldArea,
+} from "@/components/ui/field";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Select } from "@/components/ui/select";
+import {
+  CADENCE_ALL_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
-import { CADENCE_ALL_OPTIONS, STATUS_OPTIONS } from "@/lib/automation-constants";
 import type { UserSkillCadence } from "@/lib/types";
 
-type InlineAutomationSetupProps = {
+interface InlineAutomationSetupProps {
   slug: string;
   skillTitle: string;
   sourceCount: number;
-};
+}
 
 export function InlineAutomationSetup({
   slug,
@@ -37,18 +44,20 @@ export function InlineAutomationSetup({
 
     startTransition(async () => {
       const response = await fetch("/api/automations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          name: `${skillTitle} refresh`,
-          skillSlug: slug,
-          note,
           cadence,
+          name: `${skillTitle} refresh`,
+          note,
+          skillSlug: slug,
           status,
         }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
       if (!response.ok) {
         setError(payload.error ?? "Unable to create automation.");
         return;
@@ -65,14 +74,16 @@ export function InlineAutomationSetup({
           <div className="grid gap-2">
             <div className="flex items-center gap-2">
               <Badge color="orange">No automation yet</Badge>
-              <Badge color="neutral">{sourceCount} source{sourceCount === 1 ? "" : "s"}</Badge>
+              <Badge color="neutral">
+                {sourceCount} source{sourceCount === 1 ? "" : "s"}
+              </Badge>
             </div>
             <h3 className="m-0 text-xl font-semibold tracking-tight text-ink">
               Set up automation
             </h3>
             <p className="m-0 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-              Schedule automatic refreshes to keep this skill current.
-              Pick a cadence and optionally add an instruction for the refresh agent.
+              Schedule automatic refreshes to keep this skill current. Pick a
+              cadence and optionally add an instruction for the refresh agent.
             </p>
           </div>
         </PanelHead>
@@ -97,7 +108,10 @@ export function InlineAutomationSetup({
             </span>
             <Select
               onChange={(v) => setStatus(v as "ACTIVE" | "PAUSED")}
-              options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              options={STATUS_OPTIONS.map((o) => ({
+                label: o.label,
+                value: o.value,
+              }))}
               value={status}
             />
           </FieldGroup>
@@ -105,7 +119,10 @@ export function InlineAutomationSetup({
 
         <FieldGroup>
           <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-ink-soft">
-            Instruction <span className="normal-case tracking-normal text-ink-faint/60">(optional)</span>
+            Instruction{" "}
+            <span className="normal-case tracking-normal text-ink-faint/60">
+              (optional)
+            </span>
           </span>
           <textarea
             className={cn(textFieldBase, textFieldArea)}
@@ -117,17 +134,26 @@ export function InlineAutomationSetup({
           />
         </FieldGroup>
 
-        {error && <p className="m-0 text-sm font-medium text-danger">{error}</p>}
+        {error && (
+          <p className="m-0 text-sm font-medium text-danger">{error}</p>
+        )}
 
         {isPending && (
           <div className="grid gap-1">
             <ProgressBar rounded={false} size="sm" status="active" />
-            <span className="text-xs text-ink-faint">Setting up automation...</span>
+            <span className="text-xs text-ink-faint">
+              Setting up automation...
+            </span>
           </div>
         )}
 
         <div className="flex items-center gap-2">
-          <Button disabled={isPending} onClick={handleCreate} size="sm" type="button">
+          <Button
+            disabled={isPending}
+            onClick={handleCreate}
+            size="sm"
+            type="button"
+          >
             <SparkIcon className="h-3.5 w-3.5" />
             {isPending ? "Creating\u2026" : "Create automation"}
           </Button>

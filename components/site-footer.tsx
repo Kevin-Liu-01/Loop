@@ -14,17 +14,32 @@ export function SiteFooter() {
         <p className="m-0 font-medium tabular-nums text-ink-faint">
           © {year} Loop · Operator desk for agent skills
         </p>
-        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          <Link className="text-ink-soft transition-colors hover:text-ink" href="/">
+        <nav
+          aria-label="Footer"
+          className="flex flex-wrap items-center gap-x-5 gap-y-1"
+        >
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/"
+          >
             Skills
           </Link>
-          <Link className="text-ink-soft transition-colors hover:text-ink" href="/sandbox">
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/sandbox"
+          >
             Sandbox
           </Link>
-          <Link className="text-ink-soft transition-colors hover:text-ink" href="/settings">
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/settings"
+          >
             Settings
           </Link>
-          <Link className="text-ink-soft transition-colors hover:text-ink" href="/faq">
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/faq"
+          >
             FAQ
           </Link>
           <a

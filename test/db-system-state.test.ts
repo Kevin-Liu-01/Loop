@@ -6,32 +6,32 @@ import type {
   RefreshRunRecord,
   UsageEventRecord,
   BillingEventRecord,
-  StripeSubscriptionRecord
+  StripeSubscriptionRecord,
 } from "@/lib/types";
 
 test("LoopRunRecord type satisfies required shape for DB mapping", () => {
   const record: LoopRunRecord = {
-    id: "test-loop-run-001",
-    slug: "test-skill",
-    title: "Test Skill",
-    origin: "user",
-    trigger: "manual",
-    status: "success",
-    startedAt: "2026-03-28T00:00:00.000Z",
-    finishedAt: "2026-03-28T00:01:00.000Z",
-    previousVersionLabel: "v1",
-    nextVersionLabel: "v2",
-    href: "/skills/test-skill/v2",
-    summary: "Test loop run completed.",
-    whatChanged: "Updated section headers.",
     bodyChanged: true,
     changedSections: ["Purpose"],
+    diffLines: [{ type: "added", value: "+ New line" }],
     editorModel: "gpt-4.1-mini",
-    sourceCount: 2,
-    signalCount: 5,
+    finishedAt: "2026-03-28T00:01:00.000Z",
+    href: "/skills/test-skill/v2",
+    id: "test-loop-run-001",
     messages: ["Started scanning.", "Completed."],
+    nextVersionLabel: "v2",
+    origin: "user",
+    previousVersionLabel: "v1",
+    signalCount: 5,
+    slug: "test-skill",
+    sourceCount: 2,
     sources: [],
-    diffLines: [{ type: "added", value: "+ New line" }]
+    startedAt: "2026-03-28T00:00:00.000Z",
+    status: "success",
+    summary: "Test loop run completed.",
+    title: "Test Skill",
+    trigger: "manual",
+    whatChanged: "Updated section headers.",
   };
 
   assert.equal(record.id, "test-loop-run-001");
@@ -43,22 +43,22 @@ test("LoopRunRecord type satisfies required shape for DB mapping", () => {
 
 test("RefreshRunRecord type satisfies DB mapping shape", () => {
   const record: RefreshRunRecord = {
-    id: "test-refresh-001",
-    status: "success",
-    startedAt: "2026-03-28T00:00:00.000Z",
+    categoryCount: 7,
+    dailyBriefCount: 7,
     finishedAt: "2026-03-28T00:10:00.000Z",
+    focusImportedSkillSlugs: [],
+    focusSkillSlugs: [],
     generatedAt: "2026-03-28T00:09:00.000Z",
     generatedFrom: "remote-refresh",
-    writeLocal: false,
-    uploadBlob: false,
+    id: "test-refresh-001",
     refreshCategorySignals: true,
-    refreshUserSkills: true,
     refreshImportedSkills: true,
-    focusSkillSlugs: [],
-    focusImportedSkillSlugs: [],
+    refreshUserSkills: true,
     skillCount: 42,
-    categoryCount: 7,
-    dailyBriefCount: 7
+    startedAt: "2026-03-28T00:00:00.000Z",
+    status: "success",
+    uploadBlob: false,
+    writeLocal: false,
   };
 
   assert.equal(record.status, "success");
@@ -68,16 +68,16 @@ test("RefreshRunRecord type satisfies DB mapping shape", () => {
 
 test("UsageEventRecord type satisfies DB mapping shape", () => {
   const record: UsageEventRecord = {
-    id: "test-usage-001",
     at: "2026-03-28T00:00:00.000Z",
-    kind: "api_call",
-    source: "api",
-    label: "Test API call",
-    route: "/api/skills",
-    method: "GET",
-    status: 200,
     durationMs: 150,
-    ok: true
+    id: "test-usage-001",
+    kind: "api_call",
+    label: "Test API call",
+    method: "GET",
+    ok: true,
+    route: "/api/skills",
+    source: "api",
+    status: 200,
   };
 
   assert.equal(record.kind, "api_call");
@@ -87,17 +87,17 @@ test("UsageEventRecord type satisfies DB mapping shape", () => {
 
 test("BillingEventRecord type satisfies DB mapping shape", () => {
   const record: BillingEventRecord = {
-    id: "test-billing-001",
-    type: "checkout.session.completed",
+    amount: 2900,
     createdAt: "2026-03-28T00:00:00.000Z",
-    livemode: false,
-    customerId: "cus_test123",
+    currency: "usd",
     customerEmail: "test@example.com",
-    subscriptionId: "sub_test123",
+    customerId: "cus_test123",
+    id: "test-billing-001",
+    livemode: false,
     planSlug: "pro",
     status: "active",
-    amount: 2900,
-    currency: "usd"
+    subscriptionId: "sub_test123",
+    type: "checkout.session.completed",
   };
 
   assert.equal(record.type, "checkout.session.completed");
@@ -106,14 +106,14 @@ test("BillingEventRecord type satisfies DB mapping shape", () => {
 
 test("StripeSubscriptionRecord type satisfies DB mapping shape", () => {
   const record: StripeSubscriptionRecord = {
-    id: "sub_test123",
-    customerId: "cus_test123",
-    customerEmail: "test@example.com",
-    planSlug: "pro",
-    status: "active",
     cancelAtPeriodEnd: false,
     currentPeriodEnd: "2026-04-28T00:00:00.000Z",
-    updatedAt: "2026-03-28T00:00:00.000Z"
+    customerEmail: "test@example.com",
+    customerId: "cus_test123",
+    id: "sub_test123",
+    planSlug: "pro",
+    status: "active",
+    updatedAt: "2026-03-28T00:00:00.000Z",
   };
 
   assert.equal(record.status, "active");

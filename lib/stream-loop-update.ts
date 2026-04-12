@@ -3,17 +3,20 @@ import type {
   LoopUpdateResult,
   LoopUpdateSourceLog,
   LoopUpdateStreamEvent,
-  LoopUpdateTarget
+  LoopUpdateTarget,
 } from "@/lib/types";
 
-export type StreamLoopCallbacks = {
+export interface StreamLoopCallbacks {
   onStart: (loop: LoopUpdateTarget) => void;
   onSource: (source: LoopUpdateSourceLog) => void;
   onMessage: (message: string) => void;
   onReasoningStep?: (step: AgentReasoningStep) => void;
-  onComplete: (result: LoopUpdateResult, sources: LoopUpdateSourceLog[]) => void;
+  onComplete: (
+    result: LoopUpdateResult,
+    sources: LoopUpdateSourceLog[]
+  ) => void;
   onError: (message: string) => void;
-};
+}
 
 export function applySourceUpdate(
   current: LoopUpdateSourceLog[],
@@ -32,13 +35,15 @@ export async function streamLoopUpdate(
   callbacks: StreamLoopCallbacks
 ): Promise<void> {
   const response = await fetch("/api/admin/loops/update", {
-    method: "POST",
+    body: JSON.stringify({ origin, slug }),
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ slug, origin })
+    method: "POST",
   });
 
   if (!response.ok || !response.body) {
-    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
     throw new Error(payload.error ?? "Unable to start the manual loop update.");
   }
 
@@ -72,25 +77,34 @@ export async function streamLoopUpdate(
   }
 }
 
-function dispatchStreamEvent(event: LoopUpdateStreamEvent, callbacks: StreamLoopCallbacks): void {
+function dispatchStreamEvent(
+  event: LoopUpdateStreamEvent,
+  callbacks: StreamLoopCallbacks
+): void {
   switch (event.type) {
-    case "start":
+    case "start": {
       callbacks.onStart(event.loop);
       break;
-    case "source":
+    }
+    case "source": {
       callbacks.onSource(event.source);
       break;
-    case "analysis":
+    }
+    case "analysis": {
       callbacks.onMessage(event.message);
       break;
-    case "reasoning-step":
+    }
+    case "reasoning-step": {
       callbacks.onReasoningStep?.(event.step);
       break;
-    case "complete":
+    }
+    case "complete": {
       callbacks.onComplete(event.result, event.sources);
       break;
-    case "error":
+    }
+    case "error": {
       callbacks.onError(event.message);
       break;
+    }
   }
 }

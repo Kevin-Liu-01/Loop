@@ -1,5 +1,9 @@
+import {
+  buttonBase,
+  buttonVariants,
+  buttonSizes,
+} from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import { buttonBase, buttonVariants, buttonSizes } from "@/components/ui/button";
 
 type FilterChipProps = {
   active?: boolean;
@@ -12,9 +16,7 @@ export function FilterChip({ active, className, ...rest }: FilterChipProps) {
       className={cn(
         buttonBase,
         buttonSizes.sm,
-        active
-          ? buttonVariants.primary
-          : buttonVariants.ghost,
+        active ? buttonVariants.primary : buttonVariants.ghost,
         className
       )}
       {...rest}

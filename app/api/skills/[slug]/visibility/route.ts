@@ -17,7 +17,11 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   return withApiUsage(
-    { route: "/api/skills/[slug]/visibility", method: "PATCH", label: "Update skill visibility" },
+    {
+      label: "Update skill visibility",
+      method: "PATCH",
+      route: "/api/skills/[slug]/visibility",
+    },
     async () => {
       try {
         const session = await requireAuth();
@@ -46,12 +50,17 @@ export async function PATCH(
         return Response.json({ ok: true, slug, visibility });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
-        return Response.json({ error: "Unable to update visibility." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to update visibility." },
+          { status: 400 }
+        );
       }
     }
   );

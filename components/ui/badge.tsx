@@ -1,7 +1,8 @@
 import { cn } from "@/lib/cn";
-import { TAG_COLOR_CLASSES, type TagColor } from "@/lib/tag-utils";
+import { TAG_COLOR_CLASSES } from "@/lib/tag-utils";
+import type { TagColor } from "@/lib/tag-utils";
 
-type BadgeProps = {
+interface BadgeProps {
   /** @deprecated Use `color` instead for semantic coloring. Kept for backward compat. */
   muted?: boolean;
   color?: TagColor;
@@ -9,14 +10,14 @@ type BadgeProps = {
   size?: "sm" | "md";
   className?: string;
   children: React.ReactNode;
-};
+}
 
 const BASE =
   "inline-flex max-w-[min(14rem,100%)] shrink-0 items-center justify-center rounded-full border font-medium leading-none tracking-tight whitespace-nowrap tabular-nums";
 
 const SIZE_CLASSES = {
-  sm: "h-5 px-2 text-[0.625rem]",
   md: "h-6 px-2.5 text-[0.6875rem]",
+  sm: "h-5 px-2 text-[0.625rem]",
 } as const;
 
 const MUTED_CLASSES =
@@ -44,10 +45,10 @@ export function Badge({
   );
 }
 
-type EyebrowPillProps = {
+interface EyebrowPillProps {
   className?: string;
   children: React.ReactNode;
-};
+}
 
 export function EyebrowPill({ className, children }: EyebrowPillProps) {
   return (

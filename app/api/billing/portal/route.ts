@@ -6,23 +6,30 @@ import { withApiUsage } from "@/lib/usage-server";
 export async function GET(request: Request) {
   return withApiUsage(
     {
-      route: "/api/billing/portal",
+      label: "Create billing portal session",
       method: "GET",
-      label: "Create billing portal session"
+      route: "/api/billing/portal",
     },
     async () => {
       const { searchParams, origin } = new URL(request.url);
       const customerId = searchParams.get("customer");
 
       if (!customerId) {
-        return NextResponse.redirect(new URL("/settings/subscription?billing=no-customer", request.url));
+        return NextResponse.redirect(
+          new URL("/settings/subscription?billing=no-customer", request.url)
+        );
       }
 
       try {
         const portalUrl = await createPortalSession(customerId, origin);
         return NextResponse.redirect(portalUrl);
       } catch {
-        return NextResponse.redirect(new URL("/settings/subscription?billing=portal-unconfigured", request.url));
+        return NextResponse.redirect(
+          new URL(
+            "/settings/subscription?billing=portal-unconfigured",
+            request.url
+          )
+        );
       }
     }
   );

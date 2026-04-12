@@ -2,14 +2,14 @@
 
 import { CpuIcon, HardDriveIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
-import { sandboxEyebrow } from "@/lib/sandbox-ui";
 import type { MemoryInfo, DiskInfo } from "@/lib/sandbox-inspect-types";
+import { sandboxEyebrow } from "@/lib/sandbox-ui";
 
-type ResourcesTabProps = {
+interface ResourcesTabProps {
   memory: MemoryInfo;
   disk: DiskInfo;
   isLoading: boolean;
-};
+}
 
 function GaugeBar({
   label,
@@ -25,8 +25,7 @@ function GaugeBar({
   unit: string;
 }) {
   const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
-  const color =
-    pct > 85 ? "bg-danger" : pct > 60 ? "bg-warning" : "bg-accent";
+  const color = pct > 85 ? "bg-danger" : pct > 60 ? "bg-warning" : "bg-accent";
 
   return (
     <div className="grid gap-2.5 border border-line bg-paper-3 p-3">
@@ -39,10 +38,7 @@ function GaugeBar({
       </div>
       <div className="h-1.5 w-full overflow-hidden bg-line/25 dark:bg-line/15">
         <div
-          className={cn(
-            "h-full transition-all duration-700 ease-out",
-            color,
-          )}
+          className={cn("h-full transition-all duration-700 ease-out", color)}
           style={{ width: `${pct}%` }}
         />
       </div>

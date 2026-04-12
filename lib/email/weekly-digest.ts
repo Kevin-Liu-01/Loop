@@ -1,5 +1,5 @@
-import { EMAIL_FROM, getResendClient } from "@/lib/email/client";
 import { getAdminEmails } from "@/lib/admin";
+import { EMAIL_FROM, getResendClient } from "@/lib/email/client";
 import {
   siteUrl,
   emailWrapper,
@@ -9,7 +9,10 @@ import {
   divider,
   categoryBadge,
 } from "@/lib/email/html";
-import type { WeeklyImportResult, ImportedSkillSummary } from "@/lib/weekly-import";
+import type {
+  WeeklyImportResult,
+  ImportedSkillSummary,
+} from "@/lib/weekly-import";
 
 function skillCard(skill: ImportedSkillSummary): string {
   const href = `${siteUrl()}/skills/${skill.slug}/v1`;
@@ -157,18 +160,22 @@ export async function sendWeeklyDigest(
     return;
   }
 
-  if (result.imported.length === 0) return;
+  if (result.imported.length === 0) {
+    return;
+  }
 
   const adminEmails = getAdminEmails();
-  if (adminEmails.length === 0) return;
+  if (adminEmails.length === 0) {
+    return;
+  }
 
   const subject = `Loop digest: ${result.imported.length} new skill${result.imported.length !== 1 ? "s" : ""} this week`;
 
   await resend.emails.send({
     from: EMAIL_FROM,
-    to: adminEmails,
-    subject,
     html: buildDigestHtml(result),
+    subject,
     text: buildDigestText(result),
+    to: adminEmails,
   });
 }

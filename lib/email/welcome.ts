@@ -9,10 +9,10 @@ import {
   divider,
 } from "@/lib/email/html";
 
-type WelcomeEmailParams = {
+interface WelcomeEmailParams {
   email: string;
   firstName?: string;
-};
+}
 
 function actionCard(
   title: string,
@@ -133,7 +133,9 @@ function buildWelcomeHtml({ firstName }: WelcomeEmailParams): string {
 }
 
 function buildWelcomeText({ firstName }: WelcomeEmailParams): string {
-  const greeting = firstName ? `Welcome, ${firstName}` : `Welcome to ${BRAND_NAME}`;
+  const greeting = firstName
+    ? `Welcome, ${firstName}`
+    : `Welcome to ${BRAND_NAME}`;
   const base = siteUrl();
   return [
     greeting,
@@ -170,9 +172,9 @@ export async function sendWelcomeEmail(
 
   await resend.emails.send({
     from: EMAIL_FROM,
-    to: [params.email],
-    subject: `Welcome to ${BRAND_NAME} – your skills, always current`,
     html: buildWelcomeHtml(params),
+    subject: `Welcome to ${BRAND_NAME} – your skills, always current`,
     text: buildWelcomeText(params),
+    to: [params.email],
   });
 }

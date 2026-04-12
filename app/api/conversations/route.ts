@@ -7,70 +7,76 @@ import { withApiUsage } from "@/lib/usage-server";
 const messageMetadataSchema = z.object({
   attachments: z
     .object({
+      mcps: z.array(
+        z.object({
+          iconUrl: z.string().optional(),
+          id: z.string(),
+          name: z.string(),
+          sandboxSupported: z.boolean().optional(),
+          transport: z.enum(["stdio", "http", "sse", "ws", "unknown"]),
+        })
+      ),
       skills: z.array(
         z.object({
+          iconUrl: z.string().optional(),
           slug: z.string(),
           title: z.string(),
           versionLabel: z.string(),
-          iconUrl: z.string().optional()
         })
       ),
-      mcps: z.array(
-        z.object({
-          id: z.string(),
-          name: z.string(),
-          transport: z.enum(["stdio", "http", "sse", "ws", "unknown"]),
-          iconUrl: z.string().optional(),
-          sandboxSupported: z.boolean().optional()
-        })
-      )
     })
-    .optional()
+    .optional(),
 });
 
 const messagePartSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({ text: z.string(), type: z.literal("text") }),
   z.object({
-    type: z.literal("tool-invocation"),
     toolInvocation: z.object({
-      toolName: z.string(),
       args: z.record(z.unknown()),
       result: z.record(z.unknown()).optional(),
       state: z.string(),
+      toolName: z.string(),
     }),
+    type: z.literal("tool-invocation"),
   }),
 ]);
 
 const upsertSchema = z.object({
-  id: z.string().uuid().nullable().optional(),
   channel: z.enum(["copilot", "agent-studio", "sandbox"]),
-  title: z.string().max(200).default(""),
+  id: z.string().uuid().nullable().optional(),
   messages: z.array(
     z.object({
-      id: z.string(),
-      role: z.enum(["user", "assistant", "system"]),
       content: z.string(),
-      parts: z.array(messagePartSchema).optional(),
       createdAt: z.string(),
+      id: z.string(),
       metadata: messageMetadataSchema.optional(),
+      parts: z.array(messagePartSchema).optional(),
+      role: z.enum(["user", "assistant", "system"]),
     })
   ),
   model: z.string().optional(),
   providerId: z.string().optional(),
+  title: z.string().max(200).default(""),
 });
 
 export async function GET(request: Request) {
   return withApiUsage(
-    { route: "/api/conversations", method: "GET", label: "List conversations" },
+    { label: "List conversations", method: "GET", route: "/api/conversations" },
     async () => {
       try {
         const session = await getSessionUser();
         if (!session) {
-          return Response.json({ error: "Sign in to view conversations." }, { status: 401 });
+          return Response.json(
+            { error: "Sign in to view conversations." },
+            { status: 401 }
+          );
         }
 
         const url = new URL(request.url);
-        const channel = url.searchParams.get("channel") as "copilot" | "agent-studio" | null;
+        const channel = url.searchParams.get("channel") as
+          | "copilot"
+          | "agent-studio"
+          | null;
         const limit = Math.min(Number(url.searchParams.get("limit") ?? 20), 50);
 
         const conversations = await listConversations(
@@ -80,16 +86,21 @@ export async function GET(request: Request) {
         );
 
         return Response.json({
-          ok: true,
           conversations: conversations.map(({ messages: _msgs, ...rest }) => ({
             ...rest,
-            messageCount: _msgs.length
-          }))
+            messageCount: _msgs.length,
+          })),
+          ok: true,
         });
       } catch (error) {
         const authResponse = authErrorResponse(error);
-        if (authResponse) return authResponse;
-        return Response.json({ error: "Failed to list conversations." }, { status: 500 });
+        if (authResponse) {
+          return authResponse;
+        }
+        return Response.json(
+          { error: "Failed to list conversations." },
+          { status: 500 }
+        );
       }
     }
   );
@@ -97,35 +108,46 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   return withApiUsage(
-    { route: "/api/conversations", method: "POST", label: "Save conversation" },
+    { label: "Save conversation", method: "POST", route: "/api/conversations" },
     async () => {
       try {
         const session = await getSessionUser();
         if (!session) {
-          return Response.json({ error: "Sign in to save conversations." }, { status: 401 });
+          return Response.json(
+            { error: "Sign in to save conversations." },
+            { status: 401 }
+          );
         }
 
         const payload = upsertSchema.parse(await request.json());
         const record = await upsertConversation({
-          id: payload.id ?? undefined,
-          clerkUserId: session.userId,
           channel: payload.channel,
-          title: payload.title,
+          clerkUserId: session.userId,
+          id: payload.id ?? undefined,
           messages: payload.messages,
           model: payload.model,
-          providerId: payload.providerId
+          providerId: payload.providerId,
+          title: payload.title,
         });
 
-        return Response.json({ ok: true, id: record.id });
+        return Response.json({ id: record.id, ok: true });
       } catch (error) {
         const authResponse = authErrorResponse(error);
-        if (authResponse) return authResponse;
-
-        if (error instanceof z.ZodError) {
-          return Response.json({ error: error.issues[0]?.message ?? "Invalid payload." }, { status: 400 });
+        if (authResponse) {
+          return authResponse;
         }
 
-        return Response.json({ error: "Failed to save conversation." }, { status: 500 });
+        if (error instanceof z.ZodError) {
+          return Response.json(
+            { error: error.issues[0]?.message ?? "Invalid payload." },
+            { status: 400 }
+          );
+        }
+
+        return Response.json(
+          { error: "Failed to save conversation." },
+          { status: 500 }
+        );
       }
     }
   );

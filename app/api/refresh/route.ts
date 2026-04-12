@@ -1,6 +1,5 @@
-import { revalidatePath } from "next/cache";
-
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 import { getSkillCatalogue } from "@/lib/content";
 import { refreshLoopSnapshot } from "@/lib/refresh";
@@ -17,7 +16,9 @@ async function isAuthorized(request: Request): Promise<boolean> {
   }
 
   if (!secret && authorization) {
-    console.error("[refresh] CRON_SECRET is not set – bearer token auth cannot succeed. Set CRON_SECRET in your environment.");
+    console.error(
+      "[refresh] CRON_SECRET is not set – bearer token auth cannot succeed. Set CRON_SECRET in your environment."
+    );
   }
 
   const { userId } = await auth();
@@ -34,12 +35,26 @@ function parseRefreshScope(url: string): {
     const scope = searchParams.get("scope");
 
     if (scope === "skills-only") {
-      return { refreshCategorySignals: false, refreshUserSkills: true, refreshImportedSkills: true };
+      return {
+        refreshCategorySignals: false,
+        refreshImportedSkills: true,
+        refreshUserSkills: true,
+      };
     }
 
-    return { refreshCategorySignals: false, refreshUserSkills: true, refreshImportedSkills: true };
-  } catch { /* fall through to defaults */ }
-  return { refreshCategorySignals: true, refreshUserSkills: true, refreshImportedSkills: true };
+    return {
+      refreshCategorySignals: false,
+      refreshImportedSkills: true,
+      refreshUserSkills: true,
+    };
+  } catch {
+    /* fall through to defaults */
+  }
+  return {
+    refreshCategorySignals: true,
+    refreshImportedSkills: true,
+    refreshUserSkills: true,
+  };
 }
 
 async function handleRefresh(request: Request) {
@@ -57,7 +72,9 @@ async function handleRefresh(request: Request) {
     revalidatePath("/agents");
     revalidatePath("/feed.xml");
     revalidatePath("/skills/new");
-    catalogue.categories.forEach((category) => revalidatePath(`/categories/${category.slug}`));
+    catalogue.categories.forEach((category) =>
+      revalidatePath(`/categories/${category.slug}`)
+    );
     catalogue.skills.forEach((skill) => {
       revalidatePath(`/skills/${skill.slug}`);
       revalidatePath(skill.href);
@@ -67,20 +84,20 @@ async function handleRefresh(request: Request) {
   }
 
   return Response.json({
-    ok: true,
-    generatedAt: new Date().toISOString(),
-    skills: catalogue.skills.length,
     categories: catalogue.categories.length,
-    dispatchedSkillRefreshes: dispatchedSkillCount
+    dispatchedSkillRefreshes: dispatchedSkillCount,
+    generatedAt: new Date().toISOString(),
+    ok: true,
+    skills: catalogue.skills.length,
   });
 }
 
 export async function GET(request: Request) {
   return withApiUsage(
     {
-      route: "/api/refresh",
+      label: "Full refresh",
       method: "GET",
-      label: "Full refresh"
+      route: "/api/refresh",
     },
     async () => handleRefresh(request)
   );
@@ -89,9 +106,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return withApiUsage(
     {
-      route: "/api/refresh",
+      label: "Full refresh",
       method: "POST",
-      label: "Full refresh"
+      route: "/api/refresh",
     },
     async () => handleRefresh(request)
   );

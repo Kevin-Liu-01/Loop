@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
-import { createSkill as dbCreateSkill } from "@/lib/db/skills";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { createSkill as dbCreateSkill } from "@/lib/db/skills";
 import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
-import { canCreateSkill } from "@/lib/skill-limits";
 import { slugify, stableHash } from "@/lib/markdown";
 import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
+import { canCreateSkill } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const bodySchema = z.object({
@@ -17,7 +17,7 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   return withApiUsage(
-    { route: "/api/skills/copy", method: "POST", label: "Copy skill" },
+    { label: "Copy skill", method: "POST", route: "/api/skills/copy" },
     async () => {
       try {
         const session = await requireAuth();
@@ -28,10 +28,10 @@ export async function POST(request: Request) {
         if (!limits.allowed) {
           return Response.json(
             {
-              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
               currentCount: limits.currentCount,
+              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
+              isOperator: limits.isOperator,
               limit: limits.limit,
-              isOperator: limits.isOperator
             },
             { status: 403 }
           );
@@ -39,10 +39,15 @@ export async function POST(request: Request) {
 
         const source = await getSkillRecordBySlug(sourceSlug);
         if (!source) {
-          return Response.json({ error: "Source skill not found." }, { status: 404 });
+          return Response.json(
+            { error: "Source skill not found." },
+            { status: 404 }
+          );
         }
 
-        const baseSlug = `${slugify(source.title)}-copy` || `skill-${stableHash(source.title)}-copy`;
+        const baseSlug =
+          `${slugify(source.title)}-copy` ||
+          `skill-${stableHash(source.title)}-copy`;
         let newSlug = baseSlug;
         let attempt = 0;
         while (await getSkillRecordBySlug(newSlug)) {
@@ -51,27 +56,27 @@ export async function POST(request: Request) {
         }
 
         const created = await dbCreateSkill({
-          slug: newSlug,
-          title: `${source.title} (Copy)`,
-          description: source.description,
-          category: source.category,
-          body: source.body,
           accent: source.accent,
-          visibility: "private",
-          origin: "user",
-          tags: source.tags,
-          ownerName: sessionAuthor?.displayName ?? undefined,
-          authorId: sessionAuthor?.id,
-          sources: source.sources ?? [],
-          automation: buildPausedAutomationFromSource(source),
-          updates: [],
           agentDocs: source.agentDocs,
-          references: source.references,
           agents: source.agents,
-          version: 1,
+          authorId: sessionAuthor?.id,
+          automation: buildPausedAutomationFromSource(source),
+          body: source.body,
+          category: source.category,
           creatorClerkUserId: session.userId,
-          iconUrl: source.iconUrl,
+          description: source.description,
           forkedFromSlug: sourceSlug,
+          iconUrl: source.iconUrl,
+          origin: "user",
+          ownerName: sessionAuthor?.displayName ?? undefined,
+          references: source.references,
+          slug: newSlug,
+          sources: source.sources ?? [],
+          tags: source.tags,
+          title: `${source.title} (Copy)`,
+          updates: [],
+          version: 1,
+          visibility: "private",
         });
 
         const href = buildSkillVersionHref(newSlug, 1);
@@ -81,29 +86,34 @@ export async function POST(request: Request) {
         revalidatePath(href);
 
         await logUsageEvent({
+          categorySlug: source.category,
+          details: `Forked from ${sourceSlug}`,
           kind: "skill_create",
-          source: "api",
           label: "Copied skill",
           path: href,
           skillSlug: newSlug,
-          categorySlug: source.category,
-          details: `Forked from ${sourceSlug}`,
+          source: "api",
         });
 
         return Response.json({
+          forkedFrom: sourceSlug,
+          href,
           ok: true,
           slug: newSlug,
-          href,
-          forkedFrom: sourceSlug,
         });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
-        return Response.json({ error: "Unable to copy skill." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to copy skill." },
+          { status: 400 }
+        );
       }
     }
   );

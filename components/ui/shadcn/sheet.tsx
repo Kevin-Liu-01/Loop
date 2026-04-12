@@ -1,9 +1,10 @@
 "use client";
 
-import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
-import { type VariantProps, cva } from "class-variance-authority";
+import * as React from "react";
 
 import { cn } from "@/lib/cn";
 import { modalDialogOverlay } from "@/lib/modal-dialog";
@@ -35,22 +36,25 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 const sheetVariants = cva(
   "fixed z-50 flex flex-col gap-4 overflow-y-auto border-line bg-paper shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
-    variants: {
-      side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom: "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
-        right: "inset-y-0 right-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
-      },
-    },
     defaultVariants: {
       side: "right",
+    },
+    variants: {
+      side: {
+        bottom:
+          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        right:
+          "inset-y-0 right-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+      },
     },
   }
 );
 
 interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
 const SheetContent = React.forwardRef<
@@ -74,7 +78,10 @@ const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function SheetHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
@@ -83,10 +90,16 @@ function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   );
 }
 
-function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function SheetFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className
+      )}
       {...props}
     />
   );

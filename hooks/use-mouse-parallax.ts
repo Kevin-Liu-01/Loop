@@ -1,14 +1,15 @@
 "use client";
 
+import { useMotionValue, useSpring } from "motion/react";
+import type { MotionValue } from "motion/react";
 import { useEffect } from "react";
-import { useMotionValue, useSpring, type MotionValue } from "motion/react";
 
-type MouseParallax = {
+interface MouseParallax {
   x: MotionValue<number>;
   y: MotionValue<number>;
-};
+}
 
-const SPRING_CONFIG = { stiffness: 40, damping: 25, mass: 1 };
+const SPRING_CONFIG = { damping: 25, mass: 1, stiffness: 40 };
 
 export function useMouseParallax(strength: number = 1): MouseParallax {
   const rawX = useMotionValue(0);
@@ -18,12 +19,14 @@ export function useMouseParallax(strength: number = 1): MouseParallax {
 
   useEffect(() => {
     const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
+      "(prefers-reduced-motion: reduce)"
     ).matches;
     const hasPointer = window.matchMedia(
-      "(hover: hover) and (pointer: fine)",
+      "(hover: hover) and (pointer: fine)"
     ).matches;
-    if (prefersReduced || !hasPointer) return;
+    if (prefersReduced || !hasPointer) {
+      return;
+    }
 
     function onMove(e: MouseEvent) {
       rawX.set((e.clientX / window.innerWidth - 0.5) * 2 * strength);

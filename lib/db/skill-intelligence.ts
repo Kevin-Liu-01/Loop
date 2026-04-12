@@ -1,7 +1,7 @@
 import { getServerSupabase } from "@/lib/db/client";
 import type { CategorySlug, SkillUpstreamRecord } from "@/lib/types";
 
-type SkillUpstreamRow = {
+interface SkillUpstreamRow {
   slug: string;
   title: string;
   description: string;
@@ -12,9 +12,11 @@ type SkillUpstreamRow = {
   logo_url: string | null;
   tags: string[];
   body: string;
-};
+}
 
-export async function listSkillUpstreams(skillSlug: string): Promise<SkillUpstreamRecord[]> {
+export async function listSkillUpstreams(
+  skillSlug: string
+): Promise<SkillUpstreamRecord[]> {
   const db = getServerSupabase();
   const { data: links, error: linkError } = await db
     .from("skill_upstream_links")
@@ -28,9 +30,11 @@ export async function listSkillUpstreams(skillSlug: string): Promise<SkillUpstre
     throw linkError;
   }
 
-  const upstreamSlugs = Array.from(
-    new Set((links ?? []).map((row: { upstream_slug: string }) => row.upstream_slug)),
-  );
+  const upstreamSlugs = [
+    ...new Set(
+      (links ?? []).map((row: { upstream_slug: string }) => row.upstream_slug)
+    ),
+  ];
 
   if (upstreamSlugs.length === 0) {
     return [];
@@ -50,16 +54,16 @@ export async function listSkillUpstreams(skillSlug: string): Promise<SkillUpstre
 
   return ((data ?? []) as SkillUpstreamRow[])
     .map((row) => ({
-      slug: row.slug,
-      title: row.title,
-      description: row.description,
-      category: row.category as CategorySlug,
-      upstreamUrl: row.upstream_url,
-      upstreamKind: row.upstream_kind as SkillUpstreamRecord["upstreamKind"],
-      sourceId: row.source_id,
-      logoUrl: row.logo_url ?? undefined,
-      tags: row.tags ?? [],
       body: row.body,
+      category: row.category as CategorySlug,
+      description: row.description,
+      logoUrl: row.logo_url ?? undefined,
+      slug: row.slug,
+      sourceId: row.source_id,
+      tags: row.tags ?? [],
+      title: row.title,
+      upstreamKind: row.upstream_kind as SkillUpstreamRecord["upstreamKind"],
+      upstreamUrl: row.upstream_url,
     }))
-    .sort((left, right) => left.title.localeCompare(right.title));
+    .toSorted((left, right) => left.title.localeCompare(right.title));
 }

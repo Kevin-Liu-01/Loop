@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import Image from "next/image";
+import { useState } from "react";
 
 import {
   ChevronDownIcon,
@@ -12,7 +11,11 @@ import {
   XIcon,
 } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
-import { FieldGroup, textFieldBase, textFieldCode } from "@/components/ui/field";
+import {
+  FieldGroup,
+  textFieldBase,
+  textFieldCode,
+} from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocKey, AgentDocs } from "@/lib/types";
@@ -35,29 +38,48 @@ function PlatformDocFieldIcon({ docKey }: { docKey: string }) {
   return <CodeIcon className="h-3 w-3" />;
 }
 
-type AgentDocsEditorProps = {
+interface AgentDocsEditorProps {
   value: AgentDocs;
   onChange: (docs: AgentDocs) => void;
   readOnly?: boolean;
   /** When true, renders content directly without its own <details> wrapper. */
   embedded?: boolean;
-};
+}
 
-const PREDEFINED_OPTIONS: { key: AgentDocKey; label: string; description: string }[] = [
-  { key: "agents", label: "AGENTS.md", description: "General agent instructions" },
-  { key: "cursor", label: "CURSOR.md", description: "Cursor-specific rules" },
-  { key: "claude", label: "CLAUDE.md", description: "Claude Code instructions" },
-  { key: "codex", label: "CODEX.md", description: "OpenAI Codex config" },
+const PREDEFINED_OPTIONS: {
+  key: AgentDocKey;
+  label: string;
+  description: string;
+}[] = [
+  {
+    description: "General agent instructions",
+    key: "agents",
+    label: "AGENTS.md",
+  },
+  { description: "Cursor-specific rules", key: "cursor", label: "CURSOR.md" },
+  {
+    description: "Claude Code instructions",
+    key: "claude",
+    label: "CLAUDE.md",
+  },
+  { description: "OpenAI Codex config", key: "codex", label: "CODEX.md" },
 ];
 
 const PREDEFINED_KEYS = new Set<string>(PREDEFINED_OPTIONS.map((o) => o.key));
 
 function docLabel(key: string): string {
-  if (key in AGENT_DOC_FILENAMES) return AGENT_DOC_FILENAMES[key as AgentDocKey];
+  if (key in AGENT_DOC_FILENAMES) {
+    return AGENT_DOC_FILENAMES[key as AgentDocKey];
+  }
   return `${key.toUpperCase()}.md`;
 }
 
-export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDocsEditorProps) {
+export function AgentDocsEditor({
+  value,
+  onChange,
+  readOnly,
+  embedded,
+}: AgentDocsEditorProps) {
   const [open, setOpen] = useState(false);
   const [customKeyInput, setCustomKeyInput] = useState("");
 
@@ -72,9 +94,10 @@ export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDo
   );
 
   function addDoc(key: string) {
-    const label = key in AGENT_DOC_FILENAMES
-      ? AGENT_DOC_FILENAMES[key as AgentDocKey]
-      : `${key.toUpperCase()}.md`;
+    const label =
+      key in AGENT_DOC_FILENAMES
+        ? AGENT_DOC_FILENAMES[key as AgentDocKey]
+        : `${key.toUpperCase()}.md`;
     onChange({ ...value, [key]: `# ${label}\n\n` });
   }
 
@@ -89,8 +112,14 @@ export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDo
   }
 
   function handleAddCustom() {
-    const trimmed = customKeyInput.trim().toLowerCase().replace(/\.md$/i, "").replace(/[^a-z0-9_-]/g, "");
-    if (!trimmed || allKeys.includes(trimmed)) return;
+    const trimmed = customKeyInput
+      .trim()
+      .toLowerCase()
+      .replace(/\.md$/i, "")
+      .replaceAll(/[^a-z0-9_-]/g, "");
+    if (!trimmed || allKeys.includes(trimmed)) {
+      return;
+    }
     addDoc(trimmed);
     setCustomKeyInput("");
   }
@@ -98,8 +127,9 @@ export function AgentDocsEditor({ value, onChange, readOnly, embedded }: AgentDo
   const body = (
     <>
       <p className="m-0 text-[0.625rem] text-ink-soft">
-        Attach agent-specific config files. These are included when the skill is used with each
-        agent platform. Add predefined types or create custom docs for any platform.
+        Attach agent-specific config files. These are included when the skill is
+        used with each agent platform. Add predefined types or create custom
+        docs for any platform.
       </p>
 
       {predefinedActiveKeys.map((key) => {

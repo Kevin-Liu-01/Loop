@@ -1,17 +1,17 @@
 import Link from "next/link";
 
 import { TagIcon } from "@/components/frontier-icons";
-import { buildSkillVersionHref, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { buildSkillVersionHref, formatRelativeDate } from "@/lib/format";
 import type { VersionReference } from "@/lib/types";
 
-type VersionTimelineProps = {
+interface VersionTimelineProps {
   slug: string;
   currentVersion: number;
   versions: VersionReference[];
   hrefBuilder?: (slug: string, version: number) => string;
   timeZone?: string;
-};
+}
 
 export function VersionTimeline({
   slug,

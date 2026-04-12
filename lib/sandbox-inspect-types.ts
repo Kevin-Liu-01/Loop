@@ -1,37 +1,37 @@
-export type ProcessInfo = {
+export interface ProcessInfo {
   pid: number;
   name: string;
   cpuPercent: number;
   memPercent: number;
   command: string;
-};
+}
 
-export type MemoryInfo = {
+export interface MemoryInfo {
   totalMb: number;
   usedMb: number;
   freeMb: number;
-};
+}
 
-export type DiskInfo = {
+export interface DiskInfo {
   totalMb: number;
   usedMb: number;
   freeMb: number;
-};
+}
 
-export type FileEntry = {
+export interface FileEntry {
   name: string;
   path: string;
   isDir: boolean;
   size: number;
   modified: string;
-};
+}
 
-export type PackageInfo = {
+export interface PackageInfo {
   name: string;
   version: string;
-};
+}
 
-export type SandboxInspectResponse = {
+export interface SandboxInspectResponse {
   sandboxId: string;
   uptimeSeconds: number;
   timeoutMs: number;
@@ -41,9 +41,9 @@ export type SandboxInspectResponse = {
   processes: ProcessInfo[];
   files: FileEntry[];
   packages: PackageInfo[];
-};
+}
 
-export type SandboxInspectRequest = {
+export interface SandboxInspectRequest {
   sandboxId: string;
   path?: string;
-};
+}

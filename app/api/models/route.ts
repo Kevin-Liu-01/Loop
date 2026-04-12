@@ -4,17 +4,17 @@ import { withApiUsage } from "@/lib/usage-server";
 export async function GET() {
   return withApiUsage(
     {
-      route: "/api/models",
+      label: "List models",
       method: "GET",
-      label: "List models"
+      route: "/api/models",
     },
     async () => {
       const gatewayModels = await listGatewayModels();
 
       return Response.json({
+        gatewayModels,
         ok: true,
         presets: AGENT_PROVIDER_PRESETS,
-        gatewayModels
       });
     }
   );

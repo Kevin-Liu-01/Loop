@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/lib/db/database-types";
 
@@ -14,13 +15,15 @@ function getRequiredEnv(key: string): string {
 }
 
 export function getServerSupabase(): SupabaseClient<Database> {
-  if (serverClient) return serverClient;
+  if (serverClient) {
+    return serverClient;
+  }
 
   serverClient = createClient<Database>(
     getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
     getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
-      auth: { autoRefreshToken: false, persistSession: false }
+      auth: { autoRefreshToken: false, persistSession: false },
     }
   );
 
@@ -28,7 +31,9 @@ export function getServerSupabase(): SupabaseClient<Database> {
 }
 
 export function getAnonSupabase(): SupabaseClient<Database> {
-  if (anonClient) return anonClient;
+  if (anonClient) {
+    return anonClient;
+  }
 
   anonClient = createClient<Database>(
     getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),

@@ -1,7 +1,7 @@
 import { SiteFooter } from "@/components/site-footer";
 import { cn } from "@/lib/cn";
 
-type AppGridShellProps = {
+interface AppGridShellProps {
   header: React.ReactNode;
   children: React.ReactNode;
   /**
@@ -10,18 +10,23 @@ type AppGridShellProps = {
   fillViewport?: boolean;
   /** Extra classes on the scrollable region above the footer */
   bodyClassName?: string;
-};
+}
 
 /**
  * Full-bleed grid frame: viewport borders, header, flex main, footer.
  * Center column rules in children should use flex-1 min-h-0 so they span header–footer.
  */
-export function AppGridShell({ header, children, fillViewport, bodyClassName }: AppGridShellProps) {
+export function AppGridShell({
+  header,
+  children,
+  fillViewport,
+  bodyClassName,
+}: AppGridShellProps) {
   return (
     <div
       className={cn(
         "flex w-full max-w-full flex-col border border-t-0 border-line bg-paper/90 backdrop-blur-xl dark:bg-paper/82",
-        fillViewport ? "h-dvh max-h-dvh overflow-hidden" : "min-h-dvh",
+        fillViewport ? "h-dvh max-h-dvh overflow-hidden" : "min-h-dvh"
       )}
     >
       <header

@@ -1,11 +1,11 @@
-import type { ImportedMcpTransport } from "@/lib/types";
 import { buildVersionLabel } from "@/lib/format";
+import type { ImportedMcpTransport } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Seed MCP type
 // ---------------------------------------------------------------------------
 
-export type SeedMcp = {
+export interface SeedMcp {
   name: string;
   description: string;
   manifestUrl: string;
@@ -17,7 +17,7 @@ export type SeedMcp = {
   envKeys: string[];
   headers?: Record<string, string>;
   tags: string[];
-};
+}
 
 // ---------------------------------------------------------------------------
 // Helper to build an ImportedMcpDocument-compatible row
@@ -26,22 +26,22 @@ export type SeedMcp = {
 export function toMcpRow(seed: SeedMcp) {
   const now = new Date().toISOString();
   return {
-    name: seed.name,
-    description: seed.description,
-    manifest_url: seed.manifestUrl,
-    homepage_url: seed.homepageUrl ?? null,
-    transport: seed.transport,
-    url: seed.url ?? null,
-    command: seed.command ?? null,
     args: seed.args,
+    command: seed.command ?? null,
+    created_at: now,
+    description: seed.description,
     env_keys: seed.envKeys,
     headers: seed.headers ?? null,
-    tags: seed.tags,
+    homepage_url: seed.homepageUrl ?? null,
+    manifest_url: seed.manifestUrl,
+    name: seed.name,
     raw: "",
+    tags: seed.tags,
+    transport: seed.transport,
+    updated_at: now,
+    url: seed.url ?? null,
     version: 1,
     version_label: buildVersionLabel(1),
-    created_at: now,
-    updated_at: now,
   };
 }
 
@@ -62,15 +62,15 @@ function stdio(
   }
 ): SeedMcp {
   return {
-    name,
-    description,
-    manifestUrl: opts.manifestUrl,
-    homepageUrl: opts.homepageUrl,
-    transport: "stdio",
-    command: "npx",
     args: ["-y", pkg, ...args],
+    command: "npx",
+    description,
     envKeys: opts.envKeys ?? [],
+    homepageUrl: opts.homepageUrl,
+    manifestUrl: opts.manifestUrl,
+    name,
     tags: opts.tags,
+    transport: "stdio",
   };
 }
 
@@ -91,15 +91,15 @@ function uvx(
   }
 ): SeedMcp {
   return {
-    name,
-    description,
-    manifestUrl: opts.manifestUrl,
-    homepageUrl: opts.homepageUrl,
-    transport: "stdio",
-    command: "uvx",
     args: [`${pkg}@latest`, ...args],
+    command: "uvx",
+    description,
     envKeys: opts.envKeys ?? [],
+    homepageUrl: opts.homepageUrl,
+    manifestUrl: opts.manifestUrl,
+    name,
     tags: opts.tags,
+    transport: "stdio",
   };
 }
 
@@ -119,16 +119,16 @@ function http(
   }
 ): SeedMcp {
   return {
-    name,
+    args: [],
+    command: undefined,
     description,
-    manifestUrl: opts.manifestUrl,
+    envKeys: opts.envKeys ?? [],
     homepageUrl: opts.homepageUrl,
+    manifestUrl: opts.manifestUrl,
+    name,
+    tags: opts.tags,
     transport: "http",
     url,
-    command: undefined,
-    args: [],
-    envKeys: opts.envKeys ?? [],
-    tags: opts.tags,
   };
 }
 
@@ -143,8 +143,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-everything",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-everything",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-everything",
       tags: ["official", "reference", "testing", "developer-tools"],
     }
   ),
@@ -154,8 +156,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-filesystem",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem",
       tags: ["official", "filesystem", "files", "developer-tools"],
     }
   ),
@@ -165,8 +169,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-memory",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-memory",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-memory",
       tags: ["official", "memory", "knowledge-graph", "persistence"],
     }
   ),
@@ -176,8 +182,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-sequential-thinking",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-sequential-thinking",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-sequential-thinking",
       tags: ["official", "reasoning", "thinking", "problem-solving"],
     }
   ),
@@ -187,8 +195,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-fetch",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-fetch",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-fetch",
       tags: ["official", "fetch", "web", "scraping"],
     }
   ),
@@ -198,8 +208,10 @@ const officialReference: SeedMcp[] = [
     "@modelcontextprotocol/server-git",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-git",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-git",
       tags: ["official", "git", "version-control", "developer-tools"],
     }
   ),
@@ -216,9 +228,9 @@ const devPlatforms: SeedMcp[] = [
     "@github/mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@github/mcp-server",
-      homepageUrl: "https://github.com/github/github-mcp-server",
       envKeys: ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      homepageUrl: "https://github.com/github/github-mcp-server",
+      manifestUrl: "https://www.npmjs.com/package/@github/mcp-server",
       tags: ["github", "git", "issues", "pull-requests", "developer-tools"],
     }
   ),
@@ -227,8 +239,9 @@ const devPlatforms: SeedMcp[] = [
     "GitLab's official MCP server for project data, issue management, and repository operations via OAuth 2.0.",
     "https://gitlab.com/-/mcp",
     {
-      manifestUrl: "https://docs.gitlab.com/user/gitlab_duo/model_context_protocol/mcp_server/",
       homepageUrl: "https://gitlab.com",
+      manifestUrl:
+        "https://docs.gitlab.com/user/gitlab_duo/model_context_protocol/mcp_server/",
       tags: ["gitlab", "git", "issues", "developer-tools"],
     }
   ),
@@ -237,8 +250,8 @@ const devPlatforms: SeedMcp[] = [
     "Manage Vercel projects, deployments, domains, environment variables, and logs. Search documentation and analyze deploy output.",
     "https://mcp.vercel.com/mcp",
     {
-      manifestUrl: "https://mcp.vercel.com",
       homepageUrl: "https://vercel.com/docs/mcp",
+      manifestUrl: "https://mcp.vercel.com",
       tags: ["vercel", "deployment", "hosting", "developer-tools"],
     }
   ),
@@ -248,9 +261,10 @@ const devPlatforms: SeedMcp[] = [
     "@cloudflare/mcp-server-cloudflare",
     ["init"],
     {
-      manifestUrl: "https://www.npmjs.com/package/@cloudflare/mcp-server-cloudflare",
-      homepageUrl: "https://github.com/cloudflare/mcp-server-cloudflare",
       envKeys: ["CLOUDFLARE_API_TOKEN"],
+      homepageUrl: "https://github.com/cloudflare/mcp-server-cloudflare",
+      manifestUrl:
+        "https://www.npmjs.com/package/@cloudflare/mcp-server-cloudflare",
       tags: ["cloudflare", "workers", "edge", "r2", "kv", "d1", "infra"],
     }
   ),
@@ -259,8 +273,9 @@ const devPlatforms: SeedMcp[] = [
     "Create, build, deploy, and manage websites with the Netlify web platform. Full project and deploy lifecycle.",
     "https://mcp.netlify.com/mcp",
     {
-      manifestUrl: "https://docs.netlify.com/welcome/build-with-ai/netlify-mcp-server/",
       homepageUrl: "https://netlify.com",
+      manifestUrl:
+        "https://docs.netlify.com/welcome/build-with-ai/netlify-mcp-server/",
       tags: ["netlify", "deployment", "hosting", "developer-tools"],
     }
   ),
@@ -270,8 +285,8 @@ const devPlatforms: SeedMcp[] = [
     "heroku-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/heroku/heroku-mcp-server",
       homepageUrl: "https://heroku.com",
+      manifestUrl: "https://github.com/heroku/heroku-mcp-server",
       tags: ["heroku", "deployment", "hosting", "developer-tools"],
     }
   ),
@@ -281,9 +296,9 @@ const devPlatforms: SeedMcp[] = [
     "@sentry/mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@sentry/mcp-server",
-      homepageUrl: "https://docs.sentry.io/ai/mcp/",
       envKeys: ["SENTRY_AUTH_TOKEN"],
+      homepageUrl: "https://docs.sentry.io/ai/mcp/",
+      manifestUrl: "https://www.npmjs.com/package/@sentry/mcp-server",
       tags: ["sentry", "error-tracking", "debugging", "observability"],
     }
   ),
@@ -293,9 +308,9 @@ const devPlatforms: SeedMcp[] = [
     "circleci-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/CircleCI-Public/mcp-server-circleci",
-      homepageUrl: "https://circleci.com",
       envKeys: ["CIRCLECI_TOKEN"],
+      homepageUrl: "https://circleci.com",
+      manifestUrl: "https://github.com/CircleCI-Public/mcp-server-circleci",
       tags: ["circleci", "ci-cd", "builds", "developer-tools"],
     }
   ),
@@ -305,8 +320,8 @@ const devPlatforms: SeedMcp[] = [
     "@storybook/addon-mcp",
     [],
     {
-      manifestUrl: "https://github.com/storybookjs/mcp",
       homepageUrl: "https://storybook.js.org",
+      manifestUrl: "https://github.com/storybookjs/mcp",
       tags: ["storybook", "ui", "testing", "components", "developer-tools"],
     }
   ),
@@ -323,9 +338,10 @@ const databases: SeedMcp[] = [
     "@supabase/mcp-server-supabase",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@supabase/mcp-server-supabase",
-      homepageUrl: "https://github.com/supabase-community/supabase-mcp",
       envKeys: ["SUPABASE_ACCESS_TOKEN"],
+      homepageUrl: "https://github.com/supabase-community/supabase-mcp",
+      manifestUrl:
+        "https://www.npmjs.com/package/@supabase/mcp-server-supabase",
       tags: ["supabase", "postgres", "database", "auth", "backend"],
     }
   ),
@@ -335,9 +351,10 @@ const databases: SeedMcp[] = [
     "@neondatabase/mcp-server-neon",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@neondatabase/mcp-server-neon",
-      homepageUrl: "https://neon.tech/docs/introduction/mcp",
       envKeys: ["NEON_API_KEY"],
+      homepageUrl: "https://neon.tech/docs/introduction/mcp",
+      manifestUrl:
+        "https://www.npmjs.com/package/@neondatabase/mcp-server-neon",
       tags: ["neon", "postgres", "database", "serverless", "branching"],
     }
   ),
@@ -347,8 +364,8 @@ const databases: SeedMcp[] = [
     "prisma",
     ["mcp"],
     {
-      manifestUrl: "https://www.npmjs.com/package/prisma",
       homepageUrl: "https://www.prisma.io/docs/ai/tools/mcp-server",
+      manifestUrl: "https://www.npmjs.com/package/prisma",
       tags: ["prisma", "postgres", "database", "orm", "migrations"],
     }
   ),
@@ -358,9 +375,9 @@ const databases: SeedMcp[] = [
     "mcp-turso",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/mcp-turso",
-      homepageUrl: "https://github.com/spences10/mcp-turso-cloud",
       envKeys: ["TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"],
+      homepageUrl: "https://github.com/spences10/mcp-turso-cloud",
+      manifestUrl: "https://www.npmjs.com/package/mcp-turso",
       tags: ["turso", "sqlite", "libsql", "database", "edge"],
     }
   ),
@@ -370,9 +387,9 @@ const databases: SeedMcp[] = [
     "@upstash/mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@upstash/mcp-server",
-      homepageUrl: "https://github.com/upstash/mcp-server",
       envKeys: ["UPSTASH_EMAIL", "UPSTASH_API_KEY"],
+      homepageUrl: "https://github.com/upstash/mcp-server",
+      manifestUrl: "https://www.npmjs.com/package/@upstash/mcp-server",
       tags: ["upstash", "redis", "qstash", "serverless", "cache"],
     }
   ),
@@ -382,9 +399,9 @@ const databases: SeedMcp[] = [
     "mongodb-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/mongodb-js/mongodb-mcp-server",
-      homepageUrl: "https://mongodb.com",
       envKeys: ["MONGODB_CONNECTION_STRING"],
+      homepageUrl: "https://mongodb.com",
+      manifestUrl: "https://github.com/mongodb-js/mongodb-mcp-server",
       tags: ["mongodb", "database", "nosql", "atlas"],
     }
   ),
@@ -394,9 +411,9 @@ const databases: SeedMcp[] = [
     "@clickhouse/mcp-clickhouse",
     [],
     {
-      manifestUrl: "https://github.com/ClickHouse/mcp-clickhouse",
-      homepageUrl: "https://clickhouse.com",
       envKeys: ["CLICKHOUSE_URL", "CLICKHOUSE_USER", "CLICKHOUSE_PASSWORD"],
+      homepageUrl: "https://clickhouse.com",
+      manifestUrl: "https://github.com/ClickHouse/mcp-clickhouse",
       tags: ["clickhouse", "database", "analytics", "olap"],
     }
   ),
@@ -406,9 +423,9 @@ const databases: SeedMcp[] = [
     "@redis/mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/redis/mcp-redis",
-      homepageUrl: "https://redis.io",
       envKeys: ["REDIS_URL"],
+      homepageUrl: "https://redis.io",
+      manifestUrl: "https://github.com/redis/mcp-redis",
       tags: ["redis", "database", "cache", "search"],
     }
   ),
@@ -418,9 +435,9 @@ const databases: SeedMcp[] = [
     "neo4j-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/neo4j-contrib/mcp-neo4j",
-      homepageUrl: "https://neo4j.com",
       envKeys: ["NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD"],
+      homepageUrl: "https://neo4j.com",
+      manifestUrl: "https://github.com/neo4j-contrib/mcp-neo4j",
       tags: ["neo4j", "database", "graph", "cypher"],
     }
   ),
@@ -430,9 +447,9 @@ const databases: SeedMcp[] = [
     "@elastic/mcp-server-elasticsearch",
     [],
     {
-      manifestUrl: "https://github.com/elastic/mcp-server-elasticsearch",
-      homepageUrl: "https://elastic.co/elasticsearch",
       envKeys: ["ELASTICSEARCH_URL", "ELASTICSEARCH_API_KEY"],
+      homepageUrl: "https://elastic.co/elasticsearch",
+      manifestUrl: "https://github.com/elastic/mcp-server-elasticsearch",
       tags: ["elasticsearch", "database", "search", "analytics"],
     }
   ),
@@ -442,9 +459,9 @@ const databases: SeedMcp[] = [
     "mariadb-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/mariadb/mcp",
-      homepageUrl: "https://mariadb.com",
       envKeys: ["MARIADB_CONNECTION_STRING"],
+      homepageUrl: "https://mariadb.com",
+      manifestUrl: "https://github.com/mariadb/mcp",
       tags: ["mariadb", "database", "sql", "vectors"],
     }
   ),
@@ -461,9 +478,9 @@ const vectorDbs: SeedMcp[] = [
     "pinecone-mcp",
     [],
     {
-      manifestUrl: "https://github.com/pinecone-io/pinecone-mcp",
-      homepageUrl: "https://pinecone.io",
       envKeys: ["PINECONE_API_KEY"],
+      homepageUrl: "https://pinecone.io",
+      manifestUrl: "https://github.com/pinecone-io/pinecone-mcp",
       tags: ["pinecone", "database", "vectors", "embeddings", "ai"],
     }
   ),
@@ -473,9 +490,9 @@ const vectorDbs: SeedMcp[] = [
     "mcp-server-qdrant",
     [],
     {
-      manifestUrl: "https://github.com/qdrant/mcp-server-qdrant",
-      homepageUrl: "https://qdrant.tech",
       envKeys: ["QDRANT_URL", "QDRANT_API_KEY"],
+      homepageUrl: "https://qdrant.tech",
+      manifestUrl: "https://github.com/qdrant/mcp-server-qdrant",
       tags: ["qdrant", "database", "vectors", "search", "ai"],
     }
   ),
@@ -485,8 +502,8 @@ const vectorDbs: SeedMcp[] = [
     "chroma-mcp",
     [],
     {
-      manifestUrl: "https://github.com/chroma-core/chroma-mcp",
       homepageUrl: "https://trychroma.com",
+      manifestUrl: "https://github.com/chroma-core/chroma-mcp",
       tags: ["chroma", "database", "vectors", "embeddings", "ai"],
     }
   ),
@@ -496,9 +513,9 @@ const vectorDbs: SeedMcp[] = [
     "mcp-server-milvus",
     [],
     {
-      manifestUrl: "https://github.com/zilliztech/mcp-server-milvus",
-      homepageUrl: "https://milvus.io",
       envKeys: ["MILVUS_ADDRESS"],
+      homepageUrl: "https://milvus.io",
+      manifestUrl: "https://github.com/zilliztech/mcp-server-milvus",
       tags: ["milvus", "database", "vectors", "search", "ai"],
     }
   ),
@@ -515,8 +532,8 @@ const searchResearch: SeedMcp[] = [
     "@upstash/context7-mcp",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@upstash/context7-mcp",
       homepageUrl: "https://context7.com",
+      manifestUrl: "https://www.npmjs.com/package/@upstash/context7-mcp",
       tags: ["context7", "documentation", "docs", "api-reference", "search"],
     }
   ),
@@ -526,9 +543,10 @@ const searchResearch: SeedMcp[] = [
     "@brave/brave-search-mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@brave/brave-search-mcp-server",
-      homepageUrl: "https://github.com/brave/brave-search-mcp-server",
       envKeys: ["BRAVE_API_KEY"],
+      homepageUrl: "https://github.com/brave/brave-search-mcp-server",
+      manifestUrl:
+        "https://www.npmjs.com/package/@brave/brave-search-mcp-server",
       tags: ["brave", "search", "web-search", "research"],
     }
   ),
@@ -537,9 +555,9 @@ const searchResearch: SeedMcp[] = [
     "AI-native web search, code search, and company research. Supports semantic search and content extraction.",
     "https://mcp.exa.ai/mcp",
     {
-      manifestUrl: "https://www.npmjs.com/package/exa-mcp-server",
-      homepageUrl: "https://exa.ai",
       envKeys: ["EXA_API_KEY"],
+      homepageUrl: "https://exa.ai",
+      manifestUrl: "https://www.npmjs.com/package/exa-mcp-server",
       tags: ["exa", "search", "semantic-search", "research", "ai"],
     }
   ),
@@ -549,9 +567,9 @@ const searchResearch: SeedMcp[] = [
     "firecrawl-mcp",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/firecrawl-mcp",
-      homepageUrl: "https://firecrawl.dev",
       envKeys: ["FIRECRAWL_API_KEY"],
+      homepageUrl: "https://firecrawl.dev",
+      manifestUrl: "https://www.npmjs.com/package/firecrawl-mcp",
       tags: ["firecrawl", "scraping", "crawling", "extraction", "research"],
     }
   ),
@@ -561,9 +579,9 @@ const searchResearch: SeedMcp[] = [
     "perplexity-mcp",
     [],
     {
-      manifestUrl: "https://github.com/perplexityai/modelcontextprotocol",
-      homepageUrl: "https://www.perplexity.ai",
       envKeys: ["PERPLEXITY_API_KEY"],
+      homepageUrl: "https://www.perplexity.ai",
+      manifestUrl: "https://github.com/perplexityai/modelcontextprotocol",
       tags: ["perplexity", "search", "research", "ai"],
     }
   ),
@@ -573,9 +591,9 @@ const searchResearch: SeedMcp[] = [
     "apify-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/apify/apify-mcp-server",
-      homepageUrl: "https://apify.com",
       envKeys: ["APIFY_TOKEN"],
+      homepageUrl: "https://apify.com",
+      manifestUrl: "https://github.com/apify/apify-mcp-server",
       tags: ["apify", "scraping", "extraction", "research", "automation"],
     }
   ),
@@ -592,8 +610,8 @@ const browserAutomation: SeedMcp[] = [
     "@playwright/mcp",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@playwright/mcp",
       homepageUrl: "https://github.com/microsoft/playwright-mcp",
+      manifestUrl: "https://www.npmjs.com/package/@playwright/mcp",
       tags: ["playwright", "browser", "automation", "testing", "e2e"],
     }
   ),
@@ -603,8 +621,10 @@ const browserAutomation: SeedMcp[] = [
     "@anthropic/mcp-server-puppeteer",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@anthropic/mcp-server-puppeteer",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer",
+      manifestUrl:
+        "https://www.npmjs.com/package/@anthropic/mcp-server-puppeteer",
       tags: ["puppeteer", "browser", "automation", "scraping"],
     }
   ),
@@ -614,9 +634,9 @@ const browserAutomation: SeedMcp[] = [
     "@browserbase/mcp-server-browserbase",
     [],
     {
-      manifestUrl: "https://github.com/browserbase/mcp-server-browserbase",
-      homepageUrl: "https://browserbase.com",
       envKeys: ["BROWSERBASE_API_KEY"],
+      homepageUrl: "https://browserbase.com",
+      manifestUrl: "https://github.com/browserbase/mcp-server-browserbase",
       tags: ["browserbase", "browser", "automation", "cloud"],
     }
   ),
@@ -632,8 +652,8 @@ const productivity: SeedMcp[] = [
     "Create pages, query databases, search workspace, and manage content in Notion. 22 tools for full workspace access.",
     "https://mcp.notion.so/mcp",
     {
-      manifestUrl: "https://www.npmjs.com/package/@notionhq/notion-mcp-server",
       homepageUrl: "https://developers.notion.com",
+      manifestUrl: "https://www.npmjs.com/package/@notionhq/notion-mcp-server",
       tags: ["notion", "productivity", "wiki", "databases", "collaboration"],
     }
   ),
@@ -642,8 +662,8 @@ const productivity: SeedMcp[] = [
     "Search messages, users, channels, and files. Send messages, manage canvases, and access profiles in your Slack workspace.",
     "https://mcp.slack.com/mcp",
     {
-      manifestUrl: "https://mcp.slack.com",
       homepageUrl: "https://api.slack.com",
+      manifestUrl: "https://mcp.slack.com",
       tags: ["slack", "messaging", "team", "collaboration"],
     }
   ),
@@ -652,8 +672,8 @@ const productivity: SeedMcp[] = [
     "Create and update issues, manage projects and cycles, add comments, and search docs across your Linear workspace. 23+ tools.",
     "https://mcp.linear.app/mcp",
     {
-      manifestUrl: "https://mcp.linear.app",
       homepageUrl: "https://linear.app/docs/mcp",
+      manifestUrl: "https://mcp.linear.app",
       tags: ["linear", "project-management", "issues", "agile"],
     }
   ),
@@ -663,9 +683,9 @@ const productivity: SeedMcp[] = [
     "@shayonpal/mcp-todoist",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@shayonpal/mcp-todoist",
-      homepageUrl: "https://todoist.com",
       envKeys: ["TODOIST_API_TOKEN"],
+      homepageUrl: "https://todoist.com",
+      manifestUrl: "https://www.npmjs.com/package/@shayonpal/mcp-todoist",
       tags: ["todoist", "tasks", "productivity", "project-management"],
     }
   ),
@@ -674,9 +694,15 @@ const productivity: SeedMcp[] = [
     "Securely interact with Jira work items and Confluence pages, and search across both. Official Atlassian MCP server.",
     "https://www.atlassian.com/platform/remote-mcp-server",
     {
-      manifestUrl: "https://www.atlassian.com/platform/remote-mcp-server",
       homepageUrl: "https://atlassian.com",
-      tags: ["atlassian", "jira", "confluence", "productivity", "project-management"],
+      manifestUrl: "https://www.atlassian.com/platform/remote-mcp-server",
+      tags: [
+        "atlassian",
+        "jira",
+        "confluence",
+        "productivity",
+        "project-management",
+      ],
     }
   ),
   http(
@@ -684,8 +710,8 @@ const productivity: SeedMcp[] = [
     "Connect, manage, and interact with HubSpot CRM data: contacts, companies, deals, tickets, and marketing assets.",
     "https://developer.hubspot.com/mcp",
     {
-      manifestUrl: "https://developer.hubspot.com/mcp",
       homepageUrl: "https://hubspot.com",
+      manifestUrl: "https://developer.hubspot.com/mcp",
       tags: ["hubspot", "crm", "marketing", "sales", "productivity"],
     }
   ),
@@ -695,9 +721,9 @@ const productivity: SeedMcp[] = [
     "monday-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/mondaycom/mcp",
-      homepageUrl: "https://monday.com",
       envKeys: ["MONDAY_API_TOKEN"],
+      homepageUrl: "https://monday.com",
+      manifestUrl: "https://github.com/mondaycom/mcp",
       tags: ["monday", "project-management", "productivity", "boards"],
     }
   ),
@@ -713,9 +739,9 @@ const payments: SeedMcp[] = [
     "Interact with the Stripe API for payments, subscriptions, customers, and invoices. Search Stripe's knowledge base.",
     "https://mcp.stripe.com",
     {
-      manifestUrl: "https://www.npmjs.com/package/@stripe/mcp",
-      homepageUrl: "https://docs.stripe.com/mcp",
       envKeys: ["STRIPE_SECRET_KEY"],
+      homepageUrl: "https://docs.stripe.com/mcp",
+      manifestUrl: "https://www.npmjs.com/package/@stripe/mcp",
       tags: ["stripe", "payments", "billing", "subscriptions", "commerce"],
     }
   ),
@@ -724,8 +750,8 @@ const payments: SeedMcp[] = [
     "PayPal's official MCP server. Create and manage payments, invoices, subscriptions, and payouts.",
     "https://mcp.paypal.com",
     {
-      manifestUrl: "https://mcp.paypal.com",
       homepageUrl: "https://developer.paypal.com",
+      manifestUrl: "https://mcp.paypal.com",
       tags: ["paypal", "payments", "billing", "commerce"],
     }
   ),
@@ -741,9 +767,9 @@ const design: SeedMcp[] = [
     "Extract design context from Figma, generate code from frames, and write to the canvas. Bridge design and development.",
     "https://mcp.figma.com/mcp",
     {
-      manifestUrl: "https://www.figma.com/developers/mcp",
-      homepageUrl: "https://www.figma.com",
       envKeys: ["FIGMA_ACCESS_TOKEN"],
+      homepageUrl: "https://www.figma.com",
+      manifestUrl: "https://www.figma.com/developers/mcp",
       tags: ["figma", "design", "ui", "prototyping", "design-to-code"],
     }
   ),
@@ -753,9 +779,9 @@ const design: SeedMcp[] = [
     "cloudinary-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/cloudinary/mcp-servers",
-      homepageUrl: "https://cloudinary.com",
       envKeys: ["CLOUDINARY_URL"],
+      homepageUrl: "https://cloudinary.com",
+      manifestUrl: "https://github.com/cloudinary/mcp-servers",
       tags: ["cloudinary", "media", "images", "video", "design"],
     }
   ),
@@ -772,9 +798,9 @@ const email: SeedMcp[] = [
     "resend-mcp",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/resend-mcp",
-      homepageUrl: "https://resend.com/docs/mcp-server",
       envKeys: ["RESEND_API_KEY"],
+      homepageUrl: "https://resend.com/docs/mcp-server",
+      manifestUrl: "https://www.npmjs.com/package/resend-mcp",
       tags: ["resend", "email", "transactional", "communications"],
     }
   ),
@@ -786,16 +812,16 @@ const email: SeedMcp[] = [
 
 const observability: SeedMcp[] = [
   {
-    name: "Grafana",
+    args: ["mcp-grafana"],
+    command: "uvx",
     description:
       "40+ tools across 15 categories: dashboard management, Prometheus, Loki logs, alerting, incident management, and OnCall.",
-    manifestUrl: "https://github.com/grafana/mcp-grafana",
-    homepageUrl: "https://grafana.com",
-    transport: "stdio",
-    command: "uvx",
-    args: ["mcp-grafana"],
     envKeys: ["GRAFANA_URL", "GRAFANA_API_KEY"],
+    homepageUrl: "https://grafana.com",
+    manifestUrl: "https://github.com/grafana/mcp-grafana",
+    name: "Grafana",
     tags: ["grafana", "observability", "monitoring", "prometheus", "loki"],
+    transport: "stdio",
   },
   stdio(
     "PagerDuty",
@@ -803,9 +829,9 @@ const observability: SeedMcp[] = [
     "pagerduty-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/PagerDuty/pagerduty-mcp-server",
-      homepageUrl: "https://pagerduty.com",
       envKeys: ["PAGERDUTY_API_KEY"],
+      homepageUrl: "https://pagerduty.com",
+      manifestUrl: "https://github.com/PagerDuty/pagerduty-mcp-server",
       tags: ["pagerduty", "incidents", "on-call", "observability"],
     }
   ),
@@ -815,9 +841,9 @@ const observability: SeedMcp[] = [
     "posthog-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/posthog/mcp",
-      homepageUrl: "https://posthog.com",
       envKeys: ["POSTHOG_API_KEY"],
+      homepageUrl: "https://posthog.com",
+      manifestUrl: "https://github.com/posthog/mcp",
       tags: ["posthog", "analytics", "feature-flags", "observability"],
     }
   ),
@@ -827,9 +853,9 @@ const observability: SeedMcp[] = [
     "honeycomb-mcp",
     [],
     {
-      manifestUrl: "https://github.com/honeycombio/honeycomb-mcp",
-      homepageUrl: "https://honeycomb.io",
       envKeys: ["HONEYCOMB_API_KEY"],
+      homepageUrl: "https://honeycomb.io",
+      manifestUrl: "https://github.com/honeycombio/honeycomb-mcp",
       tags: ["honeycomb", "observability", "tracing", "debugging"],
     }
   ),
@@ -839,9 +865,9 @@ const observability: SeedMcp[] = [
     "axiom-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/axiomhq/mcp-server-axiom",
-      homepageUrl: "https://axiom.co",
       envKeys: ["AXIOM_TOKEN"],
+      homepageUrl: "https://axiom.co",
+      manifestUrl: "https://github.com/axiomhq/mcp-server-axiom",
       tags: ["axiom", "observability", "logs", "traces"],
     }
   ),
@@ -858,9 +884,9 @@ const aiProviders: SeedMcp[] = [
     "@openai/mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@openai/mcp-server",
-      homepageUrl: "https://platform.openai.com",
       envKeys: ["OPENAI_API_KEY"],
+      homepageUrl: "https://platform.openai.com",
+      manifestUrl: "https://www.npmjs.com/package/@openai/mcp-server",
       tags: ["openai", "ai", "llm", "agents", "completions"],
     }
   ),
@@ -869,8 +895,8 @@ const aiProviders: SeedMcp[] = [
     "Connect to Hugging Face Hub: semantic search for spaces/papers, explore datasets and models, and access compatible tools.",
     "https://huggingface.co/mcp",
     {
-      manifestUrl: "https://huggingface.co/settings/mcp",
       homepageUrl: "https://huggingface.co",
+      manifestUrl: "https://huggingface.co/settings/mcp",
       tags: ["huggingface", "ai", "models", "datasets", "research"],
     }
   ),
@@ -880,9 +906,9 @@ const aiProviders: SeedMcp[] = [
     "@e2b/mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/e2b-dev/mcp-server",
-      homepageUrl: "https://e2b.dev",
       envKeys: ["E2B_API_KEY"],
+      homepageUrl: "https://e2b.dev",
+      manifestUrl: "https://github.com/e2b-dev/mcp-server",
       tags: ["e2b", "sandbox", "code-execution", "ai", "security"],
     }
   ),
@@ -899,9 +925,10 @@ const dataAnalytics: SeedMcp[] = [
     "@modelcontextprotocol/server-postgres",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-postgres",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers",
       envKeys: ["POSTGRES_CONNECTION_STRING"],
+      homepageUrl: "https://github.com/modelcontextprotocol/servers",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-postgres",
       tags: ["postgres", "database", "sql", "official"],
     }
   ),
@@ -911,8 +938,9 @@ const dataAnalytics: SeedMcp[] = [
     "@modelcontextprotocol/server-sqlite",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-sqlite",
       homepageUrl: "https://github.com/modelcontextprotocol/servers",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-sqlite",
       tags: ["sqlite", "database", "sql", "local", "official"],
     }
   ),
@@ -929,9 +957,14 @@ const infraCloud: SeedMcp[] = [
     "awslabs.aws-api-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/awslabs/mcp",
+      envKeys: [
+        "AWS_REGION",
+        "AWS_PROFILE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+      ],
       homepageUrl: "https://awslabs.github.io/mcp/servers/aws-api-mcp-server",
-      envKeys: ["AWS_REGION", "AWS_PROFILE", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+      manifestUrl: "https://github.com/awslabs/mcp",
       tags: ["aws", "cloud", "s3", "lambda", "infra", "official"],
     }
   ),
@@ -941,9 +974,10 @@ const infraCloud: SeedMcp[] = [
     "azure-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/microsoft/mcp/tree/main/servers/Azure.Mcp.Server",
-      homepageUrl: "https://azure.microsoft.com",
       envKeys: ["AZURE_SUBSCRIPTION_ID"],
+      homepageUrl: "https://azure.microsoft.com",
+      manifestUrl:
+        "https://github.com/microsoft/mcp/tree/main/servers/Azure.Mcp.Server",
       tags: ["azure", "cloud", "microsoft", "infra"],
     }
   ),
@@ -953,9 +987,9 @@ const infraCloud: SeedMcp[] = [
     "cloud-run-mcp",
     [],
     {
-      manifestUrl: "https://github.com/GoogleCloudPlatform/cloud-run-mcp",
-      homepageUrl: "https://cloud.google.com/run",
       envKeys: ["GOOGLE_CLOUD_PROJECT"],
+      homepageUrl: "https://cloud.google.com/run",
+      manifestUrl: "https://github.com/GoogleCloudPlatform/cloud-run-mcp",
       tags: ["gcp", "cloud", "cloud-run", "serverless", "infra"],
     }
   ),
@@ -965,8 +999,8 @@ const infraCloud: SeedMcp[] = [
     "terraform-mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/terraform-mcp-server",
       homepageUrl: "https://developer.hashicorp.com/terraform",
+      manifestUrl: "https://www.npmjs.com/package/terraform-mcp-server",
       tags: ["terraform", "iac", "infrastructure", "devops"],
     }
   ),
@@ -976,9 +1010,9 @@ const infraCloud: SeedMcp[] = [
     "pulumi-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/pulumi/pulumi-mcp-server",
-      homepageUrl: "https://www.pulumi.com",
       envKeys: ["PULUMI_ACCESS_TOKEN"],
+      homepageUrl: "https://www.pulumi.com",
+      manifestUrl: "https://github.com/pulumi/pulumi-mcp-server",
       tags: ["pulumi", "iac", "infrastructure", "devops"],
     }
   ),
@@ -988,8 +1022,8 @@ const infraCloud: SeedMcp[] = [
     "docker-mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/docker-mcp-server",
       homepageUrl: "https://www.docker.com",
+      manifestUrl: "https://www.npmjs.com/package/docker-mcp-server",
       tags: ["docker", "containers", "devops", "infrastructure"],
     }
   ),
@@ -999,9 +1033,9 @@ const infraCloud: SeedMcp[] = [
     "kubernetes-mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/kubernetes-mcp-server",
-      homepageUrl: "https://kubernetes.io",
       envKeys: ["KUBECONFIG"],
+      homepageUrl: "https://kubernetes.io",
+      manifestUrl: "https://www.npmjs.com/package/kubernetes-mcp-server",
       tags: ["kubernetes", "k8s", "containers", "orchestration", "infra"],
     }
   ),
@@ -1011,9 +1045,9 @@ const infraCloud: SeedMcp[] = [
     "render-mcp-server",
     [],
     {
-      manifestUrl: "https://render.com/docs/mcp-server",
-      homepageUrl: "https://render.com",
       envKeys: ["RENDER_API_KEY"],
+      homepageUrl: "https://render.com",
+      manifestUrl: "https://render.com/docs/mcp-server",
       tags: ["render", "deployment", "hosting", "infra"],
     }
   ),
@@ -1023,8 +1057,9 @@ const infraCloud: SeedMcp[] = [
     "firebase-tools",
     ["mcp"],
     {
-      manifestUrl: "https://github.com/firebase/firebase-tools/tree/main/src/mcp",
       homepageUrl: "https://firebase.google.com",
+      manifestUrl:
+        "https://github.com/firebase/firebase-tools/tree/main/src/mcp",
       tags: ["firebase", "google", "database", "auth", "infra"],
     }
   ),
@@ -1041,9 +1076,9 @@ const security: SeedMcp[] = [
     "snyk-mcp-server",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/snyk-mcp-server",
-      homepageUrl: "https://snyk.io",
       envKeys: ["SNYK_TOKEN"],
+      homepageUrl: "https://snyk.io",
+      manifestUrl: "https://www.npmjs.com/package/snyk-mcp-server",
       tags: ["snyk", "security", "vulnerabilities", "dependencies", "sca"],
     }
   ),
@@ -1053,9 +1088,9 @@ const security: SeedMcp[] = [
     "@auth0/auth0-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/auth0/auth0-mcp-server",
-      homepageUrl: "https://auth0.com",
       envKeys: ["AUTH0_DOMAIN", "AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECRET"],
+      homepageUrl: "https://auth0.com",
+      manifestUrl: "https://github.com/auth0/auth0-mcp-server",
       tags: ["auth0", "auth", "identity", "security"],
     }
   ),
@@ -1065,9 +1100,9 @@ const security: SeedMcp[] = [
     "sonarqube-mcp-server",
     [],
     {
-      manifestUrl: "https://github.com/SonarSource/sonarqube-mcp-server",
-      homepageUrl: "https://sonarsource.com",
       envKeys: ["SONARQUBE_URL", "SONARQUBE_TOKEN"],
+      homepageUrl: "https://sonarsource.com",
+      manifestUrl: "https://github.com/SonarSource/sonarqube-mcp-server",
       tags: ["sonarqube", "security", "code-quality", "static-analysis"],
     }
   ),
@@ -1077,8 +1112,9 @@ const security: SeedMcp[] = [
     "semgrep",
     ["mcp"],
     {
-      manifestUrl: "https://github.com/semgrep/semgrep/blob/develop/cli/src/semgrep/mcp/README.md",
       homepageUrl: "https://semgrep.dev",
+      manifestUrl:
+        "https://github.com/semgrep/semgrep/blob/develop/cli/src/semgrep/mcp/README.md",
       tags: ["semgrep", "security", "static-analysis", "code-quality"],
     }
   ),
@@ -1088,9 +1124,9 @@ const security: SeedMcp[] = [
     "falcon-mcp",
     [],
     {
-      manifestUrl: "https://github.com/CrowdStrike/falcon-mcp",
-      homepageUrl: "https://crowdstrike.com",
       envKeys: ["FALCON_CLIENT_ID", "FALCON_CLIENT_SECRET"],
+      homepageUrl: "https://crowdstrike.com",
+      manifestUrl: "https://github.com/CrowdStrike/falcon-mcp",
       tags: ["crowdstrike", "security", "threat-intelligence", "edr"],
     }
   ),
@@ -1107,8 +1143,8 @@ const utilities: SeedMcp[] = [
     "mcp-proxy",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/mcp-proxy",
       homepageUrl: "https://github.com/punkpeye/mcp-proxy",
+      manifestUrl: "https://www.npmjs.com/package/mcp-proxy",
       tags: ["proxy", "transport", "http", "sse", "utility"],
     }
   ),
@@ -1118,8 +1154,10 @@ const utilities: SeedMcp[] = [
     "@modelcontextprotocol/server-time",
     [],
     {
-      manifestUrl: "https://www.npmjs.com/package/@modelcontextprotocol/server-time",
-      homepageUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
+      homepageUrl:
+        "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
+      manifestUrl:
+        "https://www.npmjs.com/package/@modelcontextprotocol/server-time",
       tags: ["time", "timezone", "utility", "official"],
     }
   ),

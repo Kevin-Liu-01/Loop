@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import type { LatencyBucket, TimeSeriesBucket } from "@/lib/usage-charts";
 import {
@@ -14,12 +14,12 @@ function bucket(
   partial: Partial<TimeSeriesBucket> & Pick<TimeSeriesBucket, "label">
 ): TimeSeriesBucket {
   return {
+    api: partial.api ?? 0,
     bucket: partial.bucket ?? "",
+    interactions: partial.interactions ?? 0,
     label: partial.label,
     total: partial.total ?? 0,
-    api: partial.api ?? 0,
     views: partial.views ?? 0,
-    interactions: partial.interactions ?? 0,
   };
 }
 
@@ -37,7 +37,7 @@ test("peakVolumeHour returns max bucket", () => {
     bucket({ label: "2p", total: 9 }),
     bucket({ label: "3p", total: 4 }),
   ];
-  assert.deepEqual(peakVolumeHour(s), { label: "2p", count: 9 });
+  assert.deepEqual(peakVolumeHour(s), { count: 9, label: "2p" });
 });
 
 test("peakVolumeHour returns null when all zero", () => {
@@ -56,11 +56,11 @@ test("formatRollingHalfDelta handles edges", () => {
 test("rollingHalfDeltas compares halves of 24 buckets", () => {
   const s: TimeSeriesBucket[] = Array.from({ length: 24 }, (_, i) =>
     bucket({
-      label: `${i}`,
-      views: i < 12 ? 1 : 3,
       api: 0,
       interactions: 0,
+      label: `${i}`,
       total: i < 12 ? 1 : 3,
+      views: i < 12 ? 1 : 3,
     })
   );
   const d = rollingHalfDeltas(s);
@@ -69,16 +69,19 @@ test("rollingHalfDeltas compares halves of 24 buckets", () => {
 
 test("latencyHalfComparison compares averaged halves", () => {
   const early: LatencyBucket[] = Array.from({ length: 12 }, (_, i) => ({
+    avgMs: 100,
     bucket: "",
     label: `${i}`,
-    avgMs: 100,
     maxMs: 100,
   }));
   const late: LatencyBucket[] = Array.from({ length: 12 }, (_, i) => ({
+    avgMs: 200,
     bucket: "",
     label: `${i + 12}`,
-    avgMs: 200,
     maxMs: 200,
   }));
-  assert.equal(latencyHalfComparison([...early, ...late]), "+100% avg ms vs prior 12h");
+  assert.equal(
+    latencyHalfComparison([...early, ...late]),
+    "+100% avg ms vs prior 12h"
+  );
 });

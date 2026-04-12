@@ -4,19 +4,22 @@ import { useCallback, useState } from "react";
 
 import { ShareIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/shadcn/tooltip";
 
-type ShareButtonProps = {
+interface ShareButtonProps {
   href: string;
-};
+}
 
 export function ShareButton({ href }: ShareButtonProps) {
   const [shared, setShared] = useState(false);
 
   const handleShare = useCallback(async () => {
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}${href}`
-      : href;
+    const url =
+      typeof window !== "undefined" ? `${window.location.origin}${href}` : href;
 
     if (navigator.share) {
       try {
@@ -42,7 +45,13 @@ export function ShareButton({ href }: ShareButtonProps) {
           variant="soft"
         >
           {shared ? (
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
               <path d="M5 13l4 4L19 7" />
             </svg>
           ) : (

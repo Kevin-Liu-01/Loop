@@ -1,7 +1,11 @@
 import { requireAuth, authErrorResponse } from "@/lib/auth";
-import { getSkillBySlug } from "@/lib/db/skills";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
-import { uploadIcon, validateIconFile, updateSkillIconUrl } from "@/lib/icon-storage";
+import { getSkillBySlug } from "@/lib/db/skills";
+import {
+  uploadIcon,
+  validateIconFile,
+  updateSkillIconUrl,
+} from "@/lib/icon-storage";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
 
 export async function POST(
@@ -28,7 +32,10 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get("icon") as File | null;
     if (!file) {
-      return Response.json({ error: "Missing 'icon' file field." }, { status: 400 });
+      return Response.json(
+        { error: "Missing 'icon' file field." },
+        { status: 400 }
+      );
     }
 
     const validationError = validateIconFile(file);
@@ -39,14 +46,13 @@ export async function POST(
     const { publicUrl } = await uploadIcon("skills", slug, file);
     await updateSkillIconUrl(slug, publicUrl);
 
-    return Response.json({ ok: true, iconUrl: publicUrl });
+    return Response.json({ iconUrl: publicUrl, ok: true });
   } catch (error) {
     const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
+    if (authResp) {
+      return authResp;
+    }
     console.error("[skill-icon] Upload failed:", error);
-    return Response.json(
-      { error: "Icon upload failed." },
-      { status: 500 }
-    );
+    return Response.json({ error: "Icon upload failed." }, { status: 500 });
   }
 }

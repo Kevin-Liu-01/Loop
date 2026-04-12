@@ -9,11 +9,11 @@ import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
 
-type ChatMessageBubbleProps = {
+interface ChatMessageBubbleProps {
   role: "user" | "assistant" | "system";
   text: string;
   createdAt?: Date | string;
-};
+}
 
 function RelativeTimestamp({
   date,
@@ -54,7 +54,7 @@ export function ChatMessageBubble({
     <div
       className={cn(
         "chat-message",
-        isUser ? "chat-message--user" : "chat-message--assistant",
+        isUser ? "chat-message--user" : "chat-message--assistant"
       )}
     >
       <div className="mb-1.5 flex items-center gap-1.5">
@@ -66,7 +66,7 @@ export function ChatMessageBubble({
         <span
           className={cn(
             "text-[0.625rem] font-semibold uppercase tracking-[0.08em]",
-            isUser ? "text-white/70" : "text-ink-faint",
+            isUser ? "text-white/70" : "text-ink-faint"
           )}
         >
           {isUser ? "You" : "Loop"}
@@ -85,7 +85,7 @@ export function ChatMessageBubble({
           date={timestamp}
           className={cn(
             "mt-2 block text-[0.625rem] tabular-nums",
-            isUser ? "text-white/40" : "opacity-40",
+            isUser ? "text-white/40" : "opacity-40"
           )}
         />
       ) : null}

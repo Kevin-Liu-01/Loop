@@ -2,8 +2,8 @@ import { getSkillAuthorBySlug } from "@/lib/db/skill-authors";
 import {
   EXTERNAL_SKILL_SOURCES,
   findSourceForUrl,
-  type ExternalSkillSource,
 } from "@/lib/external-skill-sources";
+import type { ExternalSkillSource } from "@/lib/external-skill-sources";
 
 const authorIdCache = new Map<string, string | null>();
 
@@ -13,12 +13,16 @@ const authorIdCache = new Map<string, string | null>();
  * doesn't exist yet (e.g. migration hasn't run).
  */
 export async function resolveSourceAuthorId(
-  source: ExternalSkillSource,
+  source: ExternalSkillSource
 ): Promise<string | undefined> {
-  if (!source.authorSlug) return undefined;
+  if (!source.authorSlug) {
+    return undefined;
+  }
 
   const cached = authorIdCache.get(source.authorSlug);
-  if (cached !== undefined) return cached ?? undefined;
+  if (cached !== undefined) {
+    return cached ?? undefined;
+  }
 
   const author = await getSkillAuthorBySlug(source.authorSlug);
   authorIdCache.set(source.authorSlug, author?.id ?? null);
@@ -30,10 +34,12 @@ export async function resolveSourceAuthorId(
  * return its verified author ID. Returns `undefined` for unknown URLs.
  */
 export async function resolveAuthorIdForUrl(
-  url: string,
+  url: string
 ): Promise<string | undefined> {
   const source = findSourceForUrl(url);
-  if (!source) return undefined;
+  if (!source) {
+    return undefined;
+  }
   return resolveSourceAuthorId(source);
 }
 
@@ -47,9 +53,9 @@ export async function prefetchSourceAuthorIds(): Promise<Map<string, string>> {
     sourcesWithAuthor.map(async (s) => {
       const id = await resolveSourceAuthorId(s);
       return [s.id, id] as const;
-    }),
+    })
   );
   return new Map(
-    results.filter((r): r is [string, string] => r[1] !== undefined),
+    results.filter((r): r is [string, string] => r[1] !== undefined)
   );
 }

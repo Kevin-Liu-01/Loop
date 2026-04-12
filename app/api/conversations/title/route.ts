@@ -6,25 +6,29 @@ import { generateConversationTitle } from "@/lib/generate-title";
 import { withApiUsage } from "@/lib/usage-server";
 
 const bodySchema = z.object({
+  apiKeyEnvVar: z.string().optional(),
+  compatibleBaseUrl: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   messages: z
     .array(
       z.object({
-        role: z.string(),
         content: z.string(),
-      }),
+        role: z.string(),
+      })
     )
     .min(1)
     .max(10),
-  providerId: z.string().optional(),
   model: z.string().optional(),
-  compatibleBaseUrl: z.string().optional(),
-  apiKeyEnvVar: z.string().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
+  providerId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
   return withApiUsage(
-    { route: "/api/conversations/title", method: "POST", label: "Generate conversation title" },
+    {
+      label: "Generate conversation title",
+      method: "POST",
+      route: "/api/conversations/title",
+    },
     async () => {
       try {
         const session = await getSessionUser();
@@ -38,36 +42,41 @@ export async function POST(request: Request) {
         if (payload.providerId && payload.model) {
           try {
             externalModel = resolveLanguageModel({
-              providerId: payload.providerId,
-              model: payload.model,
-              compatibleBaseUrl: payload.compatibleBaseUrl,
               apiKeyEnvVar: payload.apiKeyEnvVar,
+              compatibleBaseUrl: payload.compatibleBaseUrl,
               headers: payload.headers,
+              model: payload.model,
+              providerId: payload.providerId,
             });
           } catch {
             /* fall through to gateway/fallback */
           }
         }
 
-        const title = await generateConversationTitle(payload.messages, externalModel);
+        const title = await generateConversationTitle(
+          payload.messages,
+          externalModel
+        );
 
         return Response.json({ ok: true, title });
       } catch (error) {
         const authResponse = authErrorResponse(error);
-        if (authResponse) return authResponse;
+        if (authResponse) {
+          return authResponse;
+        }
 
         if (error instanceof z.ZodError) {
           return Response.json(
             { error: error.issues[0]?.message ?? "Invalid payload." },
-            { status: 400 },
+            { status: 400 }
           );
         }
 
         return Response.json(
           { error: "Failed to generate title." },
-          { status: 500 },
+          { status: 500 }
         );
       }
-    },
+    }
   );
 }

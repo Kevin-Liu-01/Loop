@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   const publicSkills = snapshot.skills.filter((s) => s.visibility === "public");
-  const mcps = snapshot.mcps;
+  const { mcps } = snapshot;
 
   const lines: string[] = [
     "# Loop Skill & MCP Catalog",
@@ -49,7 +49,9 @@ export async function GET() {
     lines.push(`- Updated: ${skill.updatedAt}`);
     lines.push(`- Raw URL: ${rawUrl}`);
     lines.push(`- Detail: ${siteUrl}${skill.href}`);
-    if (skill.ownerName) lines.push(`- Author: ${skill.ownerName}`);
+    if (skill.ownerName) {
+      lines.push(`- Author: ${skill.ownerName}`);
+    }
     lines.push("");
   }
 
@@ -60,18 +62,22 @@ export async function GET() {
     lines.push(`- Description: ${mcp.description}`);
     lines.push(`- Transport: ${mcp.transport}`);
     lines.push(`- Tags: ${mcp.tags.join(", ") || "none"}`);
-    if (mcp.manifestUrl) lines.push(`- Manifest: ${mcp.manifestUrl}`);
-    if (mcp.homepageUrl) lines.push(`- Homepage: ${mcp.homepageUrl}`);
+    if (mcp.manifestUrl) {
+      lines.push(`- Manifest: ${mcp.manifestUrl}`);
+    }
+    if (mcp.homepageUrl) {
+      lines.push(`- Homepage: ${mcp.homepageUrl}`);
+    }
     lines.push("");
   }
 
   const body = lines.join("\n");
 
   return new Response(body, {
-    status: 200,
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
+      "Content-Type": "text/plain; charset=utf-8",
     },
+    status: 200,
   });
 }

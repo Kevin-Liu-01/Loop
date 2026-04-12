@@ -4,10 +4,10 @@ import { CpuIcon } from "@/components/frontier-icons";
 import { cn } from "@/lib/cn";
 import type { ProcessInfo } from "@/lib/sandbox-inspect-types";
 
-type ProcessesTabProps = {
+interface ProcessesTabProps {
   processes: ProcessInfo[];
   isLoading: boolean;
-};
+}
 
 function ProcessRow({ proc }: { proc: ProcessInfo }) {
   return (
@@ -25,7 +25,7 @@ function ProcessRow({ proc }: { proc: ProcessInfo }) {
             ? "font-semibold text-danger"
             : proc.cpuPercent > 20
               ? "text-warning"
-              : "text-ink-faint",
+              : "text-ink-faint"
         )}
       >
         {proc.cpuPercent.toFixed(1)}%
@@ -37,7 +37,7 @@ function ProcessRow({ proc }: { proc: ProcessInfo }) {
             ? "font-semibold text-danger"
             : proc.memPercent > 20
               ? "text-warning"
-              : "text-ink-faint",
+              : "text-ink-faint"
         )}
       >
         {proc.memPercent.toFixed(1)}%

@@ -3,9 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { getMcpRecordByName } from "@/lib/content";
 import { buildMcpVersionHref } from "@/lib/format";
 
-type McpNamePageProps = {
+interface McpNamePageProps {
   params: Promise<{ name: string }>;
-};
+}
 
 export default async function McpNamePage({ params }: McpNamePageProps) {
   const { name } = await params;

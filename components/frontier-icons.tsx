@@ -1,5 +1,3 @@
-import type { ComponentProps } from "react";
-
 import {
   Activity,
   ArrowRight,
@@ -62,8 +60,9 @@ import {
   Workflow,
   X,
   Zap,
-  type LucideIcon
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 
 type IconProps = ComponentProps<typeof Radar> & {
   title?: string;
@@ -194,7 +193,11 @@ export function PythonIcon({ title, className, ...props }: SvgIconProps) {
 
 export const GITHUB_REPO_URL = "https://github.com/Kevin-Liu-01/loop";
 
-export function GitHubIcon({ className, title, ...props }: Omit<IconProps, "strokeWidth">) {
+export function GitHubIcon({
+  className,
+  title,
+  ...props
+}: Omit<IconProps, "strokeWidth">) {
   return (
     <svg
       viewBox="0 0 24 24"

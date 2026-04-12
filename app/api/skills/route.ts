@@ -17,30 +17,30 @@ import {
   saveUserSkillDocuments,
   skillRecordToUserDoc,
   updateUserSkillDocument,
-  updateUserSkillInputSchema
+  updateUserSkillInputSchema,
 } from "@/lib/user-skills";
 
 export async function GET() {
   return withApiUsage(
     {
-      route: "/api/skills",
+      label: "List user skills",
       method: "GET",
-      label: "List user skills"
+      route: "/api/skills",
     },
     async () => {
       const skills = await listUserSkillDocuments();
 
       return Response.json({
-        ok: true,
         count: skills.length,
+        ok: true,
         skills: skills.map((skill) => ({
+          automation: skill.automation,
+          category: skill.category,
+          ownerName: skill.ownerName ?? null,
           slug: skill.slug,
           title: skill.title,
-          category: skill.category,
           updatedAt: skill.updatedAt,
-          ownerName: skill.ownerName ?? null,
-          automation: skill.automation
-        }))
+        })),
       });
     }
   );
@@ -49,9 +49,9 @@ export async function GET() {
 export async function POST(request: Request) {
   return withApiUsage(
     {
-      route: "/api/skills",
+      label: "Create skill",
       method: "POST",
-      label: "Create skill"
+      route: "/api/skills",
     },
     async () => {
       try {
@@ -62,10 +62,10 @@ export async function POST(request: Request) {
         if (!limits.allowed) {
           return Response.json(
             {
-              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
               currentCount: limits.currentCount,
+              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
+              isOperator: limits.isOperator,
               limit: limits.limit,
-              isOperator: limits.isOperator
             },
             { status: 403 }
           );
@@ -76,22 +76,22 @@ export async function POST(request: Request) {
         if (catalogue.skills.some((skill) => skill.slug === draft.slug)) {
           return Response.json(
             {
-              error: `The slug "${draft.slug}" is already taken. Rename the skill title and try again.`
+              error: `The slug "${draft.slug}" is already taken. Rename the skill title and try again.`,
             },
             { status: 409 }
           );
         }
 
         const created = await addUserSkill(payload, {
-          creatorClerkUserId: session.userId,
           authorId: sessionAuthor?.id,
-          ownerName: sessionAuthor?.displayName ?? payload.ownerName
+          creatorClerkUserId: session.userId,
+          ownerName: sessionAuthor?.displayName ?? payload.ownerName,
         });
         const createdRecord = buildUserSkillRecord(created);
 
         const researchProfile = buildResearchProfile({
-          title: created.title,
           sources: created.sources,
+          title: created.title,
         });
         await updateSkill(created.slug, { researchProfile }).catch(() => {});
 
@@ -102,29 +102,34 @@ export async function POST(request: Request) {
         revalidatePath(createdRecord.href);
 
         await logUsageEvent({
+          categorySlug: created.category,
+          details: created.title,
           kind: "skill_create",
-          source: "api",
           label: "Created skill",
           path: createdRecord.href,
           skillSlug: created.slug,
-          categorySlug: created.category,
-          details: created.title
+          source: "api",
         });
 
         return Response.json({
+          href: createdRecord.href,
           ok: true,
           slug: created.slug,
-          href: createdRecord.href
         });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to create skill." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to create skill." },
+          { status: 400 }
+        );
       }
     }
   );
@@ -133,9 +138,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   return withApiUsage(
     {
-      route: "/api/skills",
+      label: "Save skill setup",
       method: "PATCH",
-      label: "Save skill setup"
+      route: "/api/skills",
     },
     async () => {
       try {
@@ -145,7 +150,10 @@ export async function PATCH(request: Request) {
         const current = await getSkillRecordBySlug(payload.slug);
 
         if (!current) {
-          return Response.json({ error: "That tracked skill could not be found." }, { status: 404 });
+          return Response.json(
+            { error: "That tracked skill could not be found." },
+            { status: 404 }
+          );
         }
 
         if (!canSessionEditSkill(current, session, sessionAuthor)) {
@@ -155,15 +163,20 @@ export async function PATCH(request: Request) {
           );
         }
 
-        const result = updateUserSkillDocument(skillRecordToUserDoc(current), payload);
+        const result = updateUserSkillDocument(
+          skillRecordToUserDoc(current),
+          payload
+        );
         if (result.changed) {
           await saveUserSkillDocuments([result.skill]);
 
           const researchProfile = buildResearchProfile({
-            title: result.skill.title,
             sources: result.skill.sources,
+            title: result.skill.title,
           });
-          await updateSkill(result.skill.slug, { researchProfile }).catch(() => {});
+          await updateSkill(result.skill.slug, { researchProfile }).catch(
+            () => {}
+          );
         }
 
         const record = buildUserSkillRecord(result.skill);
@@ -177,30 +190,35 @@ export async function PATCH(request: Request) {
         revalidatePath(record.href);
 
         await logUsageEvent({
+          categorySlug: result.skill.category,
+          details: result.changed ? `Saved ${record.href}` : "No setup change",
           kind: "skill_save",
-          source: "api",
           label: result.changed ? "Saved skill setup" : "Checked skill setup",
           path: record.href,
           skillSlug: result.skill.slug,
-          categorySlug: result.skill.category,
-          details: result.changed ? `Saved ${record.href}` : "No setup change"
+          source: "api",
         });
 
         return Response.json({
+          changed: result.changed,
+          href: record.href,
           ok: true,
           slug: result.skill.slug,
-          href: record.href,
-          changed: result.changed
         });
       } catch (error) {
         const authResp = authErrorResponse(error);
-        if (authResp) return authResp;
+        if (authResp) {
+          return authResp;
+        }
 
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }
 
-        return Response.json({ error: "Unable to update skill." }, { status: 400 });
+        return Response.json(
+          { error: "Unable to update skill." },
+          { status: 400 }
+        );
       }
     }
   );

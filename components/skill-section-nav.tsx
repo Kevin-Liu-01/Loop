@@ -5,14 +5,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { SITE_HEADER_HEIGHT_PX } from "@/lib/ui-layout";
 
-export type SectionTab = {
+export interface SectionTab {
   id: string;
   label: string;
-};
+}
 
-type SkillSectionNavProps = {
+interface SkillSectionNavProps {
   sections: SectionTab[];
-};
+}
 
 export function SkillSectionNav({ sections }: SkillSectionNavProps) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
@@ -20,14 +20,16 @@ export function SkillSectionNav({ sections }: SkillSectionNavProps) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSet = useRef(new Set<string>());
   const programmaticScrollRef = useRef(false);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>();
 
   useEffect(() => {
     const navH = navRef.current?.getBoundingClientRect().height ?? 0;
     const deadZone = SITE_HEADER_HEIGHT_PX + navH;
 
     const pickActive = () => {
-      if (programmaticScrollRef.current) return;
+      if (programmaticScrollRef.current) {
+        return;
+      }
       for (const s of sections) {
         if (visibleSet.current.has(s.id)) {
           setActiveId(s.id);
@@ -58,48 +60,50 @@ export function SkillSectionNav({ sections }: SkillSectionNavProps) {
       .map((s) => document.getElementById(s.id))
       .filter(Boolean) as HTMLElement[];
 
-    for (const el of targets) observerRef.current.observe(el);
+    for (const el of targets) {
+      observerRef.current.observe(el);
+    }
 
     return () => {
       observerRef.current?.disconnect();
     };
   }, [sections]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       clearTimeout(scrollTimerRef.current);
-    };
-  }, []);
-
-  const handleClick = useCallback(
-    (id: string) => {
-      setActiveId(id);
-      programmaticScrollRef.current = true;
-      clearTimeout(scrollTimerRef.current);
-
-      const target = document.getElementById(id);
-      if (!target) {
-        programmaticScrollRef.current = false;
-        return;
-      }
-
-      const navH = navRef.current?.getBoundingClientRect().height ?? 0;
-      const y =
-        target.getBoundingClientRect().top +
-        window.scrollY -
-        SITE_HEADER_HEIGHT_PX -
-        navH;
-
-      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-
-      scrollTimerRef.current = setTimeout(() => {
-        programmaticScrollRef.current = false;
-      }, 800);
     },
     []
   );
 
-  if (sections.length === 0) return null;
+  const handleClick = useCallback((id: string) => {
+    setActiveId(id);
+    programmaticScrollRef.current = true;
+    clearTimeout(scrollTimerRef.current);
+
+    const target = document.querySelector(`#${id}`);
+    if (!target) {
+      programmaticScrollRef.current = false;
+      return;
+    }
+
+    const navH = navRef.current?.getBoundingClientRect().height ?? 0;
+    const y =
+      target.getBoundingClientRect().top +
+      window.scrollY -
+      SITE_HEADER_HEIGHT_PX -
+      navH;
+
+    window.scrollTo({ behavior: "smooth", top: Math.max(0, y) });
+
+    scrollTimerRef.current = setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 800);
+  }, []);
+
+  if (sections.length === 0) {
+    return null;
+  }
 
   return (
     <nav

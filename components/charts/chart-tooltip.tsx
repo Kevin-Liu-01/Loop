@@ -1,17 +1,17 @@
 import { cn } from "@/lib/cn";
 
-export type TooltipRow = {
+export interface TooltipRow {
   label: string;
   value: string | number;
   color?: string;
   dashed?: boolean;
-};
+}
 
-type ChartTooltipContentProps = {
+interface ChartTooltipContentProps {
   label: string;
   rows: TooltipRow[];
   className?: string;
-};
+}
 
 export function ChartTooltipContent({
   label,
@@ -30,7 +30,7 @@ export function ChartTooltipContent({
       <div className="grid gap-px">
         {rows.map((row) => (
           <div key={row.label} className="flex items-center gap-2">
-            {row.color != null && (
+            {row.color !== null && (
               <span
                 className="h-[2px] w-2.5 shrink-0 rounded-full"
                 style={{

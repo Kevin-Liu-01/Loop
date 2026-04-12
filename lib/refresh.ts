@@ -3,37 +3,39 @@ import { randomUUID } from "node:crypto";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-import { getGatewayEditorModel, getGatewayEditorModelId, getGatewayModelForSkill } from "@/lib/agents";
+import { resolveSearchProvider } from "@/lib/agent-tools/search-providers";
+import { getUserSearchKeys } from "@/lib/agent-tools/user-search-keys";
+import {
+  getGatewayEditorModel,
+  getGatewayEditorModelId,
+  getGatewayModelForSkill,
+} from "@/lib/agents";
 import {
   getSkillCatalogue,
   findSkillFiles,
   parseSkill,
   WORKSPACE_ROOT,
-  CODEX_SKILLS_ROOT
+  CODEX_SKILLS_ROOT,
 } from "@/lib/content";
+import { upsertBrief } from "@/lib/db/briefs";
 import { seedCategories } from "@/lib/db/categories";
 import { upsertSkillFromFilesystem } from "@/lib/db/skills";
-import { upsertBrief } from "@/lib/db/briefs";
 import {
   buildImportedSkillRecord,
   listImportedSkills,
   saveImportedSkills,
-  syncImportedSkill
+  syncImportedSkill,
 } from "@/lib/imports";
-import { buildLoopUpdateSourceLog, buildLoopUpdateTarget } from "@/lib/loop-updates";
+import {
+  buildLoopUpdateSourceLog,
+  buildLoopUpdateTarget,
+} from "@/lib/loop-updates";
 import { publishSkillRefresh } from "@/lib/queues";
+import { CATEGORY_REGISTRY } from "@/lib/registry";
 import { runSkillEditorAgent } from "@/lib/skill-editor-agent";
 import { fetchSignals } from "@/lib/source-signals";
 import { recordLoopRun, recordRefreshRun } from "@/lib/system-state";
 import { diffMultilineText } from "@/lib/text-diff";
-import { CATEGORY_REGISTRY } from "@/lib/registry";
-import { buildUpdateDigest } from "@/lib/update-digest";
-import {
-  buildUserSkillRecord,
-  createNextUserSkillVersion,
-  isUserSkillAutomationDue,
-  listUserSkillDocuments
-} from "@/lib/user-skills";
 import type {
   AgentReasoningStep,
   CategoryBrief,
@@ -45,16 +47,37 @@ import type {
   LoopUpdateTarget,
   SkillUpdateEntry,
   SourceDefinition,
-  UserSkillDocument
+  UserSkillDocument,
 } from "@/lib/types";
+import { buildUpdateDigest } from "@/lib/update-digest";
+import {
+  buildUserSkillRecord,
+  createNextUserSkillVersion,
+  isUserSkillAutomationDue,
+  listUserSkillDocuments,
+} from "@/lib/user-skills";
 
 const SIGNAL_SCHEMA = z.object({
-  summary: z.string().describe("2-3 sentence editorial summary of the most important shifts — what practitioners should know today"),
-  whatChanged: z.string().describe("Concrete paragraph: what specifically moved, with version numbers, dates, and named tools/libraries where applicable"),
-  experiments: z.array(z.string()).min(2).max(3).describe("2-3 actionable experiments a practitioner could try based on these signals")
+  experiments: z
+    .array(z.string())
+    .min(2)
+    .max(3)
+    .describe(
+      "2-3 actionable experiments a practitioner could try based on these signals"
+    ),
+  summary: z
+    .string()
+    .describe(
+      "2-3 sentence editorial summary of the most important shifts — what practitioners should know today"
+    ),
+  whatChanged: z
+    .string()
+    .describe(
+      "Concrete paragraph: what specifically moved, with version numbers, dates, and named tools/libraries where applicable"
+    ),
 });
 
-type RefreshOptions = {
+interface RefreshOptions {
   writeLocal?: boolean;
   uploadBlob?: boolean;
   forceFresh?: boolean;
@@ -63,9 +86,9 @@ type RefreshOptions = {
   refreshImportedSkills?: boolean;
   focusSkillSlugs?: string[];
   focusImportedSkillSlugs?: string[];
-};
+}
 
-type SkillRevisionDraft = {
+interface SkillRevisionDraft {
   update: SkillUpdateEntry;
   nextBody: string;
   nextDescription: string;
@@ -74,28 +97,35 @@ type SkillRevisionDraft = {
   editorModel: string;
   addedSources: SourceDefinition[];
   searchesUsed: number;
-};
+}
 
-type UserSkillRefreshHooks = {
+interface UserSkillRefreshHooks {
   onStart?: (loop: LoopUpdateTarget) => void;
   onSource?: (source: LoopUpdateSourceLog) => void;
   onMessage?: (message: string) => void;
   onReasoningStep?: (step: AgentReasoningStep) => void;
-};
+}
 
-export type UserSkillRefreshCycle = {
+export interface UserSkillRefreshCycle {
   nextSkill: UserSkillDocument;
   update: SkillUpdateEntry;
   result: LoopUpdateResult;
   sourceLogs: LoopUpdateSourceLog[];
   messages: string[];
   loopRun: LoopRunRecord;
-};
+}
 
-function replaceManagedSection(body: string, sectionTitle: string, sectionBody: string): string {
+function replaceManagedSection(
+  body: string,
+  sectionTitle: string,
+  sectionBody: string
+): string {
   const trimmed = body.trim();
-  const escapedTitle = sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const sectionPattern = new RegExp(`\\n## ${escapedTitle}\\n[\\s\\S]*?(?=\\n## |$)`, "m");
+  const escapedTitle = sectionTitle.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sectionPattern = new RegExp(
+    `\\n## ${escapedTitle}\\n[\\s\\S]*?(?=\\n## |$)`,
+    "m"
+  );
   const replacement = `\n## ${sectionTitle}\n${sectionBody.trim()}\n`;
 
   if (sectionPattern.test(trimmed)) {
@@ -105,7 +135,10 @@ function replaceManagedSection(body: string, sectionTitle: string, sectionBody: 
   return `${trimmed}\n\n## ${sectionTitle}\n${sectionBody.trim()}`.trim();
 }
 
-function applyFallbackSkillBodyEdit(skill: UserSkillDocument, update: SkillUpdateEntry): {
+function applyFallbackSkillBodyEdit(
+  skill: UserSkillDocument,
+  update: SkillUpdateEntry
+): {
   nextBody: string;
   changedSections: string[];
 } {
@@ -114,57 +147,83 @@ function applyFallbackSkillBodyEdit(skill: UserSkillDocument, update: SkillUpdat
     "",
     "### Fresh signals",
     ...(update.items.length > 0
-      ? update.items.slice(0, 4).map((item) => `- [${item.title}](${item.url}) · ${item.source}`)
+      ? update.items
+          .slice(0, 4)
+          .map((item) => `- [${item.title}](${item.url}) · ${item.source}`)
       : ["- No fresh signals landed in this pass."]),
     "",
     "### Next edits",
-    ...update.experiments.map((experiment) => `- ${experiment}`)
+    ...update.experiments.map((experiment) => `- ${experiment}`),
   ];
 
   return {
-    nextBody: replaceManagedSection(skill.body, "Research-backed changes", sectionLines.join("\n")),
-    changedSections: ["Research-backed changes"]
+    changedSections: ["Research-backed changes"],
+    nextBody: replaceManagedSection(
+      skill.body,
+      "Research-backed changes",
+      sectionLines.join("\n")
+    ),
   };
 }
 
-function fallbackBrief(slug: CategorySlug, title: string, items: DailySignal[]): CategoryBrief {
+function fallbackBrief(
+  slug: CategorySlug,
+  title: string,
+  items: DailySignal[]
+): CategoryBrief {
   const topItems = items.slice(0, 4);
   const joinedTitles = topItems.map((item) => item.title).join("; ");
 
   return {
-    slug,
-    title,
-    summary:
-      topItems.length > 0
-        ? `Fresh signals came in from ${Array.from(new Set(topItems.map((item) => item.source))).join(", ")}. ${joinedTitles}`
-        : `No fresh remote signals landed, so the category is holding on local skill context and the last known radar.`,
-    whatChanged:
-      topItems.length > 0
-        ? `The lead shift today is ${topItems[0]?.title ?? "a general source update"}, which is worth folding into the working playbook.`
-        : `No major source delta was detected in this refresh window.`,
     experiments:
       topItems.length > 0
         ? [
             `Turn ${topItems[0]?.title ?? "the lead item"} into a local skill delta.`,
             `Draft one new prompt recipe from ${topItems[1]?.source ?? "today's sources"}.`,
-            `Publish one public-facing brief with links back to the canonical sources.`
+            `Publish one public-facing brief with links back to the canonical sources.`,
           ]
         : [
             `Review the canonical skill and tighten one stale section.`,
             `Add one higher-signal source to the watchlist.`,
-            `Run the refresh route again after source access is configured.`
+            `Run the refresh route again after source access is configured.`,
           ],
+    generatedAt: new Date().toISOString(),
     items: topItems,
-    generatedAt: new Date().toISOString()
+    slug,
+    summary:
+      topItems.length > 0
+        ? `Fresh signals came in from ${[...new Set(topItems.map((item) => item.source))].join(", ")}. ${joinedTitles}`
+        : `No fresh remote signals landed, so the category is holding on local skill context and the last known radar.`,
+    title,
+    whatChanged:
+      topItems.length > 0
+        ? `The lead shift today is ${topItems[0]?.title ?? "a general source update"}, which is worth folding into the working playbook.`
+        : `No major source delta was detected in this refresh window.`,
   };
 }
 
-function fallbackSkillUpdate(skill: UserSkillDocument, items: DailySignal[]): SkillUpdateEntry {
+function fallbackSkillUpdate(
+  skill: UserSkillDocument,
+  items: DailySignal[]
+): SkillUpdateEntry {
   const topItems = items.slice(0, 4);
   const headline = topItems[0]?.title ?? "No fresh signal";
 
   return {
+    experiments:
+      topItems.length > 0
+        ? [
+            `Add one new tactic based on ${headline}.`,
+            `Rewrite one stale section with today's source language.`,
+            `Turn the top signal into a reusable agent prompt.`,
+          ]
+        : [
+            "Tighten one ambiguous instruction.",
+            "Swap in a higher-signal source.",
+            "Run the next refresh after the source list changes.",
+          ],
     generatedAt: new Date().toISOString(),
+    items: topItems,
     summary:
       topItems.length > 0
         ? `${skill.title} now tracks ${headline} and ${Math.max(topItems.length - 1, 0)} other fresh signals.`
@@ -173,32 +232,26 @@ function fallbackSkillUpdate(skill: UserSkillDocument, items: DailySignal[]): Sk
       topItems.length > 0
         ? `The biggest delta is ${headline}. Fold the concrete changes into the operating notes, then discard the fluff.`
         : "No watchlist delta was detected. The automation ran anyway so the skill log stays honest instead of pretending silence is novelty.",
-    experiments:
-      topItems.length > 0
-        ? [
-            `Add one new tactic based on ${headline}.`,
-            `Rewrite one stale section with today's source language.`,
-            `Turn the top signal into a reusable agent prompt.`
-          ]
-        : [
-            "Tighten one ambiguous instruction.",
-            "Swap in a higher-signal source.",
-            "Run the next refresh after the source list changes."
-          ],
-    items: topItems
   };
 }
 
 function sortSignals(items: DailySignal[]): DailySignal[] {
-  return items
-    .slice()
-    .sort((left, right) => +new Date(right.publishedAt) - +new Date(left.publishedAt));
+  return [...items].toSorted(
+    (left, right) => +new Date(right.publishedAt) - +new Date(left.publishedAt)
+  );
 }
 
-function mergeDiscoveredSources(existing: SourceDefinition[], discovered: SourceDefinition[]): SourceDefinition[] {
-  if (discovered.length === 0) return existing;
+function mergeDiscoveredSources(
+  existing: SourceDefinition[],
+  discovered: SourceDefinition[]
+): SourceDefinition[] {
+  if (discovered.length === 0) {
+    return existing;
+  }
 
-  const existingUrls = new Set(existing.map((s) => s.url.replace(/\/+$/, "").toLowerCase()));
+  const existingUrls = new Set(
+    existing.map((s) => s.url.replace(/\/+$/, "").toLowerCase())
+  );
   const newSources = discovered.filter(
     (s) => !existingUrls.has(s.url.replace(/\/+$/, "").toLowerCase())
   );
@@ -213,33 +266,37 @@ export function buildFailedLoopRun(
   errorMessage: string
 ): LoopRunRecord {
   return {
-    id: randomUUID(),
-    slug: skill.slug,
-    title: skill.title,
-    origin: "user",
-    trigger,
-    status: "error",
-    startedAt,
-    finishedAt: new Date().toISOString(),
-    previousVersionLabel: `v${skill.version}`,
-    nextVersionLabel: `v${skill.version}`,
     changedSections: [],
-    sourceCount: skill.sources.length,
-    signalCount: 0,
+    diffLines: [],
+    errorMessage,
+    finishedAt: new Date().toISOString(),
+    id: randomUUID(),
     messages: [
       `Started scanning ${skill.sources.length} sources.`,
-      errorMessage
+      errorMessage,
     ],
+    nextVersionLabel: `v${skill.version}`,
+    origin: "user",
+    previousVersionLabel: `v${skill.version}`,
+    signalCount: 0,
+    slug: skill.slug,
+    sourceCount: skill.sources.length,
     sources: skill.sources.map((source) => ({
       ...buildLoopUpdateSourceLog(source, "error"),
-      note: errorMessage
+      note: errorMessage,
     })),
-    diffLines: [],
-    errorMessage
+    startedAt,
+    status: "error",
+    title: skill.title,
+    trigger,
   };
 }
 
-async function synthesizeBrief(slug: CategorySlug, title: string, items: DailySignal[]): Promise<CategoryBrief> {
+async function synthesizeBrief(
+  slug: CategorySlug,
+  title: string,
+  items: DailySignal[]
+): Promise<CategoryBrief> {
   const briefModel = getGatewayEditorModel();
   if (items.length === 0 || !briefModel) {
     return fallbackBrief(slug, title, items);
@@ -261,23 +318,23 @@ async function synthesizeBrief(slug: CategorySlug, title: string, items: DailySi
       ...items.map(
         (item, index) =>
           `${index + 1}. **${item.title}** — ${item.source} (${item.publishedAt})\n   ${item.summary || "No summary available."}`
-      )
+      ),
     ].join("\n");
 
     const result = await generateObject({
       model: briefModel,
+      prompt,
       schema: SIGNAL_SCHEMA,
-      prompt
     });
 
     return {
-      slug,
-      title,
-      summary: result.object.summary,
-      whatChanged: result.object.whatChanged,
       experiments: result.object.experiments,
+      generatedAt: new Date().toISOString(),
       items: items.slice(0, 4),
-      generatedAt: new Date().toISOString()
+      slug,
+      summary: result.object.summary,
+      title,
+      whatChanged: result.object.whatChanged,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown AI error";
@@ -301,25 +358,26 @@ export async function synthesizeSkillUpdate(
   const fallbackUpdate = fallbackSkillUpdate(skill, items);
   const fallbackEdit = applyFallbackSkillBodyEdit(skill, {
     ...fallbackUpdate,
-    generatedAt
+    generatedAt,
   });
-  const fallbackBodyChanged = fallbackEdit.nextBody.trim() !== skill.body.trim();
+  const fallbackBodyChanged =
+    fallbackEdit.nextBody.trim() !== skill.body.trim();
   const fallbackDraft: SynthesizeResult = {
-    update: {
-      ...fallbackUpdate,
-      generatedAt,
-      bodyChanged: fallbackBodyChanged,
-      changedSections: fallbackEdit.changedSections,
-      editorModel: "heuristic-fallback"
-    },
-    nextBody: fallbackEdit.nextBody,
-    nextDescription: fallbackUpdate.summary,
+    addedSources: [],
     bodyChanged: fallbackBodyChanged,
     changedSections: fallbackEdit.changedSections,
     editorModel: "heuristic-fallback",
-    addedSources: [],
+    nextBody: fallbackEdit.nextBody,
+    nextDescription: fallbackUpdate.summary,
+    reasoningSteps: [],
     searchesUsed: 0,
-    reasoningSteps: []
+    update: {
+      ...fallbackUpdate,
+      bodyChanged: fallbackBodyChanged,
+      changedSections: fallbackEdit.changedSections,
+      editorModel: "heuristic-fallback",
+      generatedAt,
+    },
   };
 
   const modelId = getGatewayEditorModelId(preferredModel);
@@ -329,21 +387,33 @@ export async function synthesizeSkillUpdate(
     const keyLen = process.env.AI_GATEWAY_API_KEY?.length ?? 0;
     console.error(
       `[refresh:synthesize] FALLBACK – getGatewayModelForSkill returned null\n` +
-      `  skill: "${skill.title}" (${skill.slug})\n` +
-      `  modelId: ${modelId}\n` +
-      `  preferredModel: ${preferredModel ?? "none"}\n` +
-      `  AI_GATEWAY_API_KEY present: ${keyPresent} (length: ${keyLen})\n` +
-      `  LOOP_MODEL env: ${process.env.LOOP_MODEL ?? "(unset)"}\n` +
-      `  NODE_ENV: ${process.env.NODE_ENV}`
+        `  skill: "${skill.title}" (${skill.slug})\n` +
+        `  modelId: ${modelId}\n` +
+        `  preferredModel: ${preferredModel ?? "none"}\n` +
+        `  AI_GATEWAY_API_KEY present: ${keyPresent} (length: ${keyLen})\n` +
+        `  LOOP_MODEL env: ${process.env.LOOP_MODEL ?? "(unset)"}\n` +
+        `  NODE_ENV: ${process.env.NODE_ENV}`
     );
     return fallbackDraft;
   }
 
+  let searchProvider;
+  if (skill.creatorClerkUserId) {
+    try {
+      const userKeys = await getUserSearchKeys(skill.creatorClerkUserId);
+      searchProvider = resolveSearchProvider(userKeys);
+    } catch {
+      searchProvider = resolveSearchProvider();
+    }
+  } else {
+    searchProvider = resolveSearchProvider();
+  }
+
   console.info(
     `[refresh:synthesize] Starting agent for "${skill.title}" – ` +
-    `model: ${modelId}, signals: ${items.length}, sources: ${sourceLogs.length}, ` +
-    `searchBudget: ${skill.automation.searchBudget ?? "default"}, ` +
-    `preferred: ${preferredModel ?? "none"}`
+      `model: ${modelId}, signals: ${items.length}, sources: ${sourceLogs.length}, ` +
+      `searchBudget: ${skill.automation.searchBudget ?? "default"}, ` +
+      `preferred: ${preferredModel ?? "none"}, searchProvider: ${searchProvider.id}`
   );
   const agentStartMs = Date.now();
 
@@ -353,15 +423,16 @@ export async function synthesizeSkillUpdate(
     sourceLogs,
     editorModel,
     modelId,
-    onReasoningStep
+    onReasoningStep,
+    searchProvider
   );
 
   const agentElapsedMs = Date.now() - agentStartMs;
   console.info(
     `[refresh:synthesize] Agent finished for "${skill.title}" in ${(agentElapsedMs / 1000).toFixed(1)}s – ` +
-    `model: ${result.editorModel}, bodyChanged: ${result.bodyChanged}, ` +
-    `searches: ${result.searchesUsed}, addedSources: ${result.addedSources.length}, ` +
-    `steps: ${result.reasoningSteps.length}, revised: ${result.bodyChanged}`
+      `model: ${result.editorModel}, bodyChanged: ${result.bodyChanged}, ` +
+      `searches: ${result.searchesUsed}, addedSources: ${result.addedSources.length}, ` +
+      `steps: ${result.reasoningSteps.length}, revised: ${result.bodyChanged}`
   );
 
   return result;
@@ -377,24 +448,26 @@ export async function runTrackedUserSkillUpdate(
   const beforeRecord = buildUserSkillRecord(skill);
   const target = buildLoopUpdateTarget(beforeRecord);
   const messages: string[] = [];
-  let sourceLogs = skill.sources.map((source) => buildLoopUpdateSourceLog(source, "pending"));
+  let sourceLogs = skill.sources.map((source) =>
+    buildLoopUpdateSourceLog(source, "pending")
+  );
 
   console.info(
     `[refresh:tracked] BEGIN "${skill.title}" (${skill.slug}) – ` +
-    `trigger: ${trigger}, sources: ${skill.sources.length}, ` +
-    `version: v${skill.version}, automation.enabled: ${skill.automation.enabled}, ` +
-    `preferredModel: ${skill.automation.preferredModel ?? "default"}`
+      `trigger: ${trigger}, sources: ${skill.sources.length}, ` +
+      `version: v${skill.version}, automation.enabled: ${skill.automation.enabled}, ` +
+      `preferredModel: ${skill.automation.preferredModel ?? "default"}`
   );
 
   hooks.onStart?.(target);
   messages.push(`Started scanning ${skill.sources.length} sources.`);
-  hooks.onMessage?.(messages[messages.length - 1] ?? "");
+  hooks.onMessage?.(messages.at(-1) ?? "");
 
   const fetchStartMs = Date.now();
   const fetchResults = await Promise.allSettled(
     skill.sources.map(async (source) => {
       const items = await fetchSignals(source);
-      return { source, items };
+      return { items, source };
     })
   );
   const fetchElapsedMs = Date.now() - fetchStartMs;
@@ -407,7 +480,9 @@ export async function runTrackedUserSkillUpdate(
     const items = result.status === "fulfilled" ? result.value.items : [];
     if (result.status === "rejected") {
       failedSources++;
-      console.warn(`[refresh:tracked] Source fetch FAILED "${source.label}" (${source.kind}): ${result.reason}`);
+      console.warn(
+        `[refresh:tracked] Source fetch FAILED "${source.label}" (${source.kind}): ${result.reason}`
+      );
     }
     totalSignals += items.length;
 
@@ -415,80 +490,106 @@ export async function runTrackedUserSkillUpdate(
       ...buildLoopUpdateSourceLog(source, "done"),
       itemCount: items.length,
       items,
-      note: items.length > 0 ? `${items.length} fresh signals captured.` : "No fresh signals found."
+      note:
+        items.length > 0
+          ? `${items.length} fresh signals captured.`
+          : "No fresh signals found.",
     };
-    sourceLogs = sourceLogs.map((entry) => (entry.id === completed.id ? completed : entry));
+    sourceLogs = sourceLogs.map((entry) =>
+      entry.id === completed.id ? completed : entry
+    );
     hooks.onSource?.(completed);
     messages.push(`${completed.label}: ${completed.note}`);
-    hooks.onMessage?.(messages[messages.length - 1] ?? "");
+    hooks.onMessage?.(messages.at(-1) ?? "");
   }
 
   console.info(
     `[refresh:tracked] Source fetch complete for "${skill.title}" in ${(fetchElapsedMs / 1000).toFixed(1)}s – ` +
-    `${totalSignals} signals from ${skill.sources.length - failedSources}/${skill.sources.length} sources`
+      `${totalSignals} signals from ${skill.sources.length - failedSources}/${skill.sources.length} sources`
   );
 
-  messages.push("Agent is rewriting the skill body from the fetched source deltas.");
-  hooks.onMessage?.(messages[messages.length - 1] ?? "");
+  messages.push(
+    "Agent is rewriting the skill body from the fetched source deltas."
+  );
+  hooks.onMessage?.(messages.at(-1) ?? "");
 
   const flattened = sortSignals(sourceLogs.flatMap((entry) => entry.items));
-  const draft = await synthesizeSkillUpdate(skill, flattened, sourceLogs, hooks.onReasoningStep, skill.automation.preferredModel);
+  const draft = await synthesizeSkillUpdate(
+    skill,
+    flattened,
+    sourceLogs,
+    hooks.onReasoningStep,
+    skill.automation.preferredModel
+  );
   const nextUpdatedAt = draft.update.generatedAt;
 
-  const mergedSources = mergeDiscoveredSources(skill.sources, draft.addedSources);
+  const mergedSources = mergeDiscoveredSources(
+    skill.sources,
+    draft.addedSources
+  );
   if (draft.addedSources.length > 0) {
-    messages.push(`Agent discovered ${draft.addedSources.length} new source(s): ${draft.addedSources.map((s) => s.label).join(", ")}.`);
-    hooks.onMessage?.(messages[messages.length - 1] ?? "");
+    messages.push(
+      `Agent discovered ${draft.addedSources.length} new source(s): ${draft.addedSources.map((s) => s.label).join(", ")}.`
+    );
+    hooks.onMessage?.(messages.at(-1) ?? "");
   }
   if (draft.searchesUsed > 0) {
     messages.push(`Agent used ${draft.searchesUsed} web search(es).`);
-    hooks.onMessage?.(messages[messages.length - 1] ?? "");
+    hooks.onMessage?.(messages.at(-1) ?? "");
   }
 
   const nextSkill = createNextUserSkillVersion(
     skill,
     {
-      title: skill.title,
-      description: draft.nextDescription,
-      category: skill.category,
-      body: draft.nextBody,
-      ownerName: skill.ownerName,
-      tags: skill.tags,
-      visibility: skill.visibility,
-      sources: mergedSources,
       automation: {
         ...skill.automation,
-        lastRunAt: nextUpdatedAt
+        lastRunAt: nextUpdatedAt,
       },
-      updates: [draft.update, ...skill.updates].slice(0, 8)
+      body: draft.nextBody,
+      category: skill.category,
+      description: draft.nextDescription,
+      ownerName: skill.ownerName,
+      sources: mergedSources,
+      tags: skill.tags,
+      title: skill.title,
+      updates: [draft.update, ...skill.updates].slice(0, 8),
+      visibility: skill.visibility,
     },
     nextUpdatedAt
   );
 
   const afterRecord = buildUserSkillRecord(nextSkill);
-  const updateDiff = diffMultilineText(buildUpdateDigest(skill.updates[0]), buildUpdateDigest(draft.update));
+  const updateDiff = diffMultilineText(
+    buildUpdateDigest(skill.updates[0]),
+    buildUpdateDigest(draft.update)
+  );
   const bodyDiff = diffMultilineText(beforeRecord.body, afterRecord.body);
-  const diffLines = draft.bodyChanged ? bodyDiff : updateDiff.length > 0 ? updateDiff : bodyDiff;
+  const diffLines = draft.bodyChanged
+    ? bodyDiff
+    : updateDiff.length > 0
+      ? updateDiff
+      : bodyDiff;
   const result: LoopUpdateResult = {
-    slug: skill.slug,
-    title: afterRecord.title,
-    origin: "user",
-    changed: true,
-    previousVersionLabel: beforeRecord.versionLabel,
-    nextVersionLabel: afterRecord.versionLabel,
-    updatedAt: afterRecord.updatedAt,
-    href: afterRecord.href,
-    diffLines,
-    summary: draft.update.summary,
-    whatChanged: draft.update.whatChanged,
-    experiments: draft.update.experiments,
-    items: draft.update.items.slice(0, 4),
-    changedSections: draft.changedSections,
+    addedSources:
+      draft.addedSources.length > 0 ? draft.addedSources : undefined,
     bodyChanged: draft.bodyChanged,
+    changed: true,
+    changedSections: draft.changedSections,
+    diffLines,
     editorModel: draft.editorModel,
+    experiments: draft.update.experiments,
+    href: afterRecord.href,
+    items: draft.update.items.slice(0, 4),
+    nextVersionLabel: afterRecord.versionLabel,
+    origin: "user",
+    previousVersionLabel: beforeRecord.versionLabel,
     reasoningSteps: draft.reasoningSteps,
     searchesUsed: draft.searchesUsed > 0 ? draft.searchesUsed : undefined,
-    addedSources: draft.addedSources.length > 0 ? draft.addedSources : undefined
+    slug: skill.slug,
+    summary: draft.update.summary,
+    title: afterRecord.title,
+    updatedAt: afterRecord.updatedAt,
+    whatChanged: draft.update.whatChanged,
   };
 
   messages.push(
@@ -496,77 +597,98 @@ export async function runTrackedUserSkillUpdate(
       ? `${afterRecord.versionLabel} is live with body edits.`
       : `${afterRecord.versionLabel} is live with summary and log updates.`
   );
-  hooks.onMessage?.(messages[messages.length - 1] ?? "");
+  hooks.onMessage?.(messages.at(-1) ?? "");
 
   const loopRun: LoopRunRecord = {
-    id: randomUUID(),
-    slug: skill.slug,
-    title: skill.title,
-    origin: "user",
-    trigger,
-    status: "success",
-    startedAt,
-    finishedAt: new Date().toISOString(),
-    previousVersionLabel: beforeRecord.versionLabel,
-    nextVersionLabel: afterRecord.versionLabel,
-    href: afterRecord.href,
-    summary: draft.update.summary,
-    whatChanged: draft.update.whatChanged,
+    addedSources:
+      draft.addedSources.length > 0 ? draft.addedSources : undefined,
     bodyChanged: draft.bodyChanged,
     changedSections: draft.changedSections,
-    editorModel: draft.editorModel,
-    sourceCount: mergedSources.length,
-    signalCount: flattened.length,
-    messages,
-    sources: sourceLogs.map((source) => ({
-      ...source,
-      items: source.items.slice(0, 3)
-    })),
     diffLines: diffLines.slice(0, 120),
+    editorModel: draft.editorModel,
+    finishedAt: new Date().toISOString(),
+    href: afterRecord.href,
+    id: randomUUID(),
+    messages,
+    nextVersionLabel: afterRecord.versionLabel,
+    origin: "user",
+    previousVersionLabel: beforeRecord.versionLabel,
     reasoningSteps: draft.reasoningSteps.slice(0, 20),
     searchesUsed: draft.searchesUsed > 0 ? draft.searchesUsed : undefined,
-    addedSources: draft.addedSources.length > 0 ? draft.addedSources : undefined
+    signalCount: flattened.length,
+    slug: skill.slug,
+    sourceCount: mergedSources.length,
+    sources: sourceLogs.map((source) => ({
+      ...source,
+      items: source.items.slice(0, 3),
+    })),
+    startedAt,
+    status: "success",
+    summary: draft.update.summary,
+    title: skill.title,
+    trigger,
+    whatChanged: draft.update.whatChanged,
   };
 
   const totalElapsedMs = Date.now() - updateStartMs;
   console.info(
     `[refresh:tracked] DONE "${skill.title}" in ${(totalElapsedMs / 1000).toFixed(1)}s – ` +
-    `editor: ${draft.editorModel}, bodyChanged: ${draft.bodyChanged}, ` +
-    `v${skill.version} → ${afterRecord.versionLabel}, ` +
-    `searches: ${draft.searchesUsed}, newSources: ${draft.addedSources.length}, ` +
-    `steps: ${(draft.reasoningSteps?.length ?? 0)}`
+      `editor: ${draft.editorModel}, bodyChanged: ${draft.bodyChanged}, ` +
+      `v${skill.version} → ${afterRecord.versionLabel}, ` +
+      `searches: ${draft.searchesUsed}, newSources: ${draft.addedSources.length}, ` +
+      `steps: ${draft.reasoningSteps?.length ?? 0}`
   );
 
   return {
+    loopRun,
+    messages,
     nextSkill,
-    update: draft.update,
     result,
     sourceLogs,
-    messages,
-    loopRun
+    update: draft.update,
   };
 }
 
 function sortByMostOverdue(skills: UserSkillDocument[]): UserSkillDocument[] {
-  return [...skills].sort((a, b) => {
-    const aTime = a.automation.lastRunAt ? new Date(a.automation.lastRunAt).valueOf() : 0;
-    const bTime = b.automation.lastRunAt ? new Date(b.automation.lastRunAt).valueOf() : 0;
+  return [...skills].toSorted((a, b) => {
+    const aTime = a.automation.lastRunAt
+      ? new Date(a.automation.lastRunAt).valueOf()
+      : 0;
+    const bTime = b.automation.lastRunAt
+      ? new Date(b.automation.lastRunAt).valueOf()
+      : 0;
     return aTime - bTime;
   });
 }
 
-async function refreshTrackedUserSkills(options: RefreshOptions): Promise<number> {
+async function refreshTrackedUserSkills(
+  options: RefreshOptions
+): Promise<number> {
   const editorModel = getGatewayEditorModel();
-  console.info(`[refresh] Starting user skill refresh fan-out – model: ${editorModel ? getGatewayEditorModelId() : "heuristic-fallback"}`);
+  console.info(
+    `[refresh] Starting user skill refresh fan-out – model: ${editorModel ? getGatewayEditorModelId() : "heuristic-fallback"}`
+  );
 
   const skills = await listUserSkillDocuments();
-  const focusSet = options.focusSkillSlugs ? new Set(options.focusSkillSlugs) : null;
+  const focusSet = options.focusSkillSlugs
+    ? new Set(options.focusSkillSlugs)
+    : null;
   const now = new Date();
 
   const eligibleSkills = skills.filter((skill) => {
-    const canRefresh = skill.automation.enabled && skill.automation.status === "active" && skill.sources.length > 0;
-    if (focusSet && !focusSet.has(skill.slug)) return false;
-    if ((focusSet && !canRefresh) || (!focusSet && !isUserSkillAutomationDue(skill, now))) return false;
+    const canRefresh =
+      skill.automation.enabled &&
+      skill.automation.status === "active" &&
+      skill.sources.length > 0;
+    if (focusSet && !focusSet.has(skill.slug)) {
+      return false;
+    }
+    if (
+      (focusSet && !canRefresh) ||
+      (!focusSet && !isUserSkillAutomationDue(skill, now))
+    ) {
+      return false;
+    }
     return true;
   });
 
@@ -584,32 +706,49 @@ async function refreshTrackedUserSkills(options: RefreshOptions): Promise<number
   let dispatched = 0;
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
-    if (!result) continue;
+    if (!result) {
+      continue;
+    }
     if (result.status === "fulfilled") {
       dispatched++;
     } else {
-      console.error(`[refresh] Failed to enqueue "${sorted[i]?.slug}":`, result.reason);
+      console.error(
+        `[refresh] Failed to enqueue "${sorted[i]?.slug}":`,
+        result.reason
+      );
     }
   }
 
-  console.info(`[refresh] Dispatched ${dispatched}/${sorted.length} user skill refreshes to queue`);
+  console.info(
+    `[refresh] Dispatched ${dispatched}/${sorted.length} user skill refreshes to queue`
+  );
   return dispatched;
 }
 
-async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<void> {
+async function refreshTrackedImportedSkills(
+  options: RefreshOptions
+): Promise<void> {
   const importedSkills = await listImportedSkills();
-  const focusSet = options.focusImportedSkillSlugs ? new Set(options.focusImportedSkillSlugs) : null;
+  const focusSet = options.focusImportedSkillSlugs
+    ? new Set(options.focusImportedSkillSlugs)
+    : null;
   let shouldSave = false;
   const loopRuns: LoopRunRecord[] = [];
 
   const nextSkills = await Promise.all(
     importedSkills.map(async (skill) => {
-      if (!skill.syncEnabled) return skill;
-      if (focusSet && !focusSet.has(skill.slug)) return skill;
+      if (!skill.syncEnabled) {
+        return skill;
+      }
+      if (focusSet && !focusSet.has(skill.slug)) {
+        return skill;
+      }
 
       if (!focusSet && skill.lastSyncedAt) {
         const elapsedMs = Date.now() - new Date(skill.lastSyncedAt).valueOf();
-        if (elapsedMs < 24 * 60 * 60 * 1000) return skill;
+        if (elapsedMs < 24 * 60 * 60 * 1000) {
+          return skill;
+        }
       }
 
       const startedAt = new Date().toISOString();
@@ -627,50 +766,57 @@ async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<vo
               itemCount: 1,
               items: [
                 {
+                  publishedAt: afterRecord.updatedAt,
+                  source: canonicalSource.label,
+                  summary: afterRecord.description,
+                  tags: afterRecord.tags,
                   title: afterRecord.title,
                   url: canonicalSource.url,
-                  source: canonicalSource.label,
-                  publishedAt: afterRecord.updatedAt,
-                  summary: afterRecord.description,
-                  tags: afterRecord.tags
-                }
+                },
               ],
               note: changed
                 ? "Canonical source changed and a new imported revision was created."
-                : "Canonical source fetched cleanly. No structural diff landed."
+                : "Canonical source fetched cleanly. No structural diff landed.",
             }
           : null;
 
         loopRuns.push({
-          id: randomUUID(),
-          slug: skill.slug,
-          title: afterRecord.title,
-          origin: "remote",
-          trigger: "import-sync",
-          status: "success",
-          startedAt,
+          bodyChanged,
+          changedSections: bodyChanged ? ["Canonical import"] : [],
+          diffLines: diffMultilineText(
+            beforeRecord.body,
+            afterRecord.body
+          ).slice(0, 120),
+          editorModel: "canonical-import",
           finishedAt: new Date().toISOString(),
-          previousVersionLabel: beforeRecord.versionLabel,
-          nextVersionLabel: afterRecord.versionLabel,
           href: afterRecord.href,
+          id: randomUUID(),
+          messages: [
+            "Fetched the canonical source.",
+            changed
+              ? "Detected a structural diff against the current imported revision."
+              : "No structural diff detected.",
+            changed
+              ? `Saved ${afterRecord.versionLabel}.`
+              : `Kept ${afterRecord.versionLabel}.`,
+          ],
+          nextVersionLabel: afterRecord.versionLabel,
+          origin: "remote",
+          previousVersionLabel: beforeRecord.versionLabel,
+          signalCount: sourceLog?.items.length ?? 0,
+          slug: skill.slug,
+          sourceCount: canonicalSource ? 1 : 0,
+          sources: sourceLog ? [sourceLog] : [],
+          startedAt,
+          status: "success",
           summary: changed
             ? `Fetched the canonical source and minted ${afterRecord.versionLabel}.`
             : `Fetched the canonical source and kept ${afterRecord.versionLabel}.`,
+          title: afterRecord.title,
+          trigger: "import-sync",
           whatChanged: changed
             ? "The imported source changed enough to warrant a new saved revision."
             : "The canonical source was reachable, but the imported body stayed materially the same.",
-          bodyChanged,
-          changedSections: bodyChanged ? ["Canonical import"] : [],
-          editorModel: "canonical-import",
-          sourceCount: canonicalSource ? 1 : 0,
-          signalCount: sourceLog?.items.length ?? 0,
-          messages: [
-            "Fetched the canonical source.",
-            changed ? "Detected a structural diff against the current imported revision." : "No structural diff detected.",
-            changed ? `Saved ${afterRecord.versionLabel}.` : `Kept ${afterRecord.versionLabel}.`
-          ],
-          sources: sourceLog ? [sourceLog] : [],
-          diffLines: diffMultilineText(beforeRecord.body, afterRecord.body).slice(0, 120)
         });
 
         if (
@@ -683,34 +829,38 @@ async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<vo
         return refreshed;
       } catch (error) {
         loopRuns.push({
-          id: randomUUID(),
-          slug: skill.slug,
-          title: skill.title,
-          origin: "remote",
-          trigger: "import-sync",
-          status: "error",
-          startedAt,
-          finishedAt: new Date().toISOString(),
-          previousVersionLabel: beforeRecord.versionLabel,
-          nextVersionLabel: beforeRecord.versionLabel,
-          href: beforeRecord.href,
           changedSections: [],
-          sourceCount: canonicalSource ? 1 : 0,
-          signalCount: 0,
+          diffLines: [],
+          errorMessage:
+            error instanceof Error ? error.message : "Imported sync failed.",
+          finishedAt: new Date().toISOString(),
+          href: beforeRecord.href,
+          id: randomUUID(),
           messages: [
             "Fetched the canonical source.",
-            error instanceof Error ? error.message : "Imported sync failed."
+            error instanceof Error ? error.message : "Imported sync failed.",
           ],
+          nextVersionLabel: beforeRecord.versionLabel,
+          origin: "remote",
+          previousVersionLabel: beforeRecord.versionLabel,
+          signalCount: 0,
+          slug: skill.slug,
+          sourceCount: canonicalSource ? 1 : 0,
           sources: canonicalSource
             ? [
                 {
                   ...buildLoopUpdateSourceLog(canonicalSource, "error"),
-                  note: error instanceof Error ? error.message : "Imported sync failed."
-                }
+                  note:
+                    error instanceof Error
+                      ? error.message
+                      : "Imported sync failed.",
+                },
               ]
             : [],
-          diffLines: [],
-          errorMessage: error instanceof Error ? error.message : "Imported sync failed."
+          startedAt,
+          status: "error",
+          title: skill.title,
+          trigger: "import-sync",
         });
         return skill;
       }
@@ -718,7 +868,9 @@ async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<vo
   );
 
   if (shouldSave) {
-    const changedSkills = nextSkills.filter((next, i) => next !== importedSkills[i]);
+    const changedSkills = nextSkills.filter(
+      (next, i) => next !== importedSkills[i]
+    );
     if (changedSkills.length > 0) {
       await saveImportedSkills(changedSkills);
     }
@@ -728,7 +880,10 @@ async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<vo
     try {
       await recordLoopRun(run);
     } catch (recordError) {
-      console.error(`[refresh] Failed to record imported loop run for "${run.slug}":`, recordError);
+      console.error(
+        `[refresh] Failed to record imported loop run for "${run.slug}":`,
+        recordError
+      );
     }
   }
 }
@@ -738,7 +893,10 @@ async function refreshTrackedImportedSkills(options: RefreshOptions): Promise<vo
  * In production, all skills live in Supabase and this is a no-op.
  */
 async function syncFilesystemSkillsToDb(): Promise<void> {
-  if (process.env.NODE_ENV !== "development" || process.env.LOOP_SYNC_FS !== "1") {
+  if (
+    process.env.NODE_ENV !== "development" ||
+    process.env.LOOP_SYNC_FS !== "1"
+  ) {
     return;
   }
 
@@ -746,31 +904,35 @@ async function syncFilesystemSkillsToDb(): Promise<void> {
   const codexSkillFiles = await findSkillFiles(CODEX_SKILLS_ROOT);
   const allSkillFiles = [...repoSkillFiles, ...codexSkillFiles];
 
-  if (allSkillFiles.length === 0) return;
+  if (allSkillFiles.length === 0) {
+    return;
+  }
 
-  console.info(`[refresh] LOOP_SYNC_FS=1 – syncing ${allSkillFiles.length} filesystem skills to DB`);
+  console.info(
+    `[refresh] LOOP_SYNC_FS=1 – syncing ${allSkillFiles.length} filesystem skills to DB`
+  );
 
   await Promise.all(
     allSkillFiles.map(async (skillFile) => {
       const parsed = await parseSkill(skillFile);
       await upsertSkillFromFilesystem({
-        slug: parsed.slug,
-        title: parsed.title,
-        description: parsed.description,
-        category: parsed.category,
-        body: parsed.body,
         accent: parsed.accent,
+        agentDocs: parsed.agentDocs,
+        agents: parsed.agents,
+        body: parsed.body,
+        category: parsed.category,
+        description: parsed.description,
         featured: parsed.featured,
-        visibility: parsed.visibility,
+        headings: parsed.headings,
         origin: parsed.origin as "repo" | "codex",
         path: parsed.path,
-        relativeDir: parsed.relativeDir,
-        tags: parsed.tags,
-        headings: parsed.headings,
         references: parsed.references,
-        agents: parsed.agents,
-        agentDocs: parsed.agentDocs,
-        version: 1
+        relativeDir: parsed.relativeDir,
+        slug: parsed.slug,
+        tags: parsed.tags,
+        title: parsed.title,
+        version: 1,
+        visibility: parsed.visibility,
       });
     })
   );
@@ -803,15 +965,27 @@ export async function refreshLoopSnapshot(
       await Promise.all(
         categories.map(async (category) => {
           try {
-            const signalBuckets = await Promise.all(category.sources.map(fetchSignals));
+            const signalBuckets = await Promise.all(
+              category.sources.map(fetchSignals)
+            );
             const flattened = signalBuckets
               .flat()
-              .sort((left, right) => +new Date(right.publishedAt) - +new Date(left.publishedAt));
+              .toSorted(
+                (left, right) =>
+                  +new Date(right.publishedAt) - +new Date(left.publishedAt)
+              );
 
-            const brief = await synthesizeBrief(category.slug, category.title, flattened);
+            const brief = await synthesizeBrief(
+              category.slug,
+              category.title,
+              flattened
+            );
             await upsertBrief(brief);
           } catch (briefError) {
-            console.error(`[refresh] Brief failed for "${category.slug}":`, briefError);
+            console.error(
+              `[refresh] Brief failed for "${category.slug}":`,
+              briefError
+            );
           }
         })
       );
@@ -821,47 +995,54 @@ export async function refreshLoopSnapshot(
 
     try {
       await recordRefreshRun({
-        id: randomUUID(),
-        status: "success",
-        startedAt,
-        finishedAt: new Date().toISOString(),
-        generatedAt: new Date().toISOString(),
-        generatedFrom: refreshCategorySignals ? "remote-refresh" : "local-scan",
-        writeLocal: false,
-        uploadBlob: false,
-        refreshCategorySignals,
-        refreshUserSkills,
-        refreshImportedSkills: shouldRefreshImportedSkills,
-        focusSkillSlugs: options.focusSkillSlugs ?? [],
-        focusImportedSkillSlugs: options.focusImportedSkillSlugs ?? [],
-        skillCount: catalogue.skills.length,
         categoryCount: catalogue.categories.length,
         dailyBriefCount: 0,
-        dispatchedSkillCount
+        dispatchedSkillCount,
+        finishedAt: new Date().toISOString(),
+        focusImportedSkillSlugs: options.focusImportedSkillSlugs ?? [],
+        focusSkillSlugs: options.focusSkillSlugs ?? [],
+        generatedAt: new Date().toISOString(),
+        generatedFrom: refreshCategorySignals ? "remote-refresh" : "local-scan",
+        id: randomUUID(),
+        refreshCategorySignals,
+        refreshImportedSkills: shouldRefreshImportedSkills,
+        refreshUserSkills,
+        skillCount: catalogue.skills.length,
+        startedAt,
+        status: "success",
+        uploadBlob: false,
+        writeLocal: false,
       });
     } catch (recordError) {
-      console.error("[refresh] Failed to record successful refresh run:", recordError);
+      console.error(
+        "[refresh] Failed to record successful refresh run:",
+        recordError
+      );
     }
 
     return { dispatchedSkillCount };
   } catch (error) {
     try {
       await recordRefreshRun({
-        id: randomUUID(),
-        status: "error",
-        startedAt,
+        errorMessage:
+          error instanceof Error ? error.message : "Unknown refresh failure.",
         finishedAt: new Date().toISOString(),
-        writeLocal: false,
-        uploadBlob: false,
-        refreshCategorySignals,
-        refreshUserSkills,
-        refreshImportedSkills: shouldRefreshImportedSkills,
-        focusSkillSlugs: options.focusSkillSlugs ?? [],
         focusImportedSkillSlugs: options.focusImportedSkillSlugs ?? [],
-        errorMessage: error instanceof Error ? error.message : "Unknown refresh failure."
+        focusSkillSlugs: options.focusSkillSlugs ?? [],
+        id: randomUUID(),
+        refreshCategorySignals,
+        refreshImportedSkills: shouldRefreshImportedSkills,
+        refreshUserSkills,
+        startedAt,
+        status: "error",
+        uploadBlob: false,
+        writeLocal: false,
       });
     } catch (recordError) {
-      console.error("[refresh] Failed to record error refresh run:", recordError);
+      console.error(
+        "[refresh] Failed to record error refresh run:",
+        recordError
+      );
     }
     throw error;
   }

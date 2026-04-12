@@ -1,20 +1,22 @@
 import { cn } from "@/lib/cn";
 
-export type BarListItem = {
+export interface BarListItem {
   label: string;
   value: number;
   secondary?: string;
-};
+}
 
-type BarListProps = {
+interface BarListProps {
   items: BarListItem[];
   maxValue?: number;
   compact?: boolean;
   className?: string;
-};
+}
 
 export function BarList({ items, maxValue, compact, className }: BarListProps) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   const max = maxValue ?? Math.max(...items.map((item) => item.value), 1);
 
@@ -39,8 +41,8 @@ export function BarList({ items, maxValue, compact, className }: BarListProps) {
                   <div
                     className="h-full rounded-full"
                     style={{
-                      width: `${pct}%`,
                       background: `color-mix(in srgb, var(--color-accent) 50%, transparent)`,
+                      width: `${pct}%`,
                     }}
                   />
                 )}
@@ -83,8 +85,8 @@ export function BarList({ items, maxValue, compact, className }: BarListProps) {
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
-                  width: `${pct}%`,
                   background: `color-mix(in srgb, var(--color-accent) 50%, transparent)`,
+                  width: `${pct}%`,
                 }}
               />
             </div>

@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DiffViewer } from "@/components/diff-viewer";
-import { AutomationIcon, ClockIcon, CpuIcon, SearchIcon, SparkIcon } from "@/components/frontier-icons";
+import {
+  AutomationIcon,
+  ClockIcon,
+  CpuIcon,
+  SearchIcon,
+  SparkIcon,
+} from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RunMetadataBar } from "@/components/ui/run-metadata-bar";
@@ -14,7 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/shadcn/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/shadcn/tabs";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
@@ -22,10 +33,10 @@ import type {
   AgentReasoningStep,
   DiffLine,
   LoopUpdateResult,
-  LoopUpdateSourceLog
+  LoopUpdateSourceLog,
 } from "@/lib/types";
 
-type RunLogModalProps = {
+interface RunLogModalProps {
   open: boolean;
   onClose: () => void;
   isLive: boolean;
@@ -40,44 +51,47 @@ type RunLogModalProps = {
   result: LoopUpdateResult | null;
   diffLines: DiffLine[];
   error: string | null;
-};
+}
 
-const SECTION_LABEL = "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
+const SECTION_LABEL =
+  "text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink-soft";
 
 function formatDuration(startedAt: string, finishedAt: string): string {
   const ms = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
-  if (ms < 1000) return `${ms}ms`;
+  if (ms < 1000) {
+    return `${ms}ms`;
+  }
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
-  analyze_signals: "Analyze signals",
-  read_current_skill: "Read skill",
-  web_search: "Web search",
-  fetch_page: "Fetch page",
   add_source: "Discover source",
-  revise_skill: "Revise skill",
+  analyze_signals: "Analyze signals",
+  fetch_page: "Fetch page",
   finalize: "Finalize",
+  read_current_skill: "Read skill",
+  revise_skill: "Revise skill",
+  web_search: "Web search",
 };
 
 function toolDisplayName(name: string): string {
-  return TOOL_DISPLAY_NAMES[name] ?? name.replace(/_/g, " ");
+  return TOOL_DISPLAY_NAMES[name] ?? name.replaceAll("_", " ");
 }
 
 const TOOL_DOT_COLORS: Record<string, string> = {
-  web_search: "bg-sky-500",
-  fetch_page: "bg-indigo-500",
   add_source: "bg-emerald-500",
-  revise_skill: "bg-accent",
+  fetch_page: "bg-indigo-500",
   finalize: "bg-success",
+  revise_skill: "bg-accent",
+  web_search: "bg-sky-500",
 };
 
 const TOOL_ICON_COLORS: Record<string, string> = {
-  web_search: "text-sky-500",
-  fetch_page: "text-indigo-500",
   add_source: "text-emerald-500",
-  revise_skill: "text-accent",
+  fetch_page: "text-indigo-500",
   finalize: "text-success",
+  revise_skill: "text-accent",
+  web_search: "text-sky-500",
 };
 
 function StepTimeline({
@@ -98,8 +112,8 @@ function StepTimeline({
   useEffect(() => {
     if (activeRef.current && containerRef.current) {
       activeRef.current.scrollIntoView({
-        block: "nearest",
         behavior: "smooth",
+        block: "nearest",
       });
     }
   }, [selectedIndex, steps.length, containerRef]);
@@ -112,7 +126,9 @@ function StepTimeline({
           const hasDiff = step.diffLines && step.diffLines.length > 0;
           const isLatestLive = isLive && step.index === steps.length - 1;
           const toolName = step.toolCall?.name;
-          const dotColor = toolName ? TOOL_DOT_COLORS[toolName] ?? "bg-ink-muted" : "bg-ink-muted";
+          const dotColor = toolName
+            ? (TOOL_DOT_COLORS[toolName] ?? "bg-ink-muted")
+            : "bg-ink-muted";
 
           return (
             <button
@@ -138,7 +154,10 @@ function StepTimeline({
                   className={cn(
                     "relative flex h-5 w-5 items-center justify-center text-[0.6rem] font-bold",
                     isCurrent
-                      ? cn("border border-accent bg-accent text-white", isLatestLive && "animate-pulse")
+                      ? cn(
+                          "border border-accent bg-accent text-white",
+                          isLatestLive && "animate-pulse"
+                        )
                       : "border border-line bg-paper-3 text-ink-muted"
                   )}
                 >
@@ -146,11 +165,18 @@ function StepTimeline({
                 </span>
               </span>
               <span className="min-w-0 flex-1 truncate">
-                {step.toolCall ? toolDisplayName(step.toolCall.name) : "Reasoning"}
+                {step.toolCall
+                  ? toolDisplayName(step.toolCall.name)
+                  : "Reasoning"}
               </span>
               <span className="ml-auto flex items-center gap-1">
                 {toolName && (
-                  <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotColor)} />
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 shrink-0 rounded-full",
+                      dotColor
+                    )}
+                  />
                 )}
                 {hasDiff && (
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
@@ -177,10 +203,13 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
   return (
     <article className="grid gap-2 border border-line bg-paper-3 px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)} />
+        <span
+          className={cn("flex h-2.5 w-2.5 shrink-0 rounded-full", statusColor)}
+        />
         <strong className="text-sm text-ink">{source.label}</strong>
         <span className="ml-auto text-xs tabular-nums text-ink-faint">
-          {source.itemCount} signal{source.itemCount === 1 ? "" : "s"} · {source.status}
+          {source.itemCount} signal{source.itemCount === 1 ? "" : "s"} ·{" "}
+          {source.status}
         </span>
       </div>
       {source.note ? (
@@ -211,20 +240,31 @@ function SourceCardFull({ source }: { source: LoopUpdateSourceLog }) {
   );
 }
 
-
-function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: string }) {
+function StepDetail({
+  step,
+  timeZone,
+}: {
+  step: AgentReasoningStep;
+  timeZone: string;
+}) {
   const toolName = step.toolCall?.name;
-  const iconColor = toolName ? TOOL_ICON_COLORS[toolName] ?? "text-ink-soft" : "text-ink-soft";
-  const dotColor = toolName ? TOOL_DOT_COLORS[toolName] ?? "bg-ink-muted" : "bg-ink-muted";
+  const iconColor = toolName
+    ? (TOOL_ICON_COLORS[toolName] ?? "text-ink-soft")
+    : "text-ink-soft";
+  const dotColor = toolName
+    ? (TOOL_DOT_COLORS[toolName] ?? "bg-ink-muted")
+    : "bg-ink-muted";
 
   return (
     <div className="grid gap-4">
       {/* Step header */}
       <div className="flex items-center gap-3 border-b border-line pb-3">
-        <span className={cn(
-          "flex h-8 w-8 items-center justify-center border border-line bg-paper-3 [&>svg]:h-4 [&>svg]:w-4",
-          iconColor
-        )}>
+        <span
+          className={cn(
+            "flex h-8 w-8 items-center justify-center border border-line bg-paper-3 [&>svg]:h-4 [&>svg]:w-4",
+            iconColor
+          )}
+        >
           <AutomationIcon />
         </span>
         <div className="min-w-0 flex-1">
@@ -236,7 +276,9 @@ function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: st
               <>
                 <span className="text-ink-muted">·</span>
                 <span className="flex items-center gap-1.5 text-sm font-medium text-ink-soft">
-                  <span className={cn("h-2 w-2 shrink-0 rounded-full", dotColor)} />
+                  <span
+                    className={cn("h-2 w-2 shrink-0 rounded-full", dotColor)}
+                  />
                   {toolDisplayName(toolName)}
                 </span>
               </>
@@ -244,7 +286,9 @@ function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: st
             {!toolName && (
               <>
                 <span className="text-ink-muted">·</span>
-                <span className="text-sm font-medium text-ink-soft">Reasoning</span>
+                <span className="text-sm font-medium text-ink-soft">
+                  Reasoning
+                </span>
               </>
             )}
           </div>
@@ -276,7 +320,9 @@ function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: st
               <summary className="cursor-pointer text-xs font-medium text-ink-soft hover:text-ink [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center gap-1">
                   Arguments
-                  <span className="text-ink-muted transition-transform group-open:rotate-90">&#9654;</span>
+                  <span className="text-ink-muted transition-transform group-open:rotate-90">
+                    &#9654;
+                  </span>
                 </span>
               </summary>
               <pre className="mt-2 max-h-60 overflow-auto bg-paper p-3 font-mono text-xs text-ink-soft">
@@ -299,13 +345,24 @@ function StepDetail({ step, timeZone }: { step: AgentReasoningStep; timeZone: st
 
       {/* Diff */}
       {step.diffLines && step.diffLines.length > 0 ? (
-        <DiffViewer compact label="Diff produced" lines={step.diffLines} maxHeight={320} />
+        <DiffViewer
+          compact
+          label="Diff produced"
+          lines={step.diffLines}
+          maxHeight={320}
+        />
       ) : null}
     </div>
   );
 }
 
-function LegacyStepView({ messages, diffLines }: { messages: string[]; diffLines: DiffLine[] }) {
+function LegacyStepView({
+  messages,
+  diffLines,
+}: {
+  messages: string[];
+  diffLines: DiffLine[];
+}) {
   const endRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(messages.length);
 
@@ -351,8 +408,12 @@ function EmptyStepsPlaceholder({ isLive }: { isLive: boolean }) {
           <CpuIcon />
         </span>
         <div className="grid gap-1">
-          <span className="text-sm font-medium text-ink-soft">Agent is starting up...</span>
-          <span className="text-xs text-ink-muted">Steps will appear here as the agent works.</span>
+          <span className="text-sm font-medium text-ink-soft">
+            Agent is starting up...
+          </span>
+          <span className="text-xs text-ink-muted">
+            Steps will appear here as the agent works.
+          </span>
         </div>
       </div>
     );
@@ -378,14 +439,16 @@ export function RunLogModal({
   reasoningSteps,
   result,
   diffLines,
-  error
+  error,
 }: RunLogModalProps) {
   const { timeZone } = useAppTimezone();
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
   const hasReasoningSteps = reasoningSteps.length > 0;
   const selectedStep = reasoningSteps[selectedStepIndex] ?? null;
   const totalSignals = sourceLogs.reduce((acc, s) => acc + s.itemCount, 0);
-  const totalSteps = hasReasoningSteps ? reasoningSteps.length : messages.length;
+  const totalSteps = hasReasoningSteps
+    ? reasoningSteps.length
+    : messages.length;
   const addedCount = diffLines.filter((l) => l.type === "added").length;
   const removedCount = diffLines.filter((l) => l.type === "removed").length;
 
@@ -403,16 +466,24 @@ export function RunLogModal({
   const handleStepSelect = useCallback((index: number) => {
     setSelectedStepIndex(index);
     if (detailScrollRef.current) {
-      detailScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      detailScrollRef.current.scrollTo({ behavior: "smooth", top: 0 });
     }
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="flex max-h-[min(92vh,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0" maxWidth="4xl">
-        {isLive && (
-          <ProgressBar rounded={false} size="sm" status="active" />
-        )}
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        className="flex max-h-[min(92vh,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0"
+        maxWidth="4xl"
+      >
+        {isLive && <ProgressBar rounded={false} size="sm" status="active" />}
 
         {/* Fixed header */}
         <DialogHeader>
@@ -423,17 +494,31 @@ export function RunLogModal({
             <div className="grid gap-0.5">
               <DialogTitle>{isLive ? "Live run log" : "Run log"}</DialogTitle>
               <DialogDescription>
-                {isLive ? "Watching agent execution in real time." : "Trace, sources, diffs, and agent steps."}
+                {isLive
+                  ? "Watching agent execution in real time."
+                  : "Trace, sources, diffs, and agent steps."}
               </DialogDescription>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <Badge color={status === "error" ? "red" : status === "running" ? "amber" : "green"}>
+            <Badge
+              color={
+                status === "error"
+                  ? "red"
+                  : status === "running"
+                    ? "amber"
+                    : "green"
+              }
+            >
               {status}
             </Badge>
             <Badge color="neutral">
               <ClockIcon className="mr-1 h-3 w-3" />
-              {startedAt && finishedAt ? formatDuration(startedAt, finishedAt) : isLive ? "running..." : "—"}
+              {startedAt && finishedAt
+                ? formatDuration(startedAt, finishedAt)
+                : isLive
+                  ? "running..."
+                  : "—"}
             </Badge>
             {sourceLogs.length > 0 && (
               <Badge color="blue">
@@ -474,7 +559,11 @@ export function RunLogModal({
                 <TabsList className="w-fit">
                   <TabsTrigger value="steps">
                     Steps
-                    {totalSteps > 0 ? <span className="ml-1 tabular-nums text-ink-faint">({totalSteps})</span> : null}
+                    {totalSteps > 0 ? (
+                      <span className="ml-1 tabular-nums text-ink-faint">
+                        ({totalSteps})
+                      </span>
+                    ) : null}
                   </TabsTrigger>
                   <TabsTrigger value="diff">
                     Diff
@@ -486,7 +575,11 @@ export function RunLogModal({
                   </TabsTrigger>
                   <TabsTrigger value="sources">
                     Sources
-                    {sourceLogs.length > 0 ? <span className="ml-1 tabular-nums text-ink-faint">({sourceLogs.length})</span> : null}
+                    {sourceLogs.length > 0 ? (
+                      <span className="ml-1 tabular-nums text-ink-faint">
+                        ({sourceLogs.length})
+                      </span>
+                    ) : null}
                   </TabsTrigger>
                 </TabsList>
 
@@ -499,8 +592,12 @@ export function RunLogModal({
                         ref={timelineScrollRef}
                       >
                         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper-2/80 px-3 py-2 backdrop-blur-sm">
-                          <h3 className={cn(SECTION_LABEL, "m-0")}>Agent steps</h3>
-                          <span className="text-[0.6rem] tabular-nums text-ink-muted">{reasoningSteps.length}</span>
+                          <h3 className={cn(SECTION_LABEL, "m-0")}>
+                            Agent steps
+                          </h3>
+                          <span className="text-[0.6rem] tabular-nums text-ink-muted">
+                            {reasoningSteps.length}
+                          </span>
                         </div>
                         <StepTimeline
                           containerRef={timelineScrollRef}
@@ -535,7 +632,9 @@ export function RunLogModal({
                     <DiffViewer label="Full skill diff" lines={diffLines} />
                   ) : (
                     <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
-                      {isLive ? "Diff will appear here when the agent revises the skill." : "No diff was produced for this run."}
+                      {isLive
+                        ? "Diff will appear here when the agent revises the skill."
+                        : "No diff was produced for this run."}
                     </div>
                   )}
                 </TabsContent>
@@ -549,7 +648,9 @@ export function RunLogModal({
                     </div>
                   ) : (
                     <div className="border border-line bg-paper-3 p-4 text-sm text-ink-soft">
-                      {isLive ? "Source logs will appear here as sources are scanned." : "No source logs were recorded for this run."}
+                      {isLive
+                        ? "Source logs will appear here as sources are scanned."
+                        : "No source logs were recorded for this run."}
                     </div>
                   )}
                 </TabsContent>

@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
 import { useAuth, SignInButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 
-type CopySkillButtonProps = {
+interface CopySkillButtonProps {
   slug: string;
   label?: string;
-};
+}
 
 export function CopySkillButton({
   slug,
@@ -35,9 +34,9 @@ export function CopySkillButton({
     setError(null);
     startTransition(async () => {
       const response = await fetch("/api/skills/copy", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
       });
 
       const payload = (await response.json().catch(() => ({}))) as {

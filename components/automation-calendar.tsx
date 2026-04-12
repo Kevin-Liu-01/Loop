@@ -4,30 +4,51 @@ import { Children, useMemo, useState } from "react";
 import { Chevron, DayPicker } from "react-day-picker";
 import type { MonthProps } from "react-day-picker";
 
-import { AutomationDayModal, type DayAutomationEntry } from "@/components/automation-day-modal";
+import { AutomationDayModal } from "@/components/automation-day-modal";
+import type { DayAutomationEntry } from "@/components/automation-day-modal";
 import { AutomationIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { SkillIcon } from "@/components/ui/skill-icon";
 import { StatusDot } from "@/components/ui/status-dot";
 import { cn } from "@/lib/cn";
-import { formatNextRun, getRunDatesForMonth, isScheduledOnDate } from "@/lib/schedule";
+import {
+  formatNextRun,
+  getRunDatesForMonth,
+  isScheduledOnDate,
+} from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
 
 const LEGEND_COLLAPSED_LIMIT = 12;
 
-type AutomationColorSet = { bg: string; ring: string; border: string };
+interface AutomationColorSet {
+  bg: string;
+  ring: string;
+  border: string;
+}
 
 const AUTOMATION_COLORS: AutomationColorSet[] = [
-  { bg: "bg-accent",          ring: "ring-accent/60",        border: "border-accent/50" },
-  { bg: "bg-emerald-500",     ring: "ring-emerald-500/60",   border: "border-emerald-500/50" },
-  { bg: "bg-sky-500",         ring: "ring-sky-500/60",       border: "border-sky-500/50" },
-  { bg: "bg-violet-500",      ring: "ring-violet-500/60",    border: "border-violet-500/50" },
-  { bg: "bg-amber-500",       ring: "ring-amber-500/60",     border: "border-amber-500/50" },
-  { bg: "bg-rose-500",        ring: "ring-rose-500/60",      border: "border-rose-500/50" },
+  { bg: "bg-accent", border: "border-accent/50", ring: "ring-accent/60" },
+  {
+    bg: "bg-emerald-500",
+    border: "border-emerald-500/50",
+    ring: "ring-emerald-500/60",
+  },
+  { bg: "bg-sky-500", border: "border-sky-500/50", ring: "ring-sky-500/60" },
+  {
+    bg: "bg-violet-500",
+    border: "border-violet-500/50",
+    ring: "ring-violet-500/60",
+  },
+  {
+    bg: "bg-amber-500",
+    border: "border-amber-500/50",
+    ring: "ring-amber-500/60",
+  },
+  { bg: "bg-rose-500", border: "border-rose-500/50", ring: "ring-rose-500/60" },
 ];
 
-type AutomationCalendarProps = {
+interface AutomationCalendarProps {
   automations: AutomationSummary[];
   onDaySelect?: (date: Date) => void;
   onEditAutomation?: (automation: AutomationSummary) => void;
@@ -36,15 +57,21 @@ type AutomationCalendarProps = {
   skillMap?: Map<string, SkillRecord>;
   /** Cap the number of legend rows shown before "Show more". Defaults to 12. */
   maxLegendRows?: number;
-};
+}
 
-type DayAutomation = {
+interface DayAutomation {
   automation: AutomationSummary;
   color: AutomationColorSet;
-};
+}
 
 /** Full-width header row: prev | caption | next, then grid (react-day-picker v9 `navLayout="around"` order). */
-function AutomationMonth({ className, children, calendarMonth: _cm, displayIndex: _di, ...rest }: MonthProps) {
+function AutomationMonth({
+  className,
+  children,
+  calendarMonth: _cm,
+  displayIndex: _di,
+  ...rest
+}: MonthProps) {
   const ch = Children.toArray(children);
   if (ch.length < 4) {
     return (
@@ -87,7 +114,8 @@ function AutomationLegend({
 }) {
   const [expanded, setExpanded] = useState(false);
   const canCollapse = automations.length > limit;
-  const visible = canCollapse && !expanded ? automations.slice(0, limit) : automations;
+  const visible =
+    canCollapse && !expanded ? automations.slice(0, limit) : automations;
   const hiddenCount = automations.length - limit;
 
   return (
@@ -96,9 +124,18 @@ function AutomationLegend({
         const colorSet = AUTOMATION_COLORS[index % AUTOMATION_COLORS.length];
         const year = month.getFullYear();
         const m = month.getMonth();
-        const count = getRunDatesForMonth(automation.cadence, year, m, automation.preferredDay).length;
-        const nextRun = formatNextRun(automation.cadence, automation.preferredHour ?? 12, automation.preferredDay);
-        const schedule = automation.schedule;
+        const count = getRunDatesForMonth(
+          automation.cadence,
+          year,
+          m,
+          automation.preferredDay
+        ).length;
+        const nextRun = formatNextRun(
+          automation.cadence,
+          automation.preferredHour ?? 12,
+          automation.preferredDay
+        );
+        const { schedule } = automation;
         const isActive = automation.status === "ACTIVE";
         const linkedSkill = automation.matchedSkillSlugs[0]
           ? skillMap?.get(automation.matchedSkillSlugs[0])
@@ -107,13 +144,20 @@ function AutomationLegend({
 
         const content = (
           <div className="flex items-center gap-2">
-            <div className={cn(
-              "relative flex h-5 w-5 shrink-0 items-center justify-center",
-              linkedSkill || skillSlug ? colorSet.border : "border-line",
-              "border"
-            )}>
+            <div
+              className={cn(
+                "relative flex h-5 w-5 shrink-0 items-center justify-center",
+                linkedSkill || skillSlug ? colorSet.border : "border-line",
+                "border"
+              )}
+            >
               {linkedSkill ? (
-                <SkillIcon flush iconUrl={linkedSkill.iconUrl} size={20} slug={linkedSkill.slug} />
+                <SkillIcon
+                  flush
+                  iconUrl={linkedSkill.iconUrl}
+                  size={20}
+                  slug={linkedSkill.slug}
+                />
               ) : skillSlug ? (
                 <SkillIcon flush size={20} slug={skillSlug} />
               ) : (
@@ -121,13 +165,18 @@ function AutomationLegend({
               )}
               <span
                 aria-hidden
-                className={cn("absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full border border-paper-3", colorSet.bg)}
+                className={cn(
+                  "absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full border border-paper-3",
+                  colorSet.bg
+                )}
               />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-0">
               <div className="flex items-center gap-1.5">
-                <span className="min-w-0 truncate text-xs font-medium text-ink">{automation.name}</span>
+                <span className="min-w-0 truncate text-xs font-medium text-ink">
+                  {automation.name}
+                </span>
                 {/*linkedSkill && (
                   <Badge color={getTagColorForCategory(linkedSkill.category)} size="sm">
                     {formatTagLabel(linkedSkill.category)}
@@ -135,13 +184,19 @@ function AutomationLegend({
                 )*/}
               </div>
               <div className="flex mt-[-0.1rem] items-center gap-1.5 text-[0.625rem] text-ink-faint">
-                <StatusDot tone={isActive ? "fresh" : "idle"} pulse={isActive} size="sm" />
-                <span className="flex items-center gap-0.5">                
+                <StatusDot
+                  tone={isActive ? "fresh" : "idle"}
+                  pulse={isActive}
+                  size="sm"
+                />
+                <span className="flex items-center gap-0.5">
                   <AutomationIcon className="h-2.5 w-2.5" />
                   {schedule}
                 </span>
                 <span className="tabular-nums">{count} runs</span>
-                <span className="ml-auto tabular-nums text-white">{nextRun}</span>
+                <span className="ml-auto tabular-nums text-white">
+                  {nextRun}
+                </span>
               </div>
             </div>
           </div>
@@ -202,7 +257,12 @@ export function AutomationCalendar({
 
     activeAutomations.forEach((automation, index) => {
       const color = AUTOMATION_COLORS[index % AUTOMATION_COLORS.length];
-      const dates = getRunDatesForMonth(automation.cadence, year, m, automation.preferredDay);
+      const dates = getRunDatesForMonth(
+        automation.cadence,
+        year,
+        m,
+        automation.preferredDay
+      );
 
       dates.forEach((date) => {
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -216,18 +276,26 @@ export function AutomationCalendar({
   }, [activeAutomations, month]);
 
   const scheduledDays = useMemo(
-    () => Array.from(dayMap.keys()).map((iso) => new Date(iso + "T12:00:00")),
+    () => [...dayMap.keys()].map((iso) => new Date(iso + "T12:00:00")),
     [dayMap]
   );
 
   const modalEntries = useMemo((): DayAutomationEntry[] => {
-    if (!modalDate) return [];
+    if (!modalDate) {
+      return [];
+    }
     return automations
       .map((automation, index) => ({
         automation,
         color: AUTOMATION_COLORS[index % AUTOMATION_COLORS.length],
       }))
-      .filter(({ automation }) => isScheduledOnDate(automation.cadence, modalDate, automation.preferredDay));
+      .filter(({ automation }) =>
+        isScheduledOnDate(
+          automation.cadence,
+          modalDate,
+          automation.preferredDay
+        )
+      );
   }, [modalDate, automations]);
 
   const navBtn = cn(
@@ -249,7 +317,7 @@ export function AutomationCalendar({
           modifiers={{ scheduled: scheduledDays }}
           modifiersClassNames={{
             scheduled:
-              "bg-accent/[0.08] ring-1 ring-inset ring-accent/25 data-[selected=true]:bg-accent/15 data-[selected=true]:ring-accent/40"
+              "bg-accent/[0.08] ring-1 ring-inset ring-accent/25 data-[selected=true]:bg-accent/15 data-[selected=true]:ring-accent/40",
           }}
           onMonthChange={setMonth}
           onSelect={(day) => {
@@ -261,24 +329,15 @@ export function AutomationCalendar({
           selected={modalDate ?? undefined}
           showOutsideDays
           classNames={{
-            root: cn("automation-calendar w-full", sidebar && "select-none"),
-            months: "w-full",
-            month: "w-full",
-            month_grid: "w-full border-collapse",
-            month_caption: "flex min-w-0 items-center justify-center border-0 p-0",
+            button_next: navBtn,
+            button_previous: navBtn,
             caption_label: cn(
               "min-w-0 truncate font-serif font-medium tracking-[-0.03em] text-ink",
-              sidebar ? "text-[1.125rem] leading-tight" : "text-[1.0625rem] leading-tight"
+              sidebar
+                ? "text-[1.125rem] leading-tight"
+                : "text-[1.0625rem] leading-tight"
             ),
-            nav: "flex items-center gap-1",
             chevron: "fill-current text-current",
-            button_previous: navBtn,
-            button_next: navBtn,
-            weekdays:
-              "flex w-full gap-px border-b border-line bg-line/80 pb-0 pt-0 dark:bg-line/50",
-            weekday:
-              "flex-1 bg-paper-3 py-2 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-soft dark:bg-paper-2/90",
-            week: "mt-px flex w-full gap-px bg-line/80 first:mt-0 dark:bg-line/50",
             day: "relative min-w-0 flex-1 align-top bg-paper-3 p-0 text-center dark:bg-paper-2/90",
             day_button: cn(
               "relative flex min-h-[3.85rem] w-full flex-col items-center justify-start gap-1.5 rounded-none border-0 px-0.5 pt-2 pb-2",
@@ -287,14 +346,26 @@ export function AutomationCalendar({
               "hover:bg-paper-2/90 dark:hover:bg-white/[0.07]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
             ),
-            selected: "bg-accent/12! font-semibold text-accent! ring-1 ring-inset ring-accent/35!",
+            disabled: "pointer-events-none text-ink-faint/25",
+            month: "w-full",
+            month_caption:
+              "flex min-w-0 items-center justify-center border-0 p-0",
+            month_grid: "w-full border-collapse",
+            months: "w-full",
+            nav: "flex items-center gap-1",
+            outside: "text-ink-faint/50 opacity-70",
+            root: cn("automation-calendar w-full", sidebar && "select-none"),
+            selected:
+              "bg-accent/12! font-semibold text-accent! ring-1 ring-inset ring-accent/35!",
             today:
               "bg-paper-2/50 font-semibold text-accent ring-1 ring-inset ring-accent/35 data-[selected=true]:bg-accent/12!",
-            outside: "text-ink-faint/50 opacity-70",
-            disabled: "pointer-events-none text-ink-faint/25"
+            week: "mt-px flex w-full gap-px bg-line/80 first:mt-0 dark:bg-line/50",
+            weekday:
+              "flex-1 bg-paper-3 py-2 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-soft dark:bg-paper-2/90",
+            weekdays:
+              "flex w-full gap-px border-b border-line bg-line/80 pb-0 pt-0 dark:bg-line/50",
           }}
           components={{
-            Month: AutomationMonth,
             Chevron: ({ className, disabled, ...props }) => (
               <Chevron
                 {...props}
@@ -306,20 +377,29 @@ export function AutomationCalendar({
                 size={14}
               />
             ),
-            DayButton: ({ day, modifiers: _modifiers, className, ...props }) => {
+            DayButton: ({
+              day,
+              modifiers: _modifiers,
+              className,
+              ...props
+            }) => {
               const key = day.isoDate;
               const entries = dayMap.get(key);
 
               return (
                 <button className={cn(className)} type="button" {...props}>
-                  <span className="leading-none tabular-nums">{day.date.getDate()}</span>
+                  <span className="leading-none tabular-nums">
+                    {day.date.getDate()}
+                  </span>
                   {entries && entries.length > 0 && (
                     <div className="flex w-full max-w-full flex-col items-center gap-0.5">
                       <div className="flex min-h-[14px] w-full flex-wrap items-center justify-center gap-0.5 px-0.5">
                         {entries.slice(0, 3).map((entry, i) => {
                           const linkedSkill = !sidebar
                             ? entry.automation.matchedSkillSlugs[0]
-                              ? skillMap?.get(entry.automation.matchedSkillSlugs[0])
+                              ? skillMap?.get(
+                                  entry.automation.matchedSkillSlugs[0]
+                                )
                               : undefined
                             : undefined;
                           return linkedSkill ? (
@@ -349,7 +429,8 @@ export function AutomationCalendar({
                   )}
                 </button>
               );
-            }
+            },
+            Month: AutomationMonth,
           }}
         />
       </div>
@@ -358,10 +439,14 @@ export function AutomationCalendar({
         date={modalDate}
         entries={modalEntries}
         onClose={() => setModalDate(null)}
-        onEditAutomation={onEditAutomation ? (automation) => {
-          setModalDate(null);
-          onEditAutomation(automation);
-        } : undefined}
+        onEditAutomation={
+          onEditAutomation
+            ? (automation) => {
+                setModalDate(null);
+                onEditAutomation(automation);
+              }
+            : undefined
+        }
         open={modalDate !== null}
         skillMap={skillMap}
       />

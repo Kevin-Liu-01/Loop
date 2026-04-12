@@ -2,33 +2,35 @@ import { cn } from "@/lib/cn";
 
 export type StepStatus = "pending" | "running" | "done" | "error";
 
-type Step = {
+interface Step {
   key: string;
   label?: string;
   status: StepStatus;
-};
+}
 
-type StepIndicatorProps = {
+interface StepIndicatorProps {
   steps: Step[];
   className?: string;
-};
+}
 
 const DOT_STATUS: Record<StepStatus, string> = {
-  pending: "bg-line-strong",
-  running: "bg-accent animate-pulse",
   done: "bg-success",
   error: "bg-danger",
+  pending: "bg-line-strong",
+  running: "bg-accent animate-pulse",
 };
 
 const LINE_STATUS: Record<StepStatus, string> = {
-  pending: "bg-line",
-  running: "bg-accent/40",
   done: "bg-success/40",
   error: "bg-danger/40",
+  pending: "bg-line",
+  running: "bg-accent/40",
 };
 
 export function StepIndicator({ steps, className }: StepIndicatorProps) {
-  if (steps.length === 0) return null;
+  if (steps.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -39,7 +41,9 @@ export function StepIndicator({ steps, className }: StepIndicatorProps) {
       {steps.map((step, i) => (
         <div className="flex items-center" key={step.key}>
           <span
-            aria-label={step.label ? `${step.label}: ${step.status}` : step.status}
+            aria-label={
+              step.label ? `${step.label}: ${step.status}` : step.status
+            }
             className={cn(
               "inline-block h-2 w-2 shrink-0 rounded-full transition-colors duration-300",
               DOT_STATUS[step.status]
@@ -60,12 +64,12 @@ export function StepIndicator({ steps, className }: StepIndicatorProps) {
   );
 }
 
-type StepIndicatorCompactProps = {
+interface StepIndicatorCompactProps {
   completed: number;
   total: number;
   hasError?: boolean;
   className?: string;
-};
+}
 
 export function StepIndicatorCompact({
   completed,
@@ -75,13 +79,14 @@ export function StepIndicatorCompact({
 }: StepIndicatorCompactProps) {
   const steps: Step[] = Array.from({ length: total }, (_, i) => ({
     key: String(i),
-    status: hasError && i === completed
-      ? "error"
-      : i < completed
-        ? "done"
-        : i === completed
-          ? "running"
-          : "pending",
+    status:
+      hasError && i === completed
+        ? "error"
+        : i < completed
+          ? "done"
+          : i === completed
+            ? "running"
+            : "pending",
   }));
 
   return <StepIndicator className={className} steps={steps} />;

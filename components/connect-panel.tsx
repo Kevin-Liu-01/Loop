@@ -9,21 +9,32 @@ import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tip } from "@/components/ui/tip";
 
-type ConnectPanelProps = {
+interface ConnectPanelProps {
   hasSubscription: boolean;
   connectAccountId: string | null;
-};
+}
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-2.5 text-sm">
       <span className="shrink-0 text-ink-faint">{label}</span>
-      <span className="min-w-0 truncate text-right font-medium text-ink">{children}</span>
+      <span className="min-w-0 truncate text-right font-medium text-ink">
+        {children}
+      </span>
     </div>
   );
 }
 
-export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanelProps) {
+export function ConnectPanel({
+  hasSubscription,
+  connectAccountId,
+}: ConnectPanelProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +42,10 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
     setError(null);
     startTransition(async () => {
       const response = await fetch("/api/connect/onboard", { method: "POST" });
-      const payload = (await response.json()) as { url?: string; error?: string };
+      const payload = (await response.json()) as {
+        url?: string;
+        error?: string;
+      };
 
       if (!response.ok || !payload.url) {
         setError(payload.error ?? "Unable to start Stripe Connect onboarding.");
@@ -57,8 +71,12 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
               <CheckIcon className="h-4.5 w-4.5 text-success" />
             </span>
             <div>
-              <p className="m-0 text-sm font-semibold tracking-tight text-ink">Connected</p>
-              <p className="m-0 text-xs text-ink-faint">Payments will be deposited directly</p>
+              <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+                Connected
+              </p>
+              <p className="m-0 text-xs text-ink-faint">
+                Payments will be deposited directly
+              </p>
             </div>
           </div>
           <Tip content="Stripe payouts are enabled and active" side="left">
@@ -83,7 +101,8 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
         </div>
         <div className="p-5 sm:p-6">
           <p className="m-0 text-xs leading-relaxed text-ink-faint">
-            Manage payout schedule and tax documents from your Stripe Express dashboard.
+            Manage payout schedule and tax documents from your Stripe Express
+            dashboard.
           </p>
         </div>
       </div>
@@ -97,13 +116,18 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
           <LinkIcon className="h-4.5 w-4.5 text-ink-soft" />
         </span>
         <div>
-          <p className="m-0 text-sm font-semibold tracking-tight text-ink">Not connected</p>
-          <p className="m-0 text-xs text-ink-faint">Link a Stripe account to receive payouts</p>
+          <p className="m-0 text-sm font-semibold tracking-tight text-ink">
+            Not connected
+          </p>
+          <p className="m-0 text-xs text-ink-faint">
+            Link a Stripe account to receive payouts
+          </p>
         </div>
       </div>
       <div className="grid gap-4 p-5 sm:p-6">
         <p className="m-0 max-w-[48ch] text-sm leading-relaxed text-ink-muted">
-          You'll be redirected to Stripe to verify your identity and bank details. The process takes a few minutes and can be resumed later.
+          You'll be redirected to Stripe to verify your identity and bank
+          details. The process takes a few minutes and can be resumed later.
         </p>
         <div>
           <Button disabled={isPending} onClick={handleConnect} type="button">
@@ -111,9 +135,7 @@ export function ConnectPanel({ hasSubscription, connectAccountId }: ConnectPanel
             {isPending ? "Redirecting..." : "Connect Stripe account"}
           </Button>
         </div>
-        {error ? (
-          <p className="m-0 text-sm text-danger">{error}</p>
-        ) : null}
+        {error ? <p className="m-0 text-sm text-danger">{error}</p> : null}
       </div>
     </div>
   );

@@ -4,18 +4,18 @@ import {
   createSandboxSession,
   getSandboxStatus,
   stopSandboxSession,
-  type SandboxRuntime
 } from "@/lib/sandbox";
+import type { SandboxRuntime } from "@/lib/sandbox";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const createSchema = z.object({
+  env: z.record(z.string(), z.string()).optional(),
   runtime: z.enum(["node24", "node22", "python3.13"]).default("node24"),
-  env: z.record(z.string(), z.string()).optional()
 });
 
 export async function POST(request: Request) {
   return withApiUsage(
-    { route: "/api/sandbox/session", method: "POST", label: "Create sandbox" },
+    { label: "Create sandbox", method: "POST", route: "/api/sandbox/session" },
     async () => {
       try {
         const payload = createSchema.parse(await request.json());
@@ -25,16 +25,16 @@ export async function POST(request: Request) {
         );
 
         await logUsageEvent({
+          details: `${session.runtime} / ${session.sandboxId}`,
           kind: "api_call",
-          source: "api",
           label: "Created sandbox session",
-          details: `${session.runtime} / ${session.sandboxId}`
+          source: "api",
         });
 
         return Response.json(session, { status: 201 });
-      } catch (err) {
+      } catch (error) {
         const message =
-          err instanceof Error ? err.message : "Failed to create sandbox";
+          error instanceof Error ? error.message : "Failed to create sandbox";
 
         try {
           const parsed = JSON.parse(message);
@@ -53,7 +53,11 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   return withApiUsage(
-    { route: "/api/sandbox/session", method: "GET", label: "Get sandbox status" },
+    {
+      label: "Get sandbox status",
+      method: "GET",
+      route: "/api/sandbox/session",
+    },
     async () => {
       const { searchParams } = new URL(request.url);
       const sandboxId = searchParams.get("sandboxId");
@@ -78,9 +82,9 @@ export async function GET(request: Request) {
 export async function DELETE(request: Request) {
   return withApiUsage(
     {
-      route: "/api/sandbox/session",
+      label: "Stop sandbox",
       method: "DELETE",
-      label: "Stop sandbox"
+      route: "/api/sandbox/session",
     },
     async () => {
       const { searchParams } = new URL(request.url);
@@ -96,10 +100,10 @@ export async function DELETE(request: Request) {
       await stopSandboxSession(sandboxId);
 
       logUsageEvent({
+        details: sandboxId,
         kind: "api_call",
-        source: "api",
         label: "Stopped sandbox session",
-        details: sandboxId
+        source: "api",
       }).catch(() => {});
 
       return Response.json({ ok: true });

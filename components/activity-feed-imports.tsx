@@ -2,24 +2,27 @@
 
 import Link from "next/link";
 
-import { SkillIcon, McpIcon } from "@/components/ui/skill-icon";
+import { SparkIcon } from "@/components/frontier-icons";
+import { RelativeTime } from "@/components/relative-time";
 import { Badge } from "@/components/ui/badge";
 import { EmptyCard } from "@/components/ui/empty-card";
-import { SparkIcon } from "@/components/frontier-icons";
-import { formatTagLabel } from "@/lib/tag-utils";
-import { RelativeTime } from "@/components/relative-time";
-import { buildSkillVersionHref, buildMcpVersionHref } from "@/lib/format";
+import { SkillIcon, McpIcon } from "@/components/ui/skill-icon";
 import type { RecentImportItem } from "@/lib/db/recent-imports";
+import { buildSkillVersionHref, buildMcpVersionHref } from "@/lib/format";
+import { formatTagLabel } from "@/lib/tag-utils";
 
-type ActivityFeedImportsProps = {
+interface ActivityFeedImportsProps {
   imports: RecentImportItem[];
-};
+}
 
 export function ActivityFeedImports({ imports }: ActivityFeedImportsProps) {
   if (imports.length === 0) {
     return (
       <EmptyCard icon={<SparkIcon className="h-5 w-5" />}>
-        <p className="m-0 text-sm">No imports yet. New skills and MCPs will appear here after the weekly scan.</p>
+        <p className="m-0 text-sm">
+          No imports yet. New skills and MCPs will appear here after the weekly
+          scan.
+        </p>
       </EmptyCard>
     );
   }
@@ -59,9 +62,16 @@ export function ActivityFeedImports({ imports }: ActivityFeedImportsProps) {
                 <span className="truncate text-[0.8125rem] font-medium leading-snug text-ink group-hover:text-ink-soft">
                   {item.title}
                 </span>
-                <Badge color={item.kind === "skill" ? "purple" : "teal"} size="sm">{formatTagLabel(item.kind)}</Badge>
+                <Badge
+                  color={item.kind === "skill" ? "purple" : "teal"}
+                  size="sm"
+                >
+                  {formatTagLabel(item.kind)}
+                </Badge>
               </div>
-              <p className="m-0 line-clamp-1 text-xs text-ink-soft">{item.description}</p>
+              <p className="m-0 line-clamp-1 text-xs text-ink-soft">
+                {item.description}
+              </p>
               <div className="flex items-center gap-1.5 text-[0.6875rem] text-ink-faint">
                 {item.authorName && <span>{item.authorName} ·</span>}
                 <RelativeTime date={item.importedAt} />

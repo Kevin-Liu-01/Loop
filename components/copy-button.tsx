@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 
-import { CheckIcon, ClipboardIcon, LinkIcon } from "@/components/frontier-icons";
+import {
+  CheckIcon,
+  ClipboardIcon,
+  LinkIcon,
+} from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/shadcn/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/shadcn/tooltip";
 import { postUsageEvent } from "@/components/usage-beacon";
 import { cn } from "@/lib/cn";
 import type { CategorySlug, UsageEventKind } from "@/lib/types";
 
-type CopyButtonProps = {
+interface CopyButtonProps {
   value: string;
   label?: string;
   iconOnly?: boolean;
@@ -31,11 +39,14 @@ type CopyButtonProps = {
     categorySlug?: CategorySlug;
     details?: string;
   };
-};
+}
 
-const iconSizeClass: Record<NonNullable<CopyButtonProps["iconSize"]>, string> = {
+const iconSizeClass: Record<
+  NonNullable<CopyButtonProps["iconSize"]>,
+  string
+> = {
+  md: "h-4 w-4",
   sm: "h-3.5 w-3.5",
-  md: "h-4 w-4"
 };
 
 export function CopyButton({
@@ -75,7 +86,11 @@ export function CopyButton({
             type="button"
             variant={variant ?? "soft"}
           >
-            {copied ? <CheckIcon className={ic} /> : <DefaultIcon className={ic} />}
+            {copied ? (
+              <CheckIcon className={ic} />
+            ) : (
+              <DefaultIcon className={ic} />
+            )}
           </Button>
         </TooltipTrigger>
         <TooltipContent>{copied ? "Copied!" : label}</TooltipContent>

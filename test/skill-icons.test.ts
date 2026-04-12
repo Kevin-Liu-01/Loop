@@ -1,20 +1,54 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getSkillIcon, getMcpIcon, computeSourceLogoUrl } from "@/lib/skill-icons";
 import { validateIconFile } from "@/lib/icon-storage";
+import {
+  getSkillIcon,
+  getMcpIcon,
+  computeSourceLogoUrl,
+} from "@/lib/skill-icons";
 
 const KNOWN_SKILL_SLUGS = [
-  "frontend-frontier", "motion-framer", "gsap-scrolltrigger", "react-three-fiber",
-  "tailwind-design-system", "web-performance", "accessible-ui", "nextjs-patterns",
-  "responsive-layouts", "component-architecture", "seo-geo", "schema-markup",
-  "technical-seo-audit", "ai-citability", "keyword-research", "content-seo-strategy",
-  "social-content-os", "social-draft", "audience-growth", "content-repurposing",
-  "newsletter-craft", "edge-compute", "database-patterns", "observability-stack",
-  "serverless-architecture", "cdn-caching", "dockerfile-mastery", "kubernetes-essentials",
-  "container-security", "agent-orchestration", "mcp-development", "prompt-engineering",
-  "tool-use-patterns", "rag-pipelines", "security-best-practices", "security-threat-model",
-  "auth-patterns", "api-security", "gh-actions-ci", "release-management",
+  "frontend-frontier",
+  "motion-framer",
+  "gsap-scrolltrigger",
+  "react-three-fiber",
+  "tailwind-design-system",
+  "web-performance",
+  "accessible-ui",
+  "nextjs-patterns",
+  "responsive-layouts",
+  "component-architecture",
+  "seo-geo",
+  "schema-markup",
+  "technical-seo-audit",
+  "ai-citability",
+  "keyword-research",
+  "content-seo-strategy",
+  "social-content-os",
+  "social-draft",
+  "audience-growth",
+  "content-repurposing",
+  "newsletter-craft",
+  "edge-compute",
+  "database-patterns",
+  "observability-stack",
+  "serverless-architecture",
+  "cdn-caching",
+  "dockerfile-mastery",
+  "kubernetes-essentials",
+  "container-security",
+  "agent-orchestration",
+  "mcp-development",
+  "prompt-engineering",
+  "tool-use-patterns",
+  "rag-pipelines",
+  "security-best-practices",
+  "security-threat-model",
+  "auth-patterns",
+  "api-security",
+  "gh-actions-ci",
+  "release-management",
 ];
 
 // ---------------------------------------------------------------------------
@@ -25,7 +59,10 @@ test("getSkillIcon returns an icon for every known skill slug", () => {
   for (const slug of KNOWN_SKILL_SLUGS) {
     const icon = getSkillIcon(slug);
     assert.ok(icon, `Missing icon for skill ${slug}`);
-    assert.ok(icon.kind === "lucide" || icon.kind === "url", `Invalid icon kind for ${slug}`);
+    assert.ok(
+      icon.kind === "lucide" || icon.kind === "url",
+      `Invalid icon kind for ${slug}`
+    );
   }
 });
 
@@ -60,31 +97,41 @@ test("getMcpIcon returns lucide plug for completely unknown MCP", () => {
 // ---------------------------------------------------------------------------
 
 test("validateIconFile rejects files over 1 MB", () => {
-  const bigFile = new File([new ArrayBuffer(2_000_000)], "big.png", { type: "image/png" });
+  const bigFile = new File([new ArrayBuffer(2_000_000)], "big.png", {
+    type: "image/png",
+  });
   const err = validateIconFile(bigFile);
   assert.ok(err);
   assert.ok(err.includes("too large"));
 });
 
 test("validateIconFile rejects unsupported MIME types", () => {
-  const gifFile = new File([new ArrayBuffer(100)], "icon.gif", { type: "image/gif" });
+  const gifFile = new File([new ArrayBuffer(100)], "icon.gif", {
+    type: "image/gif",
+  });
   const err = validateIconFile(gifFile);
   assert.ok(err);
   assert.ok(err.includes("Invalid file type"));
 });
 
 test("validateIconFile accepts valid PNG under 1 MB", () => {
-  const ok = new File([new ArrayBuffer(500)], "icon.png", { type: "image/png" });
+  const ok = new File([new ArrayBuffer(500)], "icon.png", {
+    type: "image/png",
+  });
   assert.equal(validateIconFile(ok), null);
 });
 
 test("validateIconFile accepts valid SVG", () => {
-  const ok = new File([new ArrayBuffer(200)], "icon.svg", { type: "image/svg+xml" });
+  const ok = new File([new ArrayBuffer(200)], "icon.svg", {
+    type: "image/svg+xml",
+  });
   assert.equal(validateIconFile(ok), null);
 });
 
 test("validateIconFile accepts valid WebP", () => {
-  const ok = new File([new ArrayBuffer(300)], "icon.webp", { type: "image/webp" });
+  const ok = new File([new ArrayBuffer(300)], "icon.webp", {
+    type: "image/webp",
+  });
   assert.equal(validateIconFile(ok), null);
 });
 
@@ -93,11 +140,17 @@ test("validateIconFile accepts valid WebP", () => {
 // ---------------------------------------------------------------------------
 
 test("all 40 known skill slugs have a skill icon mapping", () => {
-  assert.ok(KNOWN_SKILL_SLUGS.length >= 40, `Expected at least 40 slugs, got ${KNOWN_SKILL_SLUGS.length}`);
+  assert.ok(
+    KNOWN_SKILL_SLUGS.length >= 40,
+    `Expected at least 40 slugs, got ${KNOWN_SKILL_SLUGS.length}`
+  );
 
   for (const slug of KNOWN_SKILL_SLUGS) {
     const icon = getSkillIcon(slug);
-    assert.ok(icon.kind === "lucide" || icon.kind === "url", `No icon for ${slug}`);
+    assert.ok(
+      icon.kind === "lucide" || icon.kind === "url",
+      `No icon for ${slug}`
+    );
   }
 });
 
@@ -115,7 +168,11 @@ test("seed skills with brand icons use URL kind", () => {
 
   for (const slug of brandSlugs) {
     const icon = getSkillIcon(slug);
-    assert.equal(icon.kind, "url", `Expected URL icon for ${slug}, got ${icon.kind}`);
+    assert.equal(
+      icon.kind,
+      "url",
+      `Expected URL icon for ${slug}, got ${icon.kind}`
+    );
   }
 });
 
@@ -140,7 +197,7 @@ test("computeSourceLogoUrl returns empty string for invalid URLs", () => {
 test("no known skill slug uses parenthetical format in name", () => {
   for (const slug of KNOWN_SKILL_SLUGS) {
     assert.ok(
-      !slug.match(/\(.+\)\s*$/),
+      !/\(.+\)\s*$/.test(slug),
       `Slug "${slug}" uses parenthetical format – should lead with brand name instead`
     );
   }

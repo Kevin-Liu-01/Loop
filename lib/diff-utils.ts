@@ -1,20 +1,20 @@
 import type { DiffLine } from "@/lib/types";
 
-export type DiffStats = {
+export interface DiffStats {
   added: number;
   removed: number;
-};
+}
 
-export type InlineSegment = {
+export interface InlineSegment {
   text: string;
   highlight: boolean;
-};
+}
 
-export type DiffHunk = {
+export interface DiffHunk {
   startLeft: number;
   startRight: number;
   lines: DiffLine[];
-};
+}
 
 const CONTEXT_RADIUS = 3;
 
@@ -22,41 +22,55 @@ export function computeDiffStats(lines: DiffLine[]): DiffStats {
   let added = 0;
   let removed = 0;
   for (const line of lines) {
-    if (line.type === "added") added += 1;
-    if (line.type === "removed") removed += 1;
+    if (line.type === "added") {
+      added += 1;
+    }
+    if (line.type === "removed") {
+      removed += 1;
+    }
   }
   return { added, removed };
 }
 
 export function groupIntoHunks(lines: DiffLine[]): DiffHunk[] {
-  if (lines.length === 0) return [];
+  if (lines.length === 0) {
+    return [];
+  }
 
   const changeIndices: number[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].type !== "context") changeIndices.push(i);
+    if (lines[i].type !== "context") {
+      changeIndices.push(i);
+    }
   }
 
-  if (changeIndices.length === 0) return [];
+  if (changeIndices.length === 0) {
+    return [];
+  }
 
   const included = new Set<number>();
   for (const ci of changeIndices) {
     const lo = Math.max(0, ci - CONTEXT_RADIUS);
     const hi = Math.min(lines.length - 1, ci + CONTEXT_RADIUS);
-    for (let i = lo; i <= hi; i++) included.add(i);
+    for (let i = lo; i <= hi; i++) {
+      included.add(i);
+    }
   }
 
-  const sorted = Array.from(included).sort((a, b) => a - b);
+  const sorted = [...included].toSorted((a, b) => a - b);
   const hunks: DiffHunk[] = [];
   let current: number[] = [];
 
   for (const idx of sorted) {
-    if (current.length > 0 && idx > current[current.length - 1] + 1) {
+    if (current.length > 0 && idx > current.at(-1) + 1) {
       hunks.push(buildHunk(lines, current));
       current = [];
     }
     current.push(idx);
   }
-  if (current.length > 0) hunks.push(buildHunk(lines, current));
+  if (current.length > 0) {
+    hunks.push(buildHunk(lines, current));
+  }
 
   return hunks;
 }
@@ -65,9 +79,9 @@ function buildHunk(allLines: DiffLine[], indices: number[]): DiffHunk {
   const hunkLines = indices.map((i) => allLines[i]);
   const first = hunkLines[0];
   return {
+    lines: hunkLines,
     startLeft: first.leftNumber ?? first.rightNumber ?? 1,
     startRight: first.rightNumber ?? first.leftNumber ?? 1,
-    lines: hunkLines,
   };
 }
 
@@ -84,8 +98,8 @@ export function computeInlineSegments(
   const lcs = wordLCS(oldWords, newWords);
 
   return {
-    oldSegments: buildSegments(oldWords, lcs, "old"),
     newSegments: buildSegments(newWords, lcs, "new"),
+    oldSegments: buildSegments(oldWords, lcs, "old"),
   };
 }
 
@@ -155,14 +169,18 @@ function buildSegments(
     }
 
     if (highlight !== bufHighlight) {
-      if (buf) segments.push({ text: buf, highlight: bufHighlight });
+      if (buf) {
+        segments.push({ highlight: bufHighlight, text: buf });
+      }
       buf = "";
       bufHighlight = highlight;
     }
     buf += tokens[i];
   }
 
-  if (buf) segments.push({ text: buf, highlight: bufHighlight });
+  if (buf) {
+    segments.push({ highlight: bufHighlight, text: buf });
+  }
   return segments;
 }
 

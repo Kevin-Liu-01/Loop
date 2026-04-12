@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useState, useTransition } from "react";
 
 import { TrashIcon } from "@/components/frontier-icons";
 import { Button } from "@/components/ui/button";
 
-type DeleteSkillButtonProps = {
+interface DeleteSkillButtonProps {
   slug: string;
   skillTitle: string;
-};
+}
 
-export function DeleteSkillButton({ slug, skillTitle }: DeleteSkillButtonProps) {
+export function DeleteSkillButton({
+  slug,
+  skillTitle,
+}: DeleteSkillButtonProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -43,8 +46,8 @@ export function DeleteSkillButton({ slug, skillTitle }: DeleteSkillButtonProps) 
     return (
       <div className="flex flex-col gap-2">
         <p className="m-0 text-xs text-danger">
-          Permanently delete <strong>{skillTitle}</strong>? This removes all versions,
-          automations, and run history. This cannot be undone.
+          Permanently delete <strong>{skillTitle}</strong>? This removes all
+          versions, automations, and run history. This cannot be undone.
         </p>
         <div className="flex items-center gap-2">
           <Button

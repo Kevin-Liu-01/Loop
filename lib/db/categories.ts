@@ -1,7 +1,7 @@
 import { getServerSupabase } from "@/lib/db/client";
 import type { CategoryDefinition, SourceDefinition } from "@/lib/types";
 
-type CategoryRow = {
+interface CategoryRow {
   slug: string;
   title: string;
   strapline: string;
@@ -13,33 +13,35 @@ type CategoryRow = {
   sources: unknown;
   created_at: string;
   updated_at: string;
-};
+}
 
 function rowToCategory(row: CategoryRow): CategoryDefinition {
   return {
-    slug: row.slug as CategoryDefinition["slug"],
-    title: row.title,
-    strapline: row.strapline,
+    accent: row.accent,
     description: row.description,
     hero: row.hero,
-    accent: row.accent,
-    status: row.status as CategoryDefinition["status"],
     keywords: row.keywords,
-    sources: (row.sources ?? []) as SourceDefinition[]
+    slug: row.slug as CategoryDefinition["slug"],
+    sources: (row.sources ?? []) as SourceDefinition[],
+    status: row.status as CategoryDefinition["status"],
+    strapline: row.strapline,
+    title: row.title,
   };
 }
 
-function categoryToRow(category: CategoryDefinition): Omit<CategoryRow, "created_at" | "updated_at"> {
+function categoryToRow(
+  category: CategoryDefinition
+): Omit<CategoryRow, "created_at" | "updated_at"> {
   return {
-    slug: category.slug,
-    title: category.title,
-    strapline: category.strapline,
+    accent: category.accent,
     description: category.description,
     hero: category.hero,
-    accent: category.accent,
-    status: category.status,
     keywords: category.keywords,
-    sources: category.sources as unknown
+    slug: category.slug,
+    sources: category.sources as unknown,
+    status: category.status,
+    strapline: category.strapline,
+    title: category.title,
   };
 }
 
@@ -50,11 +52,15 @@ export async function listCategories(): Promise<CategoryDefinition[]> {
     .select("*")
     .order("title");
 
-  if (error) throw new Error(`listCategories failed: ${error.message}`);
+  if (error) {
+    throw new Error(`listCategories failed: ${error.message}`);
+  }
   return (data as CategoryRow[]).map(rowToCategory);
 }
 
-export async function getCategoryBySlug(slug: string): Promise<CategoryDefinition | null> {
+export async function getCategoryBySlug(
+  slug: string
+): Promise<CategoryDefinition | null> {
   const db = getServerSupabase();
   const { data, error } = await db
     .from("categories")
@@ -62,25 +68,35 @@ export async function getCategoryBySlug(slug: string): Promise<CategoryDefinitio
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error) throw new Error(`getCategoryBySlug failed: ${error.message}`);
+  if (error) {
+    throw new Error(`getCategoryBySlug failed: ${error.message}`);
+  }
   return data ? rowToCategory(data as CategoryRow) : null;
 }
 
-export async function upsertCategory(category: CategoryDefinition): Promise<void> {
+export async function upsertCategory(
+  category: CategoryDefinition
+): Promise<void> {
   const db = getServerSupabase();
   const { error } = await db
     .from("categories")
     .upsert(categoryToRow(category) as never, { onConflict: "slug" });
 
-  if (error) throw new Error(`upsertCategory failed: ${error.message}`);
+  if (error) {
+    throw new Error(`upsertCategory failed: ${error.message}`);
+  }
 }
 
-export async function seedCategories(categories: CategoryDefinition[]): Promise<void> {
+export async function seedCategories(
+  categories: CategoryDefinition[]
+): Promise<void> {
   const db = getServerSupabase();
   const rows = categories.map(categoryToRow);
   const { error } = await db
     .from("categories")
     .upsert(rows as never, { onConflict: "slug" });
 
-  if (error) throw new Error(`seedCategories failed: ${error.message}`);
+  if (error) {
+    throw new Error(`seedCategories failed: ${error.message}`);
+  }
 }
