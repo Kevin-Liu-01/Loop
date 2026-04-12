@@ -62,7 +62,7 @@ export function groupIntoHunks(lines: DiffLine[]): DiffHunk[] {
   let current: number[] = [];
 
   for (const idx of sorted) {
-    if (current.length > 0 && idx > current.at(-1) + 1) {
+    if (current.length > 0 && idx > current.at(-1)! + 1) {
       hunks.push(buildHunk(lines, current));
       current = [];
     }

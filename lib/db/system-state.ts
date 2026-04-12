@@ -98,10 +98,10 @@ export async function listLoopRuns(options?: {
     };
     return {
       addedSources: (r.added_sources ??
-        undefined) as LoopRunRecord["addedSources"],
+        undefined) as unknown as LoopRunRecord["addedSources"],
       bodyChanged: r.body_changed ?? undefined,
       changedSections: r.changed_sections,
-      diffLines: r.diff_lines as LoopRunRecord["diffLines"],
+      diffLines: r.diff_lines as unknown as LoopRunRecord["diffLines"],
       editorModel: r.editor_model ?? undefined,
       errorMessage: r.error_message ?? undefined,
       finishedAt: r.finished_at,
@@ -112,12 +112,12 @@ export async function listLoopRuns(options?: {
       origin: r.origin as LoopRunRecord["origin"],
       previousVersionLabel: r.previous_version_label ?? undefined,
       reasoningSteps: (r.reasoning_steps ??
-        undefined) as LoopRunRecord["reasoningSteps"],
+        undefined) as unknown as LoopRunRecord["reasoningSteps"],
       searchesUsed: r.searches_used ?? undefined,
       signalCount: r.signal_count,
       slug: r.skill_slug,
       sourceCount: r.source_count,
-      sources: r.sources as LoopRunRecord["sources"],
+      sources: r.sources as unknown as LoopRunRecord["sources"],
       startedAt: r.started_at,
       status: r.status as LoopRunRecord["status"],
       summary: r.summary ?? undefined,

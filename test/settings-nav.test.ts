@@ -13,6 +13,7 @@ describe("SETTINGS_NAV_ITEMS", () => {
     assert.equal(new Set(ids).size, ids.length);
     assert.deepEqual(ids, [
       "preferences",
+      "search-keys",
       "skills",
       "branding",
       "automations",

@@ -141,8 +141,8 @@ test("buildAgentContext includes selected skills and mcps", () => {
   });
 
   assert.match(context, /Frontend Frontier/);
-  assert.match(context, /Version: v1/);
-  assert.match(context, /MCP: Linear/);
+  assert.match(context, /Version\*\*: v1/);
+  assert.match(context, /Linear \(v1\)/);
   assert.match(context, /Use attached context first/);
 });
 

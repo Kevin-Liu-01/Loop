@@ -153,7 +153,7 @@ export function serializeSkill(skill: SkillRecord): string {
 
 export function serializeMcp(mcp: ImportedMcpDocument): string {
   return [
-    `### ${mcp.name} (v${mcp.versionLabel})`,
+    `### ${mcp.name} (${mcp.versionLabel})`,
     "",
     `- **Transport**: ${mcp.transport}`,
     `- **Manifest**: ${mcp.manifestUrl}`,

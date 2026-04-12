@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
@@ -17,7 +16,7 @@ export const runtime = "nodejs";
 
 const SCREENSHOT_PATH = "/images/og.png";
 
-const fontDir = import.meta.dirname;
+const fontDir = join(process.cwd(), "app", "og");
 
 const neueMontBook = readFile(join(fontDir, "NeueMontreal-Book.ttf"));
 const neueMontBold = readFile(join(fontDir, "NeueMontreal-Bold.ttf"));
