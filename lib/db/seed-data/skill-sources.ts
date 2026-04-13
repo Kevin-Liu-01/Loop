@@ -521,21 +521,24 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "gsap-scrolltrigger",
     "weekly",
     "Scan the GSAP community forum and Chrome DevTools blog for new ScrollTrigger features, scroll-timeline CSS spec progress, or breaking changes in scroll-driven animation APIs. Update pinning, scrubbing, and parallax guidance if anything shipped.",
-    [SRC.gsapForum, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag]
+    [SRC.gsapForum, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag],
+    { paused: true }
   ),
 
   config(
     "react-three-fiber",
     "weekly",
     "Check Three.js releases for WebGPU renderer progress, new geometry or material types, and breaking API changes. Scan the React blog for Suspense/RSC patterns that affect R3F. Update drei helper recommendations and performance tips.",
-    [SRC.threejsReleases, SRC.reactBlog, SRC.chromeDevBlog, SRC.vercelBlog]
+    [SRC.threejsReleases, SRC.reactBlog, SRC.chromeDevBlog, SRC.vercelBlog],
+    { paused: true }
   ),
 
   config(
     "tailwind-design-system",
-    "daily",
+    "weekly",
     "Check Tailwind CSS and plugin releases for @theme API changes, new utility classes, or config schema updates. Scan the CSS WG drafts for spec changes that affect token transport. Update design-token patterns and migration notes.",
-    [SRC.tailwindBlog, SRC.tailwindReleases, SRC.chromeDevBlog, SRC.cssWg]
+    [SRC.tailwindBlog, SRC.tailwindReleases, SRC.chromeDevBlog, SRC.cssWg],
+    { paused: true }
   ),
 
   config(
@@ -555,7 +558,8 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "accessible-ui",
     "weekly",
     "Check W3C WAI for WCAG 2.2+ criterion updates, new ARIA roles or attributes, and browser accessibility-tree changes. Scan The A11Y Project for practical pattern shifts. Update component-level guidance and testing recommendations.",
-    [SRC.a11yProject, SRC.wcagUpdates, SRC.chromeDevBlog, SRC.webDev]
+    [SRC.a11yProject, SRC.wcagUpdates, SRC.chromeDevBlog, SRC.webDev],
+    { paused: true }
   ),
 
   config(
@@ -569,14 +573,16 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "responsive-layouts",
     "weekly",
     "Scan CSS WG drafts for container-query, anchor-positioning, and viewport-unit spec changes. Check Chrome DevTools blog for new layout debugging tools. Update breakpoint strategies, fluid typography formulas, and grid/flex patterns.",
-    [SRC.cssWg, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag]
+    [SRC.cssWg, SRC.chromeDevBlog, SRC.webDev, SRC.smashingMag],
+    { paused: true }
   ),
 
   config(
     "component-architecture",
     "weekly",
     "Scan React blog for Server Component composition patterns, hook best practices, and state management recommendations. Check Vercel blog for App Router architecture guidance. Search HN for emerging component patterns gaining traction in production apps.",
-    [SRC.reactBlog, SRC.vercelBlog, SRC.hnFrontpage, SRC.smashingMag]
+    [SRC.reactBlog, SRC.vercelBlog, SRC.hnFrontpage, SRC.smashingMag],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -600,7 +606,8 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "schema-markup",
     "weekly",
     "Check schema.org GitHub releases for new types and deprecated properties. Scan Google Search Central for rich-result eligibility changes. Update structured-data templates, validation rules, and JSON-LD patterns.",
-    [SRC.schemaOrg, SRC.googleSearchCentral, SRC.mozBlog, SRC.searchEngineLand]
+    [SRC.schemaOrg, SRC.googleSearchCentral, SRC.mozBlog, SRC.searchEngineLand],
+    { paused: true }
   ),
 
   config(
@@ -613,12 +620,13 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.chromeDevBlog,
       SRC.mozBlog,
       SRC.ahrefsBlog,
-    ]
+    ],
+    { paused: true }
   ),
 
   config(
     "ai-citability",
-    "daily",
+    "weekly",
     "Monitor OpenAI, Anthropic, and Google for changes to how AI search cites sources. Track llms.txt adoption, grounding-API updates, and retrieval-augmented search behavior. Update citability checklist and content-optimization patterns.",
     [
       SRC.openaiNews,
@@ -627,21 +635,24 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.googleSearchCentral,
       SRC.searchEngineLand,
       SRC.sej,
-    ]
+    ],
+    { paused: true }
   ),
 
   config(
     "keyword-research",
     "weekly",
     "Scan Ahrefs and Moz blogs for search-intent classification changes, keyword difficulty algorithm updates, and SERP feature evolution. Check Search Engine Journal for competitive analysis methodology changes. Update research workflow guidance.",
-    [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.sej]
+    [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.sej],
+    { paused: true }
   ),
 
   config(
     "content-seo-strategy",
     "weekly",
     "Scan Moz and Ahrefs for topic-cluster methodology updates, internal-linking algorithm signals, and content-freshness ranking factors. Check Smashing Magazine for editorial workflow patterns. Update the content calendar and refresh strategy guidance.",
-    [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.smashingMag]
+    [SRC.mozBlog, SRC.ahrefsBlog, SRC.searchEngineLand, SRC.smashingMag],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -651,35 +662,40 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "social-content-os",
     "weekly",
     "Scrape Hacker News, Product Hunt, and Indie Hackers for trending distribution tactics and platform algorithm changes. Identify which content formats are driving engagement for technical audiences this week. Update the content operating system with new channel priorities.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag]
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag],
+    { paused: true }
   ),
 
   config(
     "social-draft",
     "weekly",
     "Scan HN and Product Hunt for high-performing post formats, hook patterns, and thread structures. Identify X and LinkedIn algorithm signals that changed this week. Update the drafting templates, character-limit guidance, and engagement-bait patterns to avoid.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog]
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog],
+    { paused: true }
   ),
 
   config(
     "audience-growth",
     "weekly",
     "Scrape Indie Hackers for audience-building case studies and growth experiments. Check Product Hunt for new growth tools. Monitor HN for algorithm-change discussions on X, LinkedIn, and newsletter platforms. Update follower-growth and engagement-optimization playbooks.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag]
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.smashingMag],
+    { paused: true }
   ),
 
   config(
     "content-repurposing",
     "weekly",
     "Scan Product Hunt for new repurposing tools (blog-to-video, thread-to-carousel). Check Indie Hackers for multi-format distribution case studies. Monitor HN for platform-specific format requirement changes. Update the repurposing workflow and format matrix.",
-    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog]
+    [SRC.hnFrontpage, SRC.productHunt, SRC.indiehackers, SRC.vercelBlog],
+    { paused: true }
   ),
 
   config(
     "newsletter-craft",
     "weekly",
     "Scan Indie Hackers for newsletter growth tactics and deliverability case studies. Check Product Hunt for new email platform features. Monitor HN for email authentication requirement changes (DKIM, DMARC, BIMI). Update subject-line formulas and growth-loop patterns.",
-    [SRC.hnFrontpage, SRC.indiehackers, SRC.productHunt, SRC.smashingMag]
+    [SRC.hnFrontpage, SRC.indiehackers, SRC.productHunt, SRC.smashingMag],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -687,37 +703,42 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
   // =========================================================================
   config(
     "edge-compute",
-    "daily",
+    "weekly",
     "Check Cloudflare blog for Workers runtime changes, new binding types, and Durable Object updates. Scan Vercel blog for Edge Function and Fluid Compute changes. Monitor Deno releases for Deploy API updates. Update edge runtime comparison table and migration notes.",
-    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.denoReleases, SRC.chromeDevBlog]
+    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.denoReleases, SRC.chromeDevBlog],
+    { paused: true }
   ),
 
   config(
     "database-patterns",
-    "daily",
+    "weekly",
     "Check Supabase blog for new Postgres extensions, RLS pattern updates, and connection-pooling changes. Scan Neon blog for serverless Postgres features. Monitor Postgres Weekly for query-optimization techniques. Update schema-design and indexing guidance.",
-    [SRC.supabaseBlog, SRC.postgresWeekly, SRC.neonBlog, SRC.vercelBlog]
+    [SRC.supabaseBlog, SRC.postgresWeekly, SRC.neonBlog, SRC.vercelBlog],
+    { paused: true }
   ),
 
   config(
     "observability-stack",
     "weekly",
     "Scan Cloudflare and Vercel blogs for logging/tracing infrastructure changes. Check GitHub blog for Actions observability features. Monitor HN for OpenTelemetry ecosystem updates. Update structured-logging patterns and alerting threshold recommendations.",
-    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.githubBlog, SRC.hnFrontpage]
+    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.githubBlog, SRC.hnFrontpage],
+    { paused: true }
   ),
 
   config(
     "serverless-architecture",
-    "daily",
+    "weekly",
     "Check Vercel blog for Fluid Compute, Queues, and Function configuration changes. Scan Cloudflare blog for Workers pricing or runtime updates. Monitor Supabase for Edge Function changes. Update cold-start mitigation patterns and event-driven architecture guidance.",
-    [SRC.vercelBlog, SRC.cloudflareBlog, SRC.supabaseBlog, SRC.denoReleases]
+    [SRC.vercelBlog, SRC.cloudflareBlog, SRC.supabaseBlog, SRC.denoReleases],
+    { paused: true }
   ),
 
   config(
     "cdn-caching",
     "weekly",
     "Scan Cloudflare blog for cache-rule and purge-API changes. Check Vercel blog for ISR, Runtime Cache, and CDN invalidation updates. Monitor web.dev for Cache-Control best-practice revisions. Update cache-hierarchy diagrams and TTL recommendations.",
-    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.webDev, SRC.chromeDevBlog]
+    [SRC.cloudflareBlog, SRC.vercelBlog, SRC.webDev, SRC.chromeDevBlog],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -727,19 +748,26 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "dockerfile-mastery",
     "weekly",
     "Check Docker blog for BuildKit updates, new Dockerfile syntax directives, and multi-stage build improvements. Scan Trivy releases for image-scanning rule changes. Update Dockerfile templates, layer-caching strategies, and security-hardening patterns.",
-    [SRC.dockerBlog, SRC.containerdReleases, SRC.trivyReleases, SRC.githubBlog]
+    [SRC.dockerBlog, SRC.containerdReleases, SRC.trivyReleases, SRC.githubBlog],
+    { paused: true }
   ),
 
   config(
     "kubernetes-essentials",
     "weekly",
     "Check Kubernetes blog for new resource types, deprecation notices, and security-policy changes. Scan containerd releases for runtime updates. Monitor Docker blog for K8s integration changes. Update deployment manifests, RBAC patterns, and upgrade-path guidance.",
-    [SRC.kubernetesBlog, SRC.dockerBlog, SRC.containerdReleases, SRC.githubBlog]
+    [
+      SRC.kubernetesBlog,
+      SRC.dockerBlog,
+      SRC.containerdReleases,
+      SRC.githubBlog,
+    ],
+    { paused: true }
   ),
 
   config(
     "container-security",
-    "daily",
+    "weekly",
     "Scan Trivy releases for new vulnerability rules and scanning-engine updates. Check Snyk blog for container CVE advisories. Monitor GitHub Security Advisories for base-image vulnerabilities. Update image-hardening checklist and runtime-policy recommendations.",
     [
       SRC.trivyReleases,
@@ -747,7 +775,8 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.dockerBlog,
       SRC.githubAdvisory,
       SRC.containerdReleases,
-    ]
+    ],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -814,7 +843,7 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
 
   config(
     "rag-pipelines",
-    "daily",
+    "weekly",
     "Check OpenAI for new embedding models or retrieval-API changes. Scan Hugging Face for open embedding model releases. Monitor LangChain for retriever and reranker updates. Check Supabase/Neon for pgvector improvements. Update chunking strategies, similarity-search patterns, and evaluation benchmarks.",
     [
       SRC.openaiNews,
@@ -824,7 +853,8 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.langchainBlog,
       SRC.supabaseBlog,
       SRC.neonBlog,
-    ]
+    ],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -847,12 +877,13 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
     "security-threat-model",
     "weekly",
     "Scan OWASP for threat-modeling methodology updates and new attack-tree patterns. Check PortSwigger for novel attack vectors. Monitor Snyk for supply-chain threat intelligence. Update STRIDE/DREAD worksheets and application-boundary diagrams.",
-    [SRC.owaspBlog, SRC.portswigger, SRC.snykBlog, SRC.krebsSecurity]
+    [SRC.owaspBlog, SRC.portswigger, SRC.snykBlog, SRC.krebsSecurity],
+    { paused: true }
   ),
 
   config(
     "auth-patterns",
-    "daily",
+    "weekly",
     "Check Clerk changelog for SDK changes, middleware patterns, and organization-feature updates. Scan OWASP for session-management and JWT security advisories. Monitor Supabase for RLS and auth-hook changes. Update auth-flow diagrams and token-handling patterns.",
     [
       SRC.clerkChangelog,
@@ -860,12 +891,13 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.supabaseBlog,
       SRC.portswigger,
       SRC.snykBlog,
-    ]
+    ],
+    { paused: true }
   ),
 
   config(
     "api-security",
-    "daily",
+    "weekly",
     "Scan PortSwigger for new API attack techniques and bypass patterns. Check Snyk for API-specific CVEs. Monitor OWASP API Top 10 for guidance changes. Check Vercel blog for webhook-verification and rate-limiting updates. Update rate-limit configurations and CORS policy templates.",
     [
       SRC.portswigger,
@@ -873,7 +905,8 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
       SRC.owaspBlog,
       SRC.githubAdvisory,
       SRC.vercelBlog,
-    ]
+    ],
+    { paused: true }
   ),
 
   // =========================================================================
@@ -881,16 +914,18 @@ export const SKILL_SOURCE_CONFIGS: SkillSourceConfig[] = [
   // =========================================================================
   config(
     "gh-actions-ci",
-    "daily",
+    "weekly",
     "Check GitHub Blog and Changelog for Actions runner updates, new built-in actions, caching-API changes, and OIDC token improvements. Scan Vercel blog for deployment-integration updates. Update workflow templates, caching strategies, and secret-management patterns.",
-    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.hnFrontpage]
+    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.hnFrontpage],
+    { paused: true }
   ),
 
   config(
     "release-management",
     "weekly",
     "Scan GitHub Blog for release-automation features and tag-management updates. Check Linear changelog for project-management integration changes. Monitor Vercel blog for preview-deployment and promotion-flow updates. Update changelog-generation templates and feature-flag rollout patterns.",
-    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.linearChangelog]
+    [SRC.githubBlog, SRC.githubChangelog, SRC.vercelBlog, SRC.linearChangelog],
+    { paused: true }
   ),
 ];
 
@@ -984,15 +1019,17 @@ function config(
   slug: string,
   cadence: SkillAutomationState["cadence"],
   prompt: string,
-  sources: SourceDefinition[]
+  sources: SourceDefinition[],
+  opts?: { paused?: boolean }
 ): SkillSourceConfig {
+  const paused = opts?.paused ?? false;
   return {
     automation: {
       cadence,
-      enabled: true,
+      enabled: !paused,
       preferredHour: DEFAULT_PREFERRED_HOUR,
       prompt,
-      status: "active",
+      status: paused ? "paused" : "active",
     },
     slug,
     sources,

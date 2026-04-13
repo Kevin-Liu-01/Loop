@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { AutomationEditModal } from "@/components/automation-edit-modal";
@@ -61,6 +67,9 @@ export function AutomationManager({
     canManage: boolean;
   } | null>(null);
 
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [isBulkPending, startBulkTransition] = useTransition();
+
   const skillMap = useMemo(
     () => new Map(skills.map((s) => [s.slug, s])),
     [skills]
@@ -87,6 +96,70 @@ export function AutomationManager({
     );
   }, [automations, query]);
 
+  const manageableAutomations = useMemo(
+    () =>
+      filteredAutomations.filter((a) => {
+        const slug = a.matchedSkillSlugs[0];
+        return slug ? manageableSkillSlugSet.has(slug) : false;
+      }),
+    [filteredAutomations, manageableSkillSlugSet]
+  );
+
+  const checkedAutomations = useMemo(
+    () => filteredAutomations.filter((a) => checkedIds.has(a.id)),
+    [filteredAutomations, checkedIds]
+  );
+
+  const allManageableChecked =
+    manageableAutomations.length > 0 &&
+    manageableAutomations.every((a) => checkedIds.has(a.id));
+
+  const someChecked = checkedIds.size > 0;
+
+  const toggleOne = useCallback((id: string) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allManageableChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(manageableAutomations.map((a) => a.id)));
+    }
+  }, [allManageableChecked, manageableAutomations]);
+
+  const handleBulkAction = useCallback(
+    (status: "ACTIVE" | "PAUSED") => {
+      const ids = checkedAutomations
+        .map((a) => a.matchedSkillSlugs[0])
+        .filter(Boolean);
+      if (ids.length === 0) {
+        return;
+      }
+
+      startBulkTransition(async () => {
+        const res = await fetch("/api/automations/bulk", {
+          body: JSON.stringify({ ids, status }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
+        });
+        if (res.ok) {
+          setCheckedIds(new Set());
+          router.refresh();
+        }
+      });
+    },
+    [checkedAutomations, router]
+  );
+
   const activeCount = automations.filter((a) => a.status === "ACTIVE").length;
   const now = new Date();
   const handleOpenAutomationModal = (automation: AutomationSummary) => {
@@ -96,6 +169,11 @@ export function AutomationManager({
       canManage: skillSlug ? manageableSkillSlugSet.has(skillSlug) : false,
     });
   };
+
+  const checkedActiveCount = checkedAutomations.filter(
+    (a) => a.status === "ACTIVE"
+  ).length;
+  const checkedPausedCount = checkedAutomations.length - checkedActiveCount;
 
   return (
     <section className="grid gap-6">
@@ -155,32 +233,129 @@ export function AutomationManager({
         ) : null}
       </div>
 
-      {automations.length > 3 && (
-        <FieldGroup>
-          <input
-            className={cn(textFieldBase, "min-h-10! rounded-xl! py-2! text-sm")}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter automations..."
-            value={query}
-          />
-        </FieldGroup>
+      {automations.length > 1 && (
+        <div className="grid gap-3">
+          {automations.length > 3 && (
+            <FieldGroup>
+              <input
+                className={cn(
+                  textFieldBase,
+                  "min-h-10! rounded-xl! py-2! text-sm"
+                )}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filter automations..."
+                value={query}
+              />
+            </FieldGroup>
+          )}
+          {manageableAutomations.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className={cn(
+                  "flex h-9 shrink-0 items-center gap-2 border border-line bg-paper-3/60 px-3 text-xs font-medium text-ink-soft transition-colors hover:border-accent/40 hover:text-ink",
+                  allManageableChecked && "border-accent/40 text-ink"
+                )}
+                onClick={toggleAll}
+                type="button"
+              >
+                <SelectCheckbox
+                  checked={allManageableChecked}
+                  indeterminate={someChecked && !allManageableChecked}
+                />
+                {allManageableChecked ? "Deselect all" : "Select all"}
+              </button>
+
+              {someChecked && (
+                <>
+                  <span className="h-4 w-px bg-line" />
+                  <span className="text-xs tabular-nums text-ink-faint">
+                    {checkedIds.size} selected
+                  </span>
+
+                  {checkedActiveCount > 0 && (
+                    <Button
+                      disabled={isBulkPending}
+                      onClick={() => handleBulkAction("PAUSED")}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        viewBox="0 0 24 24"
+                      >
+                        <rect x="6" y="4" width="4" height="16" rx="1" />
+                        <rect x="14" y="4" width="4" height="16" rx="1" />
+                      </svg>
+                      {isBulkPending
+                        ? "Pausing..."
+                        : `Pause ${checkedActiveCount}`}
+                    </Button>
+                  )}
+                  {checkedPausedCount > 0 && (
+                    <Button
+                      disabled={isBulkPending}
+                      onClick={() => handleBulkAction("ACTIVE")}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      {isBulkPending
+                        ? "Resuming..."
+                        : `Resume ${checkedPausedCount}`}
+                    </Button>
+                  )}
+
+                  <button
+                    aria-label="Clear selection"
+                    className="flex h-6 w-6 items-center justify-center text-ink-faint transition-colors hover:text-ink"
+                    onClick={() => setCheckedIds(new Set())}
+                    type="button"
+                  >
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="grid gap-3">
         {filteredAutomations.length > 0 ? (
-          filteredAutomations.map((automation) => (
-            <AutomationCard
-              automation={automation}
-              canManage={
-                automation.matchedSkillSlugs[0]
-                  ? manageableSkillSlugSet.has(automation.matchedSkillSlugs[0])
-                  : false
-              }
-              key={automation.id}
-              onEdit={() => handleOpenAutomationModal(automation)}
-              skillMap={skillMap}
-            />
-          ))
+          filteredAutomations.map((automation) => {
+            const slug = automation.matchedSkillSlugs[0];
+            const canManage = slug ? manageableSkillSlugSet.has(slug) : false;
+            return (
+              <AutomationCard
+                automation={automation}
+                canManage={canManage}
+                checked={checkedIds.has(automation.id)}
+                key={automation.id}
+                onCheck={canManage ? () => toggleOne(automation.id) : undefined}
+                onEdit={() => handleOpenAutomationModal(automation)}
+                skillMap={skillMap}
+              />
+            );
+          })
         ) : automations.length === 0 ? (
           <EmptyCard icon={<AutomationIcon className="h-5 w-5" />}>
             <p className="m-0 text-sm">No automations yet.</p>
@@ -222,17 +397,63 @@ export function AutomationManager({
   );
 }
 
+function SelectCheckbox({
+  checked,
+  indeterminate,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
+        checked || indeterminate
+          ? "border-accent bg-accent text-white"
+          : "border-line bg-paper-2 text-transparent"
+      )}
+    >
+      {indeterminate ? (
+        <svg
+          className="h-2.5 w-2.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          viewBox="0 0 12 12"
+        >
+          <path d="M2 6h8" />
+        </svg>
+      ) : (
+        <svg
+          className="h-2.5 w-2.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          viewBox="0 0 12 12"
+        >
+          <path d="M2 6l3 3 5-6" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 interface AutomationCardProps {
   automation: AutomationSummary;
   canManage: boolean;
+  checked: boolean;
   skillMap: Map<string, SkillRecord>;
+  onCheck?: () => void;
   onEdit: () => void;
 }
 
 function AutomationCard({
   automation,
   canManage,
+  checked,
   skillMap,
+  onCheck,
   onEdit,
 }: AutomationCardProps) {
   const linkedSkill = automation.matchedSkillSlugs[0]
@@ -251,12 +472,28 @@ function AutomationCard({
   return (
     <article
       className={cn(
-        "group grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 border border-line bg-paper-3/60 p-4 transition-colors",
-        isActive
-          ? "hover:border-accent/20 hover:bg-paper-3"
-          : "opacity-60 hover:opacity-80"
+        "group grid items-start gap-4 border border-line bg-paper-3/60 p-4 transition-colors",
+        onCheck
+          ? "grid-cols-[auto_auto_minmax(0,1fr)_auto]"
+          : "grid-cols-[auto_minmax(0,1fr)_auto]",
+        checked
+          ? "border-accent/30 bg-accent/[0.03]"
+          : isActive
+            ? "hover:border-accent/20 hover:bg-paper-3"
+            : "opacity-60 hover:opacity-80"
       )}
     >
+      {onCheck && (
+        <button
+          aria-label={checked ? "Deselect automation" : "Select automation"}
+          className="mt-0.5 flex items-center justify-center"
+          onClick={onCheck}
+          type="button"
+        >
+          <SelectCheckbox checked={checked} />
+        </button>
+      )}
+
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-line bg-paper-2 text-ink-soft [&>svg]:h-4 [&>svg]:w-4">
         {linkedSkill ? (
           <SkillIcon

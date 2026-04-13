@@ -21,6 +21,19 @@ import type {
 import { AGENT_DOC_FILENAMES } from "@/lib/types";
 import { normalizeSource, normalizeTags } from "@/lib/user-skills";
 
+const DEFAULT_WEEKLY_IMPORT_LIMIT = 10;
+
+function getWeeklyImportLimit(): number {
+  const env = process.env.WEEKLY_IMPORT_LIMIT;
+  if (env) {
+    const parsed = Number.parseInt(env, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return DEFAULT_WEEKLY_IMPORT_LIMIT;
+}
+
 export interface WeeklyImportResult {
   imported: ImportedSkillSummary[];
   skipped: string[];
@@ -111,6 +124,7 @@ async function fetchAgentDocs(
 async function discoverFromReadmeLinks(
   source: ExternalSkillSource,
   result: WeeklyImportResult,
+  limit: number,
   authorId?: string
 ): Promise<void> {
   const readmeUrl = getRawUrl(source, "README.md");
@@ -151,6 +165,10 @@ async function discoverFromReadmeLinks(
             return;
           }
 
+          if (result.imported.length >= limit) {
+            return;
+          }
+
           const existing = await getSkillBySlug(slug);
           if (existing) {
             result.skipped.push(slug);
@@ -180,9 +198,9 @@ async function discoverFromReadmeLinks(
             authorId,
             automation: {
               cadence: "weekly",
-              enabled: true,
+              enabled: false,
               prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
-              status: "active",
+              status: "paused",
             },
             body: content.trim(),
             category,
@@ -229,10 +247,11 @@ async function discoverFromReadmeLinks(
 async function discoverAndImportFromSource(
   source: ExternalSkillSource,
   result: WeeklyImportResult,
+  limit: number,
   authorId?: string
 ): Promise<void> {
   if (source.skillsPath === "__readme_links__") {
-    await discoverFromReadmeLinks(source, result, authorId);
+    await discoverFromReadmeLinks(source, result, limit, authorId);
     return;
   }
 
@@ -279,6 +298,10 @@ async function discoverAndImportFromSource(
   }
 
   const importPromises = entries.map(async (entry) => {
+    if (result.imported.length >= limit) {
+      return;
+    }
+
     const slug = entry.name;
 
     const existing = await getSkillBySlug(slug);
@@ -320,10 +343,10 @@ async function discoverAndImportFromSource(
 
       const automation: SkillAutomationState = {
         cadence: "weekly",
-        enabled: true,
+        enabled: false,
         preferredHour: DEFAULT_PREFERRED_HOUR,
         prompt: `Refresh ${title}: pull latest changes from the upstream source, search the web for recent developments, and update the skill with new information. Stay terse.`,
-        status: "active",
+        status: "paused",
       };
 
       await createSkill({
@@ -379,10 +402,19 @@ export async function runWeeklyImport(): Promise<WeeklyImportResult> {
     skipped: [],
   };
 
+  const limit = getWeeklyImportLimit();
   const authorIds = await prefetchSourceAuthorIds();
 
   for (const source of EXTERNAL_SKILL_SOURCES) {
-    await discoverAndImportFromSource(source, result, authorIds.get(source.id));
+    if (result.imported.length >= limit) {
+      break;
+    }
+    await discoverAndImportFromSource(
+      source,
+      result,
+      limit,
+      authorIds.get(source.id)
+    );
   }
 
   return result;
