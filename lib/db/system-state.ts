@@ -2,10 +2,98 @@ import { getServerSupabase } from "@/lib/db/client";
 import type {
   BillingEventRecord,
   LoopRunRecord,
+  LoopRunSummary,
   RefreshRunRecord,
   StripeSubscriptionRecord,
   UsageEventRecord,
 } from "@/lib/types";
+
+const DEFAULT_LOOP_RUN_LIMIT = 100;
+const DEFAULT_LOOP_RUN_SUMMARY_LIMIT = 500;
+
+const LOOP_RUN_SUMMARY_COLUMNS = [
+  "id",
+  "skill_slug",
+  "title",
+  "origin",
+  "trigger",
+  "status",
+  "started_at",
+  "finished_at",
+  "previous_version_label",
+  "next_version_label",
+  "href",
+  "summary",
+  "what_changed",
+  "body_changed",
+  "changed_sections",
+  "editor_model",
+  "source_count",
+  "signal_count",
+  "error_message",
+  "searches_used",
+].join(",");
+
+type LoopRunTrigger = LoopRunRecord["trigger"];
+type LoopRunOrigin = LoopRunRecord["origin"];
+
+interface ListLoopRunsOptions {
+  skillSlug?: string;
+  skillSlugs?: string[];
+  trigger?: LoopRunTrigger;
+  origin?: LoopRunOrigin;
+  /** ISO timestamp — only return runs started on/after this. */
+  since?: string;
+  limit?: number;
+}
+
+interface LoopRunSummaryRow {
+  id: string;
+  skill_slug: string;
+  title: string;
+  origin: string;
+  trigger: string;
+  status: string;
+  started_at: string;
+  finished_at: string;
+  previous_version_label: string | null;
+  next_version_label: string | null;
+  href: string | null;
+  summary: string | null;
+  what_changed: string | null;
+  body_changed: boolean | null;
+  changed_sections: string[] | null;
+  editor_model: string | null;
+  source_count: number;
+  signal_count: number;
+  error_message: string | null;
+  searches_used?: number | null;
+}
+
+function mapLoopRunSummary(row: LoopRunSummaryRow): LoopRunSummary {
+  return {
+    bodyChanged: row.body_changed ?? undefined,
+    changedSections: row.changed_sections ?? [],
+    editorModel: row.editor_model ?? undefined,
+    errorMessage: row.error_message ?? undefined,
+    finishedAt: row.finished_at,
+    href: row.href ?? undefined,
+    id: row.id,
+    nextVersionLabel: row.next_version_label ?? undefined,
+    origin: row.origin as LoopRunSummary["origin"],
+    previousVersionLabel: row.previous_version_label ?? undefined,
+    searchesUsed: row.searches_used ?? undefined,
+    signalCount: row.signal_count,
+    slug: row.skill_slug,
+    sourceCount: row.source_count,
+    startedAt: row.started_at,
+    status: row.status as LoopRunSummary["status"],
+    summary: row.summary ?? undefined,
+    title: row.title,
+    trigger: row.trigger as LoopRunSummary["trigger"],
+    whatChanged: row.what_changed ?? undefined,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Loop runs
@@ -69,21 +157,30 @@ export async function recordLoopRun(entry: LoopRunRecord): Promise<void> {
   }
 }
 
-export async function listLoopRuns(options?: {
-  skillSlug?: string;
-  limit?: number;
-}): Promise<LoopRunRecord[]> {
+export async function listLoopRuns(
+  options?: ListLoopRunsOptions
+): Promise<LoopRunRecord[]> {
   const db = getServerSupabase();
   let query = db
     .from("loop_runs")
     .select("*")
-    .order("started_at", { ascending: false });
+    .order("started_at", { ascending: false })
+    .limit(options?.limit ?? DEFAULT_LOOP_RUN_LIMIT);
 
   if (options?.skillSlug) {
     query = query.eq("skill_slug", options.skillSlug);
   }
-  if (options?.limit) {
-    query = query.limit(options.limit);
+  if (options?.skillSlugs && options.skillSlugs.length > 0) {
+    query = query.in("skill_slug", options.skillSlugs);
+  }
+  if (options?.trigger) {
+    query = query.eq("trigger", options.trigger);
+  }
+  if (options?.origin) {
+    query = query.eq("origin", options.origin);
+  }
+  if (options?.since) {
+    query = query.gte("started_at", options.since);
   }
 
   const { data, error } = await query;
@@ -126,6 +223,45 @@ export async function listLoopRuns(options?: {
       whatChanged: r.what_changed ?? undefined,
     };
   });
+}
+
+/** Lean loop-run query used by dashboards/settings/cooldowns. Selects only
+ *  the lightweight columns and enforces a sane default limit so list views
+ *  don't pull megabytes of JSONB (which was triggering statement timeouts). */
+export async function listLoopRunSummaries(
+  options?: ListLoopRunsOptions
+): Promise<LoopRunSummary[]> {
+  const db = getServerSupabase();
+  let query = db
+    .from("loop_runs")
+    .select(LOOP_RUN_SUMMARY_COLUMNS)
+    .order("started_at", { ascending: false })
+    .limit(options?.limit ?? DEFAULT_LOOP_RUN_SUMMARY_LIMIT);
+
+  if (options?.skillSlug) {
+    query = query.eq("skill_slug", options.skillSlug);
+  }
+  if (options?.skillSlugs && options.skillSlugs.length > 0) {
+    query = query.in("skill_slug", options.skillSlugs);
+  }
+  if (options?.trigger) {
+    query = query.eq("trigger", options.trigger);
+  }
+  if (options?.origin) {
+    query = query.eq("origin", options.origin);
+  }
+  if (options?.since) {
+    query = query.gte("started_at", options.since);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`listLoopRunSummaries failed: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) =>
+    mapLoopRunSummary(row as unknown as LoopRunSummaryRow)
+  );
 }
 
 // ---------------------------------------------------------------------------

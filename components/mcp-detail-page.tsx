@@ -24,14 +24,12 @@ import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import { getTagColorForTransport } from "@/lib/tag-utils";
 import type { ImportedMcpDocument, VersionReference } from "@/lib/types";
 import { pageInsetPadX } from "@/lib/ui-layout";
+import { textEyebrow, textMetricText } from "@/lib/ui-typography";
 
 const sectionH2 =
   "m-0 font-serif text-xl font-medium tracking-[-0.02em] text-ink";
 const codeSurface =
   "rounded-none border border-line bg-paper-2/50 p-4 dark:bg-paper-2/25";
-const metaLabel =
-  "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
-const metaValue = "text-sm font-semibold tracking-[-0.03em] text-ink";
 
 interface McpDetailPageProps {
   mcp: ImportedMcpDocument;
@@ -319,34 +317,34 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
       <Panel square>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="grid gap-0.5">
-            <small className={metaLabel}>transport</small>
-            <strong className={metaValue}>
+            <small className={textEyebrow}>transport</small>
+            <strong className={textMetricText}>
               {formatTransportLabel(mcp.transport)}
             </strong>
           </div>
 
           <div className="grid gap-0.5">
-            <small className={metaLabel}>verification</small>
-            <strong className={metaValue}>
+            <small className={textEyebrow}>verification</small>
+            <strong className={textMetricText}>
               {formatVerificationLabel(mcp.verificationStatus)}
             </strong>
           </div>
 
           <div className="grid gap-0.5">
-            <small className={metaLabel}>install</small>
-            <strong className={metaValue}>
+            <small className={textEyebrow}>install</small>
+            <strong className={textMetricText}>
               {formatInstallStrategy(mcp.installStrategy)}
             </strong>
           </div>
 
           <div className="grid gap-0.5">
-            <small className={metaLabel}>auth</small>
-            <strong className={metaValue}>{mcp.authType ?? "unknown"}</strong>
+            <small className={textEyebrow}>auth</small>
+            <strong className={textMetricText}>{mcp.authType ?? "unknown"}</strong>
           </div>
 
           {mcp.url && (
             <div className="col-span-2 grid gap-0.5">
-              <small className={metaLabel}>url</small>
+              <small className={textEyebrow}>url</small>
               <code className="truncate font-mono text-sm text-ink">
                 {mcp.url}
               </code>
@@ -355,7 +353,7 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
 
           {mcp.command && (
             <div className="col-span-2 grid gap-0.5 sm:col-span-3">
-              <small className={metaLabel}>command</small>
+              <small className={textEyebrow}>command</small>
               <div className={cn(codeSurface, "flex items-center gap-2")}>
                 <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
                 <code className="block whitespace-pre-wrap font-mono text-sm text-ink wrap-break-word">
@@ -368,7 +366,7 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
 
           {mcp.args.length > 0 && !mcp.command && (
             <div className="col-span-2 grid gap-0.5">
-              <small className={metaLabel}>args</small>
+              <small className={textEyebrow}>args</small>
               <code className="font-mono text-sm text-ink">
                 {mcp.args.join(" ")}
               </code>
@@ -377,7 +375,7 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
 
           {mcp.sandboxNotes ? (
             <div className="col-span-2 grid gap-0.5 sm:col-span-3">
-              <small className={metaLabel}>sandbox notes</small>
+              <small className={textEyebrow}>sandbox notes</small>
               <p className="m-0 text-sm text-ink-soft">{mcp.sandboxNotes}</p>
             </div>
           ) : null}

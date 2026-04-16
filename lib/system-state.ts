@@ -1,6 +1,7 @@
 import {
   recordLoopRun as dbRecordLoopRun,
   listLoopRuns as dbListLoopRuns,
+  listLoopRunSummaries as dbListLoopRunSummaries,
   recordRefreshRun as dbRecordRefreshRun,
   listRefreshRuns as dbListRefreshRuns,
   recordUsageEvent as dbRecordUsageEvent,
@@ -13,10 +14,20 @@ import {
 import type {
   BillingEventRecord,
   LoopRunRecord,
+  LoopRunSummary,
   RefreshRunRecord,
   StripeSubscriptionRecord,
   UsageEventRecord,
 } from "@/lib/types";
+
+interface ListLoopRunsOptions {
+  skillSlug?: string;
+  skillSlugs?: string[];
+  trigger?: LoopRunRecord["trigger"];
+  origin?: LoopRunRecord["origin"];
+  since?: string;
+  limit?: number;
+}
 import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
 import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 
@@ -44,11 +55,16 @@ export async function recordUsageEvent(entry: UsageEventRecord): Promise<void> {
   await dbRecordUsageEvent(entry);
 }
 
-export async function listLoopRuns(options?: {
-  skillSlug?: string;
-  limit?: number;
-}): Promise<LoopRunRecord[]> {
+export async function listLoopRuns(
+  options?: ListLoopRunsOptions
+): Promise<LoopRunRecord[]> {
   return dbListLoopRuns(options);
+}
+
+export async function listLoopRunSummaries(
+  options?: ListLoopRunsOptions
+): Promise<LoopRunSummary[]> {
+  return dbListLoopRunSummaries(options);
 }
 
 export async function listRefreshRuns(

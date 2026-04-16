@@ -10,11 +10,11 @@ import { Panel } from "@/components/ui/panel";
 import { useAppTimezone } from "@/hooks/use-app-timezone";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
-import type { LoopRunRecord, SkillRecord } from "@/lib/types";
+import type { LoopRunSummary, SkillRecord } from "@/lib/types";
 
 interface SettingsSkillsOverviewProps {
   skills: SkillRecord[];
-  latestRuns: Record<string, LoopRunRecord>;
+  latestRuns: Record<string, LoopRunSummary>;
 }
 
 type SortKey = "title" | "updated" | "status";
@@ -35,7 +35,7 @@ function automationStatusLabel(skill: SkillRecord): {
   return { color: "green", label: "Active" };
 }
 
-function runStatusLabel(run?: LoopRunRecord): {
+function runStatusLabel(run?: LoopRunSummary): {
   label: string;
   color: "green" | "neutral" | "red";
 } {

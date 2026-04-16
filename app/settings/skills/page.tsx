@@ -1,20 +1,34 @@
+import { Suspense } from "react";
+
 import { SettingsSectionPage } from "@/components/settings-section-page";
 import { SettingsSkillsOverview } from "@/components/settings-skills-overview";
+import { SettingsSectionLoading } from "@/components/ui/settings-section-loading";
 import { getSessionUser } from "@/lib/auth";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
-import { listLoopRuns } from "@/lib/system-state";
+import { listLoopRunSummaries } from "@/lib/system-state";
 import { getSystemSnapshot } from "@/lib/system-summary";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsSkillsPage() {
+export default function SettingsSkillsPage() {
+  return (
+    <SettingsSectionPage sectionId="skills">
+      <Suspense
+        fallback={<SettingsSectionLoading label="Loading your skills" />}
+      >
+        <SettingsSkillsData />
+      </Suspense>
+    </SettingsSectionPage>
+  );
+}
+
+async function SettingsSkillsData() {
   const timeZone = await getUsageTimeZoneFromCookie();
-  const [session, { snapshot }, loopRuns] = await Promise.all([
+  const [session, { snapshot }] = await Promise.all([
     getSessionUser(),
     getSystemSnapshot({ includePrivate: true, timeZone }),
-    listLoopRuns({ limit: 200 }),
   ]);
 
   const sessionAuthor = session
@@ -27,6 +41,14 @@ export default async function SettingsSkillsPage() {
       canSessionEditSkill(skill, session, sessionAuthor)
   );
 
+  // Fetch just this user's skill runs, lean projection, enough rows to cover
+  // the latest run per skill without pulling the full JSONB payload.
+  const userSlugs = userSkills.map((skill) => skill.slug);
+  const loopRuns =
+    userSlugs.length > 0
+      ? await listLoopRunSummaries({ skillSlugs: userSlugs, limit: 500 })
+      : [];
+
   const latestRunBySlug = new Map<string, (typeof loopRuns)[number]>();
   for (const run of loopRuns) {
     if (!latestRunBySlug.has(run.slug)) {
@@ -35,11 +57,9 @@ export default async function SettingsSkillsPage() {
   }
 
   return (
-    <SettingsSectionPage sectionId="skills">
-      <SettingsSkillsOverview
-        latestRuns={Object.fromEntries(latestRunBySlug)}
-        skills={userSkills}
-      />
-    </SettingsSectionPage>
+    <SettingsSkillsOverview
+      latestRuns={Object.fromEntries(latestRunBySlug)}
+      skills={userSkills}
+    />
   );
 }

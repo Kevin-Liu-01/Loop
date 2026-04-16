@@ -398,6 +398,15 @@ export interface LoopRunRecord {
   addedSources?: SourceDefinition[];
 }
 
+/** Lean loop run projection used for dashboards, freshness dots, and
+ *  cooldown checks. Excludes heavy JSONB columns (`messages`, `sources`,
+ *  `diffLines`, `reasoningSteps`, `addedSources`) so list queries fit
+ *  within Postgres statement timeouts as the `loop_runs` table grows. */
+export type LoopRunSummary = Omit<
+  LoopRunRecord,
+  "messages" | "sources" | "diffLines" | "reasoningSteps" | "addedSources"
+>;
+
 export type LoopUpdateStreamEvent =
   | {
       type: "start";

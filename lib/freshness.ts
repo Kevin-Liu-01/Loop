@@ -1,5 +1,5 @@
 import type { StatusDotTone } from "@/components/ui/status-dot";
-import type { LoopRunRecord, SkillRecord } from "@/lib/types";
+import type { LoopRunSummary, SkillRecord } from "@/lib/types";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
@@ -11,7 +11,7 @@ export interface FreshnessInfo {
 
 export function computeFreshness(
   skill: SkillRecord,
-  loopRuns: LoopRunRecord[]
+  loopRuns: LoopRunSummary[]
 ): FreshnessInfo {
   const latestRun = loopRuns.find((run) => run.slug === skill.slug);
 

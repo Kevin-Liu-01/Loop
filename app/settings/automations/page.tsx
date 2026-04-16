@@ -1,5 +1,8 @@
+import { Suspense } from "react";
+
 import { AutomationManager } from "@/components/automation-manager";
 import { SettingsSectionPage } from "@/components/settings-section-page";
+import { SettingsSectionLoading } from "@/components/ui/settings-section-loading";
 import { getSessionUser } from "@/lib/auth";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
@@ -8,7 +11,19 @@ import { getSystemSnapshot } from "@/lib/system-summary";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsAutomationsPage() {
+export default function SettingsAutomationsPage() {
+  return (
+    <SettingsSectionPage sectionId="automations">
+      <Suspense
+        fallback={<SettingsSectionLoading label="Loading automations" />}
+      >
+        <SettingsAutomationsData />
+      </Suspense>
+    </SettingsSectionPage>
+  );
+}
+
+async function SettingsAutomationsData() {
   const timeZone = await getUsageTimeZoneFromCookie();
   const [session, { snapshot }] = await Promise.all([
     getSessionUser(),
@@ -22,12 +37,10 @@ export default async function SettingsAutomationsPage() {
     .map((skill) => skill.slug);
 
   return (
-    <SettingsSectionPage sectionId="automations">
-      <AutomationManager
-        automations={snapshot.automations}
-        manageableSkillSlugs={manageableSkillSlugs}
-        skills={snapshot.skills}
-      />
-    </SettingsSectionPage>
+    <AutomationManager
+      automations={snapshot.automations}
+      manageableSkillSlugs={manageableSkillSlugs}
+      skills={snapshot.skills}
+    />
   );
 }

@@ -140,7 +140,9 @@ function buildHelix(): Spinner {
 function buildSparkle(): Spinner {
   const ALL: [number, number][] = [];
   for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 4; c++) {ALL.push([r, c]);}
+    for (let c = 0; c < 4; c++) {
+      ALL.push([r, c]);
+    }
   }
 
   const seed = [7, 2, 13, 0, 11, 5, 15, 8, 3, 14, 6, 1, 10, 4, 9, 12];

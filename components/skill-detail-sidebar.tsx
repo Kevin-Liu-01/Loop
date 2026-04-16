@@ -26,14 +26,16 @@ import type {
   SkillUpdateEntry,
   VersionReference,
 } from "@/lib/types";
+import {
+  textEyebrow,
+  textMetaSm,
+  textMetric,
+  textMetricText,
+  textPanelTitle,
+} from "@/lib/ui-typography";
 import type { SkillUsageSummary } from "@/lib/usage";
 
-const sidebarSectionLabel =
-  "flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
-const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
-const metaLabel =
-  "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
-const metaValue = "text-sm font-semibold tracking-[-0.03em]";
+const sidebarSectionLabel = cn("flex items-center gap-1.5", textEyebrow);
 
 interface SkillDetailSidebarProps {
   slug: string;
@@ -163,9 +165,7 @@ export function SkillDetailSidebar({
           <div className="border-t border-line/60 pt-3 dark:border-line/40">
             <div className="mb-2 flex items-center justify-between">
               <span className={sidebarSectionLabel}>Included files</span>
-              <span className="text-[0.625rem] tabular-nums text-ink-faint">
-                {fileTreeEntries.length}
-              </span>
+              <span className={textMetaSm}>{fileTreeEntries.length}</span>
             </div>
             <FileTree
               className="border-0 bg-transparent px-0 py-0 dark:bg-transparent"
@@ -213,9 +213,7 @@ export function SkillDetailSidebar({
               <summary className="flex cursor-pointer list-none items-center justify-between gap-2 bg-paper-3 px-3 py-2.5 transition-colors hover:bg-paper-2/40 dark:bg-paper-2/60 dark:hover:bg-paper-3/40 [&::-webkit-details-marker]:hidden">
                 <span className={cn(sidebarSectionLabel, "gap-2")}>
                   Update history
-                  <span className="tabular-nums text-ink-faint">
-                    {updates.length}
-                  </span>
+                  <span className={textMetaSm}>{updates.length}</span>
                 </span>
                 <span className="text-[0.5rem] text-ink-faint transition-transform group-open:rotate-90">
                   ▶
@@ -228,15 +226,20 @@ export function SkillDetailSidebar({
                     key={entry.generatedAt}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[0.6875rem] font-semibold tabular-nums text-ink">
+                      <span className={cn(textMetaSm, "font-medium text-ink")}>
                         {formatRelativeDate(entry.generatedAt, timeZone)}
                       </span>
-                      <span className="text-[0.625rem] tabular-nums text-ink-faint">
+                      <span className={textMetaSm}>
                         {entry.items.length} source
                         {entry.items.length !== 1 ? "s" : ""}
                       </span>
                     </div>
-                    <p className="m-0 line-clamp-2 text-[0.6875rem] leading-relaxed text-ink-soft">
+                    <p
+                      className={cn(
+                        textMetaSm,
+                        "m-0 line-clamp-2 leading-relaxed text-ink-soft"
+                      )}
+                    >
                       {entry.summary}
                     </p>
                   </div>
@@ -282,7 +285,7 @@ function LatestRefreshPanel({
         <PanelHead>
           <div className="flex items-center gap-2">
             <RefreshIcon className="h-3.5 w-3.5 text-accent" />
-            <h3 className={sidebarTitle}>Latest refresh</h3>
+            <h3 className={textPanelTitle}>Latest refresh</h3>
           </div>
           {latestUpdate && (
             <Badge color="neutral" size="sm">
@@ -302,7 +305,7 @@ function LatestRefreshPanel({
         <div className="grid gap-3 px-4">
           {latestUpdate?.whatChanged && (
             <div className="border border-line/60 bg-paper-2/50 px-3.5 py-3 dark:border-line/40 dark:bg-paper-3/30">
-              <small className={metaLabel}>what changed</small>
+              <small className={textEyebrow}>what changed</small>
               <p className="m-0 mt-1 text-sm leading-relaxed text-ink-soft">
                 {latestUpdate.whatChanged}
               </p>
@@ -346,7 +349,7 @@ function LatestRefreshPanel({
 
           {visibleChangedSections.length > 0 && (
             <div>
-              <small className={cn(metaLabel, "mb-1.5 block")}>
+              <small className={cn(textEyebrow, "mb-1.5 block")}>
                 sections updated
               </small>
               <div className="flex flex-wrap gap-1">
@@ -367,7 +370,7 @@ function LatestRefreshPanel({
       {latestRun && (
         <div className="grid grid-cols-2 gap-px overflow-hidden border-t border-line/60 bg-line/50 dark:border-line/40 dark:bg-line/30">
           <div className="grid gap-0.5 bg-paper-3 px-3 py-2 dark:bg-paper-2/60">
-            <small className={metaLabel}>status</small>
+            <small className={textEyebrow}>status</small>
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
@@ -377,7 +380,7 @@ function LatestRefreshPanel({
               />
               <strong
                 className={cn(
-                  metaValue,
+                  textMetricText,
                   latestRun.status === "error" && "text-danger"
                 )}
               >
@@ -386,20 +389,20 @@ function LatestRefreshPanel({
             </div>
           </div>
           <div className="grid gap-0.5 bg-paper-3 px-3 py-2 dark:bg-paper-2/60">
-            <small className={metaLabel}>trigger</small>
-            <strong className={metaValue}>
+            <small className={textEyebrow}>trigger</small>
+            <strong className={textMetricText}>
               {formatTriggerLabel(latestRun.trigger)}
             </strong>
           </div>
           <div className="grid gap-0.5 bg-paper-3 px-3 py-2 dark:bg-paper-2/60">
-            <small className={metaLabel}>editor</small>
-            <strong className={cn(metaValue, "truncate")}>
+            <small className={textEyebrow}>editor</small>
+            <strong className={cn(textMetricText, "truncate")}>
               {latestRun.editorModel ?? "–"}
             </strong>
           </div>
           <div className="grid gap-0.5 bg-paper-3 px-3 py-2 dark:bg-paper-2/60">
-            <small className={metaLabel}>duration</small>
-            <strong className={metaValue}>
+            <small className={textEyebrow}>duration</small>
+            <strong className={textMetric}>
               {formatDuration(latestRun.startedAt, latestRun.finishedAt)}
             </strong>
           </div>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/simple-list";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelativeDate } from "@/lib/format";
+import { textEyebrow, textMetaSm, textMetric } from "@/lib/ui-typography";
 import { formatUsageEvent } from "@/lib/usage";
 import type { SkillUsageSummary, UsageOverview } from "@/lib/usage";
 
@@ -206,10 +207,6 @@ export function SystemObservabilityPanel({
   );
 }
 
-const metaLabel =
-  "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
-const metaValue = "text-sm font-semibold tracking-[-0.03em]";
-
 export function SkillObservabilityPanel({
   usage,
   timeZone,
@@ -227,12 +224,12 @@ export function SkillObservabilityPanel({
     <section className="grid gap-0 overflow-hidden border border-line bg-paper-3 dark:bg-paper-2/60">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
-        <span className={cn(metaLabel, "flex items-center gap-1.5")}>
+        <span className={cn(textEyebrow, "flex items-center gap-1.5")}>
           <PulseIcon className="h-3 w-3" />
           Usage
         </span>
         {usage.lastSeenAt && (
-          <span className="text-[0.625rem] tabular-nums text-ink-faint">
+          <span className={textMetaSm}>
             {formatRelativeDate(usage.lastSeenAt, timeZone)}
           </span>
         )}
@@ -252,7 +249,12 @@ export function SkillObservabilityPanel({
           />
         </div>
       ) : (
-        <div className="border-t border-line/60 px-3 py-3 text-center text-[0.6875rem] text-ink-faint dark:border-line/40">
+        <div
+          className={cn(
+            textMetaSm,
+            "border-t border-line/60 px-3 py-3 text-center dark:border-line/40"
+          )}
+        >
           No usage recorded yet
         </div>
       )}
@@ -261,7 +263,7 @@ export function SkillObservabilityPanel({
       {hasEvents && (
         <details className="group">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-t border-line/60 px-3 py-2 transition-colors hover:bg-paper-2/40 dark:border-line/40 dark:hover:bg-paper-3/40 [&::-webkit-details-marker]:hidden">
-            <span className={metaLabel}>Recent activity</span>
+            <span className={textEyebrow}>Recent activity</span>
             <span className="text-[0.5rem] text-ink-faint transition-transform group-open:rotate-90">
               ▶
             </span>
@@ -269,13 +271,16 @@ export function SkillObservabilityPanel({
           <div className="grid gap-0 border-t border-line/40 dark:border-line/30">
             {usage.recentEvents.map((event) => (
               <div
-                className="flex items-center justify-between gap-2 px-3 py-1.5 text-[0.6875rem]"
+                className={cn(
+                  textMetaSm,
+                  "flex items-center justify-between gap-2 px-3 py-1.5"
+                )}
                 key={event.id}
               >
                 <span className="min-w-0 truncate text-ink-soft">
                   {formatUsageEvent(event)}
                 </span>
-                <span className="shrink-0 tabular-nums text-ink-faint">
+                <span className="shrink-0 text-ink-faint">
                   {formatRelativeDate(event.at, timeZone)}
                 </span>
               </div>
@@ -303,8 +308,8 @@ function SidebarMetaCell({
         className
       )}
     >
-      <small className={metaLabel}>{label}</small>
-      <strong className={metaValue}>{value}</strong>
+      <small className={textEyebrow}>{label}</small>
+      <strong className={textMetric}>{value}</strong>
     </div>
   );
 }

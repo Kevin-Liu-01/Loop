@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { pageInsetPadX } from "@/lib/ui-layout";
 
-export default function McpDetailLoading() {
+export default function McpNameLoading() {
   return (
     <AppGridShell
       header={
@@ -20,25 +20,16 @@ export default function McpDetailLoading() {
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
         <div
           className={cn(
-            "grid min-h-0 flex-1 gap-6 overflow-y-auto py-6 sm:py-8",
+            "grid min-h-0 flex-1 items-start gap-4 py-6 sm:py-8",
             pageInsetPadX
           )}
         >
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10" />
-            <div className="grid gap-1.5">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-3 w-64" />
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </div>
+          <Skeleton className="h-10 w-1/2 max-w-md" />
+          <Skeleton className="h-4 w-2/3 max-w-lg" />
+          <Skeleton className="mt-4 h-64 w-full" />
         </div>
       </PageShell>
-      <LoadingStatusPill label="Loading MCP" />
+      <LoadingStatusPill label="Resolving MCP" />
     </AppGridShell>
   );
 }

@@ -1,5 +1,5 @@
 import { AppGridShell } from "@/components/app-grid-shell";
-import { BrailleSpinner } from "@/components/ui/braille-spinner";
+import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
@@ -32,10 +32,6 @@ export default function SkillDetailLoading() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-ink-muted">
-            <BrailleSpinner className="text-sm" />
-          </div>
-
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(280px,0.4fr)] gap-6 max-lg:grid-cols-1">
             <div className="grid gap-4">
               <Skeleton className="h-8 w-full" />
@@ -49,6 +45,7 @@ export default function SkillDetailLoading() {
           </div>
         </div>
       </PageShell>
+      <LoadingStatusPill label="Loading skill" />
     </AppGridShell>
   );
 }

@@ -47,10 +47,12 @@ export async function getManualUpdateCooldown(slug: string): Promise<{
   remainingMs: number;
   lastRunAt: string | null;
 }> {
-  const runs = await listLoopRuns();
-  const lastManual = runs.find(
-    (run) => run.slug === slug && run.trigger === "manual"
-  );
+  const runs = await listLoopRuns({
+    skillSlug: slug,
+    trigger: "manual",
+    limit: 1,
+  });
+  const lastManual = runs[0];
   if (!lastManual) {
     return { allowed: true, lastRunAt: null, remainingMs: 0 };
   }

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
@@ -14,6 +13,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/shadcn/tabs";
+import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
 
@@ -57,7 +57,42 @@ const PLATFORM_STEPS: Record<string, string[]> = {
   ],
 };
 
-const LOGO_MONO = "shrink-0 brightness-0 dark:invert";
+/** Render a brand SVG as a currentColor-tinted silhouette via CSS mask.
+ *  Using `bg-current` means the logo automatically matches the surrounding
+ *  text color — dark in light mode, light in dark mode — without relying on
+ *  `brightness-0 / invert` filter stacks (which silently fail in certain
+ *  rendering contexts). */
+function BrandMask({
+  src,
+  alt,
+  size = 14,
+  className,
+}: {
+  src: string;
+  alt: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-label={alt}
+      className={cn("shrink-0 bg-current", className)}
+      role="img"
+      style={{
+        height: size,
+        maskImage: `url(${src})`,
+        maskPosition: "center",
+        maskRepeat: "no-repeat",
+        maskSize: "contain",
+        WebkitMaskImage: `url(${src})`,
+        WebkitMaskPosition: "center",
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        width: size,
+      }}
+    />
+  );
+}
 
 function PlatformIcon({
   platformKey,
@@ -68,16 +103,7 @@ function PlatformIcon({
 }) {
   const brand = getPlatformDocIcon(platformKey);
   if (brand) {
-    return (
-      <Image
-        src={brand.src}
-        alt={brand.alt}
-        width={size}
-        height={size}
-        className={LOGO_MONO}
-        unoptimized
-      />
-    );
+    return <BrandMask src={brand.src} alt={brand.alt} size={size} />;
   }
   return <CodeIcon className="h-3.5 w-3.5" />;
 }
@@ -100,15 +126,7 @@ function PlatformLogoRow({ agentDocs }: { agentDocs?: AgentDocs }) {
           return null;
         }
         return (
-          <Image
-            key={key}
-            src={brand.src}
-            alt={brand.alt}
-            width={14}
-            height={14}
-            className={`rounded-full ring-1 ring-paper-1 ${LOGO_MONO}`}
-            unoptimized
-          />
+          <BrandMask key={key} src={brand.src} alt={brand.alt} size={14} />
         );
       })}
     </span>

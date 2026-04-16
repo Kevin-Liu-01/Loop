@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { Suspense } from "react";
 
 import {
   AutomationIcon,
@@ -10,7 +11,9 @@ import { OperatorGate } from "@/components/operator-gate";
 import { SettingsImportsCustomSourceForm } from "@/components/settings-imports-custom-source-form";
 import { SettingsSectionPage } from "@/components/settings-section-page";
 import { Badge } from "@/components/ui/badge";
+import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getUserSubscription } from "@/lib/auth";
 import { EXTERNAL_SKILL_SOURCES } from "@/lib/external-skill-sources";
 import { getNextWeeklyImportRunUtc } from "@/lib/weekly-import-schedule";
@@ -30,10 +33,7 @@ function formatNextRun(when: Date): string {
   }).format(when);
 }
 
-export default async function SettingsImportsPage() {
-  const { userId } = await auth();
-  const subscription = userId ? await getUserSubscription(userId) : null;
-  const isOperator = subscription !== null;
+export default function SettingsImportsPage() {
   const nextRunUtc = getNextWeeklyImportRunUtc();
 
   return (
@@ -185,15 +185,40 @@ export default async function SettingsImportsPage() {
             </div>
           </PanelHead>
 
-          {isOperator ? (
-            <div className="grid gap-4">
-              <SettingsImportsCustomSourceForm isOperator={isOperator} />
-            </div>
-          ) : (
-            <OperatorGate message="Upgrade to Operator to register custom import sources." />
-          )}
+          <Suspense fallback={<ImportsOperatorFallback />}>
+            <ImportsOperatorSection />
+          </Suspense>
         </Panel>
       </div>
     </SettingsSectionPage>
+  );
+}
+
+async function ImportsOperatorSection() {
+  const { userId } = await auth();
+  const subscription = userId ? await getUserSubscription(userId) : null;
+  const isOperator = subscription !== null;
+
+  if (!isOperator) {
+    return (
+      <OperatorGate message="Upgrade to Operator to register custom import sources." />
+    );
+  }
+
+  return (
+    <div className="grid gap-4">
+      <SettingsImportsCustomSourceForm isOperator={isOperator} />
+    </div>
+  );
+}
+
+function ImportsOperatorFallback() {
+  return (
+    <>
+      <div className="px-4 py-6">
+        <Skeleton className="h-12 w-full max-w-md" />
+      </div>
+      <LoadingStatusPill label="Checking access" />
+    </>
   );
 }

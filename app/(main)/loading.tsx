@@ -1,5 +1,5 @@
 import { AppGridShell } from "@/components/app-grid-shell";
-import { BrailleSpinner } from "@/components/ui/braille-spinner";
+import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { cn } from "@/lib/cn";
 import { pageInsetPadX } from "@/lib/ui-layout";
@@ -24,9 +24,6 @@ export default function Loading() {
             pageInsetPadX
           )}
         >
-          <div className="flex items-center gap-2 text-ink-muted">
-            <BrailleSpinner className="text-sm" />
-          </div>
           <section className="grid grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] gap-5 max-lg:grid-cols-1">
             <div className="skeleton skeleton--tall" />
             <div className="skeleton skeleton--panel" />
@@ -38,6 +35,7 @@ export default function Loading() {
           </section>
         </div>
       </PageShell>
+      <LoadingStatusPill label="Loading Loop" />
     </AppGridShell>
   );
 }

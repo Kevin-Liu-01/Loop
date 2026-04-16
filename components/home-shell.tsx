@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyCard } from "@/components/ui/empty-card";
 import { textFieldSearch } from "@/components/ui/field";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/ui/page-shell";
 import { Pagination, paginate } from "@/components/ui/pagination";
 import {
@@ -68,7 +69,7 @@ import type {
   AutomationSummary,
   CategoryDefinition,
   ImportedMcpDocument,
-  LoopRunRecord,
+  LoopRunSummary,
   SkillRecord,
 } from "@/lib/types";
 import { pageHeaderSub, pageInsetPadX, pageInsetPadY } from "@/lib/ui-layout";
@@ -82,7 +83,7 @@ interface HomeShellProps {
   mcps: ImportedMcpDocument[];
   recentImports: RecentImportItem[];
   skills: SkillRecord[];
-  loopRuns: LoopRunRecord[];
+  loopRuns: LoopRunSummary[];
   usageOverview: UsageOverview;
 }
 
@@ -439,15 +440,16 @@ export function HomeShell({
                       </Button>
                     </Tip>
                   )}
-                <Button
+                <LinkButton
                   className="h-7 min-h-7 px-2.5"
-                  onClick={() => router.push(skill.href)}
+                  href={skill.href}
+                  prefetch
                   size="sm"
                   variant="ghost"
                 >
                   Open
                   <ArrowRightIcon className="h-3 w-3" />
-                </Button>
+                </LinkButton>
                 <DropdownMenu>
                   <Tip content="More actions" side="top">
                     <DropdownMenuTrigger asChild>
@@ -601,14 +603,10 @@ export function HomeShell({
               </Link>
 
               <div className="flex items-center gap-1.5 max-sm:pl-4">
-                <Button
-                  onClick={() => router.push(mcpHref)}
-                  size="sm"
-                  variant="ghost"
-                >
+                <LinkButton href={mcpHref} prefetch size="sm" variant="ghost">
                   Open
                   <ArrowRightIcon className="h-3.5 w-3.5" />
-                </Button>
+                </LinkButton>
                 <DropdownMenu>
                   <Tip content="More actions" side="top">
                     <DropdownMenuTrigger asChild>

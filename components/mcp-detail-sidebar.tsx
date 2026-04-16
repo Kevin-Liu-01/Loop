@@ -12,11 +12,11 @@ import { VersionTimeline } from "@/components/version-timeline";
 import { buildMcpVersionHref } from "@/lib/format";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import type { ImportedMcpTransport, VersionReference } from "@/lib/types";
-
-const sidebarTitle = "m-0 text-sm font-semibold tracking-tight text-ink";
-const metaLabel =
-  "text-[0.65rem] font-medium uppercase tracking-[0.08em] text-ink-soft";
-const metaValue = "text-sm font-semibold tracking-[-0.03em]";
+import {
+  textEyebrow,
+  textMetricText,
+  textPanelTitle,
+} from "@/lib/ui-typography";
 
 interface McpDetailSidebarProps {
   mcpName: string;
@@ -51,7 +51,7 @@ export function McpDetailSidebar({
     <aside className="grid content-start gap-4">
       <Panel compact square>
         <PanelHead>
-          <h3 className={sidebarTitle}>Quick actions</h3>
+          <h3 className={textPanelTitle}>Quick actions</h3>
         </PanelHead>
 
         <div className="grid gap-2">
@@ -88,30 +88,30 @@ export function McpDetailSidebar({
 
       <Panel compact square>
         <PanelHead>
-          <h3 className={sidebarTitle}>Connection</h3>
+          <h3 className={textPanelTitle}>Connection</h3>
         </PanelHead>
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
-            <small className={metaLabel}>transport</small>
+            <small className={textEyebrow}>transport</small>
             <div className="flex items-center gap-1.5">
               <TerminalIcon className="h-3 w-3 text-ink-faint" />
-              <strong className={metaValue}>{transport}</strong>
+              <strong className={textMetricText}>{transport}</strong>
             </div>
           </div>
           <div className="grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
-            <small className={metaLabel}>env keys</small>
+            <small className={textEyebrow}>env keys</small>
             <div className="flex items-center gap-1.5">
               <KeyIcon className="h-3 w-3 text-ink-faint" />
-              <strong className={metaValue}>{envKeyCount}</strong>
+              <strong className={textMetricText}>{envKeyCount}</strong>
             </div>
           </div>
           <div className="col-span-2 grid gap-0.5 rounded-none border border-line bg-paper-3/90 px-3 py-2 dark:bg-paper-2/40">
-            <small className={metaLabel}>status</small>
+            <small className={textEyebrow}>status</small>
             <div className="flex items-center gap-1.5">
               <span
                 className={`h-1.5 w-1.5 rounded-full ${isRunnable ? "bg-emerald-500" : "bg-ink-faint/40"}`}
               />
-              <strong className={metaValue}>
+              <strong className={textMetricText}>
                 {isRunnable ? "Executable" : "Config only"}
               </strong>
             </div>
@@ -130,7 +130,7 @@ export function McpDetailSidebar({
       {tags.length > 0 && (
         <Panel compact square>
           <PanelHead>
-            <h3 className={sidebarTitle}>Tags</h3>
+            <h3 className={textPanelTitle}>Tags</h3>
             <Badge color="neutral">{tags.length}</Badge>
           </PanelHead>
           <div className="flex flex-wrap gap-1.5">

@@ -15,6 +15,7 @@ import { LoopLogo } from "@/components/loop-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
+import { LinkPendingIcon } from "@/components/ui/link-pending-icon";
 import {
   Sheet,
   SheetContent,
@@ -45,10 +46,12 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
           onPointerEnter={() => setBrandHover(true)}
           onPointerLeave={() => setBrandHover(false)}
         >
-          <LoopLogo
-            className="h-8 w-8 text-accent"
-            interactionActive={brandHover}
-          />
+          <LinkPendingIcon className="h-8 w-8 items-center justify-center">
+            <LoopLogo
+              className="h-8 w-8 text-accent"
+              interactionActive={brandHover}
+            />
+          </LinkPendingIcon>
           <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em]">
             Loop
           </strong>
@@ -85,7 +88,9 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <LinkButton href="/sandbox" size="icon" variant="soft">
-                <TerminalIcon className="h-4 w-4" />
+                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
+                  <TerminalIcon className="h-4 w-4" />
+                </LinkPendingIcon>
               </LinkButton>
             </TooltipTrigger>
             <TooltipContent>Sandbox</TooltipContent>
@@ -94,7 +99,9 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <LinkButton href="/settings" size="icon" variant="soft">
-                <SettingsIcon className="h-4 w-4" />
+                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
+                  <SettingsIcon className="h-4 w-4" />
+                </LinkPendingIcon>
               </LinkButton>
             </TooltipTrigger>
             <TooltipContent>Settings</TooltipContent>
@@ -154,7 +161,9 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
               size="sm"
               variant="soft"
             >
-              <TerminalIcon className="h-4 w-4" />
+              <LinkPendingIcon className="h-4 w-4 items-center justify-center">
+                <TerminalIcon className="h-4 w-4" />
+              </LinkPendingIcon>
               Sandbox
             </LinkButton>
             <LinkButton
@@ -163,7 +172,9 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
               size="sm"
               variant="soft"
             >
-              <SettingsIcon className="h-4 w-4" />
+              <LinkPendingIcon className="h-4 w-4 items-center justify-center">
+                <SettingsIcon className="h-4 w-4" />
+              </LinkPendingIcon>
               Settings
             </LinkButton>
           </nav>

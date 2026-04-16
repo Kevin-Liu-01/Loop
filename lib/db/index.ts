@@ -30,6 +30,7 @@ export { listBriefs, getBriefByCategory, upsertBrief } from "@/lib/db/briefs";
 export {
   recordLoopRun,
   listLoopRuns,
+  listLoopRunSummaries,
   recordRefreshRun,
   listRefreshRuns,
   recordUsageEvent,

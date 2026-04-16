@@ -1,4 +1,4 @@
-import { BrailleSpinner } from "@/components/ui/braille-spinner";
+import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
@@ -9,14 +9,12 @@ export default function SettingsLoading() {
         <Skeleton className="h-4 w-64" />
       </div>
 
-      <div className="flex items-center gap-2 text-ink-muted">
-        <BrailleSpinner className="text-sm" />
-      </div>
-
       <div className="grid gap-4">
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
+
+      <LoadingStatusPill label="Loading settings" />
     </div>
   );
 }

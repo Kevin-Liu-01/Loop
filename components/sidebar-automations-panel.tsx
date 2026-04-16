@@ -9,10 +9,12 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { cn } from "@/lib/cn";
 import { formatNextRun } from "@/lib/schedule";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
-
-const metaLabel =
-  "text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint";
-const metaValue = "text-sm font-semibold tracking-[-0.03em]";
+import {
+  textEyebrow,
+  textMetaLink,
+  textMetaSm,
+  textRowItem,
+} from "@/lib/ui-typography";
 
 interface SidebarAutomationsPanelProps {
   automations: AutomationSummary[];
@@ -40,22 +42,19 @@ export function SidebarAutomationsPanel({
       <section className="grid gap-0 overflow-hidden border border-line bg-paper-3 dark:bg-paper-2/60">
         {/* Header */}
         <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
-          <span className={cn(metaLabel, "flex items-center gap-1.5")}>
+          <span className={cn(textEyebrow, "flex items-center gap-1.5")}>
             <AutomationIcon className="h-3 w-3" />
             Automations
             <span className="tabular-nums">{automations.length}</span>
           </span>
           <div className="flex items-center gap-2">
             {activeCount > 0 && (
-              <span className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
+              <span className={cn(textMetaSm, "flex items-center gap-1")}>
                 <StatusDot tone="fresh" pulse size="xs" />
                 {activeCount} active
               </span>
             )}
-            <Link
-              className="text-[0.625rem] font-semibold text-ink-faint transition-colors hover:text-ink"
-              href="/settings/automations"
-            >
+            <Link className={textMetaLink} href="/settings/automations">
               Open desk →
             </Link>
           </div>
@@ -80,12 +79,13 @@ export function SidebarAutomationsPanel({
               >
                 {/* Name + status */}
                 <div className="flex items-center gap-2 px-3 pb-1 pt-2.5">
-                  <span className="min-w-0 flex-1 truncate text-[0.6875rem] font-semibold text-ink">
+                  <span className={cn(textRowItem, "min-w-0 flex-1 truncate")}>
                     {auto.name}
                   </span>
                   <span
                     className={cn(
-                      "flex items-center gap-1 text-[0.625rem]",
+                      textMetaSm,
+                      "flex items-center gap-1",
                       isActive ? "text-success" : "text-ink-faint"
                     )}
                   >
@@ -101,14 +101,14 @@ export function SidebarAutomationsPanel({
                 {/* Schedule + Next */}
                 <div className="grid grid-cols-2 gap-px bg-line/50 dark:bg-line/30">
                   <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
-                    <small className={metaLabel}>schedule</small>
-                    <span className="text-[0.6875rem] font-medium text-ink-soft">
+                    <small className={textEyebrow}>schedule</small>
+                    <span className={cn(textMetaSm, "text-ink-soft")}>
                       {auto.schedule}
                     </span>
                   </div>
                   <div className="grid gap-0.5 bg-paper-3 px-3 py-1.5 dark:bg-paper-2/60">
-                    <small className={metaLabel}>next</small>
-                    <span className="text-[0.6875rem] font-medium tabular-nums text-ink-soft">
+                    <small className={textEyebrow}>next</small>
+                    <span className={cn(textMetaSm, "text-ink-soft")}>
                       {formatNextRun(
                         auto.cadence,
                         auto.preferredHour ?? 12,

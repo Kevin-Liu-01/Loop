@@ -84,6 +84,22 @@ export function CommandPalette({ items }: CommandPaletteProps) {
     [router]
   );
 
+  const handleHover = useCallback(
+    (href: string) => {
+      router.prefetch(href);
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    for (const item of items) {
+      router.prefetch(item.href);
+    }
+  }, [isOpen, items, router]);
+
   return (
     <CommandDialog open={isOpen} onOpenChange={setIsOpen}>
       <CommandInput
@@ -100,6 +116,8 @@ export function CommandPalette({ items }: CommandPaletteProps) {
                 key={`${item.section}-${item.href}`}
                 value={`${item.label} ${item.section} ${item.hint ?? ""}`}
                 onSelect={() => handleSelect(item.href)}
+                onMouseEnter={() => handleHover(item.href)}
+                onFocus={() => handleHover(item.href)}
               >
                 <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
                 <span className="min-w-0 truncate">{item.label}</span>

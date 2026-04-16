@@ -1,4 +1,4 @@
-import type { LoopRunRecord, UsageEventRecord } from "@/lib/types";
+import type { LoopRunSummary, UsageEventRecord } from "@/lib/types";
 import { bucketEventsByHour, bucketLatencyByHour } from "@/lib/usage-charts";
 import type { LatencyBucket, TimeSeriesBucket } from "@/lib/usage-charts";
 import type { UsageComparisonMode } from "@/lib/usage-comparison-modes";
@@ -393,7 +393,7 @@ function buildDailyCounts(
 export function buildSkillUsageSummary(
   skillSlug: string,
   events: UsageEventRecord[],
-  loopRuns: LoopRunRecord[]
+  loopRuns: LoopRunSummary[]
 ): SkillUsageSummary {
   const relevantEvents = events
     .filter(
