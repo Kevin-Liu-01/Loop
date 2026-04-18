@@ -339,7 +339,9 @@ function ConnectionDetailsSection({ mcp }: { mcp: ImportedMcpDocument }) {
 
           <div className="grid gap-0.5">
             <small className={textEyebrow}>auth</small>
-            <strong className={textMetricText}>{mcp.authType ?? "unknown"}</strong>
+            <strong className={textMetricText}>
+              {mcp.authType ?? "unknown"}
+            </strong>
           </div>
 
           {mcp.url && (

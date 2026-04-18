@@ -48,6 +48,24 @@ type SandboxState = "idle" | "creating" | "running" | "stopped" | "error";
 const CONFIG_KEY = "loop.sandbox.config";
 const SIDEBAR_KEY = "loop.sandbox.sidebar";
 const INSPECTOR_KEY = "loop.sandbox.inspector";
+const MOBILE_MEDIA_QUERY = "(max-width: 640px)";
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+  });
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+  return isMobile;
+}
 
 function defaultConfig(
   presets: AgentProviderPreset[],
@@ -148,8 +166,50 @@ export function SandboxShell({
   const hydratedRef = useRef(false);
 
   // ── Layout ──
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+  // Default to closed on mobile; desktop hydration will reopen from localStorage.
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return !window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+  });
   const [inspectorOpen, setInspectorOpen] = useState(false);
+
+  // On mobile, both panels are overlays. Only one should ever be open at a
+  // time, and we close them by default so the chat is visible on first load.
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      if (next && isMobile) {
+        setInspectorOpen(false);
+      }
+      return next;
+    });
+  }, [isMobile]);
+
+  const handleToggleInspector = useCallback(() => {
+    setInspectorOpen((prev) => {
+      const next = !prev;
+      if (next && isMobile) {
+        setSidebarOpen(false);
+      }
+      return next;
+    });
+  }, [isMobile]);
+
+  const closeMobilePanels = useCallback(() => {
+    setSidebarOpen(false);
+    setInspectorOpen(false);
+  }, []);
+
+  // Viewport shrinks to mobile: collapse overlays so they don't blanket the chat.
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+      setInspectorOpen(false);
+    }
+  }, [isMobile]);
 
   // ── Sandbox session ──
   const [sandboxId, setSandboxId] = useState<string | null>(null);
@@ -218,9 +278,11 @@ export function SandboxShell({
     } catch {
       /* ignore */
     }
+    // On mobile, ignore persisted panel state so overlays start closed.
+    const onMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
     try {
       const stored = window.localStorage.getItem(SIDEBAR_KEY);
-      if (stored !== null) {
+      if (stored !== null && !onMobile) {
         setSidebarOpen(stored === "true");
       }
     } catch {
@@ -228,7 +290,7 @@ export function SandboxShell({
     }
     try {
       const stored = window.localStorage.getItem(INSPECTOR_KEY);
-      if (stored !== null) {
+      if (stored !== null && !onMobile) {
         setInspectorOpen(stored === "true");
       }
     } catch {
@@ -266,17 +328,19 @@ export function SandboxShell({
   }, [mcps]);
 
   // ── Persist panel states ──
+  // Skip persistence on mobile so the forced-closed state doesn't clobber
+  // the user's desktop preference.
   useEffect(() => {
-    if (hydratedRef.current) {
+    if (hydratedRef.current && !isMobile) {
       window.localStorage.setItem(SIDEBAR_KEY, String(sidebarOpen));
     }
-  }, [sidebarOpen]);
+  }, [sidebarOpen, isMobile]);
 
   useEffect(() => {
-    if (hydratedRef.current) {
+    if (hydratedRef.current && !isMobile) {
       window.localStorage.setItem(INSPECTOR_KEY, String(inspectorOpen));
     }
-  }, [inspectorOpen]);
+  }, [inspectorOpen, isMobile]);
 
   // ── Cleanup sandbox on page unload ──
   useEffect(() => {
@@ -712,20 +776,42 @@ export function SandboxShell({
   const isActive = !viewConvo;
   const showEmptyHero = isActive && messages.length === 0;
 
+  const showMobileBackdrop = isMobile && (sidebarOpen || inspectorOpen);
+
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1">
+      {/* ── Mobile backdrop: tap to dismiss overlay panels ── */}
+      {showMobileBackdrop && (
+        <button
+          type="button"
+          aria-label="Close panel"
+          onClick={closeMobilePanels}
+          className="absolute inset-0 z-20 bg-paper/70 backdrop-blur-[2px] sm:hidden"
+        />
+      )}
+
       {/* ── Left sidebar ── */}
       {sidebarOpen && (
         <aside
           className={cn(
             "flex h-full min-h-0 w-[260px] shrink-0 flex-col overflow-hidden border-r border-line bg-paper-2/40 dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,92vw)]"
+            "max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-30 max-sm:w-[min(280px,88vw)] max-sm:bg-paper max-sm:shadow-2xl max-sm:dark:bg-paper"
           )}
         >
           <SandboxSidebar
             currentId={conversationId}
-            onNew={handleNewConversation}
-            onSelect={handleSelectConversation}
+            onNew={() => {
+              handleNewConversation();
+              if (isMobile) {
+                setSidebarOpen(false);
+              }
+            }}
+            onSelect={(id) => {
+              handleSelectConversation(id);
+              if (isMobile) {
+                setSidebarOpen(false);
+              }
+            }}
             onDelete={handleDeleteConversation}
             version={sidebarVersion}
           />
@@ -741,8 +827,8 @@ export function SandboxShell({
           mcps={mcps}
           sidebarOpen={sidebarOpen}
           inspectorOpen={inspectorOpen}
-          onToggleSidebar={() => setSidebarOpen((p) => !p)}
-          onToggleInspector={() => setInspectorOpen((p) => !p)}
+          onToggleSidebar={handleToggleSidebar}
+          onToggleInspector={handleToggleInspector}
           onUpdateConfig={updateConfig}
           onToggleSkill={toggleSkill}
           onToggleMcp={toggleMcp}
@@ -943,7 +1029,7 @@ export function SandboxShell({
                 VM Inspector
               </span>
               <Button
-                onClick={() => setInspectorOpen((p) => !p)}
+                onClick={handleToggleInspector}
                 size="icon-sm"
                 variant={inspectorOpen ? "primary" : "ghost"}
                 aria-label="Toggle VM inspector"
@@ -978,7 +1064,7 @@ export function SandboxShell({
         <aside
           className={cn(
             "flex h-full min-h-0 w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-paper-2/40 dark:bg-paper-2/20",
-            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,92vw)]"
+            "max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:w-[min(340px,88vw)] max-sm:bg-paper max-sm:shadow-2xl max-sm:dark:bg-paper"
           )}
         >
           <SandboxInspector

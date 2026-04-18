@@ -190,7 +190,7 @@ export function SkillDetailPage({
               <ShareButton href={skill.href} />
               {skill.availableVersions.length > 1 && (
                 <VersionSwitcher
-                  className="ml-auto"
+                  className="w-full sm:ml-auto sm:w-auto"
                   currentVersion={skill.version}
                   slug={skill.slug}
                   versions={skill.availableVersions}
