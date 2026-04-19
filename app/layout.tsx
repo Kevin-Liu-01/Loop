@@ -19,13 +19,15 @@ import { buildMcpVersionHref } from "@/lib/format";
 import { getLoopSnapshot } from "@/lib/refresh";
 import {
   buildDefaultOpenGraphImages,
-  buildDefaultTwitterImageUrls,
+  buildDefaultTwitterImages,
   buildOrganizationJsonLd,
   buildRootKeywords,
   buildSiteUrl,
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_TITLE,
   SITE_NAME,
+  TWITTER_CREATOR_HANDLE,
+  TWITTER_SITE_HANDLE,
 } from "@/lib/seo";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 
@@ -51,8 +53,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    creator: TWITTER_CREATOR_HANDLE,
     description: SEO_DEFAULT_DESCRIPTION,
-    images: buildDefaultTwitterImageUrls(),
+    images: buildDefaultTwitterImages(),
+    site: TWITTER_SITE_HANDLE,
     title: SEO_DEFAULT_TITLE,
   },
 };

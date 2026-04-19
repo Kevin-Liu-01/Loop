@@ -6,7 +6,12 @@ const DEFAULT_DESCRIPTION =
   "Loop turns your agent playbooks, updates, and source scans into a living operator desk that stays current.";
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
-const STATIC_OG_IMAGE_PATH = "/og";
+// Twitter caches per absolute URL. The previous "/og" path was extensionless
+// and got cached as "no preview"; using "/og.png" busts that cache and reads
+// more reliably as an image to strict scrapers.
+const STATIC_OG_IMAGE_PATH = "/og.png";
+const TWITTER_SITE_HANDLE = "@kevskgs";
+const TWITTER_CREATOR_HANDLE = "@kevskgs";
 
 export const SOCIAL_BOT_RE =
   /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Applebot|Pinterestbot/i;
@@ -44,7 +49,7 @@ function resolvePageMeta(pathname: string): PageMeta {
       canonicalPath: pathname,
       description: `Skill details for ${name} on ${SITE_NAME}.`,
       ogImageAlt: name,
-      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=Skill`,
+      ogImagePath: `/og.png?title=${encodeURIComponent(name)}&category=Skill`,
       ogType: "article",
       title: `${name} · ${SITE_NAME}`,
     };
@@ -57,7 +62,7 @@ function resolvePageMeta(pathname: string): PageMeta {
       canonicalPath: pathname,
       description: `MCP server details for ${name} on ${SITE_NAME}.`,
       ogImageAlt: name,
-      ogImagePath: `/og?title=${encodeURIComponent(name)}&category=MCP`,
+      ogImagePath: `/og.png?title=${encodeURIComponent(name)}&category=MCP`,
       ogType: "article",
       title: `${name} · ${SITE_NAME}`,
     };
@@ -125,10 +130,15 @@ export function buildBotResponse(req: NextRequest): Response {
 <meta property="og:site_name" content="${esc(SITE_NAME)}" />
 <meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="${TWITTER_SITE_HANDLE}" />
+<meta name="twitter:creator" content="${TWITTER_CREATOR_HANDLE}" />
 <meta name="twitter:title" content="${esc(meta.title)}" />
 <meta name="twitter:description" content="${esc(meta.description)}" />
 <meta name="twitter:image" content="${esc(image)}" />
 <meta name="twitter:image:alt" content="${esc(meta.ogImageAlt)}" />
+<meta name="twitter:image:type" content="image/png" />
+<meta name="twitter:image:width" content="${OG_WIDTH}" />
+<meta name="twitter:image:height" content="${OG_HEIGHT}" />
 <link rel="icon" href="/icon.svg" />
 </head>
 <body></body>

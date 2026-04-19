@@ -13,9 +13,11 @@ import { PageShell } from "@/components/ui/page-shell";
 import { FAQ_SECTIONS } from "@/lib/faq-data";
 import {
   buildDefaultOpenGraphImages,
-  buildDefaultTwitterImageUrls,
+  buildDefaultTwitterImages,
   buildSiteUrl,
   SITE_NAME,
+  TWITTER_CREATOR_HANDLE,
+  TWITTER_SITE_HANDLE,
 } from "@/lib/seo";
 import { pageInsetColumnClass } from "@/lib/ui-layout";
 
@@ -37,8 +39,10 @@ export const metadata: Metadata = {
   title: FAQ_TITLE,
   twitter: {
     card: "summary_large_image",
+    creator: TWITTER_CREATOR_HANDLE,
     description: FAQ_DESCRIPTION,
-    images: buildDefaultTwitterImageUrls(),
+    images: buildDefaultTwitterImages(),
+    site: TWITTER_SITE_HANDLE,
     title: `${FAQ_TITLE} · ${SITE_NAME}`,
   },
 };

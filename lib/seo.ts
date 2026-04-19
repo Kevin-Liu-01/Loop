@@ -14,8 +14,11 @@ export const SEO_DEFAULT_DESCRIPTION =
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
-export const DEFAULT_OG_IMAGE_PATH = "/og";
+export const DEFAULT_OG_IMAGE_PATH = "/og.png";
 export const LOGO_ICON_PATH = "/icon.svg";
+
+export const TWITTER_SITE_HANDLE = "@kevskgs";
+export const TWITTER_CREATOR_HANDLE = "@kevskgs";
 
 /**
  * Public site origin with no trailing slash.
@@ -58,7 +61,7 @@ export function buildOgImageUrl(params?: {
   if (!params?.title && !params?.description && !params?.category) {
     return DEFAULT_OG_IMAGE_PATH;
   }
-  const url = new URL("/og", "https://n");
+  const url = new URL(DEFAULT_OG_IMAGE_PATH, "https://n");
   if (params?.title) {
     url.searchParams.set("title", params.title);
   }
@@ -85,6 +88,30 @@ export function buildDefaultOpenGraphImages(): NonNullable<
   ];
 }
 
+interface TwitterImageDescriptor {
+  url: string;
+  alt: string;
+  width: number;
+  height: number;
+  type: string;
+}
+
+export function buildDefaultTwitterImages(): TwitterImageDescriptor[] {
+  return [
+    {
+      alt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      height: OG_HEIGHT,
+      type: "image/png",
+      url: DEFAULT_OG_IMAGE_PATH,
+      width: OG_WIDTH,
+    },
+  ];
+}
+
+/**
+ * @deprecated Twitter renders the large image card more reliably when image
+ * width/height/type are emitted. Prefer {@link buildDefaultTwitterImages}.
+ */
 export function buildDefaultTwitterImageUrls(): string[] {
   return [DEFAULT_OG_IMAGE_PATH];
 }
@@ -154,8 +181,18 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
     title,
     twitter: {
       card: "summary_large_image",
+      creator: TWITTER_CREATOR_HANDLE,
       description,
-      images: [ogImageUrl],
+      images: [
+        {
+          alt: skill.title,
+          height: OG_HEIGHT,
+          type: "image/png",
+          url: ogImageUrl,
+          width: OG_WIDTH,
+        },
+      ],
+      site: TWITTER_SITE_HANDLE,
       title,
     },
   };
@@ -204,8 +241,18 @@ export function buildMcpMetadata(mcp: ImportedMcpDocument): Metadata {
     title,
     twitter: {
       card: "summary_large_image",
+      creator: TWITTER_CREATOR_HANDLE,
       description,
-      images: [ogImageUrl],
+      images: [
+        {
+          alt: mcp.name,
+          height: OG_HEIGHT,
+          type: "image/png",
+          url: ogImageUrl,
+          width: OG_WIDTH,
+        },
+      ],
+      site: TWITTER_SITE_HANDLE,
       title,
     },
   };
