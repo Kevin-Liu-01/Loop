@@ -41,6 +41,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: buildSiteUrl("/").toString(),
   },
+  applicationName: SITE_NAME,
   description: SEO_DEFAULT_DESCRIPTION,
   keywords: buildRootKeywords(),
   metadataBase: buildSiteUrl(),
