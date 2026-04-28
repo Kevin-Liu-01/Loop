@@ -153,7 +153,7 @@ export default function PrivacyPage() {
             <h2 className={sectionHeading}>9. Contact</h2>
             <p className={prose}>
               Questions about this privacy policy? Reach out at{" "}
-              <a href="mailto:kevin@kevinliu.me">kevin@kevinliu.me</a>.
+              <a href="mailto:k.bowen.liu@gmail.com">k.bowen.liu@gmail.com</a>.
             </p>
           </article>
         </div>
