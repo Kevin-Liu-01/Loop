@@ -21,15 +21,7 @@ import {
 } from "@/lib/home-landing/landing-data";
 import { fetchLandingData } from "@/lib/home-landing/landing-queries";
 import { formatScheduleLabel } from "@/lib/schedule";
-import {
-  buildDefaultOpenGraphImages,
-  buildDefaultTwitterImages,
-  buildSiteUrl,
-  SEO_DEFAULT_TITLE,
-  SITE_NAME,
-  TWITTER_CREATOR_HANDLE,
-  TWITTER_SITE_HANDLE,
-} from "@/lib/seo";
+import { buildPageMetadata, SEO_DEFAULT_TITLE } from "@/lib/seo";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { getSystemSnapshot } from "@/lib/system-summary";
 import { pageInsetPadX, pageInsetPadY } from "@/lib/ui-layout";
@@ -40,27 +32,12 @@ export const dynamic = "force-dynamic";
 const LANDING_DESCRIPTION =
   "Loop monitors, evaluates, and updates your agent playbooks. Every skill stays optimal, every parameter stays current.";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
+  title: SEO_DEFAULT_TITLE,
   description: LANDING_DESCRIPTION,
-  openGraph: {
-    description: LANDING_DESCRIPTION,
-    images: buildDefaultOpenGraphImages(),
-    locale: "en_US",
-    siteName: SITE_NAME,
-    title: SEO_DEFAULT_TITLE,
-    type: "website",
-    url: buildSiteUrl("/").toString(),
-  },
-  title: { absolute: SEO_DEFAULT_TITLE },
-  twitter: {
-    card: "summary_large_image",
-    creator: TWITTER_CREATOR_HANDLE,
-    description: LANDING_DESCRIPTION,
-    images: buildDefaultTwitterImages(),
-    site: TWITTER_SITE_HANDLE,
-    title: SEO_DEFAULT_TITLE,
-  },
-};
+  path: "/",
+  absoluteTitle: true,
+});
 
 export default async function RootPage() {
   let userId: string | null = null;

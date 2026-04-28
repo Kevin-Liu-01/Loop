@@ -58,6 +58,17 @@ export const metadata: Metadata = {
     default: SEO_DEFAULT_TITLE,
     template: `%s · ${SITE_NAME}`,
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   twitter: {
     card: "summary_large_image",
     creator: TWITTER_CREATOR_HANDLE,
@@ -66,6 +77,7 @@ export const metadata: Metadata = {
     site: TWITTER_SITE_HANDLE,
     title: SEO_DEFAULT_TITLE,
   },
+  category: "technology",
 };
 
 async function DeferredGlobals() {

@@ -130,6 +130,45 @@ export function buildRootKeywords(): string[] {
   return [...new Set([...fromCategories, ...fixed])];
 }
 
+interface PageMetadataInput {
+  title: string;
+  description: string;
+  path: string;
+  keywords?: readonly string[];
+  absoluteTitle?: boolean;
+}
+
+export function buildPageMetadata(input: PageMetadataInput): Metadata {
+  const canonical = buildSiteUrl(input.path).toString();
+  const ogTitle = input.absoluteTitle
+    ? input.title
+    : `${input.title} · ${SITE_NAME}`;
+
+  return {
+    title: input.absoluteTitle ? { absolute: input.title } : input.title,
+    description: input.description,
+    alternates: { canonical },
+    ...(input.keywords ? { keywords: [...input.keywords] } : {}),
+    openGraph: {
+      title: ogTitle,
+      description: input.description,
+      url: canonical,
+      type: "website",
+      siteName: SITE_NAME,
+      locale: "en_US",
+      images: buildDefaultOpenGraphImages(),
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: TWITTER_SITE_HANDLE,
+      creator: TWITTER_CREATOR_HANDLE,
+      title: ogTitle,
+      description: input.description,
+      images: buildDefaultTwitterImages(),
+    },
+  };
+}
+
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
   const out = { ...value };
   for (const key of Object.keys(out)) {

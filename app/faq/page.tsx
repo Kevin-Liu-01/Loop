@@ -12,42 +12,18 @@ import {
 } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 import { FAQ_SECTIONS } from "@/lib/faq-data";
-import {
-  buildDefaultOpenGraphImages,
-  buildDefaultTwitterImages,
-  buildFaqPageJsonLd,
-  buildSiteUrl,
-  SITE_NAME,
-  TWITTER_CREATOR_HANDLE,
-  TWITTER_SITE_HANDLE,
-} from "@/lib/seo";
+import { buildFaqPageJsonLd, buildPageMetadata } from "@/lib/seo";
 import { pageInsetColumnClass } from "@/lib/ui-layout";
 
 const FAQ_TITLE = "FAQ";
 const FAQ_DESCRIPTION =
   "Frequently asked questions about Loop – the operator desk for self-updating agent skills.";
 
-export const metadata: Metadata = {
-  description: FAQ_DESCRIPTION,
-  openGraph: {
-    description: FAQ_DESCRIPTION,
-    images: buildDefaultOpenGraphImages(),
-    locale: "en_US",
-    siteName: SITE_NAME,
-    title: `${FAQ_TITLE} · ${SITE_NAME}`,
-    type: "website",
-    url: buildSiteUrl("/faq").toString(),
-  },
+export const metadata: Metadata = buildPageMetadata({
   title: FAQ_TITLE,
-  twitter: {
-    card: "summary_large_image",
-    creator: TWITTER_CREATOR_HANDLE,
-    description: FAQ_DESCRIPTION,
-    images: buildDefaultTwitterImages(),
-    site: TWITTER_SITE_HANDLE,
-    title: `${FAQ_TITLE} · ${SITE_NAME}`,
-  },
-};
+  description: FAQ_DESCRIPTION,
+  path: "/faq",
+});
 
 export default function FaqPage() {
   const allItems = FAQ_SECTIONS.flatMap((s) => s.items);

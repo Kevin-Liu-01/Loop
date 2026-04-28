@@ -9,14 +9,7 @@ import {
   PageHeaderTitle,
 } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
-import {
-  buildDefaultOpenGraphImages,
-  buildDefaultTwitterImages,
-  buildSiteUrl,
-  SITE_NAME,
-  TWITTER_CREATOR_HANDLE,
-  TWITTER_SITE_HANDLE,
-} from "@/lib/seo";
+import { buildPageMetadata } from "@/lib/seo";
 import { pageInsetColumnClass } from "@/lib/ui-layout";
 
 const TITLE = "Privacy Policy";
@@ -24,27 +17,11 @@ const DESCRIPTION =
   "How Loop collects, uses, and protects your data when you use the platform.";
 const EFFECTIVE_DATE = "April 27, 2026";
 
-export const metadata: Metadata = {
-  description: DESCRIPTION,
-  openGraph: {
-    description: DESCRIPTION,
-    images: buildDefaultOpenGraphImages(),
-    locale: "en_US",
-    siteName: SITE_NAME,
-    title: `${TITLE} · ${SITE_NAME}`,
-    type: "website",
-    url: buildSiteUrl("/privacy").toString(),
-  },
+export const metadata: Metadata = buildPageMetadata({
   title: TITLE,
-  twitter: {
-    card: "summary_large_image",
-    creator: TWITTER_CREATOR_HANDLE,
-    description: DESCRIPTION,
-    images: buildDefaultTwitterImages(),
-    site: TWITTER_SITE_HANDLE,
-    title: `${TITLE} · ${SITE_NAME}`,
-  },
-};
+  description: DESCRIPTION,
+  path: "/privacy",
+});
 
 const sectionHeading =
   "mt-10 mb-3 text-lg font-semibold tracking-tight first:mt-0";
