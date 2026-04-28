@@ -11,6 +11,7 @@ export interface DiffSceneLine {
 export interface DiffScene {
   skillTitle: string;
   skillSlug: string;
+  href: string;
   iconUrl: string;
   category: string;
   versionFrom: string;
@@ -23,6 +24,7 @@ import { brandIconForDarkBg } from "@/lib/brand-icons";
 export const DIFF_SCENES: DiffScene[] = [
   {
     category: "frontend",
+    href: "https://www.loooop.dev/skills/frontend-frontier/",
     iconUrl: brandIconForDarkBg("tailwind")!,
     lines: [
       { type: "context", value: "## Motion System" },
@@ -79,6 +81,7 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     category: "a2a",
+    href: "https://www.loooop.dev/skills/agent-orchestration/",
     iconUrl: brandIconForDarkBg("openai")!,
     lines: [
       { type: "context", value: "## Handoff Protocol" },
@@ -133,6 +136,7 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     category: "security",
+    href: "https://www.loooop.dev/skills/security-best-practices/",
     iconUrl: brandIconForDarkBg("owasp")!,
     lines: [
       { type: "context", value: "## Dependency Audit" },
@@ -187,6 +191,7 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     category: "frontend",
+    href: "https://www.loooop.dev/skills/nextjs-patterns/",
     iconUrl: brandIconForDarkBg("nextjs")!,
     lines: [
       { type: "context", value: "## Data Fetching" },
@@ -241,6 +246,7 @@ export const DIFF_SCENES: DiffScene[] = [
   },
   {
     category: "a2a",
+    href: "https://www.loooop.dev/skills/prompt-engineering/",
     iconUrl: brandIconForDarkBg("openai")!,
     lines: [
       { type: "context", value: "## Chain-of-Thought" },

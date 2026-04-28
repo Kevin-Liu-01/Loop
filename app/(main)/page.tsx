@@ -203,28 +203,29 @@ async function PublicLanding() {
 
 function PublicLandingFallback() {
   return (
-    <AppGridShell header={<SiteHeader />}>
-      <PageShell inset narrow className="flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn(
-            "grid min-h-0 flex-1 content-start gap-8",
-            pageInsetPadX,
-            pageInsetPadY
-          )}
-        >
-          <div className="grid gap-4">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-12 w-3/4 max-w-[42rem]" />
-            <Skeleton className="h-4 w-1/2" />
+    <div className="min-h-screen bg-paper text-ink">
+      <nav className="mx-auto flex max-w-[1100px] items-center justify-between px-6 pt-6">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-7 w-7" />
+          <Skeleton className="h-5 w-14" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="hidden h-9 w-40 sm:block" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </nav>
+      <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,120px)] text-center">
+        <div className="mx-auto grid max-w-[700px] gap-7">
+          <div className="grid place-items-center gap-5">
+            <Skeleton className="h-14 w-[80%] max-w-[500px]" />
+            <Skeleton className="h-6 w-[60%] max-w-[380px]" />
           </div>
-          <div className="grid grid-cols-3 gap-3 max-lg:grid-cols-1">
-            <Skeleton className="h-56 w-full" />
-            <Skeleton className="h-56 w-full" />
-            <Skeleton className="h-56 w-full" />
+          <div className="flex justify-center gap-3">
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-28" />
           </div>
         </div>
-      </PageShell>
-      <LoadingStatusPill label="Loading Loop" />
-    </AppGridShell>
+      </div>
+    </div>
   );
 }

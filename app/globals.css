@@ -254,7 +254,14 @@ html[data-theme="dark"] body::after {
    Clerk social button overrides
    ================================================================ */
 
-html[data-theme="dark"] .cl-socialButtonsBlockButton__x svg {
+html[data-theme="dark"] .cl-socialButtonsBlockButton__x svg,
+html[data-theme="dark"] .cl-socialButtonsBlockButton__x img,
+html[data-theme="dark"] .cl-socialButtonsProviderIcon__x,
+html[data-theme="dark"] .cl-socialButtonsProviderIcon__x img,
+html[data-theme="dark"] .cl-socialButtonsBlockButton__github svg,
+html[data-theme="dark"] .cl-socialButtonsBlockButton__github img,
+html[data-theme="dark"] .cl-socialButtonsProviderIcon__github,
+html[data-theme="dark"] .cl-socialButtonsProviderIcon__github img {
   filter: brightness(0) invert(1);
 }
 

@@ -81,6 +81,11 @@ export const metadata: Metadata = {
 };
 
 async function DeferredGlobals() {
+  const user = await currentUser();
+  if (!user) {
+    return null;
+  }
+
   let paletteItems: {
     label: string;
     href: string;
@@ -172,7 +177,7 @@ export default async function RootLayout({
   ]);
 
   return (
-    <ClerkProvider appearance={clerkAppearance} ui={ui}>
+    <ClerkProvider afterSignOutUrl="/" appearance={clerkAppearance} ui={ui}>
       <html lang="en" suppressHydrationWarning>
         <body suppressHydrationWarning>
           <SeoJsonLd data={buildOrganizationJsonLd()} />

@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { getSkillRecordBySlug } from "@/lib/content";
 
@@ -15,5 +15,5 @@ export default async function SkillPage({ params }: SkillPageProps) {
     notFound();
   }
 
-  redirect(skill.href);
+  permanentRedirect(skill.href);
 }

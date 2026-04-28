@@ -8,9 +8,10 @@ const nextConfig: NextConfig = {
     // Keep prefetched loading.tsx shells cached longer so returning to a
     // recently-hovered route paints the skeleton instantly instead of
     // re-requesting it. Dynamic routes default to 0s (no reuse); bumping
-    // this is the single biggest perceived-speed win for nav.
+    // this improves perceived nav speed. Kept low enough that auth-state
+    // changes (sign-out) don't serve stale pages for too long.
     staleTimes: {
-      dynamic: 60,
+      dynamic: 15,
       static: 300,
     },
   },

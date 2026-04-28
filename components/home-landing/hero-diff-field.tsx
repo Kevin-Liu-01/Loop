@@ -2,12 +2,10 @@
 
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useMouseParallax } from "@/hooks/use-mouse-parallax";
 import { cn } from "@/lib/cn";
-import { buildSkillVersionHref } from "@/lib/format";
 import { DIFF_SCENES } from "@/lib/home-landing/skill-diff-scenes";
 import type {
   DiffScene,
@@ -361,12 +359,14 @@ function FloatingCard({
   mouseY,
   className,
   children,
+  onClick,
 }: {
   placement: CardPlacement;
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
   className?: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
   const pxVal = useTransform(
     mouseX,
@@ -379,7 +379,24 @@ function FloatingCard({
 
   return (
     <motion.div
-      className={cn("col-start-1 row-start-1 w-full max-w-[380px]", className)}
+      className={cn(
+        "col-start-1 row-start-1 w-full max-w-[380px]",
+        onClick && "cursor-pointer",
+        className
+      )}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       style={{
         opacity: placement.baseOpacity,
         rotateY: placement.rotateYDeg,
@@ -436,11 +453,6 @@ function SceneDots({
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
-function sceneHref(scene: DiffScene): string {
-  const version = Number.parseInt(scene.versionTo.replace(/^v/, ""), 10);
-  return buildSkillVersionHref(scene.skillSlug, version || 1);
-}
-
 /* ── Main export ────────────────────────────────────────────── */
 
 export function HeroDiffField() {
@@ -477,9 +489,11 @@ export function HeroDiffField() {
     }
   }, []);
 
+  const leftIndex = (activeIndex + 1) % DIFF_SCENES.length;
+  const rightIndex = (activeIndex + 2) % DIFF_SCENES.length;
   const activeScene = DIFF_SCENES[activeIndex]!;
-  const leftScene = DIFF_SCENES[(activeIndex + 1) % DIFF_SCENES.length]!;
-  const rightScene = DIFF_SCENES[(activeIndex + 2) % DIFF_SCENES.length]!;
+  const leftScene = DIFF_SCENES[leftIndex]!;
+  const rightScene = DIFF_SCENES[rightIndex]!;
 
   const centerAccent =
     CATEGORY_ACCENT[activeScene.category] ?? "oklch(0.70 0.12 55)";
@@ -487,7 +501,7 @@ export function HeroDiffField() {
   return (
     <motion.div
       className="relative mx-auto grid h-[340px] w-full max-w-[1000px] place-items-center sm:h-[380px]"
-      style={{ perspective: "1600px", transformStyle: "preserve-3d" as const }}
+      style={{ perspective: "1600px" }}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ amount: 0.15, once: true }}
@@ -497,21 +511,20 @@ export function HeroDiffField() {
         ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
       }}
     >
-      {/* Left card – desktop only */}
+      {/* Left card – desktop only, click to switch */}
       <FloatingCard
         placement={CARD_PLACEMENTS[0]!}
         mouseX={mouseX}
         mouseY={mouseY}
         className="hidden lg:block"
+        onClick={() => handleDotSelect(leftIndex)}
       >
-        <Link href={sceneHref(leftScene)}>
-          <DiffCardChrome accentColor={CATEGORY_ACCENT[leftScene.category]}>
-            <HeroCardHeader scene={leftScene} />
-            <DiffCardBody>
-              <DiffLines scene={leftScene} prefix="l" />
-            </DiffCardBody>
-          </DiffCardChrome>
-        </Link>
+        <DiffCardChrome accentColor={CATEGORY_ACCENT[leftScene.category]}>
+          <HeroCardHeader scene={leftScene} />
+          <DiffCardBody>
+            <DiffLines scene={leftScene} prefix="l" />
+          </DiffCardBody>
+        </DiffCardChrome>
       </FloatingCard>
 
       {/* Center card – animated reel */}
@@ -520,8 +533,8 @@ export function HeroDiffField() {
         mouseX={mouseX}
         mouseY={mouseY}
       >
-        <Link href={sceneHref(activeScene)}>
-          <DiffCardChrome glow accentColor={centerAccent}>
+        <DiffCardChrome glow accentColor={centerAccent}>
+          <a href={activeScene.href} rel="noopener noreferrer">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeScene.skillTitle}
@@ -536,30 +549,29 @@ export function HeroDiffField() {
                 </DiffCardBody>
               </motion.div>
             </AnimatePresence>
-            <SceneDots
-              count={DIFF_SCENES.length}
-              active={activeIndex}
-              onSelect={handleDotSelect}
-            />
-          </DiffCardChrome>
-        </Link>
+          </a>
+          <SceneDots
+            count={DIFF_SCENES.length}
+            active={activeIndex}
+            onSelect={handleDotSelect}
+          />
+        </DiffCardChrome>
       </FloatingCard>
 
-      {/* Right card – desktop only */}
+      {/* Right card – desktop only, click to switch */}
       <FloatingCard
         placement={CARD_PLACEMENTS[2]!}
         mouseX={mouseX}
         mouseY={mouseY}
         className="hidden lg:block"
+        onClick={() => handleDotSelect(rightIndex)}
       >
-        <Link href={sceneHref(rightScene)}>
-          <DiffCardChrome accentColor={CATEGORY_ACCENT[rightScene.category]}>
-            <HeroCardHeader scene={rightScene} />
-            <DiffCardBody>
-              <DiffLines scene={rightScene} prefix="r" />
-            </DiffCardBody>
-          </DiffCardChrome>
-        </Link>
+        <DiffCardChrome accentColor={CATEGORY_ACCENT[rightScene.category]}>
+          <HeroCardHeader scene={rightScene} />
+          <DiffCardBody>
+            <DiffLines scene={rightScene} prefix="r" />
+          </DiffCardBody>
+        </DiffCardChrome>
       </FloatingCard>
     </motion.div>
   );
