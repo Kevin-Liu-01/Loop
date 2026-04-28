@@ -21,7 +21,7 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   }
 });
 
-export async function proxy(req: NextRequest, event: NextFetchEvent) {
+export async function middleware(req: NextRequest, event: NextFetchEvent) {
   if (isSocialBot(req) && shouldServeBotHtml(req.nextUrl.pathname)) {
     return buildBotResponse(req);
   }
