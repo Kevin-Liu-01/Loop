@@ -233,7 +233,7 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
       ],
       beforePrimary: [
         {
-          body: "AI-powered automations, model selection, custom import sources, marketplace pricing, and Stripe Connect payouts. All accounts can create up to 10 skills and browse the full catalog.",
+          body: "Operator unlocks unlimited automations, unlimited agent conversations and messages, a 5-minute manual refresh cooldown, model selection, custom import sources, marketplace pricing, and Stripe Connect payouts. The comparison table below shows every limit side by side.",
           title: "What Operator unlocks",
         },
         {
@@ -241,7 +241,7 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
           title: "Checkout & receipts",
         },
       ],
-      heading: "Subscription & billing",
-      lead: "Your Loop workspace runs on the Operator plan when subscribed. Billing is handled securely by Stripe; you can open the customer portal any time to update payment methods, invoices, or cancel.",
+      heading: "Plans & billing",
+      lead: "Compare Free and Operator side by side. Every usage limit and feature is shown in the table below — upgrade or manage your billing any time through Stripe.",
     },
   };

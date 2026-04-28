@@ -2,11 +2,13 @@ import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { z } from "zod";
 
 import { resolveLanguageModel } from "@/lib/agents";
+import { authErrorResponse, getSessionUser } from "@/lib/auth";
 import { buildMcpToolRuntime } from "@/lib/mcp-runtime";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import { getLoopSnapshot } from "@/lib/refresh";
 import { getSandboxInstance } from "@/lib/sandbox";
 import { buildSandboxAgentConfig } from "@/lib/sandbox-agent";
+import { canRunAgentMessage, recordAgentRun } from "@/lib/skill-limits";
 import type { ConversationMessageMetadata } from "@/lib/types";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
@@ -29,6 +31,22 @@ export async function POST(request: Request) {
     { label: "Sandbox agent run", method: "POST", route: "/api/sandbox/run" },
     async () => {
       try {
+        const session = await getSessionUser();
+        if (!session) {
+          return Response.json(
+            { error: "Sign in to use the sandbox." },
+            { status: 401 }
+          );
+        }
+
+        const gate = await canRunAgentMessage(session.userId, session.email);
+        if (!gate.allowed) {
+          return Response.json(
+            { error: gate.reason ?? "Daily agent run limit reached." },
+            { status: 429 }
+          );
+        }
+
         const payload = runSchema.parse(await request.json());
 
         const [snapshot, sandbox] = await Promise.all([
@@ -134,6 +152,7 @@ export async function POST(request: Request) {
           label: "Ran sandbox agent",
           source: "api",
         });
+        recordAgentRun(session.userId);
 
         const result = streamText({
           messages: convertToModelMessages(payload.messages),

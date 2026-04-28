@@ -65,7 +65,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Yes. All accounts can create up to 10 skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model. Free accounts can run up to 3 automations; Operator ($19/mo) unlocks unlimited automations with model selection.",
+          "Yes. All accounts can create up to 10 skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model. Free accounts can run up to 3 automations; Operator ($5/mo) unlocks unlimited automations with model selection.",
         question: "Can I create my own skills?",
       },
       {
@@ -197,7 +197,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Free accounts can run up to 3 automations. Operator ($19/mo) unlocks unlimited automations with model selection and preferred scheduling.",
+          "Free accounts can run up to 3 automations. Operator ($5/mo) unlocks unlimited automations with model selection and preferred scheduling.",
         question: "Do automations require a paid plan?",
       },
     ],
@@ -307,7 +307,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Loop has two tiers. Free ($0) lets you browse the catalog, create up to 10 skills, run up to 3 automations, and explore the Sandbox. Operator ($19/mo) unlocks unlimited automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
+          "Loop has two tiers. Free ($0) lets you browse the catalog, create up to 10 skills, run up to 3 automations, and explore the Sandbox. Operator ($5/mo) unlocks unlimited automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
         question: "How much does Loop cost?",
       },
       {
@@ -317,7 +317,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Operator ($19/mo) unlocks: unlimited automations with configurable cadence, preferred model selection for automation runs, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support. All accounts can create up to 10 skills; free accounts get up to 3 automations.",
+          "Operator ($5/mo) unlocks: unlimited automations with configurable cadence, preferred model selection for automation runs, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support. All accounts can create up to 10 skills; free accounts get up to 3 automations.",
         question: "What does the Operator plan include?",
       },
       {

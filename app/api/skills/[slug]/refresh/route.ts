@@ -73,7 +73,10 @@ export async function POST(
         );
       }
 
-      const cooldown = await getManualUpdateCooldown(slug);
+      const cooldown = await getManualUpdateCooldown(slug, {
+        clerkUserId: session.userId,
+        email: session.email,
+      });
       if (!cooldown.allowed) {
         const minutesLeft = Math.ceil(cooldown.remainingMs / 60_000);
         return Response.json(

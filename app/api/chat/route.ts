@@ -1,7 +1,9 @@
 import { streamText } from "ai";
 
 import { getGatewayModelForSkill, getGatewayEditorModelId } from "@/lib/agents";
+import { getSessionUser } from "@/lib/auth";
 import { getLoopSnapshot } from "@/lib/refresh";
+import { canRunAgentMessage, recordAgentRun } from "@/lib/skill-limits";
 import { withApiUsage } from "@/lib/usage-server";
 
 export async function POST(request: Request) {
@@ -12,6 +14,22 @@ export async function POST(request: Request) {
       route: "/api/chat",
     },
     async () => {
+      const session = await getSessionUser();
+      if (!session) {
+        return Response.json(
+          { error: "Sign in to use the copilot." },
+          { status: 401 }
+        );
+      }
+
+      const gate = await canRunAgentMessage(session.userId, session.email);
+      if (!gate.allowed) {
+        return Response.json(
+          { error: gate.reason ?? "Daily agent message limit reached." },
+          { status: 429 }
+        );
+      }
+
       const model = getGatewayModelForSkill();
       if (!model) {
         return Response.json(
@@ -49,6 +67,8 @@ export async function POST(request: Request) {
         "",
         ...briefList,
       ].join("\n");
+
+      recordAgentRun(session.userId);
 
       const result = streamText({
         messages,

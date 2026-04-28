@@ -445,7 +445,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const cooldown = await getManualUpdateCooldown(payload.data.slug);
+      const cooldown = await getManualUpdateCooldown(payload.data.slug, {
+        clerkUserId: session.userId,
+        email: session.email,
+      });
       if (!cooldown.allowed) {
         const minutesLeft = Math.ceil(cooldown.remainingMs / 60_000);
         return NextResponse.json(

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { authErrorResponse, getSessionUser } from "@/lib/auth";
 import { listConversations, upsertConversation } from "@/lib/db/conversations";
+import { canCreateConversation } from "@/lib/skill-limits";
 import { withApiUsage } from "@/lib/usage-server";
 
 const messageMetadataSchema = z.object({
@@ -120,6 +121,22 @@ export async function POST(request: Request) {
         }
 
         const payload = upsertSchema.parse(await request.json());
+
+        const isNewConversation = !payload.id;
+        if (isNewConversation) {
+          const gate = await canCreateConversation(
+            session.userId,
+            payload.channel,
+            session.email
+          );
+          if (!gate.allowed) {
+            return Response.json(
+              { error: gate.reason ?? "Conversation limit reached." },
+              { status: 429 }
+            );
+          }
+        }
+
         const record = await upsertConversation({
           channel: payload.channel,
           clerkUserId: session.userId,

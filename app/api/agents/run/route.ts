@@ -2,8 +2,10 @@ import { stepCountIs, streamText } from "ai";
 import { z } from "zod";
 
 import { buildAgentContext, resolveLanguageModel } from "@/lib/agents";
+import { authErrorResponse, getSessionUser } from "@/lib/auth";
 import { buildMcpToolRuntime } from "@/lib/mcp-runtime";
 import { getLoopSnapshot } from "@/lib/refresh";
+import { canRunAgentMessage, recordAgentRun } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const runSchema = z.object({
@@ -28,6 +30,22 @@ export async function POST(request: Request) {
     },
     async () => {
       try {
+        const session = await getSessionUser();
+        if (!session) {
+          return Response.json(
+            { error: "Sign in to use the agent." },
+            { status: 401 }
+          );
+        }
+
+        const gate = await canRunAgentMessage(session.userId, session.email);
+        if (!gate.allowed) {
+          return Response.json(
+            { error: gate.reason ?? "Daily agent run limit reached." },
+            { status: 429 }
+          );
+        }
+
         const payload = runSchema.parse(await request.json());
         const snapshot = await getLoopSnapshot();
         const model = resolveLanguageModel(payload);
@@ -60,6 +78,7 @@ export async function POST(request: Request) {
           label: "Ran agent",
           source: "api",
         });
+        recordAgentRun(session.userId);
 
         const result = streamText({
           messages: payload.messages,

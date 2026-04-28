@@ -23,10 +23,13 @@ export function OperatorGate({
       )}
     >
       {children ?? <p className="m-0 text-sm text-ink-muted">{message}</p>}
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <LinkButton href="/api/billing/checkout?plan=operator" size="sm">
           <ZapIcon className="h-3.5 w-3.5" />
-          Upgrade to Operator – $19/mo
+          Upgrade to Operator – $5/mo
+        </LinkButton>
+        <LinkButton href="/settings/subscription" size="sm" variant="soft">
+          Compare plans
         </LinkButton>
       </div>
     </div>

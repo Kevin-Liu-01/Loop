@@ -1,27 +1,90 @@
 import { isAdminEmail } from "@/lib/admin";
 import { getUserSubscription } from "@/lib/auth";
+import { countUserConversations } from "@/lib/db/conversations";
 import {
   countUserActiveAutomations,
   countUserPublicSkills,
   countUserSkills,
 } from "@/lib/db/skills";
+import {
+  AUTOMATION_PROXIMITY_MS,
+  FREE_AUTOMATION_LIMIT,
+  FREE_CONVERSATION_LIMIT,
+  FREE_DAILY_AGENT_RUN_LIMIT,
+  FREE_MANUAL_UPDATE_COOLDOWN_MS,
+  FREE_SANDBOX_CONVERSATION_LIMIT,
+  MAX_SKILLS_PER_USER,
+  MAX_SLUG_COLLISION_ATTEMPTS,
+  MS_PER_DAY,
+  OPERATOR_AUTOMATION_LIMIT,
+  OPERATOR_CONVERSATION_LIMIT,
+  OPERATOR_DAILY_AGENT_RUN_LIMIT,
+  OPERATOR_MANUAL_UPDATE_COOLDOWN_MS,
+  OPERATOR_SANDBOX_CONVERSATION_LIMIT,
+  SKILL_CREATE_COOLDOWN_MS,
+} from "@/lib/skill-limit-constants";
 import { listLoopRuns } from "@/lib/system-state";
-import type { SkillAutomationState, UserSkillCadence } from "@/lib/types";
+import type {
+  ConversationChannel,
+  SkillAutomationState,
+  UserSkillCadence,
+} from "@/lib/types";
 
-export const FREE_AUTOMATION_LIMIT = 3;
-export const OPERATOR_AUTOMATION_LIMIT = Infinity;
-export const MAX_SKILLS_PER_USER = 10;
-export const MAX_PUBLIC_SKILLS_PER_USER = 20;
-export const SKILL_CREATE_COOLDOWN_MS = 30 * 1000;
-export const MAX_SLUG_COLLISION_ATTEMPTS = 10;
-
-export const MANUAL_UPDATE_COOLDOWN_MS = 15 * 60 * 1000;
-
-export const AUTOMATION_PROXIMITY_MS = 60 * 60 * 1000;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+export {
+  AUTOMATION_PROXIMITY_MS,
+  FREE_AUTOMATION_LIMIT,
+  FREE_CONVERSATION_LIMIT,
+  FREE_DAILY_AGENT_RUN_LIMIT,
+  FREE_MANUAL_UPDATE_COOLDOWN_MS,
+  FREE_SANDBOX_CONVERSATION_LIMIT,
+  MANUAL_UPDATE_COOLDOWN_MS,
+  MAX_PUBLIC_SKILLS_PER_USER,
+  MAX_SKILLS_PER_USER,
+  MAX_SLUG_COLLISION_ATTEMPTS,
+  OPERATOR_AUTOMATION_LIMIT,
+  OPERATOR_CONVERSATION_LIMIT,
+  OPERATOR_DAILY_AGENT_RUN_LIMIT,
+  OPERATOR_MANUAL_UPDATE_COOLDOWN_MS,
+  OPERATOR_SANDBOX_CONVERSATION_LIMIT,
+  SKILL_CREATE_COOLDOWN_MS,
+} from "@/lib/skill-limit-constants";
 
 const recentCreates = new Map<string, number>();
+
+const dailyAgentRuns = new Map<string, number[]>();
+
+function pruneOldTimestamps(timestamps: number[]): number[] {
+  const cutoff = Date.now() - MS_PER_DAY;
+  return timestamps.filter((ts) => ts > cutoff);
+}
+
+function getDailyRunCount(clerkUserId: string): number {
+  const timestamps = dailyAgentRuns.get(clerkUserId);
+  if (!timestamps) {
+    return 0;
+  }
+  const pruned = pruneOldTimestamps(timestamps);
+  dailyAgentRuns.set(clerkUserId, pruned);
+  return pruned.length;
+}
+
+export function recordAgentRun(clerkUserId: string): void {
+  const timestamps = dailyAgentRuns.get(clerkUserId) ?? [];
+  timestamps.push(Date.now());
+  dailyAgentRuns.set(clerkUserId, pruneOldTimestamps(timestamps));
+
+  if (dailyAgentRuns.size > 10_000) {
+    const cutoff = Date.now() - MS_PER_DAY;
+    for (const [key, ts] of dailyAgentRuns) {
+      const pruned = ts.filter((t) => t > cutoff);
+      if (pruned.length === 0) {
+        dailyAgentRuns.delete(key);
+      } else {
+        dailyAgentRuns.set(key, pruned);
+      }
+    }
+  }
+}
 
 function cadenceIntervalMs(cadence: UserSkillCadence): number | null {
   if (cadence === "daily") {
@@ -154,11 +217,25 @@ export async function canMakeSkillPublic(
   return { allowed: true, limit: MAX_PUBLIC_SKILLS_PER_USER, publicCount };
 }
 
-export async function getManualUpdateCooldown(slug: string): Promise<{
+export async function getManualUpdateCooldown(
+  slug: string,
+  options?: { clerkUserId?: string; email?: string }
+): Promise<{
   allowed: boolean;
   remainingMs: number;
   lastRunAt: string | null;
 }> {
+  let isOperator = false;
+  if (options?.clerkUserId) {
+    const subscription = await getUserSubscription(options.clerkUserId);
+    isOperator =
+      subscription !== null ||
+      (options.email ? isAdminEmail(options.email) : false);
+  }
+  const cooldownMs = isOperator
+    ? OPERATOR_MANUAL_UPDATE_COOLDOWN_MS
+    : FREE_MANUAL_UPDATE_COOLDOWN_MS;
+
   const runs = await listLoopRuns({
     skillSlug: slug,
     trigger: "manual",
@@ -170,11 +247,122 @@ export async function getManualUpdateCooldown(slug: string): Promise<{
   }
   const lastRunAt = lastManual.startedAt;
   const elapsed = Date.now() - Date.parse(lastRunAt);
-  if (Number.isNaN(elapsed) || elapsed >= MANUAL_UPDATE_COOLDOWN_MS) {
+  if (Number.isNaN(elapsed) || elapsed >= cooldownMs) {
     return { allowed: true, lastRunAt, remainingMs: 0 };
   }
-  const remainingMs = MANUAL_UPDATE_COOLDOWN_MS - elapsed;
+  const remainingMs = cooldownMs - elapsed;
   return { allowed: false, lastRunAt, remainingMs };
+}
+
+export async function canCreateConversation(
+  clerkUserId: string,
+  channel: ConversationChannel,
+  email?: string
+): Promise<{
+  allowed: boolean;
+  currentCount: number;
+  limit: number;
+  isOperator: boolean;
+  reason?: string;
+}> {
+  const [subscription, totalCount, sandboxCount] = await Promise.all([
+    getUserSubscription(clerkUserId),
+    countUserConversations(clerkUserId),
+    channel === "sandbox"
+      ? countUserConversations(clerkUserId, "sandbox")
+      : Promise.resolve(0),
+  ]);
+  const isOperator =
+    subscription !== null || (email ? isAdminEmail(email) : false);
+  const isAdmin = email ? isAdminEmail(email) : false;
+
+  if (isAdmin) {
+    return {
+      allowed: true,
+      currentCount: totalCount,
+      isOperator: true,
+      limit: Infinity,
+    };
+  }
+
+  const totalLimit = isOperator
+    ? OPERATOR_CONVERSATION_LIMIT
+    : FREE_CONVERSATION_LIMIT;
+  if (totalCount >= totalLimit) {
+    return {
+      allowed: false,
+      currentCount: totalCount,
+      isOperator,
+      limit: totalLimit,
+      reason: isOperator
+        ? undefined
+        : `Free accounts can have up to ${FREE_CONVERSATION_LIMIT} conversations. Upgrade to Operator for unlimited.`,
+    };
+  }
+
+  if (channel === "sandbox") {
+    const sandboxLimit = isOperator
+      ? OPERATOR_SANDBOX_CONVERSATION_LIMIT
+      : FREE_SANDBOX_CONVERSATION_LIMIT;
+    if (sandboxCount >= sandboxLimit) {
+      return {
+        allowed: false,
+        currentCount: sandboxCount,
+        isOperator,
+        limit: sandboxLimit,
+        reason: `Free accounts can have up to ${FREE_SANDBOX_CONVERSATION_LIMIT} sandbox conversations. Upgrade to Operator for unlimited.`,
+      };
+    }
+  }
+
+  return {
+    allowed: true,
+    currentCount: totalCount,
+    isOperator,
+    limit: totalLimit,
+  };
+}
+
+export async function canRunAgentMessage(
+  clerkUserId: string,
+  email?: string
+): Promise<{
+  allowed: boolean;
+  dailyCount: number;
+  limit: number;
+  isOperator: boolean;
+  reason?: string;
+}> {
+  const subscription = await getUserSubscription(clerkUserId);
+  const isOperator =
+    subscription !== null || (email ? isAdminEmail(email) : false);
+  const isAdmin = email ? isAdminEmail(email) : false;
+
+  if (isAdmin) {
+    return {
+      allowed: true,
+      dailyCount: 0,
+      isOperator: true,
+      limit: Infinity,
+    };
+  }
+
+  const limit = isOperator
+    ? OPERATOR_DAILY_AGENT_RUN_LIMIT
+    : FREE_DAILY_AGENT_RUN_LIMIT;
+  const dailyCount = getDailyRunCount(clerkUserId);
+
+  if (dailyCount >= limit) {
+    return {
+      allowed: false,
+      dailyCount,
+      isOperator,
+      limit,
+      reason: `You've reached the daily limit of ${limit} agent messages. ${isOperator ? "Try again tomorrow." : "Upgrade to Operator for unlimited."}`,
+    };
+  }
+
+  return { allowed: true, dailyCount, isOperator, limit };
 }
 
 export function isAutomationImminent(

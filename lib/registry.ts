@@ -1393,8 +1393,9 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     features: [
       "Up to 10 skills",
       "Up to 3 automations",
+      "5 sandbox conversations",
+      "20 agent messages / day",
       "Catalog access",
-      "Sandbox",
     ],
     interval: "forever",
     priceLabel: "$0",
@@ -1404,16 +1405,19 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     ctaLabel: "Unlock operator tools",
     description:
-      "Up to 10 skills, AI automations, custom imports, marketplace pricing, and payouts.",
+      "Up to 10 skills, AI automations, unlimited agent usage, custom imports, marketplace pricing, and payouts.",
     features: [
       "Up to 10 skills",
       "Unlimited automations",
+      "Unlimited conversations",
+      "Unlimited agent messages",
+      "5-min manual refresh cooldown",
       "Model selection",
       "Custom import sources",
       "Marketplace pricing & payouts",
     ],
     interval: "per month",
-    priceLabel: "$19",
+    priceLabel: "$5",
     slug: "operator",
     title: "Operator",
   },

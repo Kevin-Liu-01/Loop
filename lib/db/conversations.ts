@@ -160,3 +160,25 @@ export async function deleteConversation(
   }
   return true;
 }
+
+export async function countUserConversations(
+  clerkUserId: string,
+  channel?: ConversationChannel
+): Promise<number> {
+  const db = getServerSupabase();
+
+  let query = db
+    .from("conversations")
+    .select("*", { count: "exact", head: true })
+    .eq("clerk_user_id", clerkUserId);
+
+  if (channel) {
+    query = query.eq("channel", channel);
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    throw error;
+  }
+  return count ?? 0;
+}

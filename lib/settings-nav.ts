@@ -24,7 +24,7 @@ export const SETTINGS_NAV_ITEMS: readonly SettingsNavItem[] = [
   { group: "operations", id: "health", label: "System health" },
   { group: "operations", id: "refresh", label: "Refresh" },
   { group: "operations", id: "imports", label: "Imports" },
-  { group: "billing", id: "subscription", label: "Subscription" },
+  { group: "billing", id: "subscription", label: "Plans" },
   { group: "billing", id: "connect", label: "Stripe Connect" },
 ] as const;
 
