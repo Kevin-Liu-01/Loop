@@ -515,6 +515,7 @@ function ActivitySidebarView({
         }}
         open={listModalOpen}
         skillMap={skillMap}
+        userSkillSlugs={userSkillSlugs}
       />
     </>
   );
@@ -526,13 +527,34 @@ function AutomationListModal({
   onClose,
   onEdit,
   skillMap,
+  userSkillSlugs,
 }: {
   automations: AutomationSummary[];
   open: boolean;
   onClose: () => void;
   onEdit: (auto: AutomationSummary) => void;
   skillMap?: Map<string, SkillRecord>;
+  userSkillSlugs?: Set<string>;
 }) {
+  const sorted = [...automations].toSorted((a, b) => {
+    const aOwn = a.matchedSkillSlugs.some((s) => userSkillSlugs?.has(s))
+      ? 1
+      : 0;
+    const bOwn = b.matchedSkillSlugs.some((s) => userSkillSlugs?.has(s))
+      ? 1
+      : 0;
+    if (aOwn !== bOwn) {
+      return bOwn - aOwn;
+    }
+    const aActive = a.status === "ACTIVE" ? 1 : 0;
+    const bActive = b.status === "ACTIVE" ? 1 : 0;
+    return bActive - aActive;
+  });
+
+  const ownCount = sorted.filter((a) =>
+    a.matchedSkillSlugs.some((s) => userSkillSlugs?.has(s))
+  ).length;
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="gap-0 overflow-hidden p-0" maxWidth="lg">
@@ -545,7 +567,21 @@ function AutomationListModal({
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid gap-0">
-            {automations.map((auto) => {
+            {ownCount > 0 && (
+              <div className="flex items-center gap-2 border-b border-line/40 bg-paper-2/30 px-6 py-1.5 dark:bg-paper-2/15">
+                <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint">
+                  Your automations
+                </span>
+                <span className="text-[0.625rem] tabular-nums text-ink-faint/60">
+                  {ownCount}
+                </span>
+              </div>
+            )}
+            {sorted.map((auto, i) => {
+              const isFirstOther = ownCount > 0 && i === ownCount;
+              const isOwn = auto.matchedSkillSlugs.some((s) =>
+                userSkillSlugs?.has(s)
+              );
               const skill = skillMap?.get(auto.matchedSkillSlugs[0]);
               const isActive = auto.status === "ACTIVE";
               const nextRun =
@@ -557,55 +593,66 @@ function AutomationListModal({
                     )
                   : null;
               return (
-                <button
-                  className="group flex items-center gap-3 border-t border-line/60 px-6 py-3.5 text-left transition-colors first:border-t-0 hover:bg-paper-2/50 dark:hover:bg-paper-3/40"
-                  key={auto.id}
-                  onClick={() => onEdit(auto)}
-                  type="button"
-                >
-                  <SkillIcon
-                    className="shrink-0 rounded-md"
-                    iconUrl={skill?.iconUrl}
-                    size={28}
-                    slug={auto.matchedSkillSlugs[0] ?? auto.id}
-                  />
-                  <div className="min-w-0 flex-1 grid gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <StatusDot
-                        size="xs"
-                        tone={isActive ? "fresh" : "idle"}
-                        pulse={isActive}
-                      />
-                      <span className="truncate text-sm font-medium text-ink">
-                        {auto.name}
+                <div key={auto.id}>
+                  {isFirstOther && (
+                    <div className="flex items-center gap-2 border-b border-line/40 bg-paper-2/30 px-6 py-1.5 dark:bg-paper-2/15">
+                      <span className="text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink-faint">
+                        All automations
                       </span>
-                      <span className="shrink-0 text-[0.6875rem] text-ink-faint">
-                        {isActive ? "Active" : "Paused"}
+                      <span className="text-[0.625rem] tabular-nums text-ink-faint/60">
+                        {sorted.length - ownCount}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-ink-faint">
-                      <span>{auto.schedule?.trim() || "Manual"}</span>
-                      {nextRun && (
-                        <>
-                          <span className="text-line-strong">·</span>
-                          <span className="flex items-center gap-1">
-                            <ClockIcon className="h-2.5 w-2.5" />
-                            {nextRun}
-                          </span>
-                        </>
-                      )}
-                      {auto.matchedSkillSlugs.length > 0 && (
-                        <>
-                          <span className="text-line-strong">·</span>
-                          <span>
-                            {skill?.title ?? auto.matchedSkillSlugs[0]}
-                          </span>
-                        </>
-                      )}
+                  )}
+                  <button
+                    className="group flex w-full items-center gap-3 border-t border-line/60 px-6 py-3.5 text-left transition-colors first:border-t-0 hover:bg-paper-2/50 dark:hover:bg-paper-3/40"
+                    onClick={() => onEdit(auto)}
+                    type="button"
+                  >
+                    <SkillIcon
+                      className="shrink-0 rounded-md"
+                      iconUrl={skill?.iconUrl}
+                      size={28}
+                      slug={auto.matchedSkillSlugs[0] ?? auto.id}
+                    />
+                    <div className="min-w-0 flex-1 grid gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <StatusDot
+                          size="xs"
+                          tone={isActive ? "fresh" : "idle"}
+                          pulse={isActive}
+                        />
+                        <span className="truncate text-sm font-medium text-ink">
+                          {auto.name}
+                        </span>
+                        <span className="shrink-0 text-[0.6875rem] text-ink-faint">
+                          {isActive ? "Active" : "Paused"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-ink-faint">
+                        <span>{auto.schedule?.trim() || "Manual"}</span>
+                        {nextRun && (
+                          <>
+                            <span className="text-line-strong">·</span>
+                            <span className="flex items-center gap-1">
+                              <ClockIcon className="h-2.5 w-2.5" />
+                              {nextRun}
+                            </span>
+                          </>
+                        )}
+                        {auto.matchedSkillSlugs.length > 0 && (
+                          <>
+                            <span className="text-line-strong">·</span>
+                            <span>
+                              {skill?.title ?? auto.matchedSkillSlugs[0]}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <SettingsIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100" />
-                </button>
+                    <SettingsIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                </div>
               );
             })}
           </div>

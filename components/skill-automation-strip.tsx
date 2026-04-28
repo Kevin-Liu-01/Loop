@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { AutomationEditModal } from "@/components/automation-edit-modal";
 import {
   AutomationIcon,
   ClockIcon,
+  PlayIcon,
   RefreshIcon,
   SearchIcon,
   SettingsIcon,
   SparkIcon,
+  StopIcon,
 } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
@@ -71,10 +75,28 @@ export function SkillAutomationStrip({
   sourceCount,
   sources,
 }: SkillAutomationStripProps) {
+  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const [isToggling, startToggle] = useTransition();
 
   const isActive = automation?.status === "ACTIVE";
   const hasAutomation = !!automation;
+
+  function handleTogglePause() {
+    if (!hasAutomation) {
+      return;
+    }
+    startToggle(async () => {
+      await fetch(`/api/automations/${automation.id}`, {
+        body: JSON.stringify({
+          status: isActive ? "PAUSED" : "ACTIVE",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      });
+      router.refresh();
+    });
+  }
 
   if (!hasAutomation && !canEdit) {
     return null;
@@ -115,7 +137,7 @@ export function SkillAutomationStrip({
     <>
       <div
         className={cn(
-          "flex items-center border-b py-0",
+          "flex items-center border-b",
           isActive
             ? "border-accent/20 bg-accent/4"
             : "border-line bg-paper-2/30 dark:bg-paper-2/15"
@@ -123,78 +145,129 @@ export function SkillAutomationStrip({
       >
         <div
           className={cn(
-            "flex flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-2.5",
+            "flex flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2",
             pageInsetPadX
           )}
         >
-          <div className="flex items-center gap-2">
-            <AutomationIcon className="h-3.5 w-3.5 text-ink-faint" />
-            <StatusDot
-              pulse={isActive}
-              size="sm"
-              tone={isActive ? "fresh" : "idle"}
-            />
-            <span className="text-[0.8125rem] font-semibold text-ink">
-              {isActive ? "Active" : "Paused"}
+          {/* Left: label + status metrics */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <span className="flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-ink-faint">
+              <AutomationIcon className="h-3 w-3" />
+              Automation
             </span>
+
+            <span className="flex items-center gap-1.5">
+              <StatusDot
+                pulse={isActive}
+                size="sm"
+                tone={isActive ? "fresh" : "idle"}
+              />
+              <span className="text-[0.8125rem] font-medium text-ink">
+                {isActive ? "Active" : "Paused"}
+              </span>
+            </span>
+
             <Badge color="neutral" size="sm">
               {formatCadenceLabel(automation.cadence)}
             </Badge>
+
+            {nextRun && (
+              <span className="flex items-center gap-1 text-xs text-ink-faint">
+                <ClockIcon className="h-3 w-3" />
+                Next {nextRun}
+              </span>
+            )}
+
+            <span className="flex items-center gap-1 text-xs text-ink-faint">
+              <SearchIcon className="h-3 w-3" />
+              {sourceCount} source{sourceCount === 1 ? "" : "s"}
+            </span>
+
+            <span className="flex items-center gap-1 text-xs tabular-nums text-ink-faint">
+              <RefreshIcon className="h-3 w-3" />
+              {latestRun ? formatRelativeDate(latestRun.finishedAt) : "No runs"}
+              {latestRun && (
+                <>
+                  {" · "}
+                  <span
+                    className={cn(
+                      "font-medium",
+                      latestRun.status === "error"
+                        ? "text-danger"
+                        : latestRun.bodyChanged
+                          ? "text-ink"
+                          : ""
+                    )}
+                  >
+                    {formatOutcome(latestRun)}
+                  </span>
+                </>
+              )}
+            </span>
           </div>
 
-          {nextRun && (
-            <span className="flex items-center gap-1.5 text-xs text-ink-faint">
-              <ClockIcon className="h-3 w-3" />
-              Next {nextRun}
-            </span>
-          )}
-
-          <span className="flex items-center gap-1.5 text-xs text-ink-faint">
-            <SearchIcon className="h-3 w-3" />
-            {sourceCount} source{sourceCount === 1 ? "" : "s"}
-          </span>
-
-          <span className="flex items-center gap-1.5 text-xs tabular-nums text-ink-faint">
-            <RefreshIcon className="h-3 w-3" />
-            {latestRun
-              ? formatRelativeDate(latestRun.finishedAt)
-              : "No runs yet"}
-            {latestRun && (
-              <>
-                {" · "}
-                <span
-                  className={cn(
-                    "font-medium",
-                    latestRun.status === "error"
-                      ? "text-danger"
-                      : latestRun.bodyChanged
-                        ? "text-ink"
-                        : ""
-                  )}
-                >
-                  {formatOutcome(latestRun)}
-                </span>
-              </>
+          {/* Right: action buttons */}
+          <div className="flex items-center gap-1.5">
+            {canEdit && sourceCount > 0 && (
+              <Button
+                className="h-7 min-h-7 gap-1 px-2.5 text-xs"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("loop:trigger-refresh"))
+                }
+                size="sm"
+                type="button"
+              >
+                <RefreshIcon className="h-3 w-3" />
+                Run now
+              </Button>
             )}
-          </span>
-
-          <div className="flex items-center gap-3 sm:ml-auto">
-            <a
-              className="flex items-center gap-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
-              href="#automations"
+            {canEdit && (
+              <Button
+                className="h-7 min-h-7 gap-1 px-2.5 text-xs"
+                disabled={isToggling}
+                onClick={handleTogglePause}
+                size="sm"
+                type="button"
+                variant={isActive ? "soft" : "ghost"}
+              >
+                {isActive ? (
+                  <>
+                    <StopIcon className="h-3 w-3" />
+                    {isToggling ? "Pausing..." : "Pause"}
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="h-3 w-3" />
+                    {isToggling ? "Resuming..." : "Resume"}
+                  </>
+                )}
+              </Button>
+            )}
+            <Button
+              className="h-7 min-h-7 gap-1 px-2.5 text-xs"
+              onClick={() =>
+                document
+                  .querySelector("#automations")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              size="sm"
+              type="button"
+              variant="soft"
             >
               <SparkIcon className="h-3 w-3" />
               Details
-            </a>
+            </Button>
             {canEdit && (
-              <button
-                className="flex items-center gap-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+              <Button
+                className="h-7 min-h-7 gap-1 px-2.5 text-xs"
                 onClick={() => setEditOpen(true)}
+                size="sm"
                 type="button"
+                variant="soft"
               >
                 <SettingsIcon className="h-3 w-3" />
                 Edit
-              </button>
+              </Button>
             )}
           </div>
         </div>
