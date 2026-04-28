@@ -1388,8 +1388,14 @@ export const SKILL_OVERRIDES: Partial<
 export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     ctaLabel: "Reading now",
-    description: "Browse the catalog, create 1 skill, and explore the Sandbox.",
-    features: ["1 skill", "Catalog access", "Sandbox", "Skill downloads"],
+    description:
+      "Browse the catalog, create up to 10 skills, and explore the Sandbox.",
+    features: [
+      "Up to 10 skills",
+      "Up to 3 automations",
+      "Catalog access",
+      "Sandbox",
+    ],
     interval: "forever",
     priceLabel: "$0",
     slug: "free",
@@ -1398,10 +1404,11 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     ctaLabel: "Unlock operator tools",
     description:
-      "Unlimited skills, AI automations, custom imports, marketplace pricing, and payouts.",
+      "Up to 10 skills, AI automations, custom imports, marketplace pricing, and payouts.",
     features: [
-      "Unlimited skills",
-      "AI-powered automations",
+      "Up to 10 skills",
+      "Unlimited automations",
+      "Model selection",
       "Custom import sources",
       "Marketplace pricing & payouts",
     ],

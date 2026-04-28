@@ -14,7 +14,7 @@ interface SubscriptionPanelProps {
 }
 
 const OPERATOR_FEATURES = [
-  "Unlimited skills",
+  "Unlimited automations",
   "AI-powered automations",
   "Custom import sources",
   "Marketplace pricing & payouts",
@@ -65,8 +65,8 @@ export function SubscriptionPanel({
           <p className="m-0 mt-1 text-xs text-ink-faint">{email}</p>
         </div>
         <p className="m-0 text-sm leading-relaxed text-ink-muted">
-          You can create 1 skill for free. Upgrade to Operator to unlock
-          everything.
+          Free accounts get up to 10 skills and 3 automations. Upgrade to
+          Operator for unlimited automations, model selection, and more.
         </p>
         <ul className="m-0 grid gap-2 p-0 list-none">
           {OPERATOR_FEATURES.map((f) => (
@@ -84,7 +84,7 @@ export function SubscriptionPanel({
   }
 
   const portalHref = customerId
-    ? `/api/billing/portal?customer=${encodeURIComponent(customerId)}`
+    ? "/api/billing/portal"
     : "/settings/subscription?billing=no-customer";
 
   return (

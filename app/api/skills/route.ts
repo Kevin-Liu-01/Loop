@@ -2,11 +2,11 @@ import { revalidatePath } from "next/cache";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillCatalogue, getSkillRecordBySlug } from "@/lib/content";
-import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
 import { buildResearchProfile } from "@/lib/research-profile";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
-import { canCreateSkill } from "@/lib/skill-limits";
+import { canCreateSkill, recordSkillCreate } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   addUserSkill,
@@ -28,20 +28,36 @@ export async function GET() {
       route: "/api/skills",
     },
     async () => {
-      const skills = await listUserSkillDocuments();
+      try {
+        const session = await requireAuth();
+        const skills = await listUserSkillDocuments();
+        const ownSkills = skills.filter(
+          (skill) => skill.creatorClerkUserId === session.userId
+        );
 
-      return Response.json({
-        count: skills.length,
-        ok: true,
-        skills: skills.map((skill) => ({
-          automation: skill.automation,
-          category: skill.category,
-          ownerName: skill.ownerName ?? null,
-          slug: skill.slug,
-          title: skill.title,
-          updatedAt: skill.updatedAt,
-        })),
-      });
+        return Response.json({
+          count: ownSkills.length,
+          ok: true,
+          skills: ownSkills.map((skill) => ({
+            automation: skill.automation,
+            category: skill.category,
+            ownerName: skill.ownerName ?? null,
+            slug: skill.slug,
+            title: skill.title,
+            updatedAt: skill.updatedAt,
+          })),
+        });
+      } catch (error) {
+        const authResp = authErrorResponse(error);
+        if (authResp) {
+          return authResp;
+        }
+
+        return Response.json(
+          { error: "Unable to list skills." },
+          { status: 400 }
+        );
+      }
     }
   );
 }
@@ -56,14 +72,14 @@ export async function POST(request: Request) {
     async () => {
       try {
         const session = await requireAuth();
-        const sessionAuthor = await findSkillAuthorForSession(session);
+        const sessionAuthor = await ensureSkillAuthorForSession(session);
         const payload = createUserSkillInputSchema.parse(await request.json());
         const limits = await canCreateSkill(session.userId, session.email);
         if (!limits.allowed) {
           return Response.json(
             {
               currentCount: limits.currentCount,
-              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
+              error: limits.reason ?? "Skill limit reached.",
               isOperator: limits.isOperator,
               limit: limits.limit,
             },
@@ -83,10 +99,11 @@ export async function POST(request: Request) {
         }
 
         const created = await addUserSkill(payload, {
-          authorId: sessionAuthor?.id,
+          authorId: sessionAuthor.id,
           creatorClerkUserId: session.userId,
-          ownerName: sessionAuthor?.displayName ?? payload.ownerName,
+          ownerName: sessionAuthor.displayName ?? payload.ownerName,
         });
+        recordSkillCreate(session.userId);
         const createdRecord = buildUserSkillRecord(created);
 
         const researchProfile = buildResearchProfile({
@@ -145,7 +162,7 @@ export async function PATCH(request: Request) {
     async () => {
       try {
         const session = await requireAuth();
-        const sessionAuthor = await findSkillAuthorForSession(session);
+        const sessionAuthor = await ensureSkillAuthorForSession(session);
         const payload = updateUserSkillInputSchema.parse(await request.json());
         const current = await getSkillRecordBySlug(payload.slug);
 

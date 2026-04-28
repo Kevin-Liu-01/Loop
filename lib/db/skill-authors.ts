@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/db/client";
+import { slugify } from "@/lib/markdown";
 import type { SkillAuthorRecord } from "@/lib/types";
 
 interface SkillAuthorRow {
@@ -109,4 +110,87 @@ export async function findSkillAuthorForSession(session: {
   return emailMatches.data
     ? rowToSkillAuthor(emailMatches.data as SkillAuthorRow)
     : null;
+}
+
+export async function ensureSkillAuthorForSession(session: {
+  userId: string;
+  email: string;
+  displayName?: string | null;
+  imageUrl?: string | null;
+}): Promise<SkillAuthorRecord> {
+  const existing = await findSkillAuthorForSession(session);
+  if (existing) {
+    const needsUpdate =
+      (session.imageUrl && !existing.logoUrl) ||
+      (session.displayName && existing.displayName === existing.slug);
+    if (needsUpdate) {
+      const db = getServerSupabase();
+      const updates: Record<string, unknown> = {};
+      if (session.imageUrl && !existing.logoUrl) {
+        updates.logo_url = session.imageUrl;
+      }
+      if (session.displayName && existing.displayName === existing.slug) {
+        updates.display_name = session.displayName;
+      }
+      if (Object.keys(updates).length > 0) {
+        const { data } = await db
+          .from("skill_authors")
+          .update(updates as never)
+          .eq("id", existing.id)
+          .select("*")
+          .maybeSingle();
+        if (data) {
+          return rowToSkillAuthor(data as SkillAuthorRow);
+        }
+      }
+    }
+    return existing;
+  }
+
+  const db = getServerSupabase();
+  const normalizedEmail = session.email.trim().toLowerCase();
+  const displayName =
+    session.displayName || normalizedEmail.split("@")[0] || "User";
+  const baseSlug = slugify(displayName) || `user-${session.userId.slice(0, 8)}`;
+
+  let authorSlug = baseSlug;
+  let attempt = 0;
+  while (attempt < 5) {
+    const { data: conflict } = await db
+      .from("skill_authors")
+      .select("id")
+      .eq("slug", authorSlug)
+      .maybeSingle();
+    if (!conflict) {
+      break;
+    }
+    attempt++;
+    authorSlug = `${baseSlug}-${attempt}`;
+  }
+
+  const { data, error } = await db
+    .from("skill_authors")
+    .insert({
+      badge_label: "Author",
+      bio: "",
+      clerk_user_id: session.userId,
+      display_name: displayName,
+      is_official: false,
+      logo_url: session.imageUrl ?? null,
+      primary_email: normalizedEmail || null,
+      slug: authorSlug,
+      verified: false,
+    } as never)
+    .select("*")
+    .single();
+
+  if (error) {
+    const fallback = await findSkillAuthorForSession(session);
+    if (fallback) {
+      return fallback;
+    }
+    throw new Error(`ensureSkillAuthorForSession failed: ${error.message}`);
+  }
+
+  return rowToSkillAuthor(data as SkillAuthorRow);
 }

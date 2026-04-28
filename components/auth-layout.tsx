@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { LoopLogo } from "@/components/loop-logo";
 
 const OPERATOR_BENEFITS = [
-  "Unlimited skills",
+  "Unlimited automations",
   "AI-powered automations",
   "Model selection",
   "Custom imports",

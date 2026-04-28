@@ -179,31 +179,9 @@ export function toBillingEventRecord(event: Stripe.Event): BillingEventRecord {
 }
 
 export function toSubscriptionRecord(
-  source: Stripe.Subscription | Stripe.Checkout.Session,
+  source: Stripe.Subscription,
   updatedAt: string
 ): StripeSubscriptionRecord | null {
-  if ("object" in source && source.object === "checkout.session") {
-    const customerId =
-      typeof source.customer === "string" ? source.customer : undefined;
-    const subscriptionId =
-      typeof source.subscription === "string" ? source.subscription : undefined;
-    if (!customerId || !subscriptionId) {
-      return null;
-    }
-
-    return {
-      cancelAtPeriodEnd: false,
-      checkoutCompletedAt: updatedAt,
-      clerkUserId: source.metadata?.clerkUserId ?? undefined,
-      customerEmail: source.customer_details?.email ?? undefined,
-      customerId,
-      id: subscriptionId,
-      planSlug: source.metadata?.plan ?? undefined,
-      status: source.payment_status ?? "open",
-      updatedAt,
-    };
-  }
-
   const customerId =
     typeof source.customer === "string" ? source.customer : undefined;
   if (!customerId) {

@@ -10,6 +10,7 @@ import {
   recordBillingEvent as dbRecordBillingEvent,
   upsertSubscription as dbUpsertSubscription,
   listSubscriptions as dbListSubscriptions,
+  getSubscriptionsByClerkUserId as dbGetSubscriptionsByClerkUserId,
 } from "@/lib/db/system-state";
 import type {
   BillingEventRecord,
@@ -91,4 +92,10 @@ export async function listUsageEventsForOverview(
 
 export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {
   return dbListSubscriptions();
+}
+
+export async function getSubscriptionsByClerkUserId(
+  clerkUserId: string
+): Promise<StripeSubscriptionRecord[]> {
+  return dbGetSubscriptionsByClerkUserId(clerkUserId);
 }

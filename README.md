@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://loooooop.vercel.app">
-    <img src="https://loooooop.vercel.app/og" alt="Loop — Skills that never go stale" width="720" />
+  <a href="https://loooop.dev">
+    <img src="https://loooop.dev/og" alt="Loop — Skills that never go stale" width="720" />
   </a>
 </p>
 
@@ -28,8 +28,8 @@ The name "Loop" was inspired by **Aryan Mahajan** — thanks for the spark.
 
 It does four jobs:
 
-1. shows a catalog of skills you can browse, track, import, or write
-2. refreshes tracked skills from external sources and saves each refresh as a new version
+1. shows a catalog of skills you can browse, track, import, or write (up to 10 per user)
+2. refreshes tracked skills from external sources and saves each refresh as a new version (3 automations free, unlimited on Operator)
 3. exposes the update run itself with logs, source scans, summaries, and diffs
 4. lets you run agents against those skills, attached prompts, and imported MCP servers
 
@@ -91,6 +91,10 @@ type SkillAutomationState = {
   status: "active" | "paused";
   prompt: string;
   lastRunAt?: string;
+  preferredHour?: number;
+  preferredDay?: number;
+  preferredModel?: string;
+  consecutiveFailures?: number;
 };
 ```
 
@@ -146,7 +150,7 @@ The refresh pipeline is the center of the product.
 1. Load tracked skill documents from Supabase
 2. Decide which skills are due for refresh (check `automation.enabled`, `cadence`, `lastRunAt`)
 3. Fetch signals from each skill's source watchlist
-4. Run a research-first agent that analyzes signals, then searches the web via Firecrawl (up to 4 searches per run) and fetches full page content as clean markdown
+4. Run a research-first agent that analyzes signals, then searches the web via Jina AI (up to 4 searches per run; Firecrawl, Serper, Tavily, and Brave are optional alternatives) and fetches full page content as clean markdown
 5. The agent revises the skill body based on evidence from both tracked sources and live web research
 6. Save a new version (immutable — never mutates the old one)
 7. Persist run logs, summaries, diffs, and source results
@@ -230,21 +234,18 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### AI and refresh
 
 ```bash
-OPENAI_API_KEY=
-LOOP_MODEL=gpt-5-mini
 AI_GATEWAY_API_KEY=
-FIRECRAWL_API_KEY=
-OPENROUTER_API_KEY=
-GROQ_API_KEY=
-TOGETHER_API_KEY=
+JINA_API_KEY=
+# LOOP_MODEL=openai/gpt-5-mini
 ```
 
-`AI_GATEWAY_API_KEY` is required for automations (routes through Vercel AI Gateway). `FIRECRAWL_API_KEY` powers web search and page scraping during agent runs. Without it, `fetch_page` falls back to plain HTTP.
+`AI_GATEWAY_API_KEY` is required for automations (routes through Vercel AI Gateway). `JINA_API_KEY` is the default search and scraping provider (free at [jina.ai](https://jina.ai/?sui=apikey)). Users can optionally bring their own key for Firecrawl, Serper, Tavily, or Brave via Settings > Search.
 
 ### Billing (Stripe)
 
 ```bash
 STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRICE_OPERATOR=
 ```
@@ -315,7 +316,7 @@ For a production deploy:
 2. Set `CRON_SECRET` for the daily refresh cron
 3. Configure Supabase env vars (URL, anon key, service role key)
 4. Configure Clerk env vars (publishable key, secret key)
-5. Configure `AI_GATEWAY_API_KEY` for automations and `FIRECRAWL_API_KEY` for web research
+5. Configure `AI_GATEWAY_API_KEY` for automations and `JINA_API_KEY` for web research
 6. Configure Stripe keys if billing is enabled
 7. The cron schedule is in `vercel.json`
 

@@ -6,11 +6,11 @@ import type { UserSearchKeys } from "@/lib/agent-tools/search-providers";
 const METADATA_KEY = "searchApiKeys";
 
 const VALID_PROVIDERS = new Set<SearchProviderId>([
-  "jina",
+  "brave",
   "firecrawl",
   "serper",
   "tavily",
-  "brave",
+  "jina",
 ]);
 
 export async function getUserSearchKeys(
@@ -35,7 +35,7 @@ export async function getUserSearchKeys(
     firecrawl: typeof keys.firecrawl === "string" ? keys.firecrawl : undefined,
     serper: typeof keys.serper === "string" ? keys.serper : undefined,
     tavily: typeof keys.tavily === "string" ? keys.tavily : undefined,
-    brave: typeof keys.brave === "string" ? keys.brave : undefined,
+    jina: typeof keys.jina === "string" ? keys.jina : undefined,
   };
 }
 
@@ -74,13 +74,13 @@ export function maskUserSearchKeys(keys: UserSearchKeys | null): {
   firecrawl: string | null;
   serper: string | null;
   tavily: string | null;
-  brave: string | null;
+  jina: string | null;
 } {
   return {
-    provider: keys?.provider ?? "jina",
+    provider: keys?.provider ?? "brave",
     firecrawl: maskKey(keys?.firecrawl),
     serper: maskKey(keys?.serper),
     tavily: maskKey(keys?.tavily),
-    brave: maskKey(keys?.brave),
+    jina: maskKey(keys?.jina),
   };
 }

@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
+import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
@@ -22,7 +22,7 @@ export async function PATCH(request: Request) {
     },
     async () => {
       try {
-        const session = await requireActiveSubscription();
+        const session = await requireAuth();
         const sessionAuthor = await findSkillAuthorForSession(session);
         const { ids, status } = bulkSchema.parse(await request.json());
 

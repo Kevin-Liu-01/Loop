@@ -1,4 +1,6 @@
 import {
+  BRAVE_SEARCH_URL,
+  BRAVE_TIMEOUT_MS,
   FIRECRAWL_API_URL,
   FIRECRAWL_TIMEOUT_MS,
   JINA_READER_URL,
@@ -22,91 +24,68 @@ export interface UserSearchKeys {
   firecrawl?: string;
   serper?: string;
   tavily?: string;
-  brave?: string;
+  jina?: string;
 }
 
 // ---------------------------------------------------------------------------
-// Jina (default, free)
+// Brave Search (default, free — platform-level key)
 // ---------------------------------------------------------------------------
 
-interface JinaSearchItem {
+interface BraveResult {
   title: string;
-  description: string;
   url: string;
-  content?: string;
+  description: string;
 }
 
-interface JinaSearchResponse {
-  code: number;
-  data: JinaSearchItem[];
-}
-
-interface JinaReaderResponse {
-  code: number;
-  data: { title: string; content: string; url: string };
-}
-
-function getJinaApiKey(): string {
-  const key = process.env.JINA_API_KEY;
+function getBraveApiKey(): string {
+  const key = process.env.BRAVE_API_KEY;
   if (!key) {
     throw new Error(
-      "JINA_API_KEY is not set. Get a free key at https://jina.ai/?sui=apikey"
+      "BRAVE_API_KEY is not set. Get a free key at https://brave.com/search/api/"
     );
   }
   return key;
 }
 
-function createJinaProvider(): SearchProvider {
+function createBraveProvider(apiKey?: string): SearchProvider {
   return {
-    id: "jina",
+    id: "brave",
     async search(query, limit) {
-      const response = await fetch(JINA_SEARCH_URL, {
-        method: "POST",
+      const key = apiKey ?? getBraveApiKey();
+      const params = new URLSearchParams({
+        q: query,
+        count: String(limit),
+      });
+
+      const response = await fetch(`${BRAVE_SEARCH_URL}?${params.toString()}`, {
+        method: "GET",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${getJinaApiKey()}`,
-          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip",
+          "X-Subscription-Token": key,
         },
-        body: JSON.stringify({ q: query }),
-        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+        signal: AbortSignal.timeout(BRAVE_TIMEOUT_MS),
       });
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
         throw new Error(
-          `Jina search returned HTTP ${response.status}: ${text.slice(0, 200)}`
+          `Brave Search returned HTTP ${response.status}: ${text.slice(0, 200)}`
         );
       }
 
-      const json = (await response.json()) as JinaSearchResponse;
-      return (json.data ?? []).slice(0, limit).map((item) => ({
-        title: item.title,
-        url: item.url,
-        snippet: item.description,
+      const json = (await response.json()) as {
+        web?: { results?: BraveResult[] };
+      };
+      return (json.web?.results ?? []).slice(0, limit).map((r) => ({
+        title: r.title,
+        url: r.url,
+        snippet: r.description,
       }));
     },
 
-    async scrape(url) {
-      const response = await fetch(JINA_READER_URL, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${getJinaApiKey()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const json = (await response.json()) as JinaReaderResponse;
-      return {
-        markdown: json.data?.content ?? "",
-        title: json.data?.title ?? "Untitled",
-      };
+    async scrape() {
+      return null;
     },
   };
 }
@@ -203,7 +182,7 @@ function createSerperProvider(apiKey: string): SearchProvider {
           "X-API-KEY": apiKey,
         },
         body: JSON.stringify({ q: query, num: limit }),
-        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+        signal: AbortSignal.timeout(BRAVE_TIMEOUT_MS),
       });
 
       if (!response.ok) {
@@ -250,7 +229,7 @@ function createTavilyProvider(apiKey: string): SearchProvider {
           max_results: limit,
           search_depth: "basic",
         }),
-        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+        signal: AbortSignal.timeout(BRAVE_TIMEOUT_MS),
       });
 
       if (!response.ok) {
@@ -275,56 +254,77 @@ function createTavilyProvider(apiKey: string): SearchProvider {
 }
 
 // ---------------------------------------------------------------------------
-// Brave Search (user-provided key)
+// Jina (user-provided key — legacy)
 // ---------------------------------------------------------------------------
 
-interface BraveResult {
+interface JinaSearchItem {
   title: string;
-  url: string;
   description: string;
+  url: string;
+  content?: string;
 }
 
-function createBraveProvider(apiKey: string): SearchProvider {
-  return {
-    id: "brave",
-    async search(query, limit) {
-      const params = new URLSearchParams({
-        q: query,
-        count: String(limit),
-      });
+interface JinaSearchResponse {
+  code: number;
+  data: JinaSearchItem[];
+}
 
-      const response = await fetch(
-        `https://api.search.brave.com/res/v1/web/search?${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Accept-Encoding": "gzip",
-            "X-Subscription-Token": apiKey,
-          },
-          signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
-        }
-      );
+interface JinaReaderResponse {
+  code: number;
+  data: { title: string; content: string; url: string };
+}
+
+function createJinaProvider(apiKey: string): SearchProvider {
+  return {
+    id: "jina",
+    async search(query, limit) {
+      const response = await fetch(JINA_SEARCH_URL, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ q: query }),
+        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+      });
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
         throw new Error(
-          `Brave Search returned HTTP ${response.status}: ${text.slice(0, 200)}`
+          `Jina search returned HTTP ${response.status}: ${text.slice(0, 200)}`
         );
       }
 
-      const json = (await response.json()) as {
-        web?: { results?: BraveResult[] };
-      };
-      return (json.web?.results ?? []).slice(0, limit).map((r) => ({
-        title: r.title,
-        url: r.url,
-        snippet: r.description,
+      const json = (await response.json()) as JinaSearchResponse;
+      return (json.data ?? []).slice(0, limit).map((item) => ({
+        title: item.title,
+        url: item.url,
+        snippet: item.description,
       }));
     },
 
-    async scrape() {
-      return null;
+    async scrape(url) {
+      const response = await fetch(JINA_READER_URL, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const json = (await response.json()) as JinaReaderResponse;
+      return {
+        markdown: json.data?.content ?? "",
+        title: json.data?.title ?? "Untitled",
+      };
     },
   };
 }
@@ -334,32 +334,32 @@ function createBraveProvider(apiKey: string): SearchProvider {
 // ---------------------------------------------------------------------------
 
 const PROVIDER_FACTORIES: Record<
-  Exclude<SearchProviderId, "jina">,
+  Exclude<SearchProviderId, "brave">,
   (apiKey: string) => SearchProvider
 > = {
   firecrawl: createFirecrawlProvider,
   serper: createSerperProvider,
   tavily: createTavilyProvider,
-  brave: createBraveProvider,
+  jina: createJinaProvider,
 };
 
-let _jinaProvider: SearchProvider | null = null;
+let _braveProvider: SearchProvider | null = null;
 
-function getJinaProvider(): SearchProvider {
-  _jinaProvider ??= createJinaProvider();
-  return _jinaProvider;
+function getBraveProvider(): SearchProvider {
+  _braveProvider ??= createBraveProvider();
+  return _braveProvider;
 }
 
 /**
  * Resolve the search provider for a request.
  *
- * If the user has configured a non-Jina provider with a valid key, use it.
- * Otherwise, always fall back to Jina (free, platform-level).
+ * If the user has configured a non-Brave provider with a valid key, use it.
+ * Otherwise, always fall back to Brave Search (free, platform-level).
  */
 export function resolveSearchProvider(
   userKeys?: UserSearchKeys | null
 ): SearchProvider {
-  if (userKeys?.provider && userKeys.provider !== "jina") {
+  if (userKeys?.provider && userKeys.provider !== "brave") {
     const key = userKeys[userKeys.provider];
     if (key) {
       const factory = PROVIDER_FACTORIES[userKeys.provider];
@@ -367,5 +367,5 @@ export function resolveSearchProvider(
     }
   }
 
-  return getJinaProvider();
+  return getBraveProvider();
 }

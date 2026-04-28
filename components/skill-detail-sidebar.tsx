@@ -1,5 +1,9 @@
+"use client";
+
 import { DiffViewer } from "@/components/diff-viewer";
 import {
+  AutomationIcon,
+  ClockIcon,
   LinkIcon,
   PlusIcon,
   RefreshIcon,
@@ -13,21 +17,28 @@ import { SkillInstallPanel } from "@/components/skill-install-panel";
 import { Badge } from "@/components/ui/badge";
 import { FileTree } from "@/components/ui/file-tree";
 import type { FileTreeEntry } from "@/components/ui/file-tree";
+import { LinkButton } from "@/components/ui/link-button";
 import { PanelHead } from "@/components/ui/panel";
+import { StatusDot } from "@/components/ui/status-dot";
 import { VersionTimeline } from "@/components/version-timeline";
 import { cn } from "@/lib/cn";
 import { formatRelativeDate } from "@/lib/format";
+import { formatNextRun } from "@/lib/schedule";
 import type {
   AgentDocs,
   AutomationSummary,
+  CategorySlug,
   DiffLine,
   LoopRunRecord,
+  SkillOrigin,
   SkillRecord,
   SkillUpdateEntry,
+  SourceDefinition,
   VersionReference,
 } from "@/lib/types";
 import {
   textEyebrow,
+  textMetaLink,
   textMetaSm,
   textMetric,
   textMetricText,
@@ -57,6 +68,13 @@ interface SkillDetailSidebarProps {
   usage: SkillUsageSummary;
   skills?: SkillRecord[];
   timeZone?: string;
+  canEdit?: boolean;
+  skillTitle?: string;
+  category?: CategorySlug;
+  iconUrl?: string | null;
+  sourceCount?: number;
+  origin?: SkillOrigin;
+  sources?: SourceDefinition[];
 }
 
 function buildAgentFileTree(agentDocs?: AgentDocs): FileTreeEntry[] {
@@ -131,6 +149,13 @@ export function SkillDetailSidebar({
   usage,
   skills = [],
   timeZone,
+  canEdit = false,
+  skillTitle,
+  category,
+  iconUrl,
+  sourceCount = 0,
+  origin,
+  sources = [],
 }: SkillDetailSidebarProps) {
   const fileTreeEntries = buildAgentFileTree(agentDocs);
 
@@ -174,6 +199,15 @@ export function SkillDetailSidebar({
           </div>
         )}
       </section>
+
+      {/* ── Automation quick-view ── */}
+      <SidebarAutomationBox
+        automation={automations[0]}
+        canEdit={canEdit}
+        latestRun={latestRun}
+        slug={slug}
+        sourceCount={sourceCount}
+      />
 
       {/* ── Changes (latest refresh + diff + history) ── */}
       {hasChanges && (
@@ -258,6 +292,138 @@ export function SkillDetailSidebar({
       {/* ── Usage ── */}
       <SkillObservabilityPanel timeZone={timeZone} usage={usage} />
     </aside>
+  );
+}
+
+function SidebarAutomationBox({
+  automation,
+  canEdit,
+  latestRun,
+  slug,
+  sourceCount,
+}: {
+  automation?: AutomationSummary;
+  canEdit: boolean;
+  latestRun?: LoopRunRecord | null;
+  slug: string;
+  sourceCount: number;
+}) {
+  const isActive = automation?.status === "ACTIVE";
+
+  if (!automation) {
+    if (!canEdit) {
+      return null;
+    }
+    return (
+      <section className="grid gap-0 overflow-hidden border border-dashed border-line">
+        <div className="flex items-center gap-2 px-3 pb-2 pt-3">
+          <span className={cn(textEyebrow, "flex items-center gap-1.5")}>
+            <AutomationIcon className="h-3 w-3" />
+            Automation
+          </span>
+        </div>
+        <div className="px-3 pb-3">
+          <p className={cn(textMetaSm, "m-0 text-ink-faint")}>
+            No automation configured.
+          </p>
+          <a
+            className={cn(textMetaLink, "mt-1.5 inline-block")}
+            href="#automations"
+          >
+            Set up →
+          </a>
+        </div>
+      </section>
+    );
+  }
+
+  const nextRun =
+    automation.cadence !== "manual"
+      ? formatNextRun(
+          automation.cadence,
+          automation.preferredHour ?? 12,
+          automation.preferredDay
+        )
+      : null;
+
+  return (
+    <section className="grid gap-0 overflow-hidden border border-line bg-paper-3 dark:bg-paper-2/60">
+      <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
+        <span className={cn(textEyebrow, "flex items-center gap-1.5")}>
+          <AutomationIcon className="h-3 w-3" />
+          Automation
+        </span>
+        <div className="flex items-center gap-1.5">
+          <StatusDot
+            pulse={isActive}
+            size="xs"
+            tone={isActive ? "fresh" : "idle"}
+          />
+          <span className={cn(textMetaSm, isActive ? "text-accent" : "")}>
+            {isActive ? "Active" : "Paused"}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-2 border-t border-line/60 px-3 py-2.5 dark:border-line/40">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          <div className="grid gap-0.5">
+            <small className={textEyebrow}>schedule</small>
+            <span className={textMetricText}>
+              {automation.schedule?.trim() || "Manual"}
+            </span>
+          </div>
+          <div className="grid gap-0.5">
+            <small className={textEyebrow}>sources</small>
+            <span className={textMetricText}>{sourceCount}</span>
+          </div>
+          {nextRun && (
+            <div className="grid gap-0.5">
+              <small className={textEyebrow}>next run</small>
+              <span className={cn(textMetricText, "flex items-center gap-1")}>
+                <ClockIcon className="h-2.5 w-2.5 text-ink-faint" />
+                {nextRun}
+              </span>
+            </div>
+          )}
+          <div className="grid gap-0.5">
+            <small className={textEyebrow}>last run</small>
+            <span className={textMetricText}>
+              {latestRun ? formatRelativeDate(latestRun.finishedAt) : "–"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 border-t border-line/60 px-3 py-2 dark:border-line/40">
+        <button
+          className={cn(
+            textMetaLink,
+            "flex items-center gap-1 text-ink-soft hover:text-ink"
+          )}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("loop:trigger-refresh"))
+          }
+          type="button"
+        >
+          <RefreshIcon className="h-3 w-3" />
+          Run now
+        </button>
+        <span className="text-line-strong">·</span>
+        <a className={textMetaLink} href="#automations">
+          Details
+        </a>
+        <span className="text-line-strong">·</span>
+        <LinkButton
+          className="h-auto min-h-0 border-0 bg-transparent p-0 text-inherit shadow-none hover:bg-transparent hover:text-ink"
+          href="/settings/automations"
+          size="sm"
+          variant="soft"
+        >
+          <span className={textMetaLink}>Desk</span>
+        </LinkButton>
+      </div>
+    </section>
   );
 }
 

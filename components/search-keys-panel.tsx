@@ -12,14 +12,14 @@ import type { SearchProviderId } from "@/lib/agent-tools/search-provider-meta";
 import { SEARCH_PROVIDER_META } from "@/lib/agent-tools/search-provider-meta";
 import { cn } from "@/lib/cn";
 
-type ProviderKey = Exclude<SearchProviderId, "jina">;
+type ProviderKey = Exclude<SearchProviderId, "brave">;
 
 interface MaskedKeys {
   provider: SearchProviderId;
   firecrawl: string | null;
   serper: string | null;
   tavily: string | null;
-  brave: string | null;
+  jina: string | null;
 }
 
 interface SearchKeysPanelProps {
@@ -35,14 +35,14 @@ const PROVIDER_OPTIONS: SelectOption[] = (
   value: id,
   label: meta.label,
   icon:
-    id === "jina" ? (
+    id === "brave" ? (
       <GlobeIcon className="h-3.5 w-3.5 text-success" />
     ) : (
       <KeyIcon className="h-3.5 w-3.5 text-ink-faint" />
     ),
 }));
 
-const KEY_FIELDS: ProviderKey[] = ["firecrawl", "serper", "tavily", "brave"];
+const KEY_FIELDS: ProviderKey[] = ["firecrawl", "serper", "tavily", "jina"];
 
 export function SearchKeysPanel({ initialKeys }: SearchKeysPanelProps) {
   const [provider, setProvider] = useState<SearchProviderId>(
@@ -52,7 +52,7 @@ export function SearchKeysPanel({ initialKeys }: SearchKeysPanelProps) {
     firecrawl: "",
     serper: "",
     tavily: "",
-    brave: "",
+    jina: "",
   });
   const [savedMasks, setSavedMasks] = useState<
     Record<ProviderKey, string | null>
@@ -60,14 +60,14 @@ export function SearchKeysPanel({ initialKeys }: SearchKeysPanelProps) {
     firecrawl: initialKeys.firecrawl,
     serper: initialKeys.serper,
     tavily: initialKeys.tavily,
-    brave: initialKeys.brave,
+    jina: initialKeys.jina,
   });
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const activeProvider = provider;
-  const needsKey = activeProvider !== "jina";
+  const needsKey = activeProvider !== "brave";
   const activeKey = needsKey ? activeProvider : null;
 
   function handleSave() {
@@ -105,11 +105,11 @@ export function SearchKeysPanel({ initialKeys }: SearchKeysPanelProps) {
           firecrawl: payload.searchKeys.firecrawl,
           serper: payload.searchKeys.serper,
           tavily: payload.searchKeys.tavily,
-          brave: payload.searchKeys.brave,
+          jina: payload.searchKeys.jina,
         });
       }
 
-      setKeyInputs({ firecrawl: "", serper: "", tavily: "", brave: "" });
+      setKeyInputs({ firecrawl: "", serper: "", tavily: "", jina: "" });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     });

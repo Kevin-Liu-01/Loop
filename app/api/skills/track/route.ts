@@ -5,6 +5,7 @@ import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillCatalogue } from "@/lib/content";
 import { updateSkill } from "@/lib/db/skills";
 import { buildResearchProfile } from "@/lib/research-profile";
+import { canCreateSkill, recordSkillCreate } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   addTrackedSkillFromRecord,
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     },
     async () => {
       try {
-        await requireAuth();
+        const session = await requireAuth();
         const payload = bodySchema.parse(await request.json());
         const base = await getSkillCatalogue();
         const skill = base.skills.find((entry) => entry.slug === payload.slug);
@@ -46,6 +47,19 @@ export async function POST(request: Request) {
           });
         }
 
+        const limits = await canCreateSkill(session.userId, session.email);
+        if (!limits.allowed) {
+          return Response.json(
+            {
+              currentCount: limits.currentCount,
+              error: limits.reason ?? "Skill limit reached.",
+              isOperator: limits.isOperator,
+              limit: limits.limit,
+            },
+            { status: 403 }
+          );
+        }
+
         const skillSources = skill.sources ?? [];
         const hasOwnSources = skillSources.length > 0;
         const sourcesToTrack = hasOwnSources
@@ -53,7 +67,11 @@ export async function POST(request: Request) {
           : skill.path && skill.path.startsWith("http")
             ? [normalizeSource(skill.path, skill.category)]
             : [];
-        const tracked = await addTrackedSkillFromRecord(skill, sourcesToTrack);
+        const tracked = await addTrackedSkillFromRecord(
+          { ...skill, creatorClerkUserId: session.userId },
+          sourcesToTrack
+        );
+        recordSkillCreate(session.userId);
         const record = buildUserSkillRecord(tracked);
 
         const researchProfile = buildResearchProfile({

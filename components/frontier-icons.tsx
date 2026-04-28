@@ -191,7 +191,7 @@ export function PythonIcon({ title, className, ...props }: SvgIconProps) {
   );
 }
 
-export const GITHUB_REPO_URL = "https://github.com/Kevin-Liu-01/loop";
+export const GITHUB_REPO_URL = "https://github.com/Kevin-Liu-01/Loop";
 
 export function GitHubIcon({
   className,

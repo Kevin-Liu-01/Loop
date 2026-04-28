@@ -23,8 +23,8 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
           title: "Pausing & safety",
         },
         {
-          body: "Creating or editing automations requires Operator. That keeps scheduled compute and storage tied to a paid workspace and reduces abuse of long-running agent jobs.",
-          title: "Operator requirement",
+          body: "Free accounts can run up to 3 active automations. Operator unlocks unlimited automations with model selection. Scheduled compute is metered per-run.",
+          title: "Automation limits",
         },
       ],
       beforePrimary: [
@@ -155,22 +155,22 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
           title: "How keys are stored",
         },
         {
-          body: "Serper and Brave are search-only — they return results but can't scrape full page content. Firecrawl and Tavily handle both search and scraping. When your provider doesn't support scraping, Loop falls back to a basic HTTP fetch.",
+          body: "Serper and Jina are search-only providers that also offer scraping. Firecrawl handles both search and full JS-rendered scraping. When your provider doesn't support scraping, Loop falls back to a basic HTTP fetch.",
           title: "Provider capabilities",
         },
       ],
       beforePrimary: [
         {
-          body: "By default, all search and page reading uses Jina AI, which is free and provided by the platform. You don't need to configure anything unless you want to use a different provider.",
+          body: "By default, all search uses Brave Search, which is free and provided by the platform. You don't need to configure anything unless you want to use a different provider.",
           title: "Default provider",
         },
         {
-          body: "If you prefer Google results (Serper), AI-optimized search (Tavily), independent search (Brave), or full JS-rendered scraping (Firecrawl), select that provider and enter your API key. Your key is used only for your searches.",
+          body: "If you prefer Google results (Serper), AI-optimized search (Tavily), Jina search + reader, or full JS-rendered scraping (Firecrawl), select that provider and enter your API key. Your key is used only for your searches.",
           title: "Bring your own key",
         },
       ],
       heading: "Search provider",
-      lead: "Loop uses web search to keep skills fresh and power agent research. Jina is the free default — optionally bring your own API key for an alternative provider.",
+      lead: "Loop uses web search to keep skills fresh and power agent research. Brave Search is the free default — optionally bring your own API key for an alternative provider.",
     },
     refresh: {
       afterPrimary: [
@@ -233,7 +233,7 @@ export const SETTINGS_SECTION_META: Record<SettingsNavId, SettingsSectionMeta> =
       ],
       beforePrimary: [
         {
-          body: "Unlimited skills, AI-powered automations, custom import sources, marketplace pricing, and Stripe Connect payouts. Free accounts can create 1 skill and browse the full catalog.",
+          body: "AI-powered automations, model selection, custom import sources, marketplace pricing, and Stripe Connect payouts. All accounts can create up to 10 skills and browse the full catalog.",
           title: "What Operator unlocks",
         },
         {

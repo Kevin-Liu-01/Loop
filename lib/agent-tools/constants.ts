@@ -9,6 +9,10 @@ export const MAX_ADDED_SOURCES_PER_RUN = 5;
 export const FIRECRAWL_API_URL = "https://api.firecrawl.dev/v2";
 export const FIRECRAWL_TIMEOUT_MS = 15_000;
 
+export const BRAVE_SEARCH_URL =
+  "https://api.search.brave.com/res/v1/web/search";
+export const BRAVE_TIMEOUT_MS = 15_000;
+
 export const JINA_SEARCH_URL = "https://s.jina.ai/";
 export const JINA_READER_URL = "https://r.jina.ai/";
 export const JINA_TIMEOUT_MS = 15_000;

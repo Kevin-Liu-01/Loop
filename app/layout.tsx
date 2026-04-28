@@ -8,10 +8,12 @@ import { Suspense } from "react";
 
 import { ActiveOperationsProvider } from "@/components/active-operations-provider";
 import { CommandPalette } from "@/components/command-palette";
+import { NewAutomationModal } from "@/components/new-automation-modal";
 import { NewSkillModal } from "@/components/new-skill-modal";
 import { SeoJsonLd } from "@/components/seo-json-ld";
 import { TimezoneProvider } from "@/components/timezone-provider";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
+import { WelcomeModal } from "@/components/welcome-modal";
 
 import "@/app/globals.css";
 import { clerkAppearance } from "@/lib/clerk-theme";
@@ -71,10 +73,13 @@ async function DeferredGlobals() {
   let snapshotCategories: Awaited<
     ReturnType<typeof getLoopSnapshot>
   >["categories"] = [];
+  let snapshotSkills: Awaited<ReturnType<typeof getLoopSnapshot>>["skills"] =
+    [];
 
   try {
     const snapshot = await getLoopSnapshot();
     snapshotCategories = snapshot.categories;
+    snapshotSkills = snapshot.skills;
 
     paletteItems = [
       ...snapshot.skills.slice(0, 30).map((skill) => ({
@@ -116,6 +121,8 @@ async function DeferredGlobals() {
     <>
       <CommandPalette items={paletteItems} />
       <NewSkillModal categories={snapshotCategories} />
+      <NewAutomationModal skills={snapshotSkills} />
+      <WelcomeModal />
     </>
   );
 }

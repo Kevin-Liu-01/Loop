@@ -3,9 +3,10 @@ import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
-import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
+import { canMakeSkillPublic } from "@/lib/skill-limits";
 import { withApiUsage } from "@/lib/usage-server";
 
 const patchSchema = z.object({
@@ -25,7 +26,7 @@ export async function PATCH(
     async () => {
       try {
         const session = await requireAuth();
-        const sessionAuthor = await findSkillAuthorForSession(session);
+        const sessionAuthor = await ensureSkillAuthorForSession(session);
         const { slug } = await params;
         const skill = await getSkillRecordBySlug(slug);
 
@@ -41,6 +42,24 @@ export async function PATCH(
         }
 
         const { visibility } = patchSchema.parse(await request.json());
+
+        if (visibility === "public" && skill.visibility !== "public") {
+          const pubLimits = await canMakeSkillPublic(
+            session.userId,
+            session.email
+          );
+          if (!pubLimits.allowed) {
+            return Response.json(
+              {
+                error: pubLimits.reason,
+                limit: pubLimits.limit,
+                publicCount: pubLimits.publicCount,
+              },
+              { status: 403 }
+            );
+          }
+        }
+
         await updateSkill(slug, { visibility });
 
         revalidatePath("/");

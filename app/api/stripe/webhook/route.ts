@@ -80,11 +80,6 @@ export async function POST(request: Request) {
 
             if (isSkillPurchase(session)) {
               await handleSkillPurchase(session);
-            } else {
-              const record = toSubscriptionRecord(session, updatedAt);
-              if (record) {
-                await upsertSubscription(record);
-              }
             }
             break;
           }

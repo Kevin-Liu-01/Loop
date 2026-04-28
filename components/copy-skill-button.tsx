@@ -65,7 +65,11 @@ export function CopySkillButton({
       >
         {isPending ? "Copying..." : label}
       </Button>
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && (
+        <p className="m-0 max-w-[28ch] text-xs leading-relaxed text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

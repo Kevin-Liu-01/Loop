@@ -591,3 +591,61 @@ export async function countUserSkills(clerkUserId: string): Promise<number> {
   }
   return count ?? 0;
 }
+
+export async function listSkillsByCreator(
+  clerkUserId: string
+): Promise<SkillRecord[]> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("skills")
+    .select("*")
+    .eq("creator_clerk_user_id", clerkUserId)
+    .order("updated_at", { ascending: false });
+  if (error) {
+    throw new Error(`listSkillsByCreator failed: ${error.message}`);
+  }
+  const rows = data as SkillRow[];
+  const authors = await attachAuthors(rows);
+  return rows.map((row) =>
+    rowToSkillRecord(
+      row,
+      undefined,
+      row.author_id ? authors.get(row.author_id) : undefined
+    )
+  );
+}
+
+export async function countUserActiveAutomations(
+  clerkUserId: string
+): Promise<number> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("skills")
+    .select("automation")
+    .eq("creator_clerk_user_id", clerkUserId)
+    .not("automation", "is", null);
+  if (error) {
+    throw new Error(`countUserActiveAutomations failed: ${error.message}`);
+  }
+  return (data ?? []).filter(
+    (row) =>
+      row.automation &&
+      typeof row.automation === "object" &&
+      (row.automation as Record<string, unknown>).enabled === true
+  ).length;
+}
+
+export async function countUserPublicSkills(
+  clerkUserId: string
+): Promise<number> {
+  const db = getServerSupabase();
+  const { count, error } = await db
+    .from("skills")
+    .select("*", { count: "exact", head: true })
+    .eq("creator_clerk_user_id", clerkUserId)
+    .eq("visibility", "public");
+  if (error) {
+    throw new Error(`countUserPublicSkills failed: ${error.message}`);
+  }
+  return count ?? 0;
+}

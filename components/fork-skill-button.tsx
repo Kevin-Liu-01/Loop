@@ -68,7 +68,11 @@ export function ForkSkillButton({
         <GitFork className="mr-1.5 h-3.5 w-3.5" aria-hidden />
         {isPending ? "Forking..." : label}
       </Button>
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && (
+        <p className="m-0 max-w-[28ch] text-xs leading-relaxed text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

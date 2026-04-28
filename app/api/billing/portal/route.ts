@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 
+import {
+  authErrorResponse,
+  getLatestUserSubscription,
+  requireAuth,
+} from "@/lib/auth";
+import { resolveBillingPortalCustomer } from "@/lib/billing-portal";
 import { createPortalSession } from "@/lib/stripe";
 import { withApiUsage } from "@/lib/usage-server";
 
@@ -12,16 +18,42 @@ export async function GET(request: Request) {
     },
     async () => {
       const { searchParams, origin } = new URL(request.url);
-      const customerId = searchParams.get("customer");
+      const requestedCustomerId = searchParams.get("customer");
 
-      if (!customerId) {
+      let session;
+      try {
+        session = await requireAuth();
+      } catch (error) {
+        return (
+          authErrorResponse(error) ??
+          Response.json({ error: "Unauthorized" }, { status: 401 })
+        );
+      }
+
+      const subscription = await getLatestUserSubscription(session.userId);
+      const customer = resolveBillingPortalCustomer(
+        subscription,
+        requestedCustomerId
+      );
+
+      if (!customer.ok) {
+        const billingStatus =
+          customer.reason === "customer-mismatch"
+            ? "customer-mismatch"
+            : "no-customer";
         return NextResponse.redirect(
-          new URL("/settings/subscription?billing=no-customer", request.url)
+          new URL(
+            `/settings/subscription?billing=${billingStatus}`,
+            request.url
+          )
         );
       }
 
       try {
-        const portalUrl = await createPortalSession(customerId, origin);
+        const portalUrl = await createPortalSession(
+          customer.customerId,
+          origin
+        );
         return NextResponse.redirect(portalUrl);
       } catch {
         return NextResponse.redirect(

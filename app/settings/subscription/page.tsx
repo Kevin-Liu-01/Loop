@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { SettingsSectionPage } from "@/components/settings-section-page";
 import { SubscriptionPanel } from "@/components/subscription-panel";
 import { SettingsSectionLoading } from "@/components/ui/settings-section-loading";
-import { getUserSubscription } from "@/lib/auth";
+import { getLatestUserSubscription } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ async function SettingsSubscriptionData() {
   const { userId } = await auth();
   const user = await currentUser();
   const email = user?.emailAddresses[0]?.emailAddress ?? "";
-  const subscription = userId ? await getUserSubscription(userId) : null;
+  const subscription = userId ? await getLatestUserSubscription(userId) : null;
 
   return (
     <SubscriptionPanel

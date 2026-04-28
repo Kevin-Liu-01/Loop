@@ -3,12 +3,16 @@ import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
-import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
+import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { createSkill as dbCreateSkill } from "@/lib/db/skills";
 import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
 import { slugify, stableHash } from "@/lib/markdown";
 import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
-import { canCreateSkill } from "@/lib/skill-limits";
+import {
+  canCreateSkill,
+  recordSkillCreate,
+  MAX_SLUG_COLLISION_ATTEMPTS,
+} from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
 const bodySchema = z.object({
@@ -21,7 +25,7 @@ export async function POST(request: Request) {
     async () => {
       try {
         const session = await requireAuth();
-        const sessionAuthor = await findSkillAuthorForSession(session);
+        const sessionAuthor = await ensureSkillAuthorForSession(session);
         const { slug: sourceSlug } = bodySchema.parse(await request.json());
 
         const limits = await canCreateSkill(session.userId, session.email);
@@ -29,7 +33,7 @@ export async function POST(request: Request) {
           return Response.json(
             {
               currentCount: limits.currentCount,
-              error: `Free accounts can create up to ${limits.limit} skill${limits.limit === 1 ? "" : "s"}. Upgrade to Operator for unlimited skills.`,
+              error: limits.reason ?? "Skill limit reached.",
               isOperator: limits.isOperator,
               limit: limits.limit,
             },
@@ -52,6 +56,15 @@ export async function POST(request: Request) {
         let attempt = 0;
         while (await getSkillRecordBySlug(newSlug)) {
           attempt++;
+          if (attempt > MAX_SLUG_COLLISION_ATTEMPTS) {
+            return Response.json(
+              {
+                error:
+                  "Too many copies with similar names. Try a different skill or rename an existing copy.",
+              },
+              { status: 409 }
+            );
+          }
           newSlug = `${baseSlug}-${attempt}`;
         }
 
@@ -59,7 +72,7 @@ export async function POST(request: Request) {
           accent: source.accent,
           agentDocs: source.agentDocs,
           agents: source.agents,
-          authorId: sessionAuthor?.id,
+          authorId: sessionAuthor.id,
           automation: buildPausedAutomationFromSource(source),
           body: source.body,
           category: source.category,
@@ -68,7 +81,7 @@ export async function POST(request: Request) {
           forkedFromSlug: sourceSlug,
           iconUrl: source.iconUrl,
           origin: "user",
-          ownerName: sessionAuthor?.displayName ?? undefined,
+          ownerName: sessionAuthor.displayName,
           references: source.references,
           slug: newSlug,
           sources: source.sources ?? [],
@@ -80,6 +93,7 @@ export async function POST(request: Request) {
         });
 
         const href = buildSkillVersionHref(newSlug, 1);
+        recordSkillCreate(session.userId);
 
         revalidatePath("/");
         revalidatePath(`/skills/${newSlug}`);

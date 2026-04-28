@@ -1,14 +1,18 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { isAdminEmail } from "@/lib/admin";
-import { listSubscriptions } from "@/lib/system-state";
+import {
+  getActiveSubscriptionForUser,
+  getLatestSubscriptionForUser,
+} from "@/lib/subscriptions";
+import { getSubscriptionsByClerkUserId } from "@/lib/system-state";
 import type { StripeSubscriptionRecord } from "@/lib/types";
-
-const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
 
 export interface SessionUser {
   userId: string;
   email: string;
+  displayName: string | null;
+  imageUrl: string | null;
   stripeConnectAccountId: string | null;
 }
 
@@ -26,9 +30,13 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const email = user.emailAddresses[0]?.emailAddress ?? "";
   const connectId = (user.publicMetadata as Record<string, unknown>)
     ?.stripeConnectAccountId as string | undefined;
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
 
   return {
+    displayName,
     email,
+    imageUrl: user.imageUrl ?? null,
     stripeConnectAccountId: connectId ?? null,
     userId,
   };
@@ -45,18 +53,17 @@ export async function requireAuth(): Promise<SessionUser> {
 export async function getUserSubscription(
   clerkUserId: string
 ): Promise<StripeSubscriptionRecord | null> {
-  const subscriptions = await listSubscriptions();
+  const subscriptions = await getSubscriptionsByClerkUserId(clerkUserId);
 
-  const byClerkId = subscriptions.find(
-    (sub) =>
-      sub.clerkUserId === clerkUserId &&
-      ACTIVE_SUBSCRIPTION_STATUSES.has(sub.status)
-  );
-  if (byClerkId) {
-    return byClerkId;
-  }
+  return getActiveSubscriptionForUser(subscriptions, clerkUserId);
+}
 
-  return null;
+export async function getLatestUserSubscription(
+  clerkUserId: string
+): Promise<StripeSubscriptionRecord | null> {
+  const subscriptions = await getSubscriptionsByClerkUserId(clerkUserId);
+
+  return getLatestSubscriptionForUser(subscriptions, clerkUserId);
 }
 
 export async function requireActiveSubscription(): Promise<

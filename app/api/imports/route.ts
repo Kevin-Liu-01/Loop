@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { authErrorResponse, requireAuth } from "@/lib/auth";
 import {
   buildImportedSkillRecord,
   importRemoteMcps,
@@ -25,16 +26,29 @@ export async function GET() {
       route: "/api/imports",
     },
     async () => {
-      const [skills, mcps] = await Promise.all([
-        listImportedSkills(),
-        listImportedMcps(),
-      ]);
+      try {
+        await requireAuth();
+        const [skills, mcps] = await Promise.all([
+          listImportedSkills(),
+          listImportedMcps(),
+        ]);
 
-      return Response.json({
-        mcps,
-        ok: true,
-        skills,
-      });
+        return Response.json({
+          mcps,
+          ok: true,
+          skills,
+        });
+      } catch (error) {
+        const authResp = authErrorResponse(error);
+        if (authResp) {
+          return authResp;
+        }
+
+        return Response.json(
+          { error: "Unable to list imports." },
+          { status: 400 }
+        );
+      }
     }
   );
 }
@@ -48,6 +62,7 @@ export async function POST(request: Request) {
     },
     async () => {
       try {
+        await requireAuth();
         const payload = importSchema.parse(await request.json());
 
         if (payload.kind === "skill") {
@@ -91,6 +106,11 @@ export async function POST(request: Request) {
           ok: true,
         });
       } catch (error) {
+        const authResp = authErrorResponse(error);
+        if (authResp) {
+          return authResp;
+        }
+
         if (error instanceof Error) {
           return Response.json({ error: error.message }, { status: 400 });
         }

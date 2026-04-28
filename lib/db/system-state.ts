@@ -492,7 +492,40 @@ export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {
     throw new Error(`listSubscriptions failed: ${error.message}`);
   }
 
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map(mapSubscriptionRow);
+}
+
+export async function getSubscriptionsByClerkUserId(
+  clerkUserId: string
+): Promise<StripeSubscriptionRecord[]> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("subscriptions")
+    .select("*")
+    .eq("clerk_user_id", clerkUserId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`getSubscriptionsByClerkUserId failed: ${error.message}`);
+  }
+
+  return (data ?? []).map(mapSubscriptionRow);
+}
+
+function mapSubscriptionRow(row: {
+  cancel_at_period_end: boolean;
+  checkout_completed_at: string | null;
+  clerk_user_id: string | null;
+  current_period_end: string | null;
+  customer_email: string | null;
+  customer_id: string;
+  id: string;
+  latest_invoice_id: string | null;
+  plan_slug: string | null;
+  status: string;
+  updated_at: string;
+}): StripeSubscriptionRecord {
+  return {
     cancelAtPeriodEnd: row.cancel_at_period_end,
     checkoutCompletedAt: row.checkout_completed_at ?? undefined,
     clerkUserId: row.clerk_user_id ?? undefined,
@@ -504,5 +537,5 @@ export async function listSubscriptions(): Promise<StripeSubscriptionRecord[]> {
     planSlug: row.plan_slug ?? undefined,
     status: row.status,
     updatedAt: row.updated_at,
-  }));
+  };
 }

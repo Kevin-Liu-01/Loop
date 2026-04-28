@@ -8,11 +8,11 @@ import {
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 
 const putSchema = z.object({
-  provider: z.enum(["jina", "firecrawl", "serper", "tavily", "brave"]),
+  provider: z.enum(["brave", "firecrawl", "serper", "tavily", "jina"]),
   firecrawl: z.string().optional(),
   serper: z.string().optional(),
   tavily: z.string().optional(),
-  brave: z.string().optional(),
+  jina: z.string().optional(),
 });
 
 export async function GET() {
@@ -44,15 +44,15 @@ export async function PUT(request: Request) {
       firecrawl: body.firecrawl ?? existing.firecrawl,
       serper: body.serper ?? existing.serper,
       tavily: body.tavily ?? existing.tavily,
-      brave: body.brave ?? existing.brave,
+      jina: body.jina ?? existing.jina,
     };
 
-    if (body.provider !== "jina") {
+    if (body.provider !== "brave") {
       const key = merged[body.provider];
       if (!key) {
         return Response.json(
           {
-            error: `An API key is required for ${body.provider}. Enter your key or switch to Jina (free).`,
+            error: `An API key is required for ${body.provider}. Enter your key or switch to Brave Search (free).`,
           },
           { status: 400 }
         );

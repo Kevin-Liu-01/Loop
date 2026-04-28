@@ -56,8 +56,8 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
         <DialogHeader>
           <DialogTitle>New skill</DialogTitle>
           <DialogDescription>
-            Discover, import, or create a skill. Free accounts get 1 skill;
-            Operators get unlimited.
+            Discover, import, or create a skill. Free accounts get up to 3
+            automations.
           </DialogDescription>
         </DialogHeader>
         {!isSignedIn ? (

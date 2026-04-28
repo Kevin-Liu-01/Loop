@@ -232,7 +232,7 @@ function OgCard({ title, description, category, screenshotUrl }: OgCardProps) {
               letterSpacing: "0.03em",
             }}
           >
-            loooooop.vercel.app
+            loooop.dev
           </span>
           <div
             style={{

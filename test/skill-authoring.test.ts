@@ -13,7 +13,9 @@ test("canSessionEditSkill allows the verified attached author", () => {
       creatorClerkUserId: undefined,
     },
     {
+      displayName: null,
       email: "kk23907751@gmail.com",
+      imageUrl: null,
       stripeConnectAccountId: null,
       userId: "user_123",
     },
@@ -38,7 +40,9 @@ test("canSessionEditSkill falls back to the legacy creator id", () => {
       creatorClerkUserId: "user_legacy",
     },
     {
+      displayName: null,
       email: "someone@example.com",
+      imageUrl: null,
       stripeConnectAccountId: null,
       userId: "user_legacy",
     },

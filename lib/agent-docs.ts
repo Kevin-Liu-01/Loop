@@ -42,7 +42,7 @@ export async function parseAgentDocs(skillDir: string): Promise<AgentDocs> {
   return docs;
 }
 
-export function hasAgentDocs(docs: AgentDocs | undefined): boolean {
+export function hasAgentDocs(docs?: AgentDocs): boolean {
   if (!docs) {
     return false;
   }
@@ -51,7 +51,7 @@ export function hasAgentDocs(docs: AgentDocs | undefined): boolean {
   );
 }
 
-export function getAgentDocKeys(docs: AgentDocs | undefined): AgentDocKey[] {
+export function getAgentDocKeys(docs?: AgentDocs): AgentDocKey[] {
   if (!docs) {
     return [];
   }

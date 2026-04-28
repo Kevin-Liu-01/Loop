@@ -4,9 +4,12 @@ import {
   Clipboard,
   CopyIcon,
   ExternalLinkIcon,
+  GitForkIcon,
   MoreHorizontalIcon,
+  PlusIcon,
   PlugIcon,
   TerminalIcon,
+  UserIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,6 +32,7 @@ import { AutomationEditModal } from "@/components/automation-edit-modal";
 import {
   ArrowRightIcon,
   AutomationIcon,
+  CheckIcon,
   SearchIcon,
 } from "@/components/frontier-icons";
 import { RelativeTime } from "@/components/relative-time";
@@ -80,6 +84,7 @@ type HomeTab = "skills" | "mcps";
 interface HomeShellProps {
   automations: AutomationSummary[];
   categories: CategoryDefinition[];
+  currentUserId?: string;
   mcps: ImportedMcpDocument[];
   recentImports: RecentImportItem[];
   skills: SkillRecord[];
@@ -90,7 +95,8 @@ interface HomeShellProps {
 function filterSkills(
   skills: SkillRecord[],
   query: string,
-  categoryFilter: string
+  categoryFilter: string,
+  currentUserId?: string
 ): SkillRecord[] {
   const normalized = query.trim().toLowerCase();
 
@@ -108,6 +114,14 @@ function filterSkills(
       return haystack.includes(normalized);
     })
     .toSorted((a, b) => {
+      const aIsOwn =
+        currentUserId && a.creatorClerkUserId === currentUserId ? 1 : 0;
+      const bIsOwn =
+        currentUserId && b.creatorClerkUserId === currentUserId ? 1 : 0;
+      if (aIsOwn !== bIsOwn) {
+        return bIsOwn - aIsOwn;
+      }
+
       const featuredDelta = (b.featuredRank ?? 0) - (a.featuredRank ?? 0);
       if (featuredDelta !== 0) {
         return featuredDelta;
@@ -205,6 +219,7 @@ const SKILLS_PER_PAGE = 30;
 export function HomeShell({
   automations,
   categories,
+  currentUserId,
   mcps = [],
   recentImports = [],
   skills,
@@ -221,6 +236,21 @@ export function HomeShell({
   const [mcpPage, setMcpPage] = useState(1);
   const listAnchorRef = useRef<HTMLDivElement>(null);
   const [editTarget, setEditTarget] = useState<AutomationSummary | null>(null);
+  const [loadingSlugs, setLoadingSlugs] = useState<Set<string>>(
+    () => new Set()
+  );
+
+  const markLoading = useCallback((slug: string) => {
+    setLoadingSlugs((prev) => new Set(prev).add(slug));
+  }, []);
+
+  const clearLoading = useCallback((slug: string) => {
+    setLoadingSlugs((prev) => {
+      const next = new Set(prev);
+      next.delete(slug);
+      return next;
+    });
+  }, []);
 
   const automationBySkillSlug = useMemo(() => {
     const map = new Map<string, AutomationSummary>();
@@ -292,8 +322,8 @@ export function HomeShell({
   }
 
   const filtered = useMemo(
-    () => filterSkills(skills, deferredQuery, categoryFilter),
-    [skills, deferredQuery, categoryFilter]
+    () => filterSkills(skills, deferredQuery, categoryFilter, currentUserId),
+    [skills, deferredQuery, categoryFilter, currentUserId]
   );
 
   const filteredMcps = useMemo(
@@ -342,9 +372,46 @@ export function HomeShell({
 
   const trackedCount = skills.filter((s) => s.origin === "user").length;
 
+  const ownSkills = useMemo(
+    () =>
+      currentUserId
+        ? skills
+            .filter((s) => s.creatorClerkUserId === currentUserId)
+            .toSorted((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+        : [],
+    [skills, currentUserId]
+  );
+
+  const userSkillSlugs = useMemo(
+    () => new Set(ownSkills.map((s) => s.slug)),
+    [ownSkills]
+  );
+
   const handleNewSkill = useCallback(() => {
     window.dispatchEvent(new Event("loop:open-new-skill"));
   }, []);
+
+  const handleFork = useCallback(
+    async (slug: string) => {
+      markLoading(slug);
+      try {
+        const res = await fetch("/api/skills/fork", {
+          body: JSON.stringify({ slug }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const data = await res.json();
+        if (data.ok && data.href) {
+          router.push(data.href);
+          return;
+        }
+      } catch {
+        /* silent */
+      }
+      clearLoading(slug);
+    },
+    [router, markLoading, clearLoading]
+  );
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -365,10 +432,14 @@ export function HomeShell({
       {paginatedSkills.length > 0 ? (
         paginatedSkills.map((skill) => {
           const freshness = computeFreshness(skill, loopRuns);
+          const isLoading = loadingSlugs.has(skill.slug);
 
           return (
             <article
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0 max-sm:grid-cols-1"
+              className={cn(
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0 max-sm:grid-cols-1 transition-opacity",
+                isLoading && "animate-pulse pointer-events-none opacity-60"
+              )}
               key={skill.slug}
             >
               <Link className="group min-w-0" href={skill.href}>
@@ -407,6 +478,16 @@ export function HomeShell({
                       <Badge color="neutral" size="sm">
                         {skill.versionLabel}
                       </Badge>
+                      {skill.visibility === "private" && (
+                        <Badge color="neutral" size="sm">
+                          Private
+                        </Badge>
+                      )}
+                      {userSkillSlugs.has(skill.slug) && (
+                        <Badge color="orange" size="sm">
+                          Yours
+                        </Badge>
+                      )}
                     </div>
                     <p className="m-0 line-clamp-1 text-sm text-ink-soft">
                       {skill.description}
@@ -469,6 +550,10 @@ export function HomeShell({
                     >
                       <Clipboard />
                       Use in agent
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleFork(skill.slug)}>
+                      <GitForkIcon />
+                      Fork
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() => {
@@ -660,6 +745,118 @@ export function HomeShell({
     </div>
   );
 
+  const yourSkillsSection =
+    ownSkills.length > 0 ? (
+      <section className="grid gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-serif text-base font-medium text-ink">
+            <UserIcon className="h-4 w-4 text-ink-faint" />
+            Your Skills
+            <span className="text-[0.6875rem] font-normal tabular-nums text-ink-faint">
+              {ownSkills.length}
+            </span>
+          </h2>
+          <Button
+            className="h-7 min-h-7 gap-1.5 px-2.5 text-xs"
+            onClick={handleNewSkill}
+            size="sm"
+            variant="ghost"
+          >
+            <PlusIcon className="h-3 w-3" />
+            New
+          </Button>
+        </div>
+        <div className="grid gap-0 rounded border border-line/60 bg-paper-2/40 px-3 dark:bg-paper-1/30">
+          {ownSkills.map((skill) => {
+            const auto = skill.automation;
+            const hasAutomation = auto?.enabled && auto.status === "active";
+            const nextRun =
+              hasAutomation && auto.cadence !== "manual"
+                ? formatNextRun(
+                    auto.cadence,
+                    auto.preferredHour ?? 9,
+                    auto.preferredDay
+                  )
+                : null;
+            return (
+              <article
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line/40 py-2.5 first:border-t-0 max-sm:grid-cols-1"
+                key={`own-${skill.slug}`}
+              >
+                <Link className="group min-w-0" href={skill.href}>
+                  <div className="flex items-start gap-2.5">
+                    <SkillIcon
+                      className="mt-0.5 rounded-md"
+                      iconUrl={skill.iconUrl}
+                      size={24}
+                      slug={skill.slug}
+                    />
+                    <div className="min-w-0 grid flex-1 gap-0.5">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="truncate font-serif text-[0.875rem] font-medium text-ink group-hover:text-ink-soft">
+                          {skill.title}
+                        </span>
+                        <Badge
+                          color={getTagColorForCategory(skill.category)}
+                          size="sm"
+                        >
+                          {formatTagLabel(skill.category)}
+                        </Badge>
+                        <Badge color="neutral" size="sm">
+                          {skill.versionLabel}
+                        </Badge>
+                        {skill.visibility === "private" && (
+                          <Badge color="neutral" size="sm">
+                            Private
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <p className="m-0 line-clamp-1 text-xs text-ink-soft">
+                          {skill.description}
+                        </p>
+                        {hasAutomation && nextRun ? (
+                          <span className="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] text-ink-faint">
+                            <AutomationIcon className="h-3 w-3" />
+                            Next {nextRun}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+                <div className="flex items-center gap-1.5 max-sm:pl-4">
+                  {hasAutomation && automationBySkillSlug.has(skill.slug) && (
+                    <Tip content="View automation settings" side="top">
+                      <Button
+                        onClick={() =>
+                          setEditTarget(automationBySkillSlug.get(skill.slug)!)
+                        }
+                        size="icon-sm"
+                        variant="ghost"
+                      >
+                        <AutomationIcon className="h-3.5 w-3.5" />
+                      </Button>
+                    </Tip>
+                  )}
+                  <LinkButton
+                    className="h-6 min-h-6 px-2 text-xs"
+                    href={skill.href}
+                    prefetch
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Open
+                    <ArrowRightIcon className="h-3 w-3" />
+                  </LinkButton>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    ) : null;
+
   const skillsFilters = (
     <div ref={listAnchorRef} className="grid gap-3">
       <label className="relative block">
@@ -829,6 +1026,100 @@ export function HomeShell({
 
   const activeFilters = tab === "skills" ? skillsFilters : mcpsFilters;
 
+  const hasOwnSkills = ownSkills.length > 0;
+  const hasActiveAutomation = automations.some((a) => a.status === "ACTIVE");
+  const showGettingStarted = !hasOwnSkills || !hasActiveAutomation;
+
+  const gettingStartedCard = showGettingStarted ? (
+    <section className="grid gap-0 overflow-hidden border border-line bg-paper-3/92">
+      <div className="dither-gradient-orange px-4 pb-3 pt-4">
+        <h2 className="m-0 text-base font-semibold tracking-tight text-ink">
+          Get started with Loop
+        </h2>
+        <p className="m-0 mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
+          Create a skill, then set up an automation to keep it current.
+        </p>
+      </div>
+      <div className="grid divide-y divide-line/60">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span
+            className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center border text-[0.625rem]",
+              hasOwnSkills
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "border-line bg-paper-2 font-semibold tabular-nums text-ink-faint"
+            )}
+          >
+            {hasOwnSkills ? <CheckIcon className="h-3 w-3" /> : "1"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong
+              className={cn(
+                "text-sm font-medium",
+                hasOwnSkills ? "text-ink-soft line-through" : "text-ink"
+              )}
+            >
+              Create your first skill
+            </strong>
+          </div>
+          {!hasOwnSkills && (
+            <Button
+              className="h-7 min-h-7 gap-1.5 px-2.5 text-xs"
+              onClick={handleNewSkill}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <PlusIcon className="h-3 w-3" />
+              New skill
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span
+            className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center border text-[0.625rem]",
+              hasActiveAutomation
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "border-line bg-paper-2 font-semibold tabular-nums text-ink-faint"
+            )}
+          >
+            {hasActiveAutomation ? <CheckIcon className="h-3 w-3" /> : "2"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong
+              className={cn(
+                "text-sm font-medium",
+                hasActiveAutomation ? "text-ink-soft line-through" : "text-ink"
+              )}
+            >
+              Set up your first automation
+            </strong>
+            {!hasActiveAutomation && (
+              <span className="ml-1.5 text-xs text-ink-faint">
+                from any skill page or the automation desk
+              </span>
+            )}
+          </div>
+          {!hasActiveAutomation && (
+            <Button
+              className="h-7 min-h-7 gap-1.5 px-2.5 text-xs"
+              onClick={() =>
+                window.dispatchEvent(new Event("loop:open-new-automation"))
+              }
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <AutomationIcon className="h-3 w-3" />
+              New automation
+            </Button>
+          )}
+        </div>
+      </div>
+    </section>
+  ) : null;
+
   return (
     <AppGridShell header={<SiteHeader onNewSkill={handleNewSkill} />}>
       <PageShell inset narrow className="flex min-h-0 flex-1 flex-col">
@@ -844,6 +1135,8 @@ export function HomeShell({
               >
                 <header className="min-w-0">{pageTitle}</header>
                 <ActiveOperationBanner />
+                {gettingStartedCard}
+                {tab === "skills" && yourSkillsSection}
                 {activeFilters}
               </div>
 
@@ -857,9 +1150,11 @@ export function HomeShell({
               >
                 <ActivityDashboard
                   automations={automations}
+                  loopRuns={loopRuns}
                   overview={usageOverview}
                   recentImports={recentImports}
                   skillMap={skillMap}
+                  userSkillSlugs={userSkillSlugs}
                   variant="sidebar"
                 />
               </aside>
@@ -875,6 +1170,8 @@ export function HomeShell({
           >
             <header className="min-w-0">{pageTitle}</header>
             <ActiveOperationBanner />
+            {gettingStartedCard}
+            {tab === "skills" && yourSkillsSection}
             <div className="grid min-w-0 gap-4">{activeFilters}</div>
           </div>
         )}

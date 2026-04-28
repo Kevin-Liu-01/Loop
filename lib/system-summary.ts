@@ -16,7 +16,7 @@ export async function getSystemSnapshot(options?: GetSystemSnapshotOptions) {
   const [snapshot, loopRuns, usageEvents] = await Promise.all([
     getLoopSnapshot({ includePrivate: options?.includePrivate }),
     listLoopRunSummaries(),
-    listUsageEventsForOverview(timeZone),
+    listUsageEventsForOverview(timeZone).catch(() => []),
   ]);
 
   return {

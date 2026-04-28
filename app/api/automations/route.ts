@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
+import { authErrorResponse, requireAuth } from "@/lib/auth";
 import {
   DEFAULT_PREFERRED_DAY,
   DEFAULT_PREFERRED_HOUR,
@@ -12,6 +12,7 @@ import { getSkillCatalogue, getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
+import { canCreateAutomation } from "@/lib/skill-limits";
 import type { SkillAutomationState } from "@/lib/types";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 
@@ -55,9 +56,28 @@ export async function POST(request: Request) {
     { label: "Create automation", method: "POST", route: "/api/automations" },
     async () => {
       try {
-        const session = await requireActiveSubscription();
+        const session = await requireAuth();
         const sessionAuthor = await findSkillAuthorForSession(session);
         const payload = createSchema.parse(await request.json());
+
+        if (payload.status !== "PAUSED") {
+          const limits = await canCreateAutomation(
+            session.userId,
+            session.email
+          );
+          if (!limits.allowed) {
+            return Response.json(
+              {
+                activeCount: limits.activeCount,
+                error: limits.reason ?? "Automation limit reached.",
+                isOperator: limits.isOperator,
+                limit: limits.limit,
+              },
+              { status: 403 }
+            );
+          }
+        }
+
         const skill = await getSkillRecordBySlug(payload.skillSlug);
 
         if (!skill) {

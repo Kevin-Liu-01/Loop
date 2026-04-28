@@ -17,7 +17,11 @@ import {
   isScheduledOnDate,
 } from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
-import type { AutomationSummary, SkillRecord } from "@/lib/types";
+import type {
+  AutomationSummary,
+  LoopRunSummary,
+  SkillRecord,
+} from "@/lib/types";
 
 const LEGEND_COLLAPSED_LIMIT = 12;
 
@@ -50,6 +54,7 @@ const AUTOMATION_COLORS: AutomationColorSet[] = [
 
 interface AutomationCalendarProps {
   automations: AutomationSummary[];
+  loopRuns?: LoopRunSummary[];
   onDaySelect?: (date: Date) => void;
   onEditAutomation?: (automation: AutomationSummary) => void;
   /** Sidebar uses slightly larger day type for scanability */
@@ -235,6 +240,7 @@ function AutomationLegend({
 
 export function AutomationCalendar({
   automations,
+  loopRuns = [],
   maxLegendRows = LEGEND_COLLAPSED_LIMIT,
   onDaySelect,
   onEditAutomation,
@@ -438,6 +444,7 @@ export function AutomationCalendar({
       <AutomationDayModal
         date={modalDate}
         entries={modalEntries}
+        loopRuns={loopRuns}
         onClose={() => setModalDate(null)}
         onEditAutomation={
           onEditAutomation

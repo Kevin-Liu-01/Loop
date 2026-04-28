@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { authErrorResponse, requireActiveSubscription } from "@/lib/auth";
+import { authErrorResponse, requireAuth } from "@/lib/auth";
 import {
   isValidCronSlotHour,
   isValidDayOfWeek,
@@ -9,11 +9,13 @@ import {
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
+import { canCreateAutomation } from "@/lib/skill-limits";
 import type {
   SkillAutomationState,
   UserSkillAutomationStatus,
 } from "@/lib/types";
 import { withApiUsage } from "@/lib/usage-server";
+import { normalizeSource } from "@/lib/user-skills";
 
 const patchSchema = z.object({
   cadence: z.enum(["daily", "weekly", "manual"]).optional(),
@@ -22,6 +24,7 @@ const patchSchema = z.object({
   preferredHour: z.number().int().min(0).max(23).optional(),
   preferredModel: z.string().trim().max(120).optional(),
   prompt: z.string().trim().max(2000).optional(),
+  sourceUrls: z.array(z.string().url().max(2000)).max(50).optional(),
   status: z.enum(["ACTIVE", "PAUSED"]).optional(),
 });
 
@@ -42,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     },
     async () => {
       try {
-        const session = await requireActiveSubscription();
+        const session = await requireAuth();
         const sessionAuthor = await findSkillAuthorForSession(session);
         const { id: skillSlug } = await context.params;
 
@@ -63,6 +66,26 @@ export async function PATCH(request: Request, context: RouteContext) {
 
         const patch = patchSchema.parse(await request.json());
         const current = skill.automation as SkillAutomationState;
+
+        const isEnabling = patch.status === "ACTIVE" && !current.enabled;
+        if (isEnabling) {
+          const limits = await canCreateAutomation(
+            session.userId,
+            session.email
+          );
+          if (!limits.allowed) {
+            return Response.json(
+              {
+                activeCount: limits.activeCount,
+                error: limits.reason ?? "Automation limit reached.",
+                isOperator: limits.isOperator,
+                limit: limits.limit,
+              },
+              { status: 403 }
+            );
+          }
+        }
+
         const updated: SkillAutomationState = { ...current };
 
         if (patch.cadence) {
@@ -91,7 +114,17 @@ export async function PATCH(request: Request, context: RouteContext) {
           updated.preferredDay = patch.preferredDay;
         }
 
-        await updateSkill(skillSlug, { automation: updated });
+        const skillUpdates: Parameters<typeof updateSkill>[1] = {
+          automation: updated,
+        };
+
+        if (patch.sourceUrls) {
+          skillUpdates.sources = patch.sourceUrls.map((url) =>
+            normalizeSource(url, skill.category)
+          );
+        }
+
+        await updateSkill(skillSlug, skillUpdates);
 
         revalidatePath("/settings", "layout");
         revalidatePath("/");
@@ -126,7 +159,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     },
     async () => {
       try {
-        const session = await requireActiveSubscription();
+        const session = await requireAuth();
         const sessionAuthor = await findSkillAuthorForSession(session);
         const { id: skillSlug } = await context.params;
 

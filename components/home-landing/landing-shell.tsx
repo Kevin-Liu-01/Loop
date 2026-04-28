@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
+import { BrandWordmark } from "@/components/brand-wordmark";
 import {
   ArrowRightIcon,
   AutomationIcon,
@@ -188,7 +189,7 @@ export function LandingShell({
               interactionActive={brandHover}
             />
             <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em] text-ink/90">
-              Loop
+              <BrandWordmark hover={brandHover} />
             </strong>
           </Link>
           <div className="flex items-center gap-2">

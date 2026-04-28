@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
-import { AutomationIcon, GlobeIcon } from "@/components/frontier-icons";
+import {
+  AutomationIcon,
+  GlobeIcon,
+  PlusIcon,
+  XIcon,
+} from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +61,8 @@ const MODEL_OPTIONS = [
 const fieldLabel =
   "text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-ink-faint";
 
+const EMPTY_SOURCES: SourceDefinition[] = [];
+
 interface AutomationEditModalProps {
   automation: AutomationSummary;
   open: boolean;
@@ -78,7 +85,7 @@ export function AutomationEditModal({
   skillSlug,
   skillIconUrl,
   skillCategory,
-  sources = [],
+  sources = EMPTY_SOURCES,
   canManage = true,
   isOperator = false,
   initialPreferredHour,
@@ -104,6 +111,12 @@ export function AutomationEditModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [editedSources, setEditedSources] = useState<SourceDefinition[]>(() => [
+    ...sources,
+  ]);
+  const [newSourceUrl, setNewSourceUrl] = useState("");
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const addSourceRef = useRef<HTMLInputElement>(null);
 
   const linkedSkillLabel = skillName ?? automation.matchedSkillSlugs[0] ?? "";
   const linkedSlug = skillSlug ?? automation.matchedSkillSlugs[0] ?? "";
@@ -117,23 +130,36 @@ export function AutomationEditModal({
     setPreferredHour(initialPreferredHour ?? DEFAULT_PREFERRED_HOUR);
     setPreferredDay(automation.preferredDay ?? DEFAULT_PREFERRED_DAY);
     setError(null);
-  }, [automation, initialPreferredHour]);
+    setEditedSources([...sources]);
+    setNewSourceUrl("");
+    setSourceError(null);
+  }, [automation, initialPreferredHour, sources]);
 
   function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
     startTransition(async () => {
+      const sourcesChanged =
+        editedSources.length !== sources.length ||
+        editedSources.some((s, i) => s.url !== sources[i]?.url);
+
+      const body: Record<string, unknown> = {
+        cadence,
+        name,
+        preferredDay,
+        preferredHour,
+        preferredModel: preferredModel || undefined,
+        prompt,
+        status,
+      };
+
+      if (sourcesChanged) {
+        body.sourceUrls = editedSources.map((s) => s.url);
+      }
+
       const response = await fetch(`/api/automations/${automation.id}`, {
-        body: JSON.stringify({
-          cadence,
-          name,
-          preferredDay,
-          preferredHour,
-          preferredModel: preferredModel || undefined,
-          prompt,
-          status,
-        }),
+        body: JSON.stringify(body),
         headers: { "content-type": "application/json" },
         method: "PATCH",
       });
@@ -176,6 +202,39 @@ export function AutomationEditModal({
       router.refresh();
       onClose();
     });
+  }
+
+  function handleAddSource() {
+    const trimmed = newSourceUrl.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    try {
+      new URL(trimmed);
+    } catch {
+      setSourceError("Enter a valid URL (e.g. https://example.com/feed.xml)");
+      return;
+    }
+
+    if (editedSources.some((s) => s.url === trimmed)) {
+      setSourceError("This URL is already tracked.");
+      return;
+    }
+
+    const hostname = new URL(trimmed).hostname.replace(/^www\./, "");
+    const newSource: SourceDefinition = {
+      id: `pending-${Date.now()}`,
+      kind: "watchlist",
+      label: hostname,
+      tags: [],
+      url: trimmed,
+    };
+
+    setEditedSources((prev) => [...prev, newSource]);
+    setNewSourceUrl("");
+    setSourceError(null);
+    addSourceRef.current?.focus();
   }
 
   const now = new Date();
@@ -432,37 +491,91 @@ export function AutomationEditModal({
               </FieldGroup>
 
               {/* Sources */}
-              {sources.length > 0 && (
-                <div className="grid gap-2">
-                  <span className={fieldLabel}>
-                    Sources
-                    <span className="ml-1.5 normal-case tracking-normal text-ink-faint/60">
-                      ({sources.length})
-                    </span>
+              <div className="grid gap-2">
+                <span className={fieldLabel}>
+                  Sources
+                  <span className="ml-1.5 normal-case tracking-normal text-ink-faint/60">
+                    ({editedSources.length})
                   </span>
+                </span>
+                {editedSources.length > 0 ? (
                   <div className="grid gap-1">
-                    {sources.map((src) => (
-                      <a
-                        className="group flex min-w-0 items-center gap-2 rounded-lg border border-line/60 bg-paper-2/40 px-3 py-2 transition-colors hover:border-accent/20 hover:bg-paper-2/70 dark:bg-paper-2/20"
-                        href={src.url}
+                    {editedSources.map((src) => (
+                      <div
+                        className="group flex min-w-0 items-center gap-2 border border-line/60 bg-paper-2/40 px-3 py-2 transition-colors hover:border-line dark:bg-paper-2/20"
                         key={src.id}
-                        rel="noreferrer"
-                        target="_blank"
                       >
-                        <GlobeIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint group-hover:text-accent" />
-                        <span className="min-w-0 truncate text-sm text-ink-soft group-hover:text-ink">
+                        <GlobeIcon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
+                        <a
+                          className="min-w-0 truncate text-sm text-ink-soft hover:text-ink"
+                          href={src.url}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
                           {src.label}
-                        </span>
+                        </a>
                         <Tip content={`Source type: ${src.kind}`} side="left">
-                          <span className="ml-auto shrink-0 text-[0.625rem] font-medium text-ink-faint/60">
+                          <span className="shrink-0 text-[0.625rem] font-medium text-ink-faint/60">
                             {src.kind}
                           </span>
                         </Tip>
-                      </a>
+                        {canManage && (
+                          <button
+                            className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center text-ink-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                            onClick={() =>
+                              setEditedSources((prev) =>
+                                prev.filter((s) => s.id !== src.id)
+                              )
+                            }
+                            type="button"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="m-0 text-xs text-ink-faint">
+                    No sources tracked. Add URLs below so automations know what
+                    to scan.
+                  </p>
+                )}
+                {canManage && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={addSourceRef}
+                      className={cn(textFieldBase, "flex-1 text-sm")}
+                      onChange={(e) => {
+                        setNewSourceUrl(e.target.value);
+                        setSourceError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddSource();
+                        }
+                      }}
+                      placeholder="https://example.com/feed.xml"
+                      value={newSourceUrl}
+                    />
+                    <Button
+                      className="shrink-0"
+                      disabled={!newSourceUrl.trim()}
+                      onClick={handleAddSource}
+                      size="sm"
+                      type="button"
+                      variant="soft"
+                    >
+                      <PlusIcon className="h-3 w-3" />
+                      Add
+                    </Button>
+                  </div>
+                )}
+                {sourceError && (
+                  <p className="m-0 text-xs text-danger">{sourceError}</p>
+                )}
+              </div>
 
               {/* Workspaces */}
               {automation.cwd.length > 0 && (

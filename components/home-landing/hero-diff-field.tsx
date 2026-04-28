@@ -2,10 +2,12 @@
 
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useMouseParallax } from "@/hooks/use-mouse-parallax";
 import { cn } from "@/lib/cn";
+import { buildSkillVersionHref } from "@/lib/format";
 import { DIFF_SCENES } from "@/lib/home-landing/skill-diff-scenes";
 import type {
   DiffScene,
@@ -432,6 +434,13 @@ function SceneDots({
   );
 }
 
+/* ── Helpers ─────────────────────────────────────────────────── */
+
+function sceneHref(scene: DiffScene): string {
+  const version = Number.parseInt(scene.versionTo.replace(/^v/, ""), 10);
+  return buildSkillVersionHref(scene.skillSlug, version || 1);
+}
+
 /* ── Main export ────────────────────────────────────────────── */
 
 export function HeroDiffField() {
@@ -493,14 +502,16 @@ export function HeroDiffField() {
         placement={CARD_PLACEMENTS[0]!}
         mouseX={mouseX}
         mouseY={mouseY}
-        className="pointer-events-none hidden lg:block"
+        className="hidden lg:block"
       >
-        <DiffCardChrome accentColor={CATEGORY_ACCENT[leftScene.category]}>
-          <HeroCardHeader scene={leftScene} />
-          <DiffCardBody>
-            <DiffLines scene={leftScene} prefix="l" />
-          </DiffCardBody>
-        </DiffCardChrome>
+        <Link href={sceneHref(leftScene)}>
+          <DiffCardChrome accentColor={CATEGORY_ACCENT[leftScene.category]}>
+            <HeroCardHeader scene={leftScene} />
+            <DiffCardBody>
+              <DiffLines scene={leftScene} prefix="l" />
+            </DiffCardBody>
+          </DiffCardChrome>
+        </Link>
       </FloatingCard>
 
       {/* Center card – animated reel */}
@@ -509,27 +520,29 @@ export function HeroDiffField() {
         mouseX={mouseX}
         mouseY={mouseY}
       >
-        <DiffCardChrome glow accentColor={centerAccent}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeScene.skillTitle}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <HeroCardHeader scene={activeScene} />
-              <DiffCardBody>
-                <DiffLines scene={activeScene} prefix="c" />
-              </DiffCardBody>
-            </motion.div>
-          </AnimatePresence>
-          <SceneDots
-            count={DIFF_SCENES.length}
-            active={activeIndex}
-            onSelect={handleDotSelect}
-          />
-        </DiffCardChrome>
+        <Link href={sceneHref(activeScene)}>
+          <DiffCardChrome glow accentColor={centerAccent}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeScene.skillTitle}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <HeroCardHeader scene={activeScene} />
+                <DiffCardBody>
+                  <DiffLines scene={activeScene} prefix="c" />
+                </DiffCardBody>
+              </motion.div>
+            </AnimatePresence>
+            <SceneDots
+              count={DIFF_SCENES.length}
+              active={activeIndex}
+              onSelect={handleDotSelect}
+            />
+          </DiffCardChrome>
+        </Link>
       </FloatingCard>
 
       {/* Right card – desktop only */}
@@ -537,14 +550,16 @@ export function HeroDiffField() {
         placement={CARD_PLACEMENTS[2]!}
         mouseX={mouseX}
         mouseY={mouseY}
-        className="pointer-events-none hidden lg:block"
+        className="hidden lg:block"
       >
-        <DiffCardChrome accentColor={CATEGORY_ACCENT[rightScene.category]}>
-          <HeroCardHeader scene={rightScene} />
-          <DiffCardBody>
-            <DiffLines scene={rightScene} prefix="r" />
-          </DiffCardBody>
-        </DiffCardChrome>
+        <Link href={sceneHref(rightScene)}>
+          <DiffCardChrome accentColor={CATEGORY_ACCENT[rightScene.category]}>
+            <HeroCardHeader scene={rightScene} />
+            <DiffCardBody>
+              <DiffLines scene={rightScene} prefix="r" />
+            </DiffCardBody>
+          </DiffCardChrome>
+        </Link>
       </FloatingCard>
     </motion.div>
   );

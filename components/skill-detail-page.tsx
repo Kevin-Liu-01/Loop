@@ -16,6 +16,8 @@ import { SkillActivitySection } from "@/components/skill-activity-section";
 import { SkillAgentDocsPanel } from "@/components/skill-agent-docs-panel";
 import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { SkillAuthorStudio } from "@/components/skill-author-studio";
+import { SkillAutomationSection } from "@/components/skill-automation-section";
+import { SkillAutomationStrip } from "@/components/skill-automation-strip";
 import { SkillDetailSidebar } from "@/components/skill-detail-sidebar";
 import { SkillResearchPanel } from "@/components/skill-research-panel";
 import { SkillSectionNav } from "@/components/skill-section-nav";
@@ -127,6 +129,7 @@ export function SkillDetailPage({
     { id: "content", label: "Content" },
     ...(hasAgentDocs ? [{ id: "agent-docs", label: "Agent docs" }] : []),
     { id: "activity", label: "Activity" },
+    { id: "automations", label: "Automations" },
     ...(hasResearch ? [{ id: "research", label: "Research" }] : []),
     ...(trackedSources.length > 0 ? [{ id: "sources", label: "Sources" }] : []),
   ];
@@ -283,6 +286,18 @@ export function SkillDetailPage({
           </header>
         </div>
 
+        <SkillAutomationStrip
+          automation={primaryAutomation}
+          canEdit={canEdit}
+          category={skill.category}
+          iconUrl={skill.iconUrl}
+          latestRun={latestRun}
+          skillTitle={skill.title}
+          slug={skill.slug}
+          sourceCount={sourceCount}
+          sources={skill.sources}
+        />
+
         {/* ── Two-column layout ── */}
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* Main column */}
@@ -326,6 +341,19 @@ export function SkillDetailPage({
               <SkillActivitySection
                 automation={primaryAutomation}
                 canManage={canEdit}
+                category={skill.category}
+                iconUrl={skill.iconUrl}
+                latestRun={latestRun}
+                origin={skill.origin}
+                skillTitle={skill.title}
+                slug={skill.slug}
+                sourceCount={sourceCount}
+                sources={skill.sources}
+              />
+
+              <SkillAutomationSection
+                automation={primaryAutomation}
+                canEdit={canEdit}
                 category={skill.category}
                 iconUrl={skill.iconUrl}
                 latestRun={latestRun}
@@ -404,16 +432,23 @@ export function SkillDetailPage({
               agentPrompt={primaryAgentPrompt}
               automations={attachedAutomations}
               body={skill.body}
+              canEdit={canEdit}
+              category={skill.category}
               currentVersion={skill.version}
               diffLines={diffLines}
               downloadFilename={downloadFilename}
+              iconUrl={skill.iconUrl}
               latestRun={latestRun}
               latestUpdate={latestUpdate}
+              origin={skill.origin}
               rawDiffLength={rawDiff.length}
               rawUrl={rawUrl}
               skillHref={skill.href}
+              skillTitle={skill.title}
               skills={[skill]}
               slug={skill.slug}
+              sourceCount={sourceCount}
+              sources={skill.sources}
               timeZone={timeZone}
               updates={skill.updates}
               usage={usage}

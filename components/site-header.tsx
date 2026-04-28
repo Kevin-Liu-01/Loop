@@ -1,11 +1,14 @@
 "use client";
 
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
-import { MenuIcon } from "lucide-react";
+import { StarIcon, MenuIcon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { BrandWordmark } from "@/components/brand-wordmark";
 import {
+  GitHubIcon,
+  GITHUB_REPO_URL,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -27,6 +30,49 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/shadcn/tooltip";
+
+const GITHUB_API_URL = "https://api.github.com/repos/Kevin-Liu-01/Loop";
+
+let cachedStars: number | null = null;
+
+function GitHubStarLink() {
+  const [stars, setStars] = useState<number | null>(cachedStars);
+
+  useEffect(() => {
+    if (cachedStars !== null) {
+      return;
+    }
+
+    fetch(GITHUB_API_URL)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.stargazers_count != null) {
+          cachedStars = data.stargazers_count;
+          setStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <a
+      className="inline-flex h-9 items-center gap-1.5 rounded-none border border-line px-2.5 text-[0.75rem] font-medium text-ink-soft transition-colors hover:bg-paper-2 hover:text-ink"
+      href={GITHUB_REPO_URL}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      <GitHubIcon className="h-3.5 w-3.5" />
+      {stars !== null ? (
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <StarIcon className="h-3 w-3 fill-current" />
+          {stars}
+        </span>
+      ) : (
+        <span>GitHub</span>
+      )}
+    </a>
+  );
+}
 
 function openNewSkillModal() {
   window.dispatchEvent(new Event("loop:open-new-skill"));
@@ -53,7 +99,7 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
             />
           </LinkPendingIcon>
           <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em]">
-            Loop
+            <BrandWordmark hover={brandHover} />
           </strong>
         </Link>
 
@@ -85,6 +131,8 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
         </Show>
 
         <div className="flex items-center gap-2 max-sm:hidden">
+          <GitHubStarLink />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <LinkButton href="/sandbox" size="icon" variant="soft">

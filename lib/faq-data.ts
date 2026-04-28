@@ -38,6 +38,15 @@ export const FAQ_SECTIONS: FaqSection[] = [
           "Loop's codebase is a Next.js application. Check the repo and license file for current availability and contribution guidelines.",
         question: "Is Loop open source?",
       },
+      {
+        answer:
+          "Because it's a loop. If it only had two o's it would just be a line segment, and nobody wants to build an operator desk on a line segment. The four o's represent the full cycle: discover → track → refresh → evolve. Also, we tried 'Lp' and it looked like a license plate.",
+        question: "Why does Loop have four o's?",
+      },
+      {
+        answer: "Try hovering over it.",
+        question: "But the logo still says 'Loop'…?",
+      },
     ],
     title: "General",
   },
@@ -56,7 +65,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Yes. Free accounts can create 1 skill. Operator subscribers ($19/mo) get unlimited skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model.",
+          "Yes. All accounts can create up to 10 skills. The new-skill modal lets you discover skills from external sources, import from a URL, or create from scratch. All paths normalize into the same tracked, versioned data model. Free accounts can run up to 3 automations; Operator ($19/mo) unlocks unlimited automations with model selection.",
         question: "Can I create my own skills?",
       },
       {
@@ -183,12 +192,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Each automation run executes a research-first agent. The agent gathers signals from tracked sources, then searches the web using Firecrawl (up to 4 searches per run by default), fetches full page content as clean markdown, and finally revises the skill body. The agent has a dynamic step budget calculated from the number of sources and search budget, with 5 steps reserved for the revision phase so research never crowds out the actual skill update.",
+          "Each automation run executes a research-first agent. The agent gathers signals from tracked sources, then searches the web using Jina AI (up to 4 searches per run by default), fetches full page content as clean markdown, and finally revises the skill body. The agent has a dynamic step budget calculated from the number of sources and search budget, with 5 steps reserved for the revision phase so research never crowds out the actual skill update.",
         question: "How does the agent research pipeline work?",
       },
       {
         answer:
-          "Yes. Creating or editing automations requires the Operator plan ($19/mo). This keeps scheduled compute and storage tied to a paid workspace and reduces abuse of long-running agent jobs.",
+          "Free accounts can run up to 3 automations. Operator ($19/mo) unlocks unlimited automations with model selection and preferred scheduling.",
         question: "Do automations require a paid plan?",
       },
     ],
@@ -298,17 +307,17 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Loop has two tiers. Free ($0) lets you browse the catalog, create 1 skill, and explore the Sandbox. Operator ($19/mo) unlocks unlimited skills, AI-powered automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
+          "Loop has two tiers. Free ($0) lets you browse the catalog, create up to 10 skills, run up to 3 automations, and explore the Sandbox. Operator ($19/mo) unlocks unlimited automations with model selection, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
         question: "How much does Loop cost?",
       },
       {
         answer:
-          "Free gives you full catalog access, search, skill detail views, the Sandbox, and 1 skill. You can fork public skills, download skill markdown, and use the raw URL API. Automations, model selection, custom import sources, and marketplace pricing require Operator.",
+          "Free gives you full catalog access, search, skill detail views, the Sandbox, up to 10 skills, and up to 3 automations. You can fork public skills, download skill markdown, and use the raw URL API. Unlimited automations, model selection, custom import sources, and marketplace pricing require Operator.",
         question: "What's included in the free tier?",
       },
       {
         answer:
-          "Operator ($19/mo) unlocks: unlimited skills, AI-powered automations with configurable cadence, preferred model selection for automation runs, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support.",
+          "Operator ($19/mo) unlocks: unlimited automations with configurable cadence, preferred model selection for automation runs, custom import sources, marketplace pricing, Stripe Connect payouts, and priority support. All accounts can create up to 10 skills; free accounts get up to 3 automations.",
         question: "What does the Operator plan include?",
       },
       {
@@ -406,12 +415,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. It uses Clerk for authentication, Supabase (Postgres) for all persistence, Stripe for billing and payouts, Vercel for hosting (Sandbox, Analytics, Speed Insights), Resend for transactional email, Vercel AI SDK v5 for agent interactions, and Firecrawl for web research (search and page scraping).",
+          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. It uses Clerk for authentication, Supabase (Postgres) for all persistence, Stripe for billing and payouts, Vercel for hosting (Sandbox, Analytics, Speed Insights), Resend for transactional email, Vercel AI SDK v5 for agent interactions, and Jina AI for web research (search and page scraping). Users can optionally bring their own key for Firecrawl, Serper, Tavily, or Brave.",
         question: "What tech stack does Loop use?",
       },
       {
         answer:
-          "Loop is designed for Vercel but runs locally without Vercel services. For a deploy you need Supabase credentials, Clerk API keys, NEXT_PUBLIC_SITE_URL, CRON_SECRET, AI_GATEWAY_API_KEY (or direct provider keys) for agent runs, FIRECRAWL_API_KEY for web research, Resend API key for emails, and Stripe keys if billing is enabled.",
+          "Loop is designed for Vercel but runs locally without Vercel services. For a deploy you need Supabase credentials, Clerk API keys, NEXT_PUBLIC_SITE_URL, CRON_SECRET, AI_GATEWAY_API_KEY (or direct provider keys) for agent runs, BRAVE_API_KEY for web research (free at brave.com/search/api), Resend API key for emails, and Stripe keys if billing is enabled.",
         question: "Can I self-host Loop?",
       },
       {

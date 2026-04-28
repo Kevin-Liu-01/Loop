@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
 
-test("buildPausedAutomationFromSource copies source automation but forces paused state", () => {
+test("buildPausedAutomationFromSource preserves active state from source", () => {
   const result = buildPausedAutomationFromSource({
     automation: {
       cadence: "weekly",
@@ -18,13 +18,30 @@ test("buildPausedAutomationFromSource copies source automation but forces paused
     title: "React Patterns",
   });
 
-  assert.equal(result.enabled, false);
-  assert.equal(result.status, "paused");
+  assert.equal(result.enabled, true);
+  assert.equal(result.status, "active");
   assert.equal(result.cadence, "weekly");
   assert.equal(result.prompt, "Watch for new patterns in the React ecosystem.");
   assert.equal(result.preferredModel, "gpt-4o");
   assert.equal(result.lastRunAt, undefined);
   assert.equal(result.consecutiveFailures, undefined);
+});
+
+test("buildPausedAutomationFromSource keeps paused state from paused source", () => {
+  const result = buildPausedAutomationFromSource({
+    automation: {
+      cadence: "daily",
+      enabled: false,
+      prompt: "Check for updates.",
+      status: "paused",
+    },
+    slug: "paused-skill",
+    title: "Paused Skill",
+  });
+
+  assert.equal(result.enabled, false);
+  assert.equal(result.status, "paused");
+  assert.equal(result.cadence, "daily");
 });
 
 test("buildPausedAutomationFromSource creates default paused automation when source has none", () => {

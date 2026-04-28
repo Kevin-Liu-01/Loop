@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Sign up",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function SignUpPage() {
   return (
     <AuthSplitLayout mode="sign-up">

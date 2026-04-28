@@ -10,14 +10,17 @@ import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsageBeacon } from "@/components/usage-beacon";
+import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import { listRecentImports } from "@/lib/db/recent-imports";
+import { listSkillsByCreator } from "@/lib/db/skills";
 import {
   LANDING_AUTOMATIONS,
   LANDING_MCPS,
   LANDING_SKILLS,
 } from "@/lib/home-landing/landing-data";
 import { fetchLandingData } from "@/lib/home-landing/landing-queries";
+import { formatScheduleLabel } from "@/lib/schedule";
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImages,
@@ -84,14 +87,47 @@ export default async function RootPage() {
 }
 
 async function AuthenticatedDashboard() {
+  const { userId } = await auth();
   const timeZone = await getUsageTimeZoneFromCookie();
-  const [{ snapshot, systemState }, recentImports] = await Promise.all([
-    getSystemSnapshot({ timeZone }),
-    listRecentImports(20),
-  ]);
+  const [{ snapshot, systemState }, recentImports, ownSkills] =
+    await Promise.all([
+      getSystemSnapshot({ timeZone }),
+      listRecentImports(20),
+      userId ? listSkillsByCreator(userId) : Promise.resolve([]),
+    ]);
   const usageOverview = buildUsageOverview(systemState.usageEvents, {
     timeZone,
   });
+
+  const catalogSlugs = new Set(snapshot.skills.map((s) => s.slug));
+  const privateOwn = ownSkills.filter((s) => !catalogSlugs.has(s.slug));
+  const mergedSkills = [...snapshot.skills, ...privateOwn];
+
+  const snapshotAutoSlugs = new Set(
+    snapshot.automations.map((a) => a.matchedSkillSlugs[0]).filter(Boolean)
+  );
+  const userAutomations = ownSkills
+    .filter((s) => s.automation && !snapshotAutoSlugs.has(s.slug))
+    .map((s) => {
+      const auto = s.automation!;
+      const hour = auto.preferredHour ?? DEFAULT_PREFERRED_HOUR;
+      return {
+        cadence: auto.cadence,
+        cwd: [] as string[],
+        id: s.slug,
+        matchedCategorySlugs: [s.category],
+        matchedSkillSlugs: [s.slug],
+        name: `${s.title} refresh`,
+        path: "",
+        preferredDay: auto.preferredDay,
+        preferredHour: hour,
+        preferredModel: auto.preferredModel,
+        prompt: auto.prompt || `Refresh ${s.title} from tracked sources.`,
+        schedule: formatScheduleLabel(auto.cadence, hour, auto.preferredDay),
+        status: (auto.enabled ? "ACTIVE" : "PAUSED") as "ACTIVE" | "PAUSED",
+      };
+    });
+  const mergedAutomations = [...snapshot.automations, ...userAutomations];
 
   return (
     <>
@@ -102,12 +138,13 @@ async function AuthenticatedDashboard() {
         path="/"
       />
       <HomeShell
-        automations={snapshot.automations}
+        automations={mergedAutomations}
         categories={snapshot.categories}
+        currentUserId={userId ?? undefined}
         loopRuns={systemState.loopRuns}
         mcps={snapshot.mcps}
         recentImports={recentImports}
-        skills={snapshot.skills}
+        skills={mergedSkills}
         usageOverview={usageOverview}
       />
     </>

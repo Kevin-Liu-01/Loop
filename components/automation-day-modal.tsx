@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { AutomationIcon } from "@/components/frontier-icons";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
@@ -18,7 +20,11 @@ import { cn } from "@/lib/cn";
 import { formatFullDate } from "@/lib/format";
 import { formatNextRun } from "@/lib/schedule";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
-import type { AutomationSummary, SkillRecord } from "@/lib/types";
+import type {
+  AutomationSummary,
+  LoopRunSummary,
+  SkillRecord,
+} from "@/lib/types";
 
 export interface DayAutomationEntry {
   automation: AutomationSummary;
@@ -30,14 +36,17 @@ interface AutomationDayModalProps {
   onClose: () => void;
   date: Date | null;
   entries: DayAutomationEntry[];
+  loopRuns?: LoopRunSummary[];
   onEditAutomation?: (automation: AutomationSummary) => void;
   skillMap?: Map<string, SkillRecord>;
 }
 
 function AutomationRunIcon({
+  skillSlug,
   skill,
   color,
 }: {
+  skillSlug?: string;
   skill?: SkillRecord;
   color: { bg: string; ring: string; border: string };
 }) {
@@ -45,11 +54,15 @@ function AutomationRunIcon({
     <div
       className={cn(
         "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border",
-        skill ? color.border : "border-line bg-paper-2 dark:bg-paper-2/60"
+        skill || skillSlug
+          ? color.border
+          : "border-line bg-paper-2 dark:bg-paper-2/60"
       )}
     >
       {skill ? (
         <SkillIcon flush iconUrl={skill.iconUrl} size={40} slug={skill.slug} />
+      ) : skillSlug ? (
+        <SkillIcon flush size={40} slug={skillSlug} />
       ) : (
         <AutomationIcon className="h-4 w-4 text-ink-faint" />
       )}
@@ -64,11 +77,32 @@ function AutomationRunIcon({
   );
 }
 
+function formatTimeAgo(iso: string): string {
+  const ms = Date.now() - Date.parse(iso);
+  if (Number.isNaN(ms) || ms < 0) {
+    return "just now";
+  }
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 export function AutomationDayModal({
   open,
   onClose,
   date,
   entries,
+  loopRuns = [],
   onEditAutomation,
   skillMap,
 }: AutomationDayModalProps) {
@@ -78,6 +112,17 @@ export function AutomationDayModal({
   const activeCount = entries.filter(
     ({ automation }) => automation.status === "ACTIVE"
   ).length;
+
+  const latestRunBySlug = useMemo(() => {
+    const map = new Map<string, LoopRunSummary>();
+    for (const run of loopRuns) {
+      const existing = map.get(run.slug);
+      if (!existing || run.startedAt > existing.startedAt) {
+        map.set(run.slug, run);
+      }
+    }
+    return map;
+  }, [loopRuns]);
 
   return (
     <Dialog
@@ -112,8 +157,12 @@ export function AutomationDayModal({
           ) : (
             <ul className="m-0 grid list-none gap-2 p-0">
               {entries.map(({ automation, color }) => {
-                const linkedSkill = automation.matchedSkillSlugs[0]
-                  ? skillMap?.get(automation.matchedSkillSlugs[0])
+                const skillSlug = automation.matchedSkillSlugs[0];
+                const linkedSkill = skillSlug
+                  ? skillMap?.get(skillSlug)
+                  : undefined;
+                const lastRun = skillSlug
+                  ? latestRunBySlug.get(skillSlug)
                   : undefined;
                 const isActive = automation.status === "ACTIVE";
                 const { schedule } = automation;
@@ -125,7 +174,11 @@ export function AutomationDayModal({
 
                 const inner = (
                   <div className="flex items-start gap-3.5">
-                    <AutomationRunIcon color={color} skill={linkedSkill} />
+                    <AutomationRunIcon
+                      color={color}
+                      skill={linkedSkill}
+                      skillSlug={skillSlug}
+                    />
 
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
@@ -165,6 +218,41 @@ export function AutomationDayModal({
                           Next: <span className="text-ink-soft">{nextRun}</span>
                         </span>
                       </div>
+
+                      {lastRun && (
+                        <div
+                          className={cn(
+                            "mt-1 flex items-start gap-2 rounded border px-2.5 py-1.5 text-[0.6875rem]",
+                            lastRun.status === "success"
+                              ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400"
+                              : "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-400"
+                          )}
+                        >
+                          <StatusDot
+                            className="mt-0.5 shrink-0"
+                            tone={
+                              lastRun.status === "success" ? "fresh" : "stale"
+                            }
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                {lastRun.status === "success"
+                                  ? "Last run succeeded"
+                                  : "Last run failed"}
+                              </span>
+                              <span className="tabular-nums text-ink-faint">
+                                {formatTimeAgo(lastRun.finishedAt)}
+                              </span>
+                            </div>
+                            {lastRun.summary && (
+                              <p className="m-0 mt-0.5 line-clamp-2 text-ink-soft">
+                                {lastRun.summary}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -173,8 +261,8 @@ export function AutomationDayModal({
                   <li key={automation.id}>
                     <button
                       className={cn(
-                        "w-full border border-line/80 bg-paper-2/35 p-4 text-left transition-colors dark:bg-black/25",
-                        "hover:border-accent/25 hover:bg-paper-2/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        "w-full border border-line/60 bg-transparent p-4 text-left transition-colors",
+                        "hover:border-accent/25 hover:bg-paper-2/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       )}
                       onClick={() => onEditAutomation(automation)}
                       type="button"
@@ -184,7 +272,7 @@ export function AutomationDayModal({
                   </li>
                 ) : (
                   <li
-                    className="border border-line/80 bg-paper-2/35 p-4 dark:bg-black/25"
+                    className="border border-line/60 bg-transparent p-4"
                     key={automation.id}
                   >
                     {inner}

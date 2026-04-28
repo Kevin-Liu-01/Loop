@@ -1,9 +1,9 @@
 export type SearchProviderId =
-  | "jina"
+  | "brave"
   | "firecrawl"
   | "serper"
   | "tavily"
-  | "brave";
+  | "jina";
 
 export interface SearchProviderMeta {
   label: string;
@@ -15,11 +15,11 @@ export const SEARCH_PROVIDER_META: Record<
   SearchProviderId,
   SearchProviderMeta
 > = {
-  jina: {
-    label: "Jina (default — free)",
-    docsUrl: "https://jina.ai/?sui=apikey",
+  brave: {
+    label: "Brave Search (default — free)",
+    docsUrl: "https://brave.com/search/api/",
     description:
-      "Free search and page reading powered by Jina AI. No API key required from you — the platform provides this.",
+      "Independent search index with 2,000 free queries per month. No API key required from you — the platform provides this.",
   },
   firecrawl: {
     label: "Firecrawl",
@@ -39,9 +39,10 @@ export const SEARCH_PROVIDER_META: Record<
     description:
       "Search API built for AI agents. Returns clean, relevant results optimized for LLMs.",
   },
-  brave: {
-    label: "Brave Search",
-    docsUrl: "https://brave.com/search/api/",
-    description: "Independent search index with 2,000 free queries per month.",
+  jina: {
+    label: "Jina",
+    docsUrl: "https://jina.ai/?sui=apikey",
+    description:
+      "Search and page reading powered by Jina AI. Includes a scrape/reader API for full page content.",
   },
 };

@@ -84,7 +84,7 @@ export function LoopLogo({
           animate={{ rotate: spin ? 360 : 0 }}
           transition={
             spin
-              ? { rotate: { duration: 3.8, ease: "linear", repeat: Infinity } }
+              ? { rotate: { duration: 1.8, ease: "linear", repeat: Infinity } }
               : { rotate: { duration: 0.35, ease: "easeOut" } }
           }
         >

@@ -32,6 +32,7 @@ export async function searchSkills(
       .select(
         "slug, title, description, category, tags, updated_at, origin, version"
       )
+      .eq("visibility", "public")
       .order("updated_at", { ascending: false })
       .limit(limit);
 
@@ -84,6 +85,7 @@ export async function searchSkills(
       .select(
         "slug, title, description, category, tags, updated_at, origin, version"
       )
+      .eq("visibility", "public")
       .or(
         `title.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%`
       )
