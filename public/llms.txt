@@ -1,0 +1,47 @@
+# Loop
+
+> Loop is an operator desk for self-updating agent skills. It monitors, evaluates, and updates agent playbooks so every skill stays current.
+
+## What Loop Does
+
+Loop turns agent playbooks, source scans, and upstream documentation into a living skill catalog that evolves on its own. Skills are versioned, tracked, and refreshed on a configurable schedule using AI agents.
+
+## Core Concepts
+
+- **Skills**: Versioned playbooks with a body, description, tags, category, tracked sources, automation settings, and complete version history. Skills can come from repos, the Codex directory, a remote URL, or be written from scratch.
+- **Automations**: Scheduled agent runs that refresh skills by scanning tracked sources, researching the web, and drafting new revisions.
+- **MCP Servers**: Model Context Protocol integrations that connect AI agents to external tools (GitHub, Slack, Supabase, Stripe, Figma, and 70+ more).
+- **Sandbox**: An isolated agent chat environment with Vercel Sandbox sessions for testing skills interactively.
+
+## Key Pages
+
+- / — Skill catalog home (browse, search, filter by category)
+- /skills/{slug}/{version} — Skill detail page with body, version history, automation controls, observability
+- /mcps/{name}/{version} — MCP server detail page
+- /sandbox — Agent sandbox with provider/model selection and skill attachment
+- /faq — Frequently asked questions (10 sections, 60+ questions)
+- /settings — Account settings, subscription, automations, imports, system health
+- /privacy — Privacy policy
+- /terms — Terms of service
+
+## Pricing
+
+- **Free** ($0): Browse catalog, create up to 10 skills, run up to 3 automations, full Sandbox access.
+- **Operator** ($5/mo): Unlimited automations, model selection, custom import sources, marketplace pricing, Stripe Connect payouts.
+
+## Tech Stack
+
+Next.js, React, TypeScript, Tailwind CSS v4, Supabase (Postgres), Clerk (auth), Stripe (billing), Vercel AI SDK, Vercel Sandbox.
+
+## APIs
+
+- /api/skills/{slug}/raw — Raw skill markdown (text/markdown). Append ?v=N for a specific version.
+- /api/skills/raw/all — Plain-text index of all public skills and MCP servers.
+- /api/skills/{slug}/icon — Resolved skill icon URL.
+- /api/mcps/{name}/icon — Resolved MCP server icon URL.
+
+## Links
+
+- Website: https://loooop.dev
+- GitHub: https://github.com/Kevin-Liu-01/Loop
+- Twitter: https://x.com/kevskgs

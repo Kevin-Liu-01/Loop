@@ -42,6 +42,18 @@ export function SiteFooter() {
           >
             FAQ
           </Link>
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/privacy"
+          >
+            Privacy
+          </Link>
+          <Link
+            className="text-ink-soft transition-colors hover:text-ink"
+            href="/terms"
+          >
+            Terms
+          </Link>
           <a
             className="text-ink-soft transition-colors hover:text-ink"
             href={GITHUB_REPO_URL}

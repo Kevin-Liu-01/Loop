@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AppGridShell } from "@/components/app-grid-shell";
 import { FaqShell } from "@/components/faq-shell";
+import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SiteHeader } from "@/components/site-header";
 import {
   PageHeader,
@@ -14,6 +15,7 @@ import { FAQ_SECTIONS } from "@/lib/faq-data";
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImages,
+  buildFaqPageJsonLd,
   buildSiteUrl,
   SITE_NAME,
   TWITTER_CREATOR_HANDLE,
@@ -48,8 +50,11 @@ export const metadata: Metadata = {
 };
 
 export default function FaqPage() {
+  const allItems = FAQ_SECTIONS.flatMap((s) => s.items);
+
   return (
     <AppGridShell header={<SiteHeader />}>
+      <SeoJsonLd data={buildFaqPageJsonLd(allItems)} />
       <PageShell inset className="flex min-h-0 flex-1 flex-col">
         <div
           className={pageInsetColumnClass(

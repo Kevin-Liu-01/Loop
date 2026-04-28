@@ -7,8 +7,9 @@ export function BrandWordmark({ hover }: { hover: boolean }) {
 
   return (
     <span className="inline-flex items-baseline overflow-hidden">
-      <span>L</span>
-      <span>o</span>
+      <span className="sr-only">Loop</span>
+      <span aria-hidden="true">L</span>
+      <span aria-hidden="true">o</span>
       <motion.span
         className="inline-flex overflow-hidden"
         initial={false}
@@ -18,6 +19,7 @@ export function BrandWordmark({ hover }: { hover: boolean }) {
             ? { duration: 0.15 }
             : { type: "spring", stiffness: 400, damping: 26, mass: 0.8 }
         }
+        aria-hidden="true"
       >
         {[..."oo"].map((ch, i) => (
           <motion.span
@@ -44,7 +46,7 @@ export function BrandWordmark({ hover }: { hover: boolean }) {
           </motion.span>
         ))}
       </motion.span>
-      <span>op</span>
+      <span aria-hidden="true">op</span>
     </span>
   );
 }

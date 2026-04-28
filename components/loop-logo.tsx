@@ -16,6 +16,8 @@ type LoopLogoProps = SVGProps<SVGSVGElement> & {
   interactionActive?: boolean;
   /** Override chip fill class. Defaults to black in light / white in dark. */
   chipClassName?: string;
+  /** Persistent accent glow for Operator subscribers. */
+  operatorGlow?: boolean;
 };
 
 const ORIGIN = "64px 60px";
@@ -39,6 +41,7 @@ export function LoopLogo({
   className,
   interactionActive,
   chipClassName,
+  operatorGlow,
   ...props
 }: LoopLogoProps) {
   const [mounted, setMounted] = useState(false);
@@ -61,7 +64,12 @@ export function LoopLogo({
     <svg
       viewBox="0 0 134 120"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("touch-manipulation", className)}
+      className={cn(
+        "touch-manipulation",
+        operatorGlow &&
+          "drop-shadow-[0_0_6px_rgba(232,101,10,0.45)] dark:drop-shadow-[0_0_8px_rgba(232,101,10,0.5)]",
+        className
+      )}
       onPointerEnter={controlled ? undefined : () => setHovered(true)}
       onPointerLeave={controlled ? undefined : () => setHovered(false)}
       {...props}

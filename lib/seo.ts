@@ -294,13 +294,40 @@ export function buildMcpJsonLd(
   });
 }
 
-export function buildOrganizationJsonLd(): Record<string, unknown> {
+export function buildOrganizationJsonLd(): Record<string, unknown>[] {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      description: SEO_DEFAULT_DESCRIPTION,
+      logo: buildSiteUrl(LOGO_ICON_PATH).toString(),
+      name: SITE_NAME,
+      sameAs: ["https://github.com/Kevin-Liu-01/Loop", "https://x.com/kevskgs"],
+      url: buildSiteUrl("/").toString(),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      description: SEO_DEFAULT_DESCRIPTION,
+      name: SITE_NAME,
+      url: buildSiteUrl("/").toString(),
+    },
+  ];
+}
+
+export function buildFaqPageJsonLd(
+  items: { question: string; answer: string }[]
+): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    description: SEO_DEFAULT_DESCRIPTION,
-    logo: buildSiteUrl(LOGO_ICON_PATH).toString(),
-    name: SITE_NAME,
-    url: buildSiteUrl("/").toString(),
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+      name: item.question,
+    })),
   };
 }

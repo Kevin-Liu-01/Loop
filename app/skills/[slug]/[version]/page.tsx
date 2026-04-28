@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AppGridShell } from "@/components/app-grid-shell";
+import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SiteHeader } from "@/components/site-header";
 import { SkillDetailPage } from "@/components/skill-detail-page";
 import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
@@ -16,7 +17,7 @@ import { listSkillUpstreams } from "@/lib/db/skill-intelligence";
 import { getBrief, parseVersionSegment } from "@/lib/format";
 import { hasUserPurchasedSkill } from "@/lib/purchases";
 import { getLoopSnapshot } from "@/lib/refresh";
-import { buildSkillMetadata } from "@/lib/seo";
+import { buildSkillJsonLd, buildSkillMetadata } from "@/lib/seo";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import {
   canSessionEditSkill,
@@ -121,17 +122,20 @@ async function SkillDetailData({
   const usage = buildSkillUsageSummary(skill.slug, usageEvents, loopRuns);
 
   return (
-    <SkillDetailPage
-      brief={brief}
-      canEdit={canEdit}
-      isSignedIn={!!session}
-      latestRun={latestRun}
-      previousSkill={previousSkill}
-      purchased={purchased || canEdit}
-      skill={{ ...skill, upstreams }}
-      timeZone={timeZone}
-      usage={usage}
-    />
+    <>
+      <SeoJsonLd data={buildSkillJsonLd(skill)} />
+      <SkillDetailPage
+        brief={brief}
+        canEdit={canEdit}
+        isSignedIn={!!session}
+        latestRun={latestRun}
+        previousSkill={previousSkill}
+        purchased={purchased || canEdit}
+        skill={{ ...skill, upstreams }}
+        timeZone={timeZone}
+        usage={usage}
+      />
+    </>
   );
 }
 

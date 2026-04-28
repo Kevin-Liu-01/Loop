@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { AppGridShell } from "@/components/app-grid-shell";
 import { McpDetailPage } from "@/components/mcp-detail-page";
+import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SiteHeader } from "@/components/site-header";
 import { LoadingStatusPill } from "@/components/ui/loading-status-pill";
 import { PageShell } from "@/components/ui/page-shell";
@@ -11,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { getMcpRecordByName } from "@/lib/content";
 import { parseVersionSegment } from "@/lib/format";
-import { buildMcpMetadata } from "@/lib/seo";
+import { buildMcpJsonLd, buildMcpMetadata } from "@/lib/seo";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { pageInsetPadX } from "@/lib/ui-layout";
 
@@ -71,7 +72,12 @@ async function McpDetailData({
     notFound();
   }
 
-  return <McpDetailPage mcp={mcp} timeZone={timeZone} />;
+  return (
+    <>
+      <SeoJsonLd data={buildMcpJsonLd(mcp)} />
+      <McpDetailPage mcp={mcp} timeZone={timeZone} />
+    </>
+  );
 }
 
 function McpDetailFallback() {

@@ -1075,33 +1075,46 @@ export function HomeShell({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div
+          className={cn(
+            "flex items-center gap-3 px-4 py-3",
+            !hasOwnSkills && "opacity-40"
+          )}
+        >
           <span
             className={cn(
               "flex h-5 w-5 shrink-0 items-center justify-center border text-[0.625rem]",
-              hasActiveAutomation
+              hasOwnSkills && hasActiveAutomation
                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : "border-line bg-paper-2 font-semibold tabular-nums text-ink-faint"
             )}
           >
-            {hasActiveAutomation ? <CheckIcon className="h-3 w-3" /> : "2"}
+            {hasOwnSkills && hasActiveAutomation ? (
+              <CheckIcon className="h-3 w-3" />
+            ) : (
+              "2"
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <strong
               className={cn(
                 "text-sm font-medium",
-                hasActiveAutomation ? "text-ink-soft line-through" : "text-ink"
+                hasOwnSkills && hasActiveAutomation
+                  ? "text-ink-soft line-through"
+                  : "text-ink"
               )}
             >
               Set up your first automation
             </strong>
-            {!hasActiveAutomation && (
+            {!(hasOwnSkills && hasActiveAutomation) && (
               <span className="ml-1.5 text-xs text-ink-faint">
-                from any skill page or the automation desk
+                {hasOwnSkills
+                  ? "from any skill page or the automation desk"
+                  : "create a skill first"}
               </span>
             )}
           </div>
-          {!hasActiveAutomation && (
+          {hasOwnSkills && !hasActiveAutomation && (
             <Button
               className="h-7 min-h-7 gap-1.5 px-2.5 text-xs"
               onClick={() =>

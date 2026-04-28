@@ -39,7 +39,11 @@ export async function GET(request: Request) {
           session.userId
         );
         return NextResponse.redirect(checkoutUrl);
-      } catch {
+      } catch (error) {
+        console.error(
+          "[billing/checkout] Failed to create checkout session:",
+          error instanceof Error ? error.message : error
+        );
         return NextResponse.redirect(
           new URL("/?billing=unconfigured", request.url)
         );

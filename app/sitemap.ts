@@ -8,6 +8,8 @@ import { SETTINGS_BASE_PATH, SETTINGS_NAV_ITEMS } from "@/lib/settings-nav";
 const STATIC_PATHS = [
   "/",
   "/faq",
+  "/privacy",
+  "/terms",
   "/sign-in",
   "/sign-up",
   SETTINGS_BASE_PATH,

@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   AutomationIcon,
@@ -70,10 +70,24 @@ export function WelcomeModal() {
     setStep((s) => (s > 0 ? ((s - 1) as Step) : s));
   }, []);
 
+  const suspendedRef = useRef(false);
+
   const openNewSkill = useCallback(() => {
-    dismiss();
+    suspendedRef.current = true;
+    setOpen(false);
     window.dispatchEvent(new CustomEvent("loop:open-new-skill"));
-  }, [dismiss]);
+  }, []);
+
+  useEffect(() => {
+    const resume = () => {
+      if (suspendedRef.current) {
+        suspendedRef.current = false;
+        setOpen(true);
+      }
+    };
+    window.addEventListener("loop:skill-modal-closed", resume);
+    return () => window.removeEventListener("loop:skill-modal-closed", resume);
+  }, []);
 
   if (!isSignedIn) {
     return null;

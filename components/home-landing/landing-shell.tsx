@@ -567,6 +567,18 @@ export function LandingShell({
             </Link>
             <Link
               className="text-ink-faint transition-colors hover:text-ink"
+              href="/privacy"
+            >
+              Privacy
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
+              href="/terms"
+            >
+              Terms
+            </Link>
+            <Link
+              className="text-ink-faint transition-colors hover:text-ink"
               href="/sign-in"
             >
               Sign in

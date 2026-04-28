@@ -13,8 +13,10 @@ import {
   SearchIcon,
   SettingsIcon,
   TerminalIcon,
+  ZapIcon,
 } from "@/components/frontier-icons";
 import { LoopLogo } from "@/components/loop-logo";
+import { useOperator } from "@/components/operator-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
@@ -81,6 +83,7 @@ function openNewSkillModal() {
 export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [brandHover, setBrandHover] = useState(false);
+  const { isOperator } = useOperator();
   const handleNew = onNewSkill ?? openNewSkillModal;
 
   return (
@@ -95,6 +98,7 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
           <LinkPendingIcon className="h-8 w-8 items-center justify-center">
             <LoopLogo
               className="h-8 w-8 text-accent"
+              operatorGlow={isOperator}
               interactionActive={brandHover}
             />
           </LinkPendingIcon>
@@ -102,6 +106,16 @@ export function SiteHeader({ onNewSkill }: { onNewSkill?: () => void }) {
             <BrandWordmark hover={brandHover} />
           </strong>
         </Link>
+
+        {isOperator && (
+          <Link
+            href="/settings/subscription"
+            className="inline-flex items-center gap-1 border border-accent/20 bg-accent/8 px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-accent transition-colors hover:bg-accent/14 hover:border-accent/30 max-sm:hidden"
+          >
+            <ZapIcon className="h-3 w-3" />
+            Operator
+          </Link>
+        )}
 
         <div className="flex-1" />
 

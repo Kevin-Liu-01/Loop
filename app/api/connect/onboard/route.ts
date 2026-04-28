@@ -31,14 +31,26 @@ export async function POST(request: Request) {
           return authResp;
         }
 
-        if (error instanceof Error) {
-          return Response.json({ error: error.message }, { status: 400 });
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to start onboarding.";
+        console.error("[connect/onboard]", message);
+
+        if (
+          message.includes("signed up for Connect") ||
+          message.includes("not registered as a platform")
+        ) {
+          return Response.json(
+            {
+              error:
+                "Stripe Connect is not enabled yet. Complete platform setup at dashboard.stripe.com/test/settings/connect first.",
+            },
+            { status: 400 }
+          );
         }
 
-        return Response.json(
-          { error: "Unable to start onboarding." },
-          { status: 400 }
-        );
+        return Response.json({ error: message }, { status: 400 });
       }
     }
   );

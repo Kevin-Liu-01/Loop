@@ -49,7 +49,6 @@ export async function createCheckoutSession(
   const session = await stripe.checkout.sessions.create({
     allow_promotion_codes: true,
     cancel_url: `${origin}/settings/subscription?checkout=canceled`,
-    customer_creation: "always",
     line_items: [
       {
         price: priceId,

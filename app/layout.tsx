@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { ui } from "@clerk/ui";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -10,12 +11,15 @@ import { ActiveOperationsProvider } from "@/components/active-operations-provide
 import { CommandPalette } from "@/components/command-palette";
 import { NewAutomationModal } from "@/components/new-automation-modal";
 import { NewSkillModal } from "@/components/new-skill-modal";
+import { OperatorProvider } from "@/components/operator-provider";
 import { SeoJsonLd } from "@/components/seo-json-ld";
 import { TimezoneProvider } from "@/components/timezone-provider";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
 import { WelcomeModal } from "@/components/welcome-modal";
 
 import "@/app/globals.css";
+import { isAdminEmail } from "@/lib/admin";
+import { getUserSubscription } from "@/lib/auth";
 import { clerkAppearance } from "@/lib/clerk-theme";
 import { buildMcpVersionHref } from "@/lib/format";
 import { getLoopSnapshot } from "@/lib/refresh";
@@ -127,12 +131,32 @@ async function DeferredGlobals() {
   );
 }
 
+async function resolveOperatorStatus(): Promise<boolean> {
+  try {
+    const user = await currentUser();
+    if (!user) {
+      return false;
+    }
+    const email = user.emailAddresses[0]?.emailAddress ?? "";
+    if (isAdminEmail(email)) {
+      return true;
+    }
+    const subscription = await getUserSubscription(user.id);
+    return subscription !== null;
+  } catch {
+    return false;
+  }
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const serverTimeZone = await getUsageTimeZoneFromCookie();
+  const [serverTimeZone, isOperator] = await Promise.all([
+    getUsageTimeZoneFromCookie(),
+    resolveOperatorStatus(),
+  ]);
 
   return (
     <ClerkProvider appearance={clerkAppearance} ui={ui}>
@@ -145,16 +169,18 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <TimezoneProvider serverTimeZone={serverTimeZone}>
-              <TooltipProvider delayDuration={300}>
-                <ActiveOperationsProvider>
-                  <Suspense>
-                    <DeferredGlobals />
-                  </Suspense>
-                  {children}
-                </ActiveOperationsProvider>
-              </TooltipProvider>
-            </TimezoneProvider>
+            <OperatorProvider isOperator={isOperator}>
+              <TimezoneProvider serverTimeZone={serverTimeZone}>
+                <TooltipProvider delayDuration={300}>
+                  <ActiveOperationsProvider>
+                    <Suspense>
+                      <DeferredGlobals />
+                    </Suspense>
+                    {children}
+                  </ActiveOperationsProvider>
+                </TooltipProvider>
+              </TimezoneProvider>
+            </OperatorProvider>
           </ThemeProvider>
           <Analytics />
           <SpeedInsights />

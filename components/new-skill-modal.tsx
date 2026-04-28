@@ -36,7 +36,10 @@ export function NewSkillModal({ categories }: NewSkillModalProps) {
   const [open, setOpen] = useState(false);
 
   const handleOpen = useCallback(() => setOpen(true), []);
-  const handleClose = useCallback(() => setOpen(false), []);
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    window.dispatchEvent(new Event("loop:skill-modal-closed"));
+  }, []);
 
   useEffect(() => {
     window.addEventListener("loop:open-new-skill", handleOpen);

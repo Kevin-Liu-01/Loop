@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const SOCIAL_AND_SEO_BOTS =
-  /Googlebot|GoogleOther|AdsBot-Google|googleweblight|Storebot-Google|Google-PageRenderer|Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Applebot|Pinterestbot|Bingbot|YandexBot/;
+  /Googlebot|GoogleOther|Google-Extended|AdsBot-Google|googleweblight|Storebot-Google|Google-PageRenderer|Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Applebot|Pinterestbot|Bingbot|YandexBot|GPTBot|ChatGPT-User|ClaudeBot|anthropic-ai|PerplexityBot|Bytespider|CCBot|cohere-ai/;
 
 const nextConfig: NextConfig = {
   experimental: {
