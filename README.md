@@ -24,6 +24,50 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="public/brand/screenshots/homepage.png" alt="Loop landing page" width="720" />
+</p>
+
+<details>
+<summary><strong>Skill catalog</strong> — browse, filter, and track skills with a live activity sidebar</summary>
+<br />
+<img src="public/brand/screenshots/catalog.png" alt="Skill catalog" width="720" />
+</details>
+
+<details>
+<summary><strong>Skill detail</strong> — edit, version, and install any skill with one prompt</summary>
+<br />
+<img src="public/brand/screenshots/skill.png" alt="Skill detail page" width="720" />
+</details>
+
+<details>
+<summary><strong>Run log</strong> — trace every refresh: sources, signals, agent steps, and diffs</summary>
+<br />
+<img src="public/brand/screenshots/run.png" alt="Run log trace" width="720" />
+</details>
+
+<details>
+<summary><strong>Edit automation</strong> — configure prompts, sources, and cadence per skill</summary>
+<br />
+<img src="public/brand/screenshots/edit-automation.png" alt="Edit automation modal" width="720" />
+</details>
+
+<details>
+<summary><strong>Scheduled runs</strong> — see all active automations and their last run status</summary>
+<br />
+<img src="public/brand/screenshots/scheduled-runs.png" alt="Scheduled runs" width="720" />
+</details>
+
+<details>
+<summary><strong>Sandbox</strong> — run agents with attached skills in a live VM</summary>
+<br />
+<img src="public/brand/screenshots/sandbox.png" alt="Agent sandbox" width="720" />
+</details>
+
+---
+
 The name "Loop" was inspired by **Aryan Mahajan** — thanks for the spark.
 
 It does four jobs:
