@@ -127,14 +127,21 @@ export function SandboxSidebar({
             {conversations.map((c) => {
               const isActive = c.id === currentId;
               return (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   className={cn(
-                    "group relative flex w-full items-start gap-2.5 border-b border-line/60 px-4 py-3 text-left transition-colors",
+                    "group relative flex w-full cursor-pointer items-start gap-2.5 border-b border-line/60 px-4 py-3 text-left transition-colors",
                     isActive ? "bg-accent/[0.06]" : "hover:bg-paper-2/50"
                   )}
                   onClick={() => onSelect(c.id)}
-                  type="button"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelect(c.id);
+                    }
+                  }}
                 >
                   {isActive && (
                     <span className="absolute inset-y-0 left-0 w-[2px] bg-accent" />
@@ -170,7 +177,7 @@ export function SandboxSidebar({
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
-                </button>
+                </div>
               );
             })}
           </div>
