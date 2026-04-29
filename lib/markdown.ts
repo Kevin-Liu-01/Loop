@@ -39,7 +39,7 @@ export function stripMarkdown(markdown: string): string {
     .trim();
 }
 
-export function createExcerpt(markdown: string, maxLength = 220): string {
+export function createExcerpt(markdown: string, maxLength = 160): string {
   const plain = stripMarkdown(markdown);
   if (plain.length <= maxLength) {
     return plain;

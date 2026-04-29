@@ -15,11 +15,11 @@ import type {
   UserSkillAutomationStatus,
 } from "@/lib/types";
 import { withApiUsage } from "@/lib/usage-server";
-import { normalizeSource } from "@/lib/user-skills";
+import { AUTOMATION_NAME_MAX_LENGTH, normalizeSource } from "@/lib/user-skills";
 
 const patchSchema = z.object({
   cadence: z.enum(["daily", "weekly", "manual"]).optional(),
-  name: z.string().trim().min(3).max(80).optional(),
+  name: z.string().trim().min(3).max(AUTOMATION_NAME_MAX_LENGTH).optional(),
   preferredDay: z.number().int().min(0).max(6).optional(),
   preferredHour: z.number().int().min(0).max(23).optional(),
   preferredModel: z.string().trim().max(120).optional(),

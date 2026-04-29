@@ -37,6 +37,11 @@ import type {
   SkillRecord,
   LoopSnapshot,
 } from "@/lib/types";
+import {
+  AUTOMATION_NAME_MAX_LENGTH,
+  clampField,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/user-skills";
 
 const WORKSPACE_ROOT = process.cwd();
 const CODEX_ROOT = path.join(os.homedir(), ".codex");
@@ -224,13 +229,15 @@ export async function parseSkill(skillFile: string): Promise<SkillRecord> {
   const { data, content } = matter(raw);
 
   const slug = String(data.name ?? path.basename(skillDir));
-  const title =
+  const title = clampField(
     raw.match(/^#\s+(.+)$/m)?.[1]?.trim() ??
-    slug
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-  const description = String(data.description ?? createExcerpt(content, 160));
+      slug
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" "),
+    SKILL_TITLE_MAX_LENGTH
+  );
+  const description = String(data.description ?? createExcerpt(content));
   const category = inferCategory(slug, `${description}\n${content}`, skillFile);
   const override = SKILL_OVERRIDES[slug];
   const origin = skillFile.startsWith(CODEX_ROOT) ? "codex" : "repo";
@@ -307,7 +314,7 @@ function deriveAutomationsFromSkills(skills: SkillRecord[]): {
       id: skill.slug,
       matchedCategorySlugs: [skill.category],
       matchedSkillSlugs: [skill.slug],
-      name: `${skill.title} refresh`,
+      name: clampField(`${skill.title} refresh`, AUTOMATION_NAME_MAX_LENGTH),
       path: "",
       preferredDay: auto.preferredDay,
       preferredHour: auto.preferredHour,

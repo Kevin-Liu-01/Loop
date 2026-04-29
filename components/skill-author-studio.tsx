@@ -33,7 +33,11 @@ import {
 import { cn } from "@/lib/cn";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import type { AgentDocs, SkillRecord } from "@/lib/types";
-import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
+import {
+  AUTOMATION_PROMPT_MAX_LENGTH,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/user-skills";
 
 const BODY_MAX_CHARS = 24_000;
 
@@ -438,7 +442,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
               <span className={fieldLabel}>Title</span>
               <input
                 className={textFieldBase}
-                maxLength={80}
+                maxLength={SKILL_TITLE_MAX_LENGTH}
                 onChange={(event) => update("title", event.target.value)}
                 required
                 value={state.title}
@@ -464,7 +468,7 @@ export function SkillAuthorStudio({ skill }: SkillAuthorStudioProps) {
             <span className={fieldLabel}>Description</span>
             <textarea
               className={cn(textFieldBase, "min-h-16 resize-y")}
-              maxLength={220}
+              maxLength={SKILL_DESCRIPTION_MAX_LENGTH}
               onChange={(event) => update("description", event.target.value)}
               required
               rows={2}

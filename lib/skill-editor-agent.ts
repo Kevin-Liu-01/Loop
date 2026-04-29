@@ -22,6 +22,7 @@ import type {
   SourceDefinition,
   UserSkillDocument,
 } from "@/lib/types";
+import { SKILL_DESCRIPTION_MAX_LENGTH } from "@/lib/user-skills";
 
 const MAX_REASONING_CHARS = 2000;
 const MAX_TOOL_RESULT_CHARS = 2000;
@@ -245,7 +246,7 @@ function buildReviseSkillTool(
       revisedDescription: z
         .string()
         .min(16)
-        .max(220)
+        .max(SKILL_DESCRIPTION_MAX_LENGTH)
         .describe(
           "Updated one-line skill description reflecting current scope"
         ),

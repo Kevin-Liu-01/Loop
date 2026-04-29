@@ -49,6 +49,7 @@ import type {
   UserSkillCadence,
 } from "@/lib/types";
 import type { CategorySlug } from "@/lib/types";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 const MODEL_OPTIONS = [
   { label: "Default (auto)", value: "" },
@@ -368,7 +369,7 @@ export function AutomationEditModal({
                 <input
                   className={cn(textFieldBase, "min-h-11 py-3 text-sm")}
                   disabled={!canManage}
-                  maxLength={80}
+                  maxLength={AUTOMATION_NAME_MAX_LENGTH}
                   onChange={(e) => setName(e.target.value)}
                   value={name}
                 />

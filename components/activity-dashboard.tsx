@@ -629,12 +629,14 @@ function AutomationListModal({
                           {isActive ? "Active" : "Paused"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-ink-faint">
-                        <span>{auto.schedule?.trim() || "Manual"}</span>
+                      <div className="flex min-w-0 items-center gap-2 text-xs text-ink-faint">
+                        <span className="shrink-0">
+                          {auto.schedule?.trim() || "Manual"}
+                        </span>
                         {nextRun && (
                           <>
-                            <span className="text-line-strong">·</span>
-                            <span className="flex items-center gap-1">
+                            <span className="shrink-0 text-line-strong">·</span>
+                            <span className="flex shrink-0 items-center gap-1">
                               <ClockIcon className="h-2.5 w-2.5" />
                               {nextRun}
                             </span>
@@ -642,8 +644,8 @@ function AutomationListModal({
                         )}
                         {auto.matchedSkillSlugs.length > 0 && (
                           <>
-                            <span className="text-line-strong">·</span>
-                            <span>
+                            <span className="shrink-0 text-line-strong">·</span>
+                            <span className="min-w-0 truncate">
                               {skill?.title ?? auto.matchedSkillSlugs[0]}
                             </span>
                           </>

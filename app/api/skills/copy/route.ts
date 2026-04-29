@@ -14,6 +14,7 @@ import {
   MAX_SLUG_COLLISION_ATTEMPTS,
 } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
+import { clampField, SKILL_TITLE_MAX_LENGTH } from "@/lib/user-skills";
 
 const bodySchema = z.object({
   slug: z.string().min(1).max(120),
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
           slug: newSlug,
           sources: source.sources ?? [],
           tags: source.tags,
-          title: `${source.title} (Copy)`,
+          title: clampField(`${source.title} (Copy)`, SKILL_TITLE_MAX_LENGTH),
           updates: [],
           version: 1,
           visibility: "private",

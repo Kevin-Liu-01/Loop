@@ -30,6 +30,7 @@ import type {
   SourceDefinition,
   VersionReference,
 } from "@/lib/types";
+import { clampField, SKILL_TITLE_MAX_LENGTH } from "@/lib/user-skills";
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -540,9 +541,12 @@ export function buildImportedSkillDraft(
   const fmDescription =
     typeof data.description === "string" ? data.description : undefined;
 
-  const title = inferTitle(content, sourceUrl, fmName);
+  const title = clampField(
+    inferTitle(content, sourceUrl, fmName),
+    SKILL_TITLE_MAX_LENGTH
+  );
   const body = toMarkdownBody(content, title, sourceUrl);
-  const description = fmDescription || createExcerpt(body, 180);
+  const description = fmDescription || createExcerpt(body);
   const category = inferCategory(title, body, sourceUrl);
   const createdAt = now.toISOString();
   const slugBase = slugify(title) || `imported-skill-${stableHash(sourceUrl)}`;

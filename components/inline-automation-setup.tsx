@@ -20,6 +20,7 @@ import {
 } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import type { UserSkillCadence } from "@/lib/types";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 interface InlineAutomationSetupProps {
   slug: string;
@@ -46,7 +47,7 @@ export function InlineAutomationSetup({
       const response = await fetch("/api/automations", {
         body: JSON.stringify({
           cadence,
-          name: `${skillTitle} refresh`,
+          name: `${skillTitle} refresh`.slice(0, AUTOMATION_NAME_MAX_LENGTH),
           note,
           skillSlug: slug,
           status,

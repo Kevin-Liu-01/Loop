@@ -39,7 +39,11 @@ import type {
   CategoryDefinition,
   UserSkillCadence,
 } from "@/lib/types";
-import { AUTOMATION_PROMPT_MAX_LENGTH } from "@/lib/user-skills";
+import {
+  AUTOMATION_PROMPT_MAX_LENGTH,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/user-skills";
 
 interface UserSkillFormProps {
   categories: CategoryDefinition[];
@@ -433,7 +437,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
           <FieldLabel>Title</FieldLabel>
           <input
             className={cn(textFieldBase)}
-            maxLength={80}
+            maxLength={SKILL_TITLE_MAX_LENGTH}
             onChange={(e) => update("title", e.target.value)}
             placeholder="Frontend research loop"
             required
@@ -446,7 +450,7 @@ export function UserSkillForm({ categories }: UserSkillFormProps) {
           <FieldLabel>Description</FieldLabel>
           <textarea
             className={cn(textFieldBase, textFieldArea)}
-            maxLength={220}
+            maxLength={SKILL_DESCRIPTION_MAX_LENGTH}
             onChange={(e) => update("description", e.target.value)}
             placeholder="What this skill does and what makes it useful."
             required

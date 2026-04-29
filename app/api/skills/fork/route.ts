@@ -15,6 +15,7 @@ import {
   MAX_SLUG_COLLISION_ATTEMPTS,
 } from "@/lib/skill-limits";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
+import { clampField, SKILL_TITLE_MAX_LENGTH } from "@/lib/user-skills";
 
 const bodySchema = z.object({
   slug: z.string().min(1).max(120),
@@ -70,9 +71,13 @@ export async function POST(request: Request) {
         }
 
         const forkSources = source.sources ?? [];
+        const forkTitle = clampField(
+          `${source.title} (Fork)`,
+          SKILL_TITLE_MAX_LENGTH
+        );
         const researchProfile = buildResearchProfile({
           sources: forkSources,
-          title: `${source.title} (Fork)`,
+          title: forkTitle,
         });
 
         const created = await dbCreateSkill({
@@ -94,7 +99,7 @@ export async function POST(request: Request) {
           slug: newSlug,
           sources: forkSources,
           tags: source.tags,
-          title: `${source.title} (Fork)`,
+          title: forkTitle,
           updates: [],
           version: 1,
           visibility: "private",

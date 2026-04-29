@@ -19,7 +19,12 @@ import type {
   SourceDefinition,
 } from "@/lib/types";
 import { AGENT_DOC_FILENAMES } from "@/lib/types";
-import { normalizeSource, normalizeTags } from "@/lib/user-skills";
+import {
+  clampField,
+  normalizeSource,
+  normalizeTags,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/user-skills";
 
 const DEFAULT_WEEKLY_IMPORT_LIMIT = 10;
 
@@ -183,14 +188,16 @@ async function discoverFromReadmeLinks(
           }
 
           const { data, content } = matter(raw);
-          const title =
+          const title = clampField(
             content.match(/^#\s+(.+)$/m)?.[1]?.trim() ??
-            slug
-              .split("-")
-              .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-              .join(" ");
+              slug
+                .split("-")
+                .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+                .join(" "),
+            SKILL_TITLE_MAX_LENGTH
+          );
           const description = String(
-            data.description ?? createExcerpt(content, 160)
+            data.description ?? createExcerpt(content)
           );
           const category = inferCategory(slug, `${description}\n${content}`);
 
@@ -321,15 +328,15 @@ async function discoverAndImportFromSource(
 
     try {
       const { data, content } = matter(raw);
-      const title =
+      const title = clampField(
         content.match(/^#\s+(.+)$/m)?.[1]?.trim() ??
-        slug
-          .split("-")
-          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-          .join(" ");
-      const description = String(
-        data.description ?? createExcerpt(content, 160)
+          slug
+            .split("-")
+            .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+            .join(" "),
+        SKILL_TITLE_MAX_LENGTH
       );
+      const description = String(data.description ?? createExcerpt(content));
       const category = inferCategory(slug, `${description}\n${content}`);
 
       const agentDocs = entry.isFile

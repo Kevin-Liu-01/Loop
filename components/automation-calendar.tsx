@@ -188,18 +188,18 @@ function AutomationLegend({
                   </Badge>
                 )*/}
               </div>
-              <div className="flex mt-[-0.1rem] items-center gap-1.5 text-[0.625rem] text-ink-faint">
+              <div className="flex min-w-0 mt-[-0.1rem] items-center gap-1.5 overflow-hidden text-[0.625rem] text-ink-faint">
                 <StatusDot
                   tone={isActive ? "fresh" : "idle"}
                   pulse={isActive}
                   size="sm"
                 />
-                <span className="flex items-center gap-0.5">
+                <span className="flex shrink-0 items-center gap-0.5">
                   <AutomationIcon className="h-2.5 w-2.5" />
                   {schedule}
                 </span>
-                <span className="tabular-nums">{count} runs</span>
-                <span className="ml-auto tabular-nums text-white">
+                <span className="shrink-0 tabular-nums">{count} runs</span>
+                <span className="ml-auto shrink-0 tabular-nums text-white">
                   {nextRun}
                 </span>
               </div>

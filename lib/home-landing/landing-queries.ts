@@ -16,14 +16,16 @@ export async function fetchLandingData(): Promise<LandingData> {
     listMcps().catch(() => []),
   ]);
 
-  const skills = allSkills
+  const verifiedSkills = allSkills.filter((s) => s.author?.verified);
+
+  const skills = verifiedSkills
     .toSorted(
       (a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     )
     .slice(0, 10);
 
-  const automations = allSkills.flatMap((s) =>
+  const automations = verifiedSkills.flatMap((s) =>
     buildSkillAutomationSummaries(s)
   );
 

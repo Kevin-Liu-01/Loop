@@ -1,6 +1,7 @@
 import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
 import { formatScheduleLabel } from "@/lib/schedule";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
+import { AUTOMATION_NAME_MAX_LENGTH, clampField } from "@/lib/user-skills";
 
 type SkillAutomationSource = Pick<
   SkillRecord,
@@ -19,7 +20,10 @@ export function buildSkillAutomationSummaries(
             id: skill.slug,
             matchedCategorySlugs: [],
             matchedSkillSlugs: [skill.slug],
-            name: `${skill.title} refresh`,
+            name: clampField(
+              `${skill.title} refresh`,
+              AUTOMATION_NAME_MAX_LENGTH
+            ),
             path: "",
             preferredDay: skill.automation.preferredDay,
             preferredHour: skill.automation.preferredHour,

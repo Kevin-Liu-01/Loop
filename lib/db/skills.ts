@@ -17,6 +17,11 @@ import type {
   SourceDefinition,
   VersionReference,
 } from "@/lib/types";
+import {
+  clampField,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/user-skills";
 
 interface SkillRow {
   id: string;
@@ -170,7 +175,7 @@ function inputToRow(input: CreateSkillInput): Record<string, unknown> {
     body: input.body,
     canonical_url: input.canonicalUrl ?? null,
     category: input.category,
-    description: input.description,
+    description: clampField(input.description, SKILL_DESCRIPTION_MAX_LENGTH),
     featured: input.featured ?? false,
     headings: input.headings ?? [],
     origin: input.origin,
@@ -183,7 +188,7 @@ function inputToRow(input: CreateSkillInput): Record<string, unknown> {
     sources: input.sources ?? [],
     sync_enabled: input.syncEnabled ?? false,
     tags: input.tags ?? [],
-    title: input.title,
+    title: clampField(input.title, SKILL_TITLE_MAX_LENGTH),
     updates: input.updates ?? [],
     version: input.version ?? 1,
     visibility: input.visibility ?? "public",
@@ -425,10 +430,13 @@ export async function updateSkill(
     mapped.origin = updates.origin;
   }
   if (updates.title !== undefined) {
-    mapped.title = updates.title;
+    mapped.title = clampField(updates.title, SKILL_TITLE_MAX_LENGTH);
   }
   if (updates.description !== undefined) {
-    mapped.description = updates.description;
+    mapped.description = clampField(
+      updates.description,
+      SKILL_DESCRIPTION_MAX_LENGTH
+    );
   }
   if (updates.category !== undefined) {
     mapped.category = updates.category;

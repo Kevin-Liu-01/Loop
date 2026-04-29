@@ -15,10 +15,11 @@ import { canSessionEditSkill } from "@/lib/skill-authoring";
 import { canCreateAutomation } from "@/lib/skill-limits";
 import type { SkillAutomationState } from "@/lib/types";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 const createSchema = z.object({
   cadence: z.enum(["daily", "weekly", "manual"]),
-  name: z.string().trim().min(3).max(80),
+  name: z.string().trim().min(3).max(AUTOMATION_NAME_MAX_LENGTH),
   note: z.string().trim().max(240).optional().default(""),
   preferredDay: z.number().int().min(0).max(6).optional(),
   preferredHour: z.number().int().min(0).max(23).optional(),

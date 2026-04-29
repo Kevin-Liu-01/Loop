@@ -58,7 +58,20 @@ const sourceSchema = z.object({
   url: z.string().url(),
 });
 
+export const SKILL_TITLE_MAX_LENGTH = 60;
+export const SKILL_DESCRIPTION_MAX_LENGTH = 160;
+export const AUTOMATION_NAME_MAX_LENGTH = 60;
 export const AUTOMATION_PROMPT_MAX_LENGTH = 600;
+
+/** Truncate a string to `max` characters, breaking at a word boundary when possible. */
+export function clampField(value: string, max: number): string {
+  if (value.length <= max) {
+    return value;
+  }
+  const cut = value.lastIndexOf(" ", max - 1);
+  const end = cut > max * 0.4 ? cut : max - 1;
+  return `${value.slice(0, end).trimEnd()}…`;
+}
 
 const automationSchema = z.object({
   cadence: z.enum(["daily", "weekly", "manual"]),
@@ -79,7 +92,7 @@ export const createUserSkillInputSchema = z.object({
     .optional(),
   body: z.string().trim().min(40).max(24_000),
   category: z.enum(CATEGORY_SLUGS),
-  description: z.string().trim().min(16).max(220),
+  description: z.string().trim().min(16).max(SKILL_DESCRIPTION_MAX_LENGTH),
   ownerName: z.string().trim().max(48).optional(),
   preferredDay: z.number().int().min(0).max(6).optional(),
   preferredHour: z.number().int().min(0).max(23).optional(),
@@ -89,7 +102,7 @@ export const createUserSkillInputSchema = z.object({
     .optional(),
   sourceUrls: z.array(z.string().url()).max(8).default([]),
   tags: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
-  title: z.string().trim().min(3).max(80),
+  title: z.string().trim().min(3).max(SKILL_TITLE_MAX_LENGTH),
   visibility: z.enum(["public", "private"]).optional().default("private"),
 });
 
@@ -645,7 +658,7 @@ export function buildUserSkillAutomation(
     id: `user:${skill.slug}`,
     matchedCategorySlugs: [skill.category],
     matchedSkillSlugs: [skill.slug],
-    name: `${skill.title} refresh`,
+    name: clampField(`${skill.title} refresh`, AUTOMATION_NAME_MAX_LENGTH),
     path: `loop://skills/${skill.slug}/automation`,
     preferredDay: day,
     preferredHour: hour,

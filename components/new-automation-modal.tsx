@@ -38,6 +38,7 @@ import {
 } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import type { SkillRecord, UserSkillCadence } from "@/lib/types";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 interface NewAutomationModalProps {
   skills: SkillRecord[];
@@ -141,7 +142,7 @@ export function NewAutomationModal({ skills }: NewAutomationModalProps) {
     setSelectedSkillSlug(slug);
     const skill = skillMap.get(slug);
     if (skill) {
-      setName(`${skill.title} refresh`);
+      setName(`${skill.title} refresh`.slice(0, AUTOMATION_NAME_MAX_LENGTH));
     }
   }
 
@@ -307,7 +308,7 @@ export function NewAutomationModal({ skills }: NewAutomationModalProps) {
                 </span>
                 <input
                   className={cn(textFieldBase)}
-                  maxLength={80}
+                  maxLength={AUTOMATION_NAME_MAX_LENGTH}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Frontend refresh"
                   required
