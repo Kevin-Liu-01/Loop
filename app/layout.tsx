@@ -9,6 +9,7 @@ import { Suspense } from "react";
 
 import { ActiveOperationsProvider } from "@/components/active-operations-provider";
 import { CommandPalette } from "@/components/command-palette";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { NewAutomationModal } from "@/components/new-automation-modal";
 import { NewSkillModal } from "@/components/new-skill-modal";
 import { OperatorProvider } from "@/components/operator-provider";
@@ -195,6 +196,7 @@ export default async function RootLayout({
                       <DeferredGlobals />
                     </Suspense>
                     {children}
+                    <FeedbackWidget />
                   </ActiveOperationsProvider>
                 </TooltipProvider>
               </TimezoneProvider>

@@ -45,6 +45,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      feedback: {
+        Row: {
+          id: string;
+          clerk_user_id: string | null;
+          email: string | null;
+          message: string;
+          page_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          clerk_user_id?: string | null;
+          email?: string | null;
+          message: string;
+          page_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          clerk_user_id?: string | null;
+          email?: string | null;
+          message?: string;
+          page_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           slug: string;
