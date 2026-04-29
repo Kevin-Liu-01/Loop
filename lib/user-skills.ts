@@ -59,7 +59,7 @@ const sourceSchema = z.object({
 });
 
 export const SKILL_TITLE_MAX_LENGTH = 60;
-export const SKILL_DESCRIPTION_MAX_LENGTH = 160;
+export const SKILL_DESCRIPTION_MAX_LENGTH = 400;
 export const AUTOMATION_NAME_MAX_LENGTH = 60;
 export const AUTOMATION_PROMPT_MAX_LENGTH = 600;
 
