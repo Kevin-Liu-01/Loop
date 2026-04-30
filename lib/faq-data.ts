@@ -15,28 +15,33 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Loop is an operator desk for self-updating agent skills. It lets you browse, track, fork, import, and author versioned skill playbooks – then keeps them current by scanning the sources they depend on and proposing targeted updates.",
+          "Loop is an operator desk for agent skills. You track the sources a skill depends on, Loop watches those sources, and every refresh lands as a versioned diff with the full run attached. You can browse, track, fork, import, and author skills in the same desk.",
         question: "What is Loop?",
       },
       {
         answer:
-          'Agent skills go stale. Docs change, APIs ship new versions, repos refactor. Without tooling, "self-updating" is guesswork. Loop exists to close that gap: it monitors sources, refreshes skills into new versions, and records every run so you can see exactly what changed and why.',
+          "Loop came from a pretty specific frustration: Codex automations kept breaking on stale refresh tokens, and leaving Codex open on a Mac just to keep automation alive was absurd. Other options existed, but they were either too expensive or too babysit-heavy. Loop exists to make agent skill refreshes run on their own, reliably, with the evidence attached.",
         question: "Why does Loop exist?",
       },
       {
         answer:
-          "Anyone who operates AI agents and wants their skill playbooks to stay accurate over time – prompt engineers, AI-ops teams, developer-tool authors, verified publishers, and agent builders who publish reusable skills. Loop also automatically imports high-signal skills weekly from trusted sources like Anthropic, OpenAI, and Cursor Directory so your catalog stays current.",
+          "Anyone operating AI agents who wants source-backed skills that stay current without constant manual upkeep: individual builders, prompt engineers, AI-ops teams, tool vendors, verified publishers, and people shipping reusable agent workflows. Loop also auto-imports high-signal skills from trusted sources so the catalog stays fresh.",
         question: "Who is Loop for?",
       },
       {
         answer:
-          "Skills are only as good as the information they encode. When upstream documentation, libraries, or APIs change, skills silently become wrong. Loop continuously monitors your tracked sources, proposes diffs, and gates updates behind evals so skills evolve instead of rot.",
+          "Loop solves two problems at once: skills go stale, and the automation around keeping them fresh is usually brittle. When upstream docs, repos, or APIs move, Loop monitors the sources, proposes the diff, records the run, and keeps the refresh system off your laptop and out of your way.",
         question: "What problem does Loop solve?",
       },
       {
         answer:
-          "Loop's codebase is a Next.js application. Check the repo and license file for current availability and contribution guidelines.",
+          "The code is in this repo, but there is no license file in the project right now. Treat it as source-available until a license and contribution policy are added explicitly.",
         question: "Is Loop open source?",
+      },
+      {
+        answer:
+          "Loop believes in shipping product logic fast and outsourcing commodity infrastructure. Cron should orchestrate, queues should fan out, workers should do the real refresh work, and every automation should be inspectable instead of magical. If the system needs babysitting, it failed the design review.",
+        question: "What does Loop believe about shipping fast?",
       },
       {
         answer:
@@ -152,7 +157,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Automations run an agent on a schedule against a selected skill. Each skill's automation config – prompt, cadence, model, and status – is stored directly on the skill in Supabase. Loop's cron checks which skills are due, fetches signals from their sources, and runs the agent to draft a revision.",
+          "Automations run an agent on a schedule against a selected skill. Each skill's automation config – prompt, cadence, model, and status – is stored directly on the skill in Supabase. The daily cron checks which skills are due and dispatches refresh jobs to `@vercel/queue`; the actual research, rewriting, and version save happen in separate worker invocations.",
         question: "What are automations?",
       },
       {
@@ -192,8 +197,13 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Each automation run executes a research-first agent. The agent gathers signals from tracked sources, then searches the web using Jina AI (up to 4 searches per run by default), fetches full page content as clean markdown, and finally revises the skill body. The agent has a dynamic step budget calculated from the number of sources and search budget, with 5 steps reserved for the revision phase so research never crowds out the actual skill update.",
+          "Each automation run executes a research-first agent. The worker gathers signals from tracked sources, then searches the web using Brave Search API by default, fetches full page content as clean markdown, and revises the skill body from evidence instead of vibes. The agent has a dynamic step budget based on source count and search budget, with 5 steps reserved for the revision phase so research does not crowd out the actual edit. It can also propose new sources when it finds something materially better.",
         question: "How does the agent research pipeline work?",
+      },
+      {
+        answer:
+          "Loop sidesteps the Vercel cron time limit by treating cron as an orchestrator, not a worker. There are two crons: a daily refresh at 09:00 UTC and a weekly import on Mondays at 09:00 UTC. Each cron only enumerates work and dispatches per-skill jobs to `@vercel/queue`. Every queued message becomes its own function invocation, so the refresh system scales by fan-out instead of trying to brute-force everything inside one cron request.",
+        question: "How does the cron and queue architecture work?",
       },
       {
         answer:
@@ -415,12 +425,12 @@ export const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         answer:
-          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. It uses Clerk for authentication, Supabase (Postgres) for all persistence, Stripe for billing and payouts, Vercel for hosting (Sandbox, Analytics, Speed Insights), Resend for transactional email, Vercel AI SDK v5 for agent interactions, and Jina AI for web research (search and page scraping). Users can optionally bring their own key for Firecrawl, Serper, Tavily, or Brave.",
+          "Loop is built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4. The stack is intentionally Vercel-native: AI Gateway for multi-provider model access, `@vercel/queue` for refresh fan-out, `@vercel/sandbox` for Firecracker microVM execution, and Blob, Cron, Analytics, and Speed Insights as supporting primitives. Supabase handles persistence, Clerk handles auth, Stripe handles billing and payouts, Resend handles email, and Brave Search API is the default research layer. The point of the stack is simple: spend engineering time on product logic, not bespoke infrastructure.",
         question: "What tech stack does Loop use?",
       },
       {
         answer:
-          "Loop is designed for Vercel but runs locally without Vercel services. For a deploy you need Supabase credentials, Clerk API keys, NEXT_PUBLIC_SITE_URL, CRON_SECRET, AI_GATEWAY_API_KEY (or direct provider keys) for agent runs, BRAVE_API_KEY for web research (free at brave.com/search/api), Resend API key for emails, and Stripe keys if billing is enabled.",
+          "Loop runs locally for development, but the production architecture is deliberately Vercel-native. If you want the full hosted behavior, you need equivalents for AI Gateway, queue fan-out, cron dispatch, sandboxed code execution, and the rest of the Vercel primitives Loop leans on. In the default setup you provide Supabase credentials, Clerk keys, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET`, `AI_GATEWAY_API_KEY`, `BRAVE_API_KEY`, Resend, and Stripe if billing is enabled.",
         question: "Can I self-host Loop?",
       },
       {

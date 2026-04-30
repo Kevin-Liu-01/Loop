@@ -17,7 +17,7 @@ import { pageInsetColumnClass } from "@/lib/ui-layout";
 
 const FAQ_TITLE = "FAQ";
 const FAQ_DESCRIPTION =
-  "Frequently asked questions about Loop – the operator desk for self-updating agent skills.";
+  "Frequently asked questions about Loop – the operator desk for source-backed agent skills.";
 
 export const metadata: Metadata = buildPageMetadata({
   title: FAQ_TITLE,
@@ -41,8 +41,9 @@ export default function FaqPage() {
             <PageHeaderLead>
               <PageHeaderTitle>Frequently asked questions</PageHeaderTitle>
               <PageHeaderSub>
-                Everything you need to know about Loop – from skills and
-                automations to billing and the refresh engine.
+                Everything you need to know about Loop, from source-backed
+                skills and automations to the refresh engine and why it is
+                built the way it is.
               </PageHeaderSub>
             </PageHeaderLead>
           </PageHeader>

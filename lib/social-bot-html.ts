@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 const SITE_NAME = "Loop";
 const DEFAULT_TITLE = "Loop \u2014 Skills that never go stale";
 const DEFAULT_DESCRIPTION =
-  "Loop turns your agent playbooks, updates, and source scans into a living operator desk that stays current.";
+  "Loop tracks the sources your agent skills depend on, refreshes them when they change, and shows every diff in one operator desk.";
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 // Twitter caches per absolute URL. The previous "/og" path was extensionless
@@ -72,7 +72,7 @@ function resolvePageMeta(pathname: string): PageMeta {
     return {
       canonicalPath: "/faq",
       description: DEFAULT_DESCRIPTION,
-      ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      ogImageAlt: `${SITE_NAME} \u2014 operator desk for agent skills`,
       ogImagePath: STATIC_OG_IMAGE_PATH,
       ogType: "website",
       title: `FAQ · ${SITE_NAME}`,
@@ -82,7 +82,7 @@ function resolvePageMeta(pathname: string): PageMeta {
   return {
     canonicalPath: "/",
     description: DEFAULT_DESCRIPTION,
-    ogImageAlt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+    ogImageAlt: `${SITE_NAME} \u2014 operator desk for agent skills`,
     ogImagePath: STATIC_OG_IMAGE_PATH,
     ogType: "website",
     title: DEFAULT_TITLE,

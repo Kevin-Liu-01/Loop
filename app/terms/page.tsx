@@ -54,9 +54,9 @@ export default function TermsPage() {
 
             <h2 className={sectionHeading}>2. Description of Service</h2>
             <p className={prose}>
-              Loop is an operator desk for self-updating agent skills. We
-              provide tools for creating, managing, and automating agent skills,
-              MCP servers, and related workflows.
+              Loop is an operator desk for agent skills. We provide tools for
+              creating, managing, refreshing, and automating source-backed
+              skills, MCP servers, and related workflows.
             </p>
 
             <h2 className={sectionHeading}>3. Accounts</h2>

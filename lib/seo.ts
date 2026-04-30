@@ -9,7 +9,7 @@ export const SITE_NAME = "Loop";
 export const SEO_DEFAULT_TITLE = "Loop \u2014 Skills that never go stale";
 
 export const SEO_DEFAULT_DESCRIPTION =
-  "Loop turns your agent playbooks, updates, and source scans into a living operator desk that stays current.";
+  "Loop tracks the sources your agent skills depend on, refreshes them when they change, and shows every diff in one operator desk.";
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -79,7 +79,7 @@ export function buildDefaultOpenGraphImages(): NonNullable<
 >["images"] {
   return [
     {
-      alt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      alt: `${SITE_NAME} \u2014 operator desk for agent skills`,
       height: OG_HEIGHT,
       type: "image/png",
       url: DEFAULT_OG_IMAGE_PATH,
@@ -99,7 +99,7 @@ interface TwitterImageDescriptor {
 export function buildDefaultTwitterImages(): TwitterImageDescriptor[] {
   return [
     {
-      alt: `${SITE_NAME} \u2014 operator desk for self-updating agent skills`,
+      alt: `${SITE_NAME} \u2014 operator desk for agent skills`,
       height: OG_HEIGHT,
       type: "image/png",
       url: DEFAULT_OG_IMAGE_PATH,
