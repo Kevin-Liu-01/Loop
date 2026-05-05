@@ -500,8 +500,7 @@ export function HeroDiffField() {
 
   return (
     <motion.div
-      className="relative mx-auto grid h-[340px] w-full max-w-[1000px] place-items-center sm:h-[380px]"
-      style={{ perspective: "1600px" }}
+      className="relative mx-auto grid h-[340px] w-full max-w-[1000px] place-items-center sm:h-[380px] lg:[perspective:1600px]"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ amount: 0.15, once: true }}

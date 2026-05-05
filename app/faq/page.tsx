@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
-import { AppGridShell } from "@/components/app-grid-shell";
 import { FaqShell } from "@/components/faq-shell";
 import { SeoJsonLd } from "@/components/seo-json-ld";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
   PageHeader,
@@ -10,10 +10,8 @@ import {
   PageHeaderSub,
   PageHeaderTitle,
 } from "@/components/ui/page-header";
-import { PageShell } from "@/components/ui/page-shell";
 import { FAQ_SECTIONS } from "@/lib/faq-data";
 import { buildFaqPageJsonLd, buildPageMetadata } from "@/lib/seo";
-import { pageInsetColumnClass } from "@/lib/ui-layout";
 
 const FAQ_TITLE = "FAQ";
 const FAQ_DESCRIPTION =
@@ -29,28 +27,26 @@ export default function FaqPage() {
   const allItems = FAQ_SECTIONS.flatMap((s) => s.items);
 
   return (
-    <AppGridShell header={<SiteHeader />}>
+    <div className="flex min-h-screen flex-col bg-paper text-ink">
       <SeoJsonLd data={buildFaqPageJsonLd(allItems)} />
-      <PageShell inset className="flex min-h-0 flex-1 flex-col">
-        <div
-          className={pageInsetColumnClass(
-            "grid min-h-0 flex-1 gap-8 overflow-y-auto pb-16"
-          )}
-        >
-          <PageHeader>
-            <PageHeaderLead>
-              <PageHeaderTitle>Frequently asked questions</PageHeaderTitle>
-              <PageHeaderSub>
-                Everything you need to know about Loop, from source-backed
-                skills and automations to the refresh engine and why it is
-                built the way it is.
-              </PageHeaderSub>
-            </PageHeaderLead>
-          </PageHeader>
+      <SiteHeader variant="landing" />
+      <main className="mx-auto w-full max-w-[1100px] flex-1 px-6 pt-12 pb-20 max-md:px-5 max-md:pt-8">
+        <PageHeader>
+          <PageHeaderLead>
+            <PageHeaderTitle>Frequently asked questions</PageHeaderTitle>
+            <PageHeaderSub>
+              Everything you need to know about Loop, from source-backed skills
+              and automations to the refresh engine and why it is built the way
+              it is.
+            </PageHeaderSub>
+          </PageHeaderLead>
+        </PageHeader>
 
+        <div className="mt-10">
           <FaqShell sections={FAQ_SECTIONS} />
         </div>
-      </PageShell>
-    </AppGridShell>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

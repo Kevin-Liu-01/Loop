@@ -2,15 +2,80 @@
 
 import { MessageSquarePlusIcon, SendIcon, CheckIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
 type Phase = "idle" | "open" | "sending" | "sent";
 
+/** px gap to keep between the widget's bottom edge and the footer's top edge. */
+const FOOTER_GAP = 16;
+/** matches the `bottom-5` Tailwind class on the fixed wrapper. */
+const FIXED_BOTTOM_OFFSET = 20;
+
 export function FeedbackWidget() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState("");
+  const [footerLift, setFooterLift] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let raf: number | null = null;
+    let lastLift = 0;
+
+    const measure = () => {
+      raf = null;
+      // Re-query each tick so client-side navigation between pages with
+      // different footers (or pages with no footer at all) stays correct —
+      // a captured ref would point at a detached node after route change.
+      const footers = document.querySelectorAll("footer");
+      const lastIndex = footers.length - 1;
+      const footer = lastIndex >= 0 ? footers[lastIndex] : null;
+
+      let lift = 0;
+      if (footer) {
+        const rect = footer.getBoundingClientRect();
+        // Only treat as a real footer if it's actually rendered (detached
+        // nodes report 0,0,0,0 rects, which would otherwise falsely lift
+        // the widget by ~innerHeight and push it off-screen).
+        if (rect.width > 0 || rect.height > 0) {
+          const encroachment = Math.max(0, window.innerHeight - rect.top);
+          lift = Math.max(0, encroachment - FIXED_BOTTOM_OFFSET + FOOTER_GAP);
+        }
+      }
+
+      if (Math.abs(lift - lastLift) > 0.5) {
+        lastLift = lift;
+        setFooterLift(lift);
+      }
+    };
+
+    const onScroll = () => {
+      if (raf === null) {
+        raf = requestAnimationFrame(measure);
+      }
+    };
+
+    // Measure once on mount and after any route change. Wait one frame so
+    // the new page's footer has a chance to mount before we read the rect.
+    const initialRaf = requestAnimationFrame(measure);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      cancelAnimationFrame(initialRaf);
+      if (raf !== null) {
+        cancelAnimationFrame(raf);
+      }
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [pathname]);
 
   const reset = useCallback(() => {
     setPhase("idle");
@@ -67,7 +132,10 @@ export function FeedbackWidget() {
   );
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+    <div
+      className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3 transition-transform duration-150 ease-out will-change-transform"
+      style={{ transform: `translateY(-${footerLift}px)` }}
+    >
       <AnimatePresence mode="wait">
         {(phase === "open" || phase === "sending") && (
           <motion.div

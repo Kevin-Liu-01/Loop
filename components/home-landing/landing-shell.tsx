@@ -2,10 +2,9 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
-import { BrandWordmark } from "@/components/brand-wordmark";
 import {
   ArrowRightIcon,
   AutomationIcon,
@@ -15,11 +14,10 @@ import {
 import { GrainShader } from "@/components/home-landing/grain-shader";
 import { HeroDiffField } from "@/components/home-landing/hero-diff-field";
 import { LoopLogo } from "@/components/loop-logo";
+import { SiteHeader } from "@/components/site-header";
 import { SkillAuthorBadge } from "@/components/skill-author-badge";
 import { SkillMetaBar } from "@/components/skill-meta-bar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
 import { McpIcon, SkillIcon } from "@/components/ui/skill-icon";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -150,8 +148,6 @@ export function LandingShell({
   mcps,
   automations,
 }: LandingShellProps) {
-  const [brandHover, setBrandHover] = useState(false);
-
   const normalizedSkills: NormalizedSkill[] = skills
     ? skills.map(normalizeSkillRecord)
     : (staticSkills ?? []).map(normalizeStaticSkill);
@@ -169,6 +165,8 @@ export function LandingShell({
 
   return (
     <div className="min-h-screen bg-paper text-ink">
+      <SiteHeader variant="landing" />
+
       {/* ── HERO ── */}
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0">
@@ -176,58 +174,16 @@ export function LandingShell({
           <div className="hero-fade absolute inset-0" />
         </div>
 
-        {/* Nav */}
-        <nav className="relative z-20 mx-auto flex max-w-[1100px] items-center justify-between px-6 pt-6">
-          <Link
-            className="flex items-center gap-2.5"
-            href="/"
-            onPointerEnter={() => setBrandHover(true)}
-            onPointerLeave={() => setBrandHover(false)}
-          >
-            <LoopLogo
-              className="h-7 w-7 text-accent"
-              interactionActive={brandHover}
-            />
-            <strong className="font-serif text-[1.05rem] font-medium tracking-[-0.03em] text-ink/90">
-              <BrandWordmark hover={brandHover} />
-            </strong>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="hidden h-9 items-center border border-ink/[0.08] bg-ink/[0.03] sm:flex">
-              <Link
-                className="inline-flex h-full items-center px-4 text-xs font-medium text-ink/50 transition-colors hover:bg-ink/[0.06] hover:text-ink/85"
-                href="#skills"
-              >
-                Skills
-              </Link>
-              <span className="h-4 w-px bg-ink/[0.10]" />
-              <Link
-                className="inline-flex h-full items-center px-4 text-xs font-medium text-ink/50 transition-colors hover:bg-ink/[0.06] hover:text-ink/85"
-                href="#mcps"
-              >
-                Automations
-              </Link>
-            </div>
-            <ThemeToggle className="size-9 border-ink/[0.08] bg-transparent text-ink/45 hover:border-ink/[0.14] hover:bg-ink/[0.06] hover:text-ink/85 rounded-none" />
-            <Link
-              className="hidden h-9 items-center px-3 text-xs font-medium text-ink/50 transition-colors hover:text-ink/85 sm:inline-flex"
-              href="/sign-in"
-            >
-              Sign in
-            </Link>
-            <LinkButton href="/sign-up" size="sm" variant="primary">
-              Get started
-            </LinkButton>
-          </div>
-        </nav>
-
         {/* Hero – centered stack */}
-        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,120px)] text-center">
-          <motion.div className="mx-auto grid max-w-[700px] gap-7" {...fadeUp}>
+        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(11vh,96px)] text-center">
+          <motion.div
+            className="mx-auto grid max-w-[700px] gap-7 lg:max-w-[920px] xl:max-w-[1040px]"
+            {...fadeUp}
+          >
             <div className="grid gap-5">
-              <h1 className="font-serif text-[clamp(2.8rem,5.8vw,4.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-ink">
-                Skills that{"\u00A0"}never
-                <br className="max-sm:hidden" /> go{"\u00A0"}stale
+              <h1 className="text-balance font-serif text-[clamp(3.4rem,7vw,5.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-ink">
+                Skills that <br />
+                <span className="text-accent">evolve on their own.</span>
               </h1>
 
               <p className="mx-auto max-w-[34rem] text-balance text-[1.1rem] leading-[1.7] text-ink/55">
@@ -275,7 +231,7 @@ export function LandingShell({
       </section>
 
       {/* ── LIVE SKILLS ── */}
-      <section className="relative z-10" id="skills">
+      <section className="relative z-10 scroll-mt-20" id="skills">
         <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-14">
           <motion.div className="mb-8 grid gap-2" {...fadeUp}>
             <h2 className="font-serif text-[clamp(1.4rem,2.6vw,2rem)] font-medium leading-[1.12] tracking-[-0.03em]">
@@ -428,7 +384,7 @@ export function LandingShell({
       </section>
 
       {/* ── AUTOMATION CALENDAR + MCP GRID ── */}
-      <section className="relative z-10" id="mcps">
+      <section className="relative z-10 scroll-mt-20" id="mcps">
         <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-14">
           <motion.div
             className="grid gap-10 lg:grid-cols-2 lg:gap-0"

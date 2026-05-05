@@ -204,17 +204,19 @@ async function PublicLanding() {
 function PublicLandingFallback() {
   return (
     <div className="min-h-screen bg-paper text-ink">
-      <nav className="mx-auto flex max-w-[1100px] items-center justify-between px-6 pt-6">
+      <nav className="mx-auto flex max-w-[1100px] items-center justify-between px-6 py-3.5">
         <div className="flex items-center gap-2.5">
           <Skeleton className="h-7 w-7" />
           <Skeleton className="h-5 w-14" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="hidden h-9 w-40 sm:block" />
+          <Skeleton className="hidden h-9 w-64 md:block" />
+          <Skeleton className="hidden h-9 w-20 md:block" />
+          <Skeleton className="h-9 w-9" />
           <Skeleton className="h-9 w-24" />
         </div>
       </nav>
-      <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,120px)] text-center">
+      <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-[min(11vh,96px)] text-center">
         <div className="mx-auto grid max-w-[700px] gap-7">
           <div className="grid place-items-center gap-5">
             <Skeleton className="h-14 w-[80%] max-w-[500px]" />

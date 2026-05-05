@@ -16,3 +16,6 @@ content/generated/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# vercel project link (project + org IDs should stay local)
+.vercel/
