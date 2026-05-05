@@ -6,6 +6,7 @@ import { AuthSplitLayout } from "@/components/auth-layout";
 export const metadata: Metadata = {
   description:
     "Create your Loop account and unlock the full operator toolkit for agent skills.",
+  robots: { follow: false, index: false },
   title: "Sign up",
 };
 

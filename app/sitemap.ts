@@ -3,18 +3,11 @@ import type { MetadataRoute } from "next";
 import { buildMcpVersionHref } from "@/lib/format";
 import { getLoopSnapshot } from "@/lib/refresh";
 import { buildSiteUrl } from "@/lib/seo";
-import { SETTINGS_BASE_PATH, SETTINGS_NAV_ITEMS } from "@/lib/settings-nav";
 
-const STATIC_PATHS = [
-  "/",
-  "/faq",
-  "/privacy",
-  "/terms",
-  "/sign-in",
-  "/sign-up",
-  SETTINGS_BASE_PATH,
-  ...SETTINGS_NAV_ITEMS.map((item) => `${SETTINGS_BASE_PATH}/${item.id}`),
-] as const;
+// Only public, indexable pages belong in the sitemap. Auth pages
+// (sign-in/sign-up) and the authenticated dashboard (settings/*) are
+// intentionally excluded — they should not be crawl targets.
+const STATIC_PATHS = ["/", "/faq", "/privacy", "/terms"] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
