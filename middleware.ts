@@ -7,9 +7,14 @@ import {
   shouldServeBotHtml,
 } from "@/lib/social-bot-html";
 
+// Per-route auth (`requireAuth()` inside each handler) covers every
+// /api/skills/** mutation endpoint, so the previous "/api/skills(.*)" matcher
+// was both redundant and harmful — it 404'd the public reads at
+// /api/skills/[slug]/raw and /api/skills/raw/all that are documented in
+// llms.txt and the FAQ. Keep middleware-level protection only for routes
+// without per-handler enforcement.
 const isProtectedRoute = createRouteMatcher([
   "/settings(.*)",
-  "/api/skills(.*)",
   "/api/automations(.*)",
   "/api/billing(.*)",
   "/api/connect(.*)",

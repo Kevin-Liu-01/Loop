@@ -6,6 +6,7 @@ import { AuthSplitLayout } from "@/components/auth-layout";
 export const metadata: Metadata = {
   description:
     "Sign in to Loop – the operator desk for source-backed agent skills.",
+  robots: { follow: false, index: false },
   title: "Sign in",
 };
 
