@@ -203,8 +203,14 @@ async function PublicLanding() {
 
 function PublicLandingFallback() {
   return (
-    <div className="min-h-screen bg-paper text-ink">
-      <nav className="mx-auto flex max-w-[1100px] items-center justify-between px-6 py-3.5">
+    <div className="relative min-h-screen bg-paper text-ink">
+      {/*
+        Mirror the real landing nav layout: sticky on mobile, absolute on
+        lg+ so it overlays the hero placeholder and doesn't push the
+        skeleton headline down. Keeps the hero rhythm identical between
+        the fallback and the hydrated render → no layout shift.
+      */}
+      <nav className="sticky top-0 z-30 mx-auto flex max-w-[1100px] items-center justify-between px-6 py-3.5 lg:absolute lg:inset-x-0">
         <div className="flex items-center gap-2.5">
           <Skeleton className="h-7 w-7" />
           <Skeleton className="h-5 w-14" />
@@ -216,10 +222,10 @@ function PublicLandingFallback() {
           <Skeleton className="h-9 w-24" />
         </div>
       </nav>
-      <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-[min(11vh,96px)] text-center">
-        <div className="mx-auto grid max-w-[700px] gap-7">
+      <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,140px)] text-center">
+        <div className="grid gap-7">
           <div className="grid place-items-center gap-5">
-            <Skeleton className="h-14 w-[80%] max-w-[500px]" />
+            <Skeleton className="h-12 w-[90%] max-w-[760px]" />
             <Skeleton className="h-6 w-[60%] max-w-[380px]" />
           </div>
           <div className="flex justify-center gap-3">

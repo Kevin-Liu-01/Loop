@@ -44,6 +44,15 @@ interface SiteHeaderProps {
    * own sticky `<header>` (full-width, `px-4`).
    */
   variant?: "landing" | "default";
+  /**
+   * Only meaningful when `variant="landing"`. When true, the header is
+   * `position: absolute` on `lg+` so it overlays the hero shader instead
+   * of taking document-flow space (and pushing the hero down). Mobile
+   * keeps the sticky behavior so the nav stays reachable on touch
+   * devices. Defaults to `false` (sticky everywhere) — used by the
+   * landing page itself; legal/FAQ pages omit it.
+   */
+  overlay?: boolean;
   onNewSkill?: () => void;
 }
 
@@ -66,6 +75,7 @@ function openPalette() {
 
 export function SiteHeader({
   variant = "default",
+  overlay = false,
   onNewSkill,
 }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -378,12 +388,21 @@ export function SiteHeader({
 
   if (isLanding) {
     return (
-      <header className="sticky top-0 z-30">
+      <header
+        className={cn(
+          "sticky top-0 z-30",
+          overlay && "lg:absolute lg:inset-x-0"
+        )}
+      >
         <div
           aria-hidden
           className={cn(
             "pointer-events-none absolute inset-0 -z-10 transition-opacity duration-300 ease-out",
-            scrolled ? "opacity-100" : "opacity-0"
+            scrolled ? "opacity-100" : "opacity-0",
+            // When overlaying on desktop the header scrolls away with the
+            // page, so the scroll-fade backdrop becomes irrelevant — hide
+            // it on lg+ so the nav stays clean over the hero shader.
+            overlay && "lg:hidden"
           )}
         >
           <div className="absolute inset-0 bg-paper/75 backdrop-blur-md backdrop-saturate-150" />

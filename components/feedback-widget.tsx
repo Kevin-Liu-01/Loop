@@ -67,6 +67,14 @@ export function FeedbackWidget() {
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
 
+    // Re-measure whenever the document grows or shrinks. This is what
+    // catches Suspense-fallback → real-content swaps (e.g. the dashboard
+    // skeleton showing the footer in viewport, then the loaded skill list
+    // pushing the footer way below the fold). Without this, the lift
+    // stays stuck at its initial-skeleton value until the user scrolls.
+    const bodyObserver = new ResizeObserver(onScroll);
+    bodyObserver.observe(document.body);
+
     return () => {
       cancelAnimationFrame(initialRaf);
       if (raf !== null) {
@@ -74,6 +82,7 @@ export function FeedbackWidget() {
       }
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      bodyObserver.disconnect();
     };
   }, [pathname]);
 

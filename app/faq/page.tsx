@@ -46,7 +46,7 @@ export default function FaqPage() {
           <FaqShell sections={FAQ_SECTIONS} />
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter narrow />
     </div>
   );
 }

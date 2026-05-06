@@ -143,7 +143,7 @@ export default function TermsPage() {
           </p>
         </article>
       </main>
-      <SiteFooter />
+      <SiteFooter narrow />
     </div>
   );
 }

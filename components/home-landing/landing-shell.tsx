@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useMemo } from "react";
+import { TypeAnimation } from "react-type-animation";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import {
@@ -135,6 +136,50 @@ const staggerItem = {
   whileInView: { opacity: 1, y: 0 },
 };
 
+const ROTATING_HEADLINE_HOLD_MS = 2200;
+const ROTATING_HEADLINE_PHRASES = [
+  "evolve on their own.",
+  "rewrite themselves.",
+  "never stop improving.",
+  "keep getting better.",
+] as const;
+const ROTATING_HEADLINE_SEQUENCE = ROTATING_HEADLINE_PHRASES.flatMap(
+  (phrase) => [phrase, ROTATING_HEADLINE_HOLD_MS]
+);
+
+/**
+ * Desktop-only rotating typewriter for the hero headline tail.
+ * The wrapper is gated `hidden lg:inline-grid` so on mobile/tablet the
+ * static span renders instead. Inline-grid + invisible ghost spans reserve
+ * the rendered width of the widest phrase, so "Skills that" never shifts
+ * as phrases swap.
+ */
+function RotatingHeadlineTail() {
+  return (
+    <span className="hidden text-left align-baseline lg:inline-grid">
+      {ROTATING_HEADLINE_PHRASES.map((phrase) => (
+        <span
+          aria-hidden="true"
+          className="invisible col-start-1 row-start-1 whitespace-pre"
+          key={phrase}
+        >
+          {phrase}
+        </span>
+      ))}
+      <TypeAnimation
+        aria-label={ROTATING_HEADLINE_PHRASES[0]}
+        className="col-start-1 row-start-1 text-accent"
+        cursor
+        deletionSpeed={70}
+        repeat={Number.POSITIVE_INFINITY}
+        sequence={ROTATING_HEADLINE_SEQUENCE}
+        speed={50}
+        wrapper="span"
+      />
+    </span>
+  );
+}
+
 interface LandingShellProps {
   skills?: SkillRecord[];
   staticSkills?: LandingSkillRow[];
@@ -164,8 +209,8 @@ export function LandingShell({
   }, [skills]);
 
   return (
-    <div className="min-h-screen bg-paper text-ink">
-      <SiteHeader variant="landing" />
+    <div className="relative min-h-screen bg-paper text-ink">
+      <SiteHeader variant="landing" overlay />
 
       {/* ── HERO ── */}
       <section className="relative w-full overflow-hidden">
@@ -175,15 +220,21 @@ export function LandingShell({
         </div>
 
         {/* Hero – centered stack */}
-        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(11vh,96px)] text-center">
-          <motion.div
-            className="mx-auto grid max-w-[700px] gap-7 lg:max-w-[920px] xl:max-w-[1040px]"
-            {...fadeUp}
-          >
+        <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,140px)] text-center lg:pt-[min(20vh,200px)]">
+          <motion.div className="grid gap-7" {...fadeUp}>
             <div className="grid gap-5">
-              <h1 className="text-balance font-serif text-[clamp(3.4rem,7vw,5.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-ink">
-                Skills that <br />
-                <span className="text-accent">evolve on their own.</span>
+              {/*
+                Headline lives in its own wider column than the body copy so
+                "Skills that evolve on their own." can hold one line on
+                desktop. text-balance kicks in only when the viewport is
+                narrow enough to force a wrap.
+              */}
+              <h1 className="mx-auto max-w-[1040px] text-balance font-serif text-[clamp(2.6rem,5.4vw,3.8rem)] font-medium leading-[1.04] tracking-[-0.045em] text-ink">
+                Skills that{" "}
+                <span className="text-accent lg:hidden">
+                  evolve on their own.
+                </span>
+                <RotatingHeadlineTail />
               </h1>
 
               <p className="mx-auto max-w-[34rem] text-balance text-[1.1rem] leading-[1.7] text-ink/55">
@@ -492,11 +543,11 @@ export function LandingShell({
         <div className="h-px w-full bg-line" />
       </div>
       <footer className="relative z-10 px-6 py-6">
-        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-x-4 gap-y-3 max-sm:justify-center max-sm:text-center">
           <p className="m-0 text-[0.62rem] tabular-nums text-ink-faint">
             © {new Date().getFullYear()} Loop · Operator desk for agent skills
           </p>
-          <nav className="flex items-center gap-6 text-[0.62rem]">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.62rem] max-sm:justify-center">
             <Link
               className="text-ink-faint transition-colors hover:text-ink"
               href="/sign-up"

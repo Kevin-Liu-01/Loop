@@ -54,6 +54,7 @@
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
+    "react-type-animation": "^3.2.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.10.0",
     "shaders": "^2.5.84",

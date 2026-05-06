@@ -127,7 +127,7 @@ export default function PrivacyPage() {
           </p>
         </article>
       </main>
-      <SiteFooter />
+      <SiteFooter narrow />
     </div>
   );
 }
