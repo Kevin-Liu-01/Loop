@@ -6,6 +6,7 @@ import {
   listRefreshRuns as dbListRefreshRuns,
   recordUsageEvent as dbRecordUsageEvent,
   listUsageEvents as dbListUsageEvents,
+  listUsageEventsForSkill as dbListUsageEventsForSkill,
   listUsageEventsSince as dbListUsageEventsSince,
   recordBillingEvent as dbRecordBillingEvent,
   upsertSubscription as dbUpsertSubscription,
@@ -20,6 +21,8 @@ import type {
   StripeSubscriptionRecord,
   UsageEventRecord,
 } from "@/lib/types";
+import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
+import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 
 interface ListLoopRunsOptions {
   skillSlug?: string;
@@ -29,8 +32,6 @@ interface ListLoopRunsOptions {
   since?: string;
   limit?: number;
 }
-import { USAGE_OVERVIEW_EVENTS_LIMIT } from "@/lib/usage-constants";
-import { usageEventsSinceIsoForOverview } from "@/lib/usage-day-bounds";
 
 export async function recordRefreshRun(entry: RefreshRunRecord): Promise<void> {
   await dbRecordRefreshRun(entry);
@@ -78,6 +79,13 @@ export async function listUsageEvents(
   limit?: number
 ): Promise<UsageEventRecord[]> {
   return dbListUsageEvents(limit);
+}
+
+export async function listUsageEventsForSkill(
+  skillSlug: string,
+  limit?: number
+): Promise<UsageEventRecord[]> {
+  return dbListUsageEventsForSkill(skillSlug, limit);
 }
 
 /** Enough history for calendar “today vs yesterday” + rolling 24h charts. */

@@ -895,6 +895,39 @@ export interface Database {
         };
         Relationships: [];
       };
+      sandbox_sessions: {
+        Row: {
+          id: string;
+          sandbox_id: string;
+          clerk_user_id: string;
+          runtime: string;
+          status: string;
+          created_at: string;
+          expires_at: string;
+          stopped_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          sandbox_id: string;
+          clerk_user_id: string;
+          runtime: string;
+          status: string;
+          created_at?: string;
+          expires_at: string;
+          stopped_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          sandbox_id?: string;
+          clerk_user_id?: string;
+          runtime?: string;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          stopped_at?: string | null;
+        };
+        Relationships: [];
+      };
       billing_events: {
         Row: {
           id: string;

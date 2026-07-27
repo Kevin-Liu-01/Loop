@@ -34,16 +34,16 @@ import {
 } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
+import {
+  AUTOMATION_PROMPT_MAX_LENGTH,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/skill-constraints";
 import type {
   AgentDocs,
   CategoryDefinition,
   UserSkillCadence,
 } from "@/lib/types";
-import {
-  AUTOMATION_PROMPT_MAX_LENGTH,
-  SKILL_DESCRIPTION_MAX_LENGTH,
-  SKILL_TITLE_MAX_LENGTH,
-} from "@/lib/user-skills";
 
 interface UserSkillFormProps {
   categories: CategoryDefinition[];

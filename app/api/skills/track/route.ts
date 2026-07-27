@@ -1,7 +1,7 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillCatalogue } from "@/lib/content";
 import { updateSkill } from "@/lib/db/skills";
 import { buildResearchProfile } from "@/lib/research-profile";
@@ -78,14 +78,20 @@ export async function POST(request: Request) {
           sources: tracked.sources,
           title: tracked.title,
         });
-        await updateSkill(tracked.slug, { researchProfile }).catch(() => {});
+        try {
+          await updateSkill(tracked.slug, { researchProfile });
+        } catch (error) {
+          console.error(
+            "[skills/track] Research profile update failed:",
+            error
+          );
+        }
 
-        revalidatePath("/");
-        revalidatePath("/admin");
-        revalidatePath("/skills/new");
-        revalidatePath(`/categories/${tracked.category}`);
-        revalidatePath(`/skills/${tracked.slug}`);
-        revalidatePath(record.href);
+        invalidateSkillData({
+          categorySlugs: [tracked.category],
+          href: record.href,
+          slug: tracked.slug,
+        });
 
         await logUsageEvent({
           categorySlug: tracked.category,

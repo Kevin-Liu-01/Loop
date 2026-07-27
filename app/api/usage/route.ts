@@ -1,6 +1,7 @@
+import { after } from "next/server";
 import { z } from "zod";
 
-import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
+import { logUsageEvent } from "@/lib/usage-server";
 
 const usageSchema = z.object({
   categorySlug: z
@@ -35,21 +36,14 @@ const usageSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  return withApiUsage(
-    {
-      label: "Usage event",
-      method: "POST",
-      route: "/api/usage",
-    },
-    async () => {
-      const payload = usageSchema.parse(await request.json());
+  const payload = usageSchema.parse(await request.json());
 
-      await logUsageEvent({
-        ...payload,
-        source: "ui",
-      });
-
-      return Response.json({ ok: true });
-    }
+  after(() =>
+    logUsageEvent({
+      ...payload,
+      source: "ui",
+    })
   );
+
+  return new Response(null, { status: 204 });
 }

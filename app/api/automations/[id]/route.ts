@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
@@ -6,6 +5,7 @@ import {
   isValidCronSlotHour,
   isValidDayOfWeek,
 } from "@/lib/automation-constants";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getSkillBySlug, updateSkill } from "@/lib/db/skills";
 import { canSessionEditSkill } from "@/lib/skill-authoring";
@@ -126,9 +126,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
         await updateSkill(skillSlug, skillUpdates);
 
-        revalidatePath("/settings", "layout");
-        revalidatePath("/");
-        revalidatePath(`/skills/${skillSlug}`);
+        invalidateSkillData({
+          categorySlugs: [skill.category],
+          href: skill.href,
+          slug: skillSlug,
+        });
 
         return Response.json({ id: skillSlug, ok: true });
       } catch (error) {
@@ -186,9 +188,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
         await updateSkill(skillSlug, { automation: disabled });
 
-        revalidatePath("/settings", "layout");
-        revalidatePath("/");
-        revalidatePath(`/skills/${skillSlug}`);
+        invalidateSkillData({
+          categorySlugs: [skill.category],
+          href: skill.href,
+          slug: skillSlug,
+        });
 
         return Response.json({ id: skillSlug, ok: true });
       } catch (error) {

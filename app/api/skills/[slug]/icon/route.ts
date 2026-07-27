@@ -1,4 +1,5 @@
 import { requireAuth, authErrorResponse } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { getSkillBySlug } from "@/lib/db/skills";
 import {
@@ -45,6 +46,11 @@ export async function POST(
 
     const { publicUrl } = await uploadIcon("skills", slug, file);
     await updateSkillIconUrl(slug, publicUrl);
+    invalidateSkillData({
+      categorySlugs: [skill.category],
+      href: skill.href,
+      slug,
+    });
 
     return Response.json({ iconUrl: publicUrl, ok: true });
   } catch (error) {

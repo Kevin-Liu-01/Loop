@@ -14,6 +14,17 @@ export default function robots(): MetadataRoute.Robots {
       { allow: "/", userAgent: "PerplexityBot" },
       { allow: "/", userAgent: "Googlebot" },
       { allow: "/", userAgent: "Bingbot" },
+      {
+        allow: [
+          "/api/og",
+          "/api/og-home",
+          "/og",
+          "/og.png",
+          "/og-v2.png",
+          "/og-v3.png",
+        ],
+        userAgent: "Twitterbot",
+      },
     ],
     sitemap: buildSiteUrl("/sitemap.xml").toString(),
   };

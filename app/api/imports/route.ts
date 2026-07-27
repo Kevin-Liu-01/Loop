@@ -1,7 +1,10 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import {
+  invalidatePublicCatalogue,
+  invalidateSkillData,
+} from "@/lib/cache-invalidation";
 import {
   buildImportedSkillRecord,
   importRemoteMcps,
@@ -72,11 +75,11 @@ export async function POST(request: Request) {
           });
           const record = buildImportedSkillRecord(skill);
 
-          revalidatePath("/");
-          revalidatePath("/agents");
-          revalidatePath(`/categories/${skill.category}`);
-          revalidatePath(`/skills/${skill.slug}`);
-          revalidatePath(record.href);
+          invalidateSkillData({
+            categorySlugs: [skill.category],
+            href: record.href,
+            slug: skill.slug,
+          });
 
           await logUsageEvent({
             categorySlug: skill.category,
@@ -97,8 +100,7 @@ export async function POST(request: Request) {
 
         const mcps = await importRemoteMcps(payload.url);
 
-        revalidatePath("/");
-        revalidatePath("/agents");
+        invalidatePublicCatalogue();
 
         return Response.json({
           kind: "mcp",

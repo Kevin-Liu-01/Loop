@@ -1,6 +1,5 @@
-import { revalidatePath } from "next/cache";
-
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { deleteSkill } from "@/lib/db/skills";
@@ -57,13 +56,11 @@ export async function PATCH(
 
         const record = buildUserSkillRecord(result.skill);
 
-        revalidatePath("/");
-        revalidatePath("/admin");
-        revalidatePath("/skills/new");
-        revalidatePath(`/categories/${skill.category}`);
-        revalidatePath(`/categories/${result.skill.category}`);
-        revalidatePath(`/skills/${slug}`);
-        revalidatePath(record.href);
+        invalidateSkillData({
+          categorySlugs: [skill.category, result.skill.category],
+          href: record.href,
+          slug,
+        });
 
         await logUsageEvent({
           categorySlug: result.skill.category,
@@ -134,12 +131,11 @@ export async function DELETE(
 
         await deleteSkill(slug);
 
-        revalidatePath("/");
-        revalidatePath("/admin");
-        revalidatePath("/skills/new");
-        revalidatePath(`/categories/${skill.category}`);
-        revalidatePath(`/skills/${slug}`);
-        revalidatePath(skill.href);
+        invalidateSkillData({
+          categorySlugs: [skill.category],
+          href: skill.href,
+          slug,
+        });
 
         await logUsageEvent({
           categorySlug: skill.category,

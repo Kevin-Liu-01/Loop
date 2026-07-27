@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
@@ -8,6 +7,7 @@ import {
   isValidCronSlotHour,
   isValidDayOfWeek,
 } from "@/lib/automation-constants";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillCatalogue, getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
@@ -125,10 +125,11 @@ export async function POST(request: Request) {
           origin: "user",
         });
 
-        revalidatePath("/");
-        revalidatePath("/settings", "layout");
-        revalidatePath(`/categories/${skill.category}`);
-        revalidatePath(`/skills/${skill.slug}`);
+        invalidateSkillData({
+          categorySlugs: [skill.category],
+          href: skill.href,
+          slug: skill.slug,
+        });
 
         await logUsageEvent({
           categorySlug: skill.category,

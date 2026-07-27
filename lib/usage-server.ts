@@ -59,41 +59,8 @@ export async function logUsageEvent(input: UsageEventInput): Promise<void> {
 }
 
 export async function withApiUsage(
-  context: ApiUsageContext,
+  _context: ApiUsageContext,
   handler: () => Promise<Response>
 ): Promise<Response> {
-  const startedAt = Date.now();
-
-  try {
-    const response = await handler();
-    await logUsageEvent({
-      categorySlug: context.categorySlug,
-      details: context.details,
-      durationMs: Date.now() - startedAt,
-      kind: "api_call",
-      label: context.label ?? context.route,
-      method: context.method,
-      ok: response.ok,
-      route: context.route,
-      skillSlug: context.skillSlug,
-      source: "api",
-      status: response.status,
-    });
-    return response;
-  } catch (error) {
-    await logUsageEvent({
-      categorySlug: context.categorySlug,
-      details: error instanceof Error ? error.message : "Unknown error",
-      durationMs: Date.now() - startedAt,
-      kind: "api_call",
-      label: context.label ?? context.route,
-      method: context.method,
-      ok: false,
-      route: context.route,
-      skillSlug: context.skillSlug,
-      source: "api",
-      status: 500,
-    });
-    throw error;
-  }
+  return handler();
 }

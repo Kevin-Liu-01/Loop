@@ -6,10 +6,9 @@ const DEFAULT_DESCRIPTION =
   "Loop tracks the sources your agent skills depend on, refreshes them when they change, and shows every diff in one operator desk.";
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
-// Twitter caches per absolute URL. The previous "/og" path was extensionless
-// and got cached as "no preview"; using "/og.png" busts that cache and reads
-// more reliably as an image to strict scrapers.
-const STATIC_OG_IMAGE_PATH = "/og.png";
+// Social scrapers cache per absolute URL, including failed previews. Keep a
+// versioned PNG path for redesigns while the rewrite serves the shared route.
+const STATIC_OG_IMAGE_PATH = "/og-v3.png";
 const TWITTER_SITE_HANDLE = "@kevskgs";
 const TWITTER_CREATOR_HANDLE = "@kevskgs";
 

@@ -11,7 +11,6 @@ import {
   getGatewayModelForSkill,
 } from "@/lib/agents";
 import {
-  getSkillCatalogue,
   findSkillFiles,
   parseSkill,
   WORKSPACE_ROOT,
@@ -19,7 +18,12 @@ import {
 } from "@/lib/content";
 import { upsertBrief } from "@/lib/db/briefs";
 import { seedCategories } from "@/lib/db/categories";
-import { upsertSkillFromFilesystem } from "@/lib/db/skills";
+import {
+  countSkills,
+  listSkillAutomationCandidates,
+  upsertSkillFromFilesystem,
+} from "@/lib/db/skills";
+import type { SkillAutomationCandidate } from "@/lib/db/skills";
 import {
   buildImportedSkillRecord,
   listImportedSkills,
@@ -54,7 +58,6 @@ import {
   buildUserSkillRecord,
   createNextUserSkillVersion,
   isUserSkillAutomationDue,
-  listUserSkillDocuments,
 } from "@/lib/user-skills";
 
 const SIGNAL_SCHEMA = z.object({
@@ -649,7 +652,9 @@ export async function runTrackedUserSkillUpdate(
   };
 }
 
-function sortByMostOverdue(skills: UserSkillDocument[]): UserSkillDocument[] {
+function sortByMostOverdue(
+  skills: SkillAutomationCandidate[]
+): SkillAutomationCandidate[] {
   return [...skills].toSorted((a, b) => {
     const aTime = a.automation.lastRunAt
       ? new Date(a.automation.lastRunAt).valueOf()
@@ -669,7 +674,7 @@ async function refreshTrackedUserSkills(
     `[refresh] Starting user skill refresh fan-out – model: ${editorModel ? getGatewayEditorModelId() : "heuristic-fallback"}`
   );
 
-  const skills = await listUserSkillDocuments();
+  const skills = await listSkillAutomationCandidates();
   const focusSet = options.focusSkillSlugs
     ? new Set(options.focusSkillSlugs)
     : null;
@@ -940,7 +945,11 @@ async function syncFilesystemSkillsToDb(): Promise<void> {
 
 export async function refreshLoopSnapshot(
   options: RefreshOptions = {}
-): Promise<{ dispatchedSkillCount: number }> {
+): Promise<{
+  categoryCount: number;
+  dispatchedSkillCount: number;
+  skillCount: number;
+}> {
   const startedAt = new Date().toISOString();
   const refreshUserSkills = options.refreshUserSkills ?? true;
   const shouldRefreshImportedSkills = options.refreshImportedSkills ?? true;
@@ -991,11 +1000,12 @@ export async function refreshLoopSnapshot(
       );
     }
 
-    const catalogue = await getSkillCatalogue();
+    const skillCount = await countSkills();
+    const categoryCount = CATEGORY_REGISTRY.length;
 
     try {
       await recordRefreshRun({
-        categoryCount: catalogue.categories.length,
+        categoryCount,
         dailyBriefCount: 0,
         dispatchedSkillCount,
         finishedAt: new Date().toISOString(),
@@ -1007,7 +1017,7 @@ export async function refreshLoopSnapshot(
         refreshCategorySignals,
         refreshImportedSkills: shouldRefreshImportedSkills,
         refreshUserSkills,
-        skillCount: catalogue.skills.length,
+        skillCount,
         startedAt,
         status: "success",
         uploadBlob: false,
@@ -1020,7 +1030,11 @@ export async function refreshLoopSnapshot(
       );
     }
 
-    return { dispatchedSkillCount };
+    return {
+      categoryCount,
+      dispatchedSkillCount,
+      skillCount,
+    };
   } catch (error) {
     try {
       await recordRefreshRun({

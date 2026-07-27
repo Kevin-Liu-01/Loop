@@ -4,6 +4,7 @@ import {
   DEFAULT_PREFERRED_DAY,
   DEFAULT_PREFERRED_HOUR,
 } from "@/lib/automation-constants";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import {
   createSkillVersion as dbCreateSkillVersion,
   getSkillVersions as dbGetSkillVersions,
@@ -24,6 +25,13 @@ import {
 } from "@/lib/markdown";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import { formatScheduleLabel } from "@/lib/schedule";
+import {
+  AUTOMATION_NAME_MAX_LENGTH,
+  AUTOMATION_PROMPT_MAX_LENGTH,
+  clampField,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/skill-constraints";
 import type {
   AgentDocs,
   AgentPrompt,
@@ -46,40 +54,13 @@ const CATEGORY_SLUGS = CATEGORY_REGISTRY.map((category) => category.slug) as [
   ...CategorySlug[],
 ];
 
-// ---------------------------------------------------------------------------
-// Zod schemas
-// ---------------------------------------------------------------------------
-
-const sourceSchema = z.object({
-  id: z.string().min(1),
-  kind: z.enum(["rss", "atom", "docs", "blog", "github", "watchlist"]),
-  label: z.string().min(1),
-  tags: z.array(z.string()),
-  url: z.string().url(),
-});
-
-export const SKILL_TITLE_MAX_LENGTH = 60;
-export const SKILL_DESCRIPTION_MAX_LENGTH = 400;
-export const AUTOMATION_NAME_MAX_LENGTH = 60;
-export const AUTOMATION_PROMPT_MAX_LENGTH = 600;
-
-/** Truncate a string to `max` characters, breaking at a word boundary when possible. */
-export function clampField(value: string, max: number): string {
-  if (value.length <= max) {
-    return value;
-  }
-  const cut = value.lastIndexOf(" ", max - 1);
-  const end = cut > max * 0.4 ? cut : max - 1;
-  return `${value.slice(0, end).trimEnd()}…`;
-}
-
-const automationSchema = z.object({
-  cadence: z.enum(["daily", "weekly", "manual"]),
-  enabled: z.boolean(),
-  lastRunAt: z.string().datetime().optional(),
-  prompt: z.string(),
-  status: z.enum(["active", "paused"]),
-});
+export {
+  AUTOMATION_NAME_MAX_LENGTH,
+  AUTOMATION_PROMPT_MAX_LENGTH,
+  clampField,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/skill-constraints";
 
 export const createUserSkillInputSchema = z.object({
   agentDocs: z.record(z.string()).optional(),
@@ -172,8 +153,7 @@ export function normalizeSource(
   const hostnameLabel = titleCaseFromHost(parsed.hostname) || "Watchlist";
   const pathLabel = parsed.pathname
     .split("/")
-    .filter(Boolean)
-    .at(-1)
+    .findLast(Boolean)
     ?.replace(/\.(xml|rss|atom|json)$/i, "")
     ?.replaceAll(/[-_]/g, " ");
   const suffix =
@@ -276,7 +256,7 @@ function materializeUserSkillVersion(
 
 function buildUserSkillBody(version: UserSkillVersion): string {
   const sections = [version.body.trim()];
-  const latestUpdate = version.updates[0];
+  const [latestUpdate] = version.updates;
 
   sections.push(
     [
@@ -387,7 +367,7 @@ function cloneVersion(version: UserSkillVersion): UserSkillVersion {
 // ---------------------------------------------------------------------------
 
 export function isUserSkillAutomationDue(
-  skill: UserSkillDocument,
+  skill: Pick<UserSkillDocument, "automation" | "slug" | "sources">,
   now = new Date()
 ): boolean {
   if (
@@ -679,7 +659,7 @@ export function buildUserSkillRecord(
     (entry) => entry.slug === version.category
   );
 
-  const latestUpdate = version.updates[0];
+  const [latestUpdate] = version.updates;
 
   return {
     accent: category?.accent ?? "signal-red",
@@ -780,6 +760,13 @@ export async function listUserSkillDocuments(): Promise<UserSkillDocument[]> {
   return records.map(skillRecordToUserDoc);
 }
 
+export async function getUserSkillDocumentBySlug(
+  slug: string
+): Promise<UserSkillDocument | null> {
+  const record = await dbGetSkillBySlug(slug);
+  return record?.origin === "user" ? skillRecordToUserDoc(record) : null;
+}
+
 interface SkillCreatorIdentity {
   creatorClerkUserId?: string;
   authorId?: string;
@@ -824,8 +811,7 @@ export async function addUserSkill(
 
 export async function addTrackedSkillFromRecord(
   skill: SkillRecord,
-  categorySources: SourceDefinition[],
-  now = new Date()
+  categorySources: SourceDefinition[]
 ): Promise<UserSkillDocument> {
   const existing = await dbGetSkillBySlug(skill.slug);
 
@@ -927,6 +913,12 @@ export async function saveUserSkillDocuments(
           )
         );
       }
+
+      invalidateSkillData({
+        categorySlugs: [skill.category],
+        href: buildUserSkillRecord(skill).href,
+        slug: skill.slug,
+      });
     })
   );
 }

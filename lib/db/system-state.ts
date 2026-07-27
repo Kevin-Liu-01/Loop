@@ -34,6 +34,23 @@ const LOOP_RUN_SUMMARY_COLUMNS = [
   "searches_used",
 ].join(",");
 
+const USAGE_EVENT_COLUMNS = [
+  "id",
+  "at",
+  "kind",
+  "source",
+  "label",
+  "path",
+  "route",
+  "method",
+  "status",
+  "duration_ms",
+  "ok",
+  "skill_slug",
+  "category_slug",
+  "details",
+].join(",");
+
 type LoopRunTrigger = LoopRunRecord["trigger"];
 type LoopRunOrigin = LoopRunRecord["origin"];
 
@@ -386,7 +403,7 @@ export async function listUsageEvents(
   const db = getServerSupabase();
   const { data, error } = await db
     .from("usage_events")
-    .select("*")
+    .select(USAGE_EVENT_COLUMNS)
     .order("at", { ascending: false })
     .limit(limit);
 
@@ -395,7 +412,28 @@ export async function listUsageEvents(
   }
 
   return (data ?? []).map((row) =>
-    mapUsageEventRow(row as Record<string, unknown>)
+    mapUsageEventRow(row as unknown as Record<string, unknown>)
+  );
+}
+
+export async function listUsageEventsForSkill(
+  skillSlug: string,
+  limit = 100
+): Promise<UsageEventRecord[]> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("usage_events")
+    .select(USAGE_EVENT_COLUMNS)
+    .eq("skill_slug", skillSlug)
+    .order("at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`listUsageEventsForSkill failed: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) =>
+    mapUsageEventRow(row as unknown as Record<string, unknown>)
   );
 }
 
@@ -407,7 +445,7 @@ export async function listUsageEventsSince(
   const db = getServerSupabase();
   const { data, error } = await db
     .from("usage_events")
-    .select("*")
+    .select(USAGE_EVENT_COLUMNS)
     .gte("at", sinceIso)
     .order("at", { ascending: false })
     .limit(limit);
@@ -417,7 +455,7 @@ export async function listUsageEventsSince(
   }
 
   return (data ?? []).map((row) =>
-    mapUsageEventRow(row as Record<string, unknown>)
+    mapUsageEventRow(row as unknown as Record<string, unknown>)
   );
 }
 

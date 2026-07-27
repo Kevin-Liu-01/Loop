@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "ultracite check",
     "test": "node --import tsx --test test/*.test.ts",
+    "profile:http": "node ./scripts/profile-http.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "content:build": "node --import tsx ./lib/refresh.ts --write-local",
     "content:refresh": "node --import tsx ./lib/refresh.ts --write-local --upload-blob",

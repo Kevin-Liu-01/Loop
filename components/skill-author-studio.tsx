@@ -32,12 +32,12 @@ import {
 } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
-import type { AgentDocs, SkillRecord } from "@/lib/types";
 import {
   AUTOMATION_PROMPT_MAX_LENGTH,
   SKILL_DESCRIPTION_MAX_LENGTH,
   SKILL_TITLE_MAX_LENGTH,
-} from "@/lib/user-skills";
+} from "@/lib/skill-constraints";
+import type { AgentDocs, SkillRecord } from "@/lib/types";
 
 const BODY_MAX_CHARS = 24_000;
 

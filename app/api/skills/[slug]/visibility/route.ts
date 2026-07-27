@@ -1,7 +1,7 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
@@ -62,9 +62,11 @@ export async function PATCH(
 
         await updateSkill(slug, { visibility });
 
-        revalidatePath("/");
-        revalidatePath(`/skills/${slug}`);
-        revalidatePath("/settings", "layout");
+        invalidateSkillData({
+          categorySlugs: [skill.category],
+          href: skill.href,
+          slug,
+        });
 
         return Response.json({ ok: true, slug, visibility });
       } catch (error) {

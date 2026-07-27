@@ -1,7 +1,10 @@
 import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
 import { formatScheduleLabel } from "@/lib/schedule";
+import {
+  AUTOMATION_NAME_MAX_LENGTH,
+  clampField,
+} from "@/lib/skill-constraints";
 import type { AutomationSummary, SkillRecord } from "@/lib/types";
-import { AUTOMATION_NAME_MAX_LENGTH, clampField } from "@/lib/user-skills";
 
 type SkillAutomationSource = Pick<
   SkillRecord,

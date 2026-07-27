@@ -5,7 +5,7 @@ import { buildFailedLoopRun, runTrackedUserSkillUpdate } from "@/lib/refresh";
 import { recordLoopRun } from "@/lib/system-state";
 import { logUsageEvent } from "@/lib/usage-server";
 import {
-  listUserSkillDocuments,
+  getUserSkillDocumentBySlug,
   saveUserSkillDocuments,
 } from "@/lib/user-skills";
 
@@ -18,8 +18,7 @@ export const POST = handleCallback<SkillRefreshMessage>(
       `[skill-worker] Processing "${slug}" (delivery ${metadata.deliveryCount})`
     );
 
-    const skills = await listUserSkillDocuments();
-    const skill = skills.find((entry) => entry.slug === slug);
+    const skill = await getUserSkillDocumentBySlug(slug);
 
     if (!skill) {
       console.warn(

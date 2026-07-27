@@ -66,7 +66,7 @@ export function CopyButton({
   async function handleCopy() {
     await navigator.clipboard.writeText(value);
     if (usageEvent) {
-      postUsageEvent(usageEvent);
+      void postUsageEvent(usageEvent);
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);

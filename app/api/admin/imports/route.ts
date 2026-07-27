@@ -1,6 +1,5 @@
-import { revalidatePath } from "next/cache";
-
 import { getAuthorizedAdminEmail } from "@/lib/admin";
+import { invalidatePublicCatalogue } from "@/lib/cache-invalidation";
 import { withApiUsage } from "@/lib/usage-server";
 import { runWeeklyImport } from "@/lib/weekly-import";
 
@@ -22,8 +21,7 @@ export async function POST(request: Request) {
 
       const result = await runWeeklyImport();
 
-      revalidatePath("/", "layout");
-      revalidatePath("/settings/imports", "layout");
+      invalidatePublicCatalogue();
 
       return Response.json({
         details: result,

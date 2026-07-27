@@ -16,6 +16,8 @@ export interface LandingSkillRow {
   description: string;
   iconUrl?: string;
   ownerName: string;
+  href?: string;
+  automationEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------

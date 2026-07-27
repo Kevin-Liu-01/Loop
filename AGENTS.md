@@ -192,3 +192,18 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 ---
 
 Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `pnpm dlx ultracite fix` before committing to ensure compliance.
+
+## Social preview delivery
+
+- Keep `app/robots.ts` explicit about Twitterbot access to `/api/og` and
+  `/api/og-home`, even when the wildcard group allows the whole site.
+- Loop's deployed Open Graph image uses a versioned PNG path (currently
+  `/og-v3.png`) rewritten by `next.config.ts` to the dynamic `/og` renderer.
+  Keep the renderer, current version, and legacy `/og.png` path allowed and
+  public when the image changes.
+- Robots rules are necessary but not sufficient. Before diagnosing a missing
+  preview, verify public DNS, an unauthenticated `200` page response, absolute
+  `og:image` and `twitter:image` URLs, and a direct `200 image/png` response to
+  a `Twitterbot/1.0` request.
+- Social platforms cache failed previews. When the delivery contract or image
+  changes, use a new public image URL or version query to force a fresh scrape.

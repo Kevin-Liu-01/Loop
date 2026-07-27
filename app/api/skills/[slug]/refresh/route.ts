@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import { revalidatePath } from "next/cache";
-
 import { authErrorResponse, requireAuth } from "@/lib/auth";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
@@ -173,21 +171,6 @@ export async function POST(
               console.error(
                 `[skills/refresh] Failed to record loop run for "${slug}":`,
                 recordError
-              );
-            }
-
-            try {
-              revalidatePath("/");
-              revalidatePath("/admin");
-              revalidatePath("/skills/new");
-              revalidatePath(`/categories/${currentSkill.category}`);
-              revalidatePath(`/categories/${cycle.nextSkill.category}`);
-              revalidatePath(`/skills/${slug}`);
-              revalidatePath(cycle.result.href);
-            } catch (revalidateError) {
-              console.error(
-                "[skills/refresh] Cache revalidation failed:",
-                revalidateError
               );
             }
 

@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://loooop.dev">
-    <img src="https://loooop.dev/og" alt="Loop — Skills that never go stale" width="720" />
+    <img src="https://loooop.dev/og-v3.png" alt="Loop — Skills that never go stale" width="720" />
   </a>
 </p>
 
@@ -390,14 +390,19 @@ The mark is a golden-ratio gear with a detachable chip. The animated React versi
 
 ### OpenGraph images
 
-OG images are generated dynamically at `/og` via `next/og` (`app/og/route.tsx`). The route accepts optional `title`, `description`, and `category` query params. When none are provided it renders the default card.
+OG images are generated dynamically at `/og` via `next/og` (`app/og/route.tsx`).
+Metadata uses the cache-busting `/og-v3.png` rewrite, while earlier paths remain
+legacy aliases. The renderer accepts optional `title`, `description`, and
+`category` query params; with none, it renders the default card.
 
 The card uses:
 
-- warm dark gradient background with radial orange glow
-- the gear icon as a header lockup
+- the Loop mark, one headline, and one short description
+- a minimal sources, refresh, version, and diff loop diagram
 - `Neue Montreal` (Book + Bold) loaded from local TTF files in `app/og/`
-- a product screenshot from `/images/og.png` bleeding off the right edge
+
+The repository hero reuses the same versioned renderer, so README and social
+artwork cannot drift.
 
 SEO metadata helpers (titles, descriptions, OG images, JSON-LD) are centralized in `lib/seo.ts`.
 

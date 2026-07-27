@@ -37,8 +37,8 @@ import {
   STATUS_OPTIONS,
 } from "@/lib/automation-constants";
 import { cn } from "@/lib/cn";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/skill-constraints";
 import type { SkillRecord, UserSkillCadence } from "@/lib/types";
-import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 interface NewAutomationModalProps {
   skills: SkillRecord[];

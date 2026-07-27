@@ -2,10 +2,14 @@ import { getServerSupabase } from "@/lib/db/client";
 import { listSkillAuthorsByIds } from "@/lib/db/skill-authors";
 import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
 import { createExcerpt } from "@/lib/markdown";
+import {
+  clampField,
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_TITLE_MAX_LENGTH,
+} from "@/lib/skill-constraints";
 import type {
   AgentDocs,
   AgentPrompt,
-  AutomationSummary,
   ReferenceDoc,
   SkillResearchProfile,
   SkillAutomationState,
@@ -17,11 +21,6 @@ import type {
   SourceDefinition,
   VersionReference,
 } from "@/lib/types";
-import {
-  clampField,
-  SKILL_DESCRIPTION_MAX_LENGTH,
-  SKILL_TITLE_MAX_LENGTH,
-} from "@/lib/user-skills";
 
 interface SkillRow {
   id: string;
@@ -62,15 +61,15 @@ interface SkillRow {
   forked_from_slug?: string | null;
 }
 
+function isNonEmptyString(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
 async function attachAuthors(
   rows: SkillRow[]
 ): Promise<Map<string, SkillRecord["author"]>> {
   const authorIds = [
-    ...new Set(
-      rows
-        .map((row) => row.author_id)
-        .filter((value): value is string => Boolean(value))
-    ),
+    ...new Set(rows.map((row) => row.author_id).filter(isNonEmptyString)),
   ];
 
   const authors = await listSkillAuthorsByIds(authorIds);
@@ -269,22 +268,32 @@ export async function getSkillBySlug(
     return null;
   }
 
-  const { data: versions } = await db
-    .from("skill_versions")
-    .select("version, created_at")
-    .eq("skill_id", (data as SkillRow).id)
-    .order("version", { ascending: false });
-
   const row = data as SkillRow;
-  const authors = await attachAuthors([row]);
+  return hydrateSkillRow(row, row);
+}
+
+async function hydrateSkillRow(
+  row: SkillRow,
+  currentRow: SkillRow
+): Promise<SkillRecord> {
+  const db = getServerSupabase();
+  const [authors, { data: versions }] = await Promise.all([
+    attachAuthors([currentRow]),
+    db
+      .from("skill_versions")
+      .select("version, created_at")
+      .eq("skill_id", currentRow.id)
+      .order("version", { ascending: false }),
+  ]);
+
   const availableVersions: VersionReference[] = [
     {
-      label: buildVersionLabel(row.version),
-      updatedAt: row.updated_at,
-      version: row.version,
+      label: buildVersionLabel(currentRow.version),
+      updatedAt: currentRow.updated_at,
+      version: currentRow.version,
     },
     ...(versions ?? [])
-      .filter((v: { version: number }) => v.version !== row.version)
+      .filter((v: { version: number }) => v.version !== currentRow.version)
       .map((v: { version: number; created_at: string }) => ({
         label: buildVersionLabel(v.version),
         updatedAt: v.created_at,
@@ -295,7 +304,7 @@ export async function getSkillBySlug(
   return rowToSkillRecord(
     row,
     availableVersions,
-    row.author_id ? authors.get(row.author_id) : undefined
+    currentRow.author_id ? authors.get(currentRow.author_id) : undefined
   );
 }
 
@@ -317,7 +326,7 @@ export async function getSkillAtVersion(
   const currentRow = skillData as SkillRow;
 
   if (currentRow.version === version) {
-    return getSkillBySlug(slug);
+    return hydrateSkillRow(currentRow, currentRow);
   }
 
   const { data: versionData, error } = await db
@@ -364,35 +373,7 @@ export async function getSkillAtVersion(
     visibility: v.visibility,
   };
 
-  const [authors, { data: allVersionRows }] = await Promise.all([
-    attachAuthors([currentRow]),
-    db
-      .from("skill_versions")
-      .select("version, created_at")
-      .eq("skill_id", currentRow.id)
-      .order("version", { ascending: false }),
-  ]);
-
-  const availableVersions: VersionReference[] = [
-    {
-      label: buildVersionLabel(currentRow.version),
-      updatedAt: currentRow.updated_at,
-      version: currentRow.version,
-    },
-    ...(allVersionRows ?? [])
-      .filter((r: { version: number }) => r.version !== currentRow.version)
-      .map((r: { version: number; created_at: string }) => ({
-        label: buildVersionLabel(r.version),
-        updatedAt: r.created_at,
-        version: r.version,
-      })),
-  ].toSorted((a, b) => b.version - a.version);
-
-  return rowToSkillRecord(
-    versionRow,
-    availableVersions,
-    currentRow.author_id ? authors.get(currentRow.author_id) : undefined
-  );
+  return hydrateSkillRow(versionRow, currentRow);
 }
 
 export async function createSkill(
@@ -598,6 +579,49 @@ export async function countUserSkills(clerkUserId: string): Promise<number> {
     throw new Error(`countUserSkills failed: ${error.message}`);
   }
   return count ?? 0;
+}
+
+export async function countSkills(): Promise<number> {
+  const db = getServerSupabase();
+  const { count, error } = await db
+    .from("skills")
+    .select("id", { count: "exact", head: true });
+  if (error) {
+    throw new Error(`countSkills failed: ${error.message}`);
+  }
+  return count ?? 0;
+}
+
+export interface SkillAutomationCandidate {
+  automation: SkillAutomationState;
+  slug: string;
+  sources: SourceDefinition[];
+}
+
+export async function listSkillAutomationCandidates(): Promise<
+  SkillAutomationCandidate[]
+> {
+  const db = getServerSupabase();
+  const { data, error } = await db
+    .from("skills")
+    .select("slug,automation,sources")
+    .eq("origin", "user")
+    .not("automation", "is", null);
+  if (error) {
+    throw new Error(`listSkillAutomationCandidates failed: ${error.message}`);
+  }
+  return (data ?? []).flatMap((row) => {
+    if (!row.automation || typeof row.automation !== "object") {
+      return [];
+    }
+    return [
+      {
+        automation: row.automation as unknown as SkillAutomationState,
+        slug: row.slug,
+        sources: (row.sources ?? []) as unknown as SourceDefinition[],
+      },
+    ];
+  });
 }
 
 export async function listSkillsByCreator(

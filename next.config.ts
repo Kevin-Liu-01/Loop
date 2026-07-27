@@ -19,7 +19,11 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   reactStrictMode: true,
   async rewrites() {
-    return [{ destination: "/og", source: "/og.png" }];
+    return [
+      { destination: "/og", source: "/og.png" },
+      { destination: "/og", source: "/og-v2.png" },
+      { destination: "/og", source: "/og-v3.png" },
+    ];
   },
   transpilePackages: ["@chenglou/pretext"],
 };

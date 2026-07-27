@@ -42,6 +42,7 @@ import {
   formatScheduleLabel,
   countMonthlyRuns,
 } from "@/lib/schedule";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/skill-constraints";
 import { formatTagLabel, getTagColorForCategory } from "@/lib/tag-utils";
 import type {
   AutomationSummary,
@@ -49,7 +50,6 @@ import type {
   UserSkillCadence,
 } from "@/lib/types";
 import type { CategorySlug } from "@/lib/types";
-import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 const MODEL_OPTIONS = [
   { label: "Default (auto)", value: "" },

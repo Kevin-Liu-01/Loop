@@ -15,7 +15,7 @@ export async function getSystemSnapshot(options?: GetSystemSnapshotOptions) {
   const timeZone = options?.timeZone ?? "UTC";
   const [snapshot, loopRuns, usageEvents] = await Promise.all([
     getLoopSnapshot({ includePrivate: options?.includePrivate }),
-    listLoopRunSummaries(),
+    listLoopRunSummaries({ limit: 150 }),
     listUsageEventsForOverview(timeZone).catch(() => []),
   ]);
 

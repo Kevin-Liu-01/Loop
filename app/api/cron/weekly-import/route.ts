@@ -1,7 +1,6 @@
-import { revalidatePath } from "next/cache";
-
+import { invalidatePublicCatalogue } from "@/lib/cache-invalidation";
 import { sendWeeklyDigest } from "@/lib/email/weekly-digest";
-import { refreshLoopSnapshot } from "@/lib/refresh";
+import { hasValidBearerToken } from "@/lib/request-auth";
 import { withApiUsage } from "@/lib/usage-server";
 import { runWeeklyImport } from "@/lib/weekly-import";
 
@@ -15,39 +14,20 @@ export async function GET(request: Request) {
       route: "/api/cron/weekly-import",
     },
     async () => {
-      const authHeader = request.headers.get("authorization");
-      const expected = process.env.CRON_SECRET;
-      if (!expected || authHeader !== `Bearer ${expected}`) {
+      if (
+        !hasValidBearerToken(
+          request.headers.get("authorization"),
+          process.env.CRON_SECRET
+        )
+      ) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const [importResult, refreshResult] = await Promise.allSettled([
-        runWeeklyImport(),
-        refreshLoopSnapshot({
-          refreshCategorySignals: false,
-          refreshImportedSkills: true,
-          refreshUserSkills: true,
-        }),
-      ]);
-
-      const result =
-        importResult.status === "fulfilled" ? importResult.value : null;
-      const dispatched =
-        refreshResult.status === "fulfilled"
-          ? refreshResult.value.dispatchedSkillCount
-          : 0;
-
-      if (importResult.status === "rejected") {
-        console.error("[weekly-cron] Import failed:", importResult.reason);
-      }
-      if (refreshResult.status === "rejected") {
-        console.error("[weekly-cron] Refresh failed:", refreshResult.reason);
-      }
+      const result = await runWeeklyImport();
 
       if (result && result.imported.length > 0) {
         try {
-          revalidatePath("/");
-          revalidatePath("/skills/new");
+          invalidatePublicCatalogue();
         } catch (revalidateError) {
           console.error(
             "[weekly-cron] Cache revalidation failed:",
@@ -64,7 +44,6 @@ export async function GET(request: Request) {
 
       return Response.json({
         details: result,
-        dispatchedSkillRefreshes: dispatched,
         errors: result?.errors.length ?? 0,
         imported: result?.imported.length ?? 0,
         ok: true,

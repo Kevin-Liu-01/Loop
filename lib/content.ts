@@ -3,10 +3,12 @@ import os from "node:os";
 import path from "node:path";
 
 import matter from "gray-matter";
+import { unstable_cache } from "next/cache";
 import YAML from "yaml";
 
 import { parseAgentDocs } from "@/lib/agent-docs";
 import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
+import { CACHE_TAGS, skillCacheTag } from "@/lib/cache-tags";
 import { listBriefs as dbListBriefs } from "@/lib/db/briefs";
 import { listCategories as dbListCategories } from "@/lib/db/categories";
 import {
@@ -168,9 +170,8 @@ async function parseAgentPrompts(skillDir: string): Promise<AgentPrompt[]> {
     return [];
   }
 
-  const files = (await fs.readdir(agentsDir)).filter((file) =>
-    file.endsWith(".yaml")
-  );
+  const agentEntries = await fs.readdir(agentsDir);
+  const files = agentEntries.filter((file) => file.endsWith(".yaml"));
   const prompts = await Promise.all(
     files.map(async (fileName) => {
       const absolutePath = path.join(agentsDir, fileName);
@@ -202,7 +203,8 @@ async function parseReferences(skillDir: string): Promise<ReferenceDoc[]> {
     return [];
   }
 
-  const files = (await fs.readdir(referencesDir))
+  const referenceEntries = await fs.readdir(referencesDir);
+  const files = referenceEntries
     .filter((fileName) => fileName.endsWith(".md"))
     .toSorted();
 
@@ -369,6 +371,17 @@ export async function getSkillCatalogue(options?: {
   };
 }
 
+const getCachedPublicSkillCatalogue = unstable_cache(
+  () => getSkillCatalogue({ includePrivate: false }),
+  ["public-skill-catalogue-v1"],
+  { revalidate: 300, tags: [CACHE_TAGS.publicCatalogue] }
+);
+
+const getCachedBriefs = unstable_cache(() => dbListBriefs(), ["briefs-v1"], {
+  revalidate: 300,
+  tags: [CACHE_TAGS.briefs],
+});
+
 /** @deprecated Use getSkillCatalogue() instead */
 export const getLocalSnapshotBase = getSkillCatalogue;
 
@@ -376,18 +389,35 @@ export async function getSkillRecordBySlug(
   slug: string,
   requestedVersion?: number
 ): Promise<SkillRecord | null> {
-  if (requestedVersion) {
-    return dbGetSkillAtVersion(slug, requestedVersion);
-  }
-  return dbGetSkillBySlug(slug);
+  return requestedVersion
+    ? dbGetSkillAtVersion(slug, requestedVersion)
+    : dbGetSkillBySlug(slug);
+}
+
+export async function getCachedPublicSkillRecordBySlug(
+  slug: string,
+  requestedVersion?: number
+): Promise<SkillRecord | null> {
+  const versionKey = requestedVersion?.toString() ?? "current";
+  const loadRecord = unstable_cache(
+    async () => {
+      const record = await getSkillRecordBySlug(slug, requestedVersion);
+      return record?.visibility === "public" ? record : null;
+    },
+    ["public-skill-record-v1", slug, versionKey],
+    { revalidate: 300, tags: [skillCacheTag(slug)] }
+  );
+  return loadRecord();
 }
 
 export async function getLoopSnapshot(options?: {
   includePrivate?: boolean;
 }): Promise<LoopSnapshot> {
   const [catalogue, briefs] = await Promise.all([
-    getSkillCatalogue({ includePrivate: options?.includePrivate }),
-    dbListBriefs(),
+    options?.includePrivate
+      ? getSkillCatalogue({ includePrivate: true })
+      : getCachedPublicSkillCatalogue(),
+    getCachedBriefs(),
   ]);
 
   return {

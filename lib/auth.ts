@@ -17,7 +17,12 @@ export interface SessionUser {
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const { userId } = await auth();
+  let userId: string | null;
+  try {
+    ({ userId } = await auth());
+  } catch {
+    return null;
+  }
   if (!userId) {
     return null;
   }
@@ -46,6 +51,14 @@ export async function requireAuth(): Promise<SessionUser> {
   const session = await getSessionUser();
   if (!session) {
     throw new AuthError("Sign in to continue.", 401);
+  }
+  return session;
+}
+
+export async function requireAdmin(): Promise<SessionUser> {
+  const session = await requireAuth();
+  if (!isAdminEmail(session.email)) {
+    throw new AuthError("Administrator access is required.", 403);
   }
   return session;
 }

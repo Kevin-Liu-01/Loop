@@ -1,6 +1,5 @@
-import { revalidatePath } from "next/cache";
-
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillCatalogue, getSkillRecordBySlug } from "@/lib/content";
 import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
@@ -110,13 +109,17 @@ export async function POST(request: Request) {
           sources: created.sources,
           title: created.title,
         });
-        await updateSkill(created.slug, { researchProfile }).catch(() => {});
+        try {
+          await updateSkill(created.slug, { researchProfile });
+        } catch (error) {
+          console.error("[skills] Research profile update failed:", error);
+        }
 
-        revalidatePath("/");
-        revalidatePath("/skills/new");
-        revalidatePath(`/categories/${created.category}`);
-        revalidatePath(`/skills/${created.slug}`);
-        revalidatePath(createdRecord.href);
+        invalidateSkillData({
+          categorySlugs: [created.category],
+          href: createdRecord.href,
+          slug: created.slug,
+        });
 
         await logUsageEvent({
           categorySlug: created.category,
@@ -191,20 +194,20 @@ export async function PATCH(request: Request) {
             sources: result.skill.sources,
             title: result.skill.title,
           });
-          await updateSkill(result.skill.slug, { researchProfile }).catch(
-            () => {}
-          );
+          try {
+            await updateSkill(result.skill.slug, { researchProfile });
+          } catch (error) {
+            console.error("[skills] Research profile update failed:", error);
+          }
         }
 
         const record = buildUserSkillRecord(result.skill);
 
-        revalidatePath("/");
-        revalidatePath("/admin");
-        revalidatePath("/skills/new");
-        revalidatePath(`/categories/${current.category}`);
-        revalidatePath(`/categories/${result.skill.category}`);
-        revalidatePath(`/skills/${current.slug}`);
-        revalidatePath(record.href);
+        invalidateSkillData({
+          categorySlugs: [current.category, result.skill.category],
+          href: record.href,
+          slug: current.slug,
+        });
 
         await logUsageEvent({
           categorySlug: result.skill.category,

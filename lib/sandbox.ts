@@ -8,7 +8,7 @@ export interface SandboxSessionInfo {
   status: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 120_000;
+export const SANDBOX_TIMEOUT_MS = 120_000;
 
 export interface SandboxAuthError {
   code: "SANDBOX_AUTH_FAILED";
@@ -47,7 +47,7 @@ export async function createSandboxSession(
     const sandbox = await Sandbox.create({
       env,
       runtime,
-      timeout: DEFAULT_TIMEOUT_MS,
+      timeout: SANDBOX_TIMEOUT_MS,
     });
 
     return {

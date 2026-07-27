@@ -14,7 +14,7 @@ export const SEO_DEFAULT_DESCRIPTION =
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
-export const DEFAULT_OG_IMAGE_PATH = "/og.png";
+export const DEFAULT_OG_IMAGE_PATH = "/og-v3.png";
 export const LOGO_ICON_PATH = "/icon.svg";
 
 export const TWITTER_SITE_HANDLE = "@kevskgs";

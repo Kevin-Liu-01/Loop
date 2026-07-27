@@ -1,11 +1,11 @@
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { ensureSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { createSkill as dbCreateSkill } from "@/lib/db/skills";
-import { buildSkillVersionHref, buildVersionLabel } from "@/lib/format";
+import { buildSkillVersionHref } from "@/lib/format";
 import { slugify, stableHash } from "@/lib/markdown";
 import { buildPausedAutomationFromSource } from "@/lib/skill-fork-helpers";
 import {
@@ -50,9 +50,10 @@ export async function POST(request: Request) {
           );
         }
 
-        const baseSlug =
-          `${slugify(source.title)}-copy` ||
-          `skill-${stableHash(source.title)}-copy`;
+        const titleSlug = slugify(source.title);
+        const baseSlug = titleSlug
+          ? `${titleSlug}-copy`
+          : `skill-${stableHash(source.title)}-copy`;
         let newSlug = baseSlug;
         let attempt = 0;
         while (await getSkillRecordBySlug(newSlug)) {
@@ -96,9 +97,11 @@ export async function POST(request: Request) {
         const href = buildSkillVersionHref(newSlug, 1);
         recordSkillCreate(session.userId);
 
-        revalidatePath("/");
-        revalidatePath(`/skills/${newSlug}`);
-        revalidatePath(href);
+        invalidateSkillData({
+          categorySlugs: [created.category],
+          href,
+          slug: newSlug,
+        });
 
         await logUsageEvent({
           categorySlug: source.category,

@@ -1,6 +1,5 @@
 "use client";
 
-import { Renderer, Program, Mesh, Triangle } from "ogl";
 import { useEffect, useRef } from "react";
 
 const VERTEX = /* glsl */ `
@@ -64,82 +63,106 @@ function getThemeLight(): number {
 
 export function GrainShader({ className }: GrainShaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<Renderer | null>(null);
-  const programRef = useRef<Program | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
+    const target = container;
 
-    const isMobile = window.innerWidth < 768;
-    const dpr = isMobile
-      ? Math.min(window.devicePixelRatio, 1)
-      : Math.min(window.devicePixelRatio, 1.5);
+    let disposed = false;
+    let idleId: number | undefined;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    let stopRenderer: (() => void) | undefined;
 
-    const light = getThemeLight();
-
-    const renderer = new Renderer({ alpha: false, dpr });
-    rendererRef.current = renderer;
-    const { gl } = renderer;
-    const clearR = light === 1 ? 0.96 : 0.031;
-    const clearG = light === 1 ? 0.96 : 0.031;
-    const clearB = light === 1 ? 0.96 : 0.039;
-    gl.clearColor(clearR, clearG, clearB, 1);
-    container.append(gl.canvas);
-
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      fragment: FRAGMENT,
-      uniforms: {
-        uLight: { value: light },
-        uResolution: { value: [gl.canvas.width, gl.canvas.height] },
-        uTime: { value: 0 },
-      },
-      vertex: VERTEX,
-    });
-    programRef.current = program;
-    const mesh = new Mesh(gl, { geometry, program });
-
-    function resize() {
-      if (!container) {
+    async function startRenderer() {
+      const { Mesh, Program, Renderer, Triangle } = await import("ogl");
+      if (disposed) {
         return;
       }
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      renderer.setSize(w, h);
-      program.uniforms.uResolution.value = [w * dpr, h * dpr];
-      renderer.render({ scene: mesh });
+
+      const isMobile = window.innerWidth < 768;
+      const dpr = isMobile
+        ? Math.min(window.devicePixelRatio, 1)
+        : Math.min(window.devicePixelRatio, 1.5);
+      const light = getThemeLight();
+      const renderer = new Renderer({ alpha: false, dpr });
+      const { gl } = renderer;
+      gl.clearColor(
+        light === 1 ? 0.96 : 0.031,
+        light === 1 ? 0.96 : 0.031,
+        light === 1 ? 0.96 : 0.039,
+        1
+      );
+      target.append(gl.canvas);
+
+      const geometry = new Triangle(gl);
+      const program = new Program(gl, {
+        fragment: FRAGMENT,
+        uniforms: {
+          uLight: { value: light },
+          uResolution: { value: [gl.canvas.width, gl.canvas.height] },
+          uTime: { value: 0 },
+        },
+        vertex: VERTEX,
+      });
+      const mesh = new Mesh(gl, { geometry, program });
+
+      function render() {
+        const width = target.clientWidth;
+        const height = target.clientHeight;
+        renderer.setSize(width, height);
+        program.uniforms.uResolution.value = [width * dpr, height * dpr];
+        renderer.render({ scene: mesh });
+      }
+
+      render();
+      window.addEventListener("resize", render, { passive: true });
+
+      const observer = new MutationObserver(() => {
+        const value = getThemeLight();
+        program.uniforms.uLight.value = value;
+        gl.clearColor(
+          value === 1 ? 0.96 : 0.031,
+          value === 1 ? 0.96 : 0.031,
+          value === 1 ? 0.96 : 0.039,
+          1
+        );
+        renderer.render({ scene: mesh });
+      });
+      observer.observe(document.documentElement, {
+        attributeFilter: ["data-theme"],
+        attributes: true,
+      });
+
+      stopRenderer = () => {
+        observer.disconnect();
+        window.removeEventListener("resize", render);
+        if (target.contains(gl.canvas)) {
+          gl.canvas.remove();
+        }
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
+      };
     }
 
-    resize();
-    window.addEventListener("resize", resize);
-
-    const observer = new MutationObserver(() => {
-      const val = getThemeLight();
-      program.uniforms.uLight.value = val;
-      const cr = val === 1 ? 0.96 : 0.031;
-      const cg = val === 1 ? 0.96 : 0.031;
-      const cb = val === 1 ? 0.96 : 0.039;
-      gl.clearColor(cr, cg, cb, 1);
-      renderer.render({ scene: mesh });
-    });
-    observer.observe(document.documentElement, {
-      attributeFilter: ["data-theme"],
-      attributes: true,
-    });
-
-    program.uniforms.uTime.value = 0;
-    renderer.render({ scene: mesh });
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(() => void startRenderer(), {
+        timeout: 1200,
+      });
+    } else {
+      timerId = setTimeout(() => void startRenderer(), 250);
+    }
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", resize);
-      if (container.contains(gl.canvas)) {
-        container.removeChild(gl.canvas);
+      disposed = true;
+      if (idleId !== undefined) {
+        window.cancelIdleCallback(idleId);
       }
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      if (timerId !== undefined) {
+        clearTimeout(timerId);
+      }
+      stopRenderer?.();
     };
   }, []);
 

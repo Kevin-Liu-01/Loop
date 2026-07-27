@@ -41,12 +41,12 @@ import {
 import { cn } from "@/lib/cn";
 import { formatMonthYear } from "@/lib/format";
 import { formatNextRun, countMonthlyRuns } from "@/lib/schedule";
+import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/skill-constraints";
 import type {
   AutomationSummary,
   SkillRecord,
   UserSkillCadence,
 } from "@/lib/types";
-import { AUTOMATION_NAME_MAX_LENGTH } from "@/lib/user-skills";
 
 interface AutomationManagerProps {
   automations: AutomationSummary[];

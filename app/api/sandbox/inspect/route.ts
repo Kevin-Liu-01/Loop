@@ -1,6 +1,8 @@
 import { z } from "zod";
 
+import { authErrorResponse } from "@/lib/auth";
 import { getSandboxInstance } from "@/lib/sandbox";
+import { requireSandboxOwner } from "@/lib/sandbox-access";
 import { inspectSandbox } from "@/lib/sandbox-inspect";
 import { withApiUsage } from "@/lib/usage-server";
 
@@ -16,6 +18,7 @@ export async function POST(request: Request) {
     async () => {
       try {
         const payload = inspectSchema.parse(await request.json());
+        await requireSandboxOwner(payload.sandboxId);
         const sandbox = await getSandboxInstance(payload.sandboxId);
         const data = await inspectSandbox(
           sandbox,
@@ -25,6 +28,10 @@ export async function POST(request: Request) {
         );
         return Response.json(data);
       } catch (error) {
+        const authResponse = authErrorResponse(error);
+        if (authResponse) {
+          return authResponse;
+        }
         const message =
           error instanceof Error ? error.message : "Failed to inspect sandbox";
         return Response.json({ error: message }, { status: 400 });

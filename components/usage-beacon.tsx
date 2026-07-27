@@ -23,7 +23,7 @@ interface ClientUsagePayload {
   details?: string;
 }
 
-export function postUsageEvent(payload: ClientUsagePayload) {
+export async function postUsageEvent(payload: ClientUsagePayload) {
   const body = JSON.stringify(payload);
 
   if (
@@ -35,18 +35,34 @@ export function postUsageEvent(payload: ClientUsagePayload) {
     return;
   }
 
-  void fetch("/api/usage", {
-    body,
-    headers: {
-      "content-type": "application/json",
-    },
-    keepalive: true,
-    method: "POST",
-  }).catch(() => {});
+  try {
+    await fetch("/api/usage", {
+      body,
+      headers: {
+        "content-type": "application/json",
+      },
+      keepalive: true,
+      method: "POST",
+    });
+  } catch {
+    // Telemetry is best-effort and must never interrupt the user action.
+  }
 }
 
-export function UsageBeacon({ dedupeKey, ...payload }: UsageBeaconProps) {
+export function UsageBeacon({
+  categorySlug,
+  dedupeKey,
+  details,
+  kind,
+  label,
+  path,
+  skillSlug,
+}: UsageBeaconProps) {
   useEffect(() => {
+    if (kind === "page_view") {
+      return;
+    }
+
     if (dedupeKey) {
       const storageKey = `loop.usage.${dedupeKey}`;
       if (window.sessionStorage.getItem(storageKey)) {
@@ -55,8 +71,15 @@ export function UsageBeacon({ dedupeKey, ...payload }: UsageBeaconProps) {
       window.sessionStorage.setItem(storageKey, "1");
     }
 
-    postUsageEvent(payload);
-  }, [dedupeKey, payload]);
+    void postUsageEvent({
+      categorySlug,
+      details,
+      kind,
+      label,
+      path,
+      skillSlug,
+    });
+  }, [categorySlug, dedupeKey, details, kind, label, path, skillSlug]);
 
   return null;
 }

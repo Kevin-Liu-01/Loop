@@ -2,11 +2,12 @@ import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { z } from "zod";
 
 import { resolveLanguageModel } from "@/lib/agents";
-import { authErrorResponse, getSessionUser } from "@/lib/auth";
+import { authErrorResponse } from "@/lib/auth";
 import { buildMcpToolRuntime } from "@/lib/mcp-runtime";
 import { supportsSandboxMcp } from "@/lib/mcp-utils";
 import { getLoopSnapshot } from "@/lib/refresh";
 import { getSandboxInstance } from "@/lib/sandbox";
+import { requireSandboxOwner } from "@/lib/sandbox-access";
 import { buildSandboxAgentConfig } from "@/lib/sandbox-agent";
 import { canRunAgentMessage, recordAgentRun } from "@/lib/skill-limits";
 import type { ConversationMessageMetadata } from "@/lib/types";
@@ -31,13 +32,8 @@ export async function POST(request: Request) {
     { label: "Sandbox agent run", method: "POST", route: "/api/sandbox/run" },
     async () => {
       try {
-        const session = await getSessionUser();
-        if (!session) {
-          return Response.json(
-            { error: "Sign in to use the sandbox." },
-            { status: 401 }
-          );
-        }
+        const payload = runSchema.parse(await request.json());
+        const session = await requireSandboxOwner(payload.sandboxId);
 
         const gate = await canRunAgentMessage(session.userId, session.email);
         if (!gate.allowed) {
@@ -46,8 +42,6 @@ export async function POST(request: Request) {
             { status: 429 }
           );
         }
-
-        const payload = runSchema.parse(await request.json());
 
         const [snapshot, sandbox] = await Promise.all([
           getLoopSnapshot(),
@@ -167,6 +161,10 @@ export async function POST(request: Request) {
 
         return result.toUIMessageStreamResponse();
       } catch (error) {
+        const authResponse = authErrorResponse(error);
+        if (authResponse) {
+          return authResponse;
+        }
         const message =
           error instanceof Error
             ? error.message
