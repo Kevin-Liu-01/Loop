@@ -1,18 +1,13 @@
 "use client";
 
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { Show, SignInButton, useAuth, UserButton } from "@clerk/nextjs";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { BrandWordmark } from "@/components/brand-wordmark";
-import {
-  PlusIcon,
-  SearchIcon,
-  SettingsIcon,
-  TerminalIcon,
-  ZapIcon,
-} from "@/components/frontier-icons";
+import { PlusIcon, SearchIcon, ZapIcon } from "@/components/frontier-icons";
 import { GitHubStarLink } from "@/components/github-star-link";
 import { LoopLogo } from "@/components/loop-logo";
 import { useOperator } from "@/components/operator-provider";
@@ -26,12 +21,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/shadcn/sheet";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/shadcn/tooltip";
 import { cn } from "@/lib/cn";
+import {
+  APP_NAV_LINKS,
+  LIBRARY_PATH,
+  MARKETING_NAV_LINKS,
+  PUBLIC_HOME_PATH,
+  SIGN_UP_PATH,
+} from "@/lib/navigation";
 
 interface SiteHeaderProps {
   /**
@@ -56,14 +53,70 @@ interface SiteHeaderProps {
   onNewSkill?: () => void;
 }
 
-const MARKETING_NAV_LINKS: { href: string; label: string }[] = [
-  { href: "/#skills", label: "Skills" },
-  { href: "/#mcps", label: "Automations" },
-  { href: "/faq", label: "FAQ" },
-];
-
 const NAV_ANCHOR_BASE =
   "inline-flex items-center px-3.5 text-ink-soft transition-colors hover:bg-paper-3 hover:text-ink";
+
+function isActiveAppPath(pathname: string, href: string): boolean {
+  return href === LIBRARY_PATH
+    ? pathname === LIBRARY_PATH
+    : pathname.startsWith(href);
+}
+
+function getBrandHref(isSignedIn: boolean | undefined): string {
+  return isSignedIn ? LIBRARY_PATH : PUBLIC_HOME_PATH;
+}
+
+interface AppNavigationProps {
+  onNavigate?: () => void;
+  variant?: "desktop" | "mobile";
+}
+
+function AppNavigation({
+  onNavigate,
+  variant = "desktop",
+}: AppNavigationProps) {
+  const pathname = usePathname();
+
+  if (variant === "mobile") {
+    return APP_NAV_LINKS.map((link) => (
+      <LinkButton
+        className="w-full justify-start"
+        href={link.href}
+        key={link.href}
+        onClick={onNavigate}
+        size="sm"
+        variant={isActiveAppPath(pathname, link.href) ? "primary" : "soft"}
+      >
+        {link.label}
+      </LinkButton>
+    ));
+  }
+
+  return (
+    <nav
+      aria-label="Application"
+      className="flex h-9 items-stretch border border-line bg-paper-2/60 text-[0.75rem] font-medium"
+    >
+      {APP_NAV_LINKS.map((link, index) => (
+        <Fragment key={link.href}>
+          {index > 0 && <span className="my-1.5 w-px bg-line" />}
+          <Link
+            aria-current={
+              isActiveAppPath(pathname, link.href) ? "page" : undefined
+            }
+            className={cn(
+              NAV_ANCHOR_BASE,
+              isActiveAppPath(pathname, link.href) && "bg-paper-3 text-ink"
+            )}
+            href={link.href}
+          >
+            {link.label}
+          </Link>
+        </Fragment>
+      ))}
+    </nav>
+  );
+}
 
 function openNewSkillModal() {
   window.dispatchEvent(new Event("loop:open-new-skill"));
@@ -81,13 +134,16 @@ export function SiteHeader({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [brandHover, setBrandHover] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { isSignedIn } = useAuth();
   const { isOperator } = useOperator();
   const handleNew = onNewSkill ?? openNewSkillModal;
   const isLanding = variant === "landing";
+  const brandHref = getBrandHref(isSignedIn);
 
   const handleBrandEnter = useCallback(() => setBrandHover(true), []);
   const handleBrandLeave = useCallback(() => setBrandHover(false), []);
   const handleMobileOpen = useCallback(() => setMobileOpen(true), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
   const handleMobileNew = useCallback(() => {
     handleNew();
     setMobileOpen(false);
@@ -116,7 +172,7 @@ export function SiteHeader({
     >
       <Link
         className="inline-flex items-center gap-2.5 max-sm:gap-3"
-        href="/"
+        href={brandHref}
         onPointerEnter={handleBrandEnter}
         onPointerLeave={handleBrandLeave}
       >
@@ -149,15 +205,19 @@ export function SiteHeader({
 
       {!isLanding && (
         <Show when="signed-in">
-          {isOperator && (
-            <Link
-              href="/settings/subscription"
-              className="inline-flex items-center gap-1 border border-accent/20 bg-accent/8 px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-accent transition-colors hover:bg-accent/14 hover:border-accent/30 max-sm:hidden"
-            >
-              <ZapIcon className="h-3 w-3" />
-              Operator
-            </Link>
-          )}
+          <div className="hidden items-center gap-3 md:flex">
+            <AppNavigation />
+
+            {isOperator && (
+              <Link
+                href="/settings/subscription"
+                className="inline-flex items-center gap-1 border border-accent/20 bg-accent/8 px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-accent transition-colors hover:bg-accent/14 hover:border-accent/30"
+              >
+                <ZapIcon className="h-3 w-3" />
+                Operator
+              </Link>
+            )}
+          </div>
         </Show>
       )}
 
@@ -165,51 +225,49 @@ export function SiteHeader({
 
       {/* ── SIGNED-IN: in-app utilities ── */}
       <Show when="signed-in">
-        <Button onClick={openPalette} size="sm" type="button" variant="soft">
-          <SearchIcon className="h-3.5 w-3.5" />
-          <span className="max-sm:hidden">Search</span>
-          <kbd className="ml-1 text-[0.7rem] text-ink-faint max-sm:hidden">
-            ⌘K
-          </kbd>
-        </Button>
+        {isLanding ? (
+          <>
+            <LinkButton
+              className="max-sm:hidden"
+              href={LIBRARY_PATH}
+              size="sm"
+              variant="primary"
+            >
+              Open library
+            </LinkButton>
+            <ThemeToggle className="max-sm:hidden" />
+          </>
+        ) : (
+          <>
+            <Button
+              onClick={openPalette}
+              size="sm"
+              type="button"
+              variant="soft"
+            >
+              <SearchIcon className="h-3.5 w-3.5" />
+              <span className="max-sm:hidden">Search</span>
+              <kbd className="ml-1 text-[0.7rem] text-ink-faint max-sm:hidden">
+                ⌘K
+              </kbd>
+            </Button>
 
-        <Button
-          className="max-sm:hidden"
-          onClick={handleNew}
-          size="sm"
-          type="button"
-        >
-          <PlusIcon className="h-3.5 w-3.5" />
-          New
-        </Button>
+            <Button
+              className="max-sm:hidden"
+              onClick={handleNew}
+              size="sm"
+              type="button"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              New
+            </Button>
 
-        <div className="flex items-center gap-2 max-sm:hidden">
-          <GitHubStarLink />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <LinkButton href="/sandbox" size="icon" variant="soft">
-                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
-                  <TerminalIcon className="h-4 w-4" />
-                </LinkPendingIcon>
-              </LinkButton>
-            </TooltipTrigger>
-            <TooltipContent>Sandbox</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <LinkButton href="/settings" size="icon" variant="soft">
-                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
-                  <SettingsIcon className="h-4 w-4" />
-                </LinkPendingIcon>
-              </LinkButton>
-            </TooltipTrigger>
-            <TooltipContent>Settings</TooltipContent>
-          </Tooltip>
-
-          <ThemeToggle />
-        </div>
+            <div className="flex items-center gap-2 max-sm:hidden">
+              <GitHubStarLink />
+              <ThemeToggle />
+            </div>
+          </>
+        )}
 
         <div className="flex h-9 items-center">
           <UserButton />
@@ -244,7 +302,7 @@ export function SiteHeader({
 
         <ThemeToggle className="max-sm:hidden" />
 
-        <SignInButton mode="modal">
+        <SignInButton forceRedirectUrl={LIBRARY_PATH} mode="modal">
           <button
             className="hidden h-9 items-center px-2 text-[0.78rem] font-medium text-ink-soft transition-colors hover:text-ink sm:inline-flex"
             type="button"
@@ -255,7 +313,7 @@ export function SiteHeader({
 
         <LinkButton
           className="max-sm:hidden"
-          href="/sign-up"
+          href={SIGN_UP_PATH}
           size="sm"
           variant="primary"
         >
@@ -280,8 +338,6 @@ export function SiteHeader({
     </div>
   );
 
-  const closeMobile = () => setMobileOpen(false);
-
   const mobileSheet = (
     <>
       <Show when="signed-in">
@@ -291,37 +347,18 @@ export function SiteHeader({
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <nav className="grid gap-2">
-              <Button
-                className="w-full justify-start"
-                onClick={handleMobileNew}
-                size="sm"
-                type="button"
-              >
-                <PlusIcon className="h-3.5 w-3.5" />
-                New skill
-              </Button>
-              <LinkButton
-                className="w-full justify-start"
-                href="/sandbox"
-                size="sm"
-                variant="soft"
-              >
-                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
-                  <TerminalIcon className="h-4 w-4" />
-                </LinkPendingIcon>
-                Sandbox
-              </LinkButton>
-              <LinkButton
-                className="w-full justify-start"
-                href="/settings"
-                size="sm"
-                variant="soft"
-              >
-                <LinkPendingIcon className="h-4 w-4 items-center justify-center">
-                  <SettingsIcon className="h-4 w-4" />
-                </LinkPendingIcon>
-                Settings
-              </LinkButton>
+              {!isLanding && (
+                <Button
+                  className="w-full justify-start"
+                  onClick={handleMobileNew}
+                  size="sm"
+                  type="button"
+                >
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  New skill
+                </Button>
+              )}
+              <AppNavigation onNavigate={closeMobile} variant="mobile" />
             </nav>
             <div className="pt-2">
               <ThemeToggle />
@@ -340,7 +377,7 @@ export function SiteHeader({
 
               <LinkButton
                 className="w-full justify-center"
-                href="/sign-up"
+                href={SIGN_UP_PATH}
                 onClick={closeMobile}
                 size="sm"
                 variant="primary"
@@ -348,7 +385,7 @@ export function SiteHeader({
                 Get started
               </LinkButton>
 
-              <SignInButton mode="modal">
+              <SignInButton forceRedirectUrl={LIBRARY_PATH} mode="modal">
                 <button
                   className="-mx-2 flex h-10 items-center px-2 text-[0.95rem] font-medium text-ink-soft transition-colors hover:text-ink"
                   onClick={closeMobile}

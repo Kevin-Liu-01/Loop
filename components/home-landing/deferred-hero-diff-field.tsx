@@ -3,14 +3,6 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-const HeroDiffField = dynamic(
-  async () => {
-    const heroDiff = await import("@/components/home-landing/hero-diff-field");
-    return heroDiff.HeroDiffField;
-  },
-  { ssr: false }
-);
-
 const POSTER_LINES = [
   { marker: " ", text: "## Motion and interaction", tone: "context" },
   { marker: "−", text: "Animate the entire page on load.", tone: "removed" },
@@ -72,6 +64,17 @@ function HeroDiffPoster() {
   );
 }
 
+const HeroDiffField = dynamic(
+  async () => {
+    const heroDiff = await import("@/components/home-landing/hero-diff-field");
+    return heroDiff.HeroDiffField;
+  },
+  {
+    loading: () => <HeroDiffPoster />,
+    ssr: false,
+  }
+);
+
 export function DeferredHeroDiffField() {
   const [ready, setReady] = useState(false);
 
@@ -99,12 +102,13 @@ export function DeferredHeroDiffField() {
 
   return (
     <div className="relative mx-auto h-[340px] w-full max-w-[1000px] sm:h-[380px]">
-      <HeroDiffPoster />
       {ready ? (
-        <div className="relative z-10">
+        <div className="relative z-10 h-full">
           <HeroDiffField />
         </div>
-      ) : null}
+      ) : (
+        <HeroDiffPoster />
+      )}
     </div>
   );
 }

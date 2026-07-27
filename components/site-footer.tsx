@@ -45,7 +45,7 @@ export function SiteFooter({ narrow = false }: SiteFooterProps = {}) {
             className="text-ink-soft transition-colors hover:text-ink"
             href="/"
           >
-            Skills
+            Library
           </Link>
           <Link
             className="text-ink-soft transition-colors hover:text-ink"

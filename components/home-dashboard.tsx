@@ -15,6 +15,7 @@ import { listRecentImports } from "@/lib/db/recent-imports";
 import { listSkillsByCreator } from "@/lib/db/skills";
 import { buildMcpVersionHref } from "@/lib/format";
 import { toHomeMcpDocument, toHomeSkillRecord } from "@/lib/home-catalogue";
+import { LIBRARY_PATH } from "@/lib/navigation";
 import { formatScheduleLabel } from "@/lib/schedule";
 import { getUsageTimeZoneFromCookie } from "@/lib/server/usage-timezone-cookie";
 import { getSystemSnapshot } from "@/lib/system-summary";
@@ -98,7 +99,7 @@ export async function HomeDashboard({ userId }: HomeDashboardProps) {
     })),
     ...snapshot.categories.map((category) => ({
       hint: category.status === "live" ? "Live" : "Seeded",
-      href: `/home?category=${category.slug}`,
+      href: `${LIBRARY_PATH}?category=${category.slug}`,
       label: category.title,
       section: "Category",
     })),
@@ -125,10 +126,10 @@ export async function HomeDashboard({ userId }: HomeDashboardProps) {
   return (
     <>
       <UsageBeacon
-        dedupeKey="page:/home"
+        dedupeKey="page:/"
         kind="page_view"
-        label="Opened home"
-        path="/home"
+        label="Opened library"
+        path={LIBRARY_PATH}
       />
       <CommandPalette items={paletteItems} />
       <NewSkillModal categories={snapshot.categories} />

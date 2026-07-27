@@ -2,6 +2,7 @@ import { SignUp } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 import { AuthSplitLayout } from "@/components/auth-layout";
+import { LIBRARY_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/navigation";
 
 export const metadata: Metadata = {
   description:
@@ -15,7 +16,13 @@ export const dynamic = "force-dynamic";
 export default function SignUpPage() {
   return (
     <AuthSplitLayout mode="sign-up">
-      <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />
+      <SignUp
+        fallbackRedirectUrl={LIBRARY_PATH}
+        forceRedirectUrl={LIBRARY_PATH}
+        routing="path"
+        path={SIGN_UP_PATH}
+        signInUrl={SIGN_IN_PATH}
+      />
     </AuthSplitLayout>
   );
 }

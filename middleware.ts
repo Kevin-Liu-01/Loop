@@ -1,4 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+import { isLibraryPath, PUBLIC_HOME_PATH } from "@/lib/navigation";
 
 // Per-route auth (`requireAuth()` inside each handler) covers every
 // /api/skills/** mutation endpoint, so the previous "/api/skills(.*)" matcher
@@ -7,7 +10,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // llms.txt and the FAQ. Keep middleware-level protection only for routes
 // without per-handler enforcement.
 const isProtectedRoute = createRouteMatcher([
-  "/home(.*)",
   "/signed-in(.*)",
   "/settings(.*)",
   "/sandbox(.*)",
@@ -17,6 +19,20 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
+  if (isLibraryPath(req.nextUrl.pathname)) {
+    try {
+      const { userId } = await auth();
+      if (userId) {
+        return;
+      }
+    } catch {
+      // Auth configuration or bot requests should fail closed to the public
+      // home instead of turning the library entry point into a 500 response.
+    }
+
+    return NextResponse.redirect(new URL(PUBLIC_HOME_PATH, req.url));
+  }
+
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
@@ -26,7 +42,7 @@ export const middleware = clerkHandler;
 
 export const config = {
   matcher: [
-    "/home/:path*",
+    "/",
     "/signed-in/:path*",
     "/settings/:path*",
     "/sandbox/:path*",

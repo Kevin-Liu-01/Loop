@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { buildMcpVersionHref } from "@/lib/format";
+import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import type { ImportedMcpDocument, SkillRecord } from "@/lib/types";
 
@@ -170,13 +171,9 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
-  const out = { ...value };
-  for (const key of Object.keys(out)) {
-    if (out[key as keyof T] === undefined) {
-      delete out[key as keyof T];
-    }
-  }
-  return out;
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined)
+  ) as T;
 }
 
 export function buildSkillMetadata(skill: SkillRecord): Metadata {
@@ -342,14 +339,14 @@ export function buildOrganizationJsonLd(): Record<string, unknown>[] {
       logo: buildSiteUrl(LOGO_ICON_PATH).toString(),
       name: SITE_NAME,
       sameAs: ["https://github.com/Kevin-Liu-01/Loop", "https://x.com/kevskgs"],
-      url: buildSiteUrl("/").toString(),
+      url: buildSiteUrl(PUBLIC_HOME_PATH).toString(),
     },
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       description: SEO_DEFAULT_DESCRIPTION,
       name: SITE_NAME,
-      url: buildSiteUrl("/").toString(),
+      url: buildSiteUrl(PUBLIC_HOME_PATH).toString(),
     },
   ];
 }

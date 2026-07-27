@@ -4,12 +4,13 @@ import { unstable_cache } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache-tags";
 import { getServerSupabase } from "@/lib/db/client";
 import { buildMcpVersionHref, buildSkillVersionHref } from "@/lib/format";
+import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { buildSiteUrl } from "@/lib/seo";
 
 // Only public, indexable pages belong in the sitemap. Auth pages
 // (sign-in/sign-up) and the authenticated dashboard (settings/*) are
 // intentionally excluded — they should not be crawl targets.
-const STATIC_PATHS = ["/", "/faq", "/privacy", "/terms"] as const;
+const STATIC_PATHS = [PUBLIC_HOME_PATH, "/faq", "/privacy", "/terms"] as const;
 
 async function loadSitemapRows() {
   const db = getServerSupabase();
@@ -66,9 +67,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((path) => ({
-    changeFrequency: path === "/" ? ("daily" as const) : ("monthly" as const),
+    changeFrequency:
+      path === PUBLIC_HOME_PATH ? ("daily" as const) : ("monthly" as const),
     lastModified: now,
-    priority: path === "/" ? 1 : 0.5,
+    priority: path === PUBLIC_HOME_PATH ? 1 : 0.5,
     url: buildSiteUrl(path).toString(),
   }));
 

@@ -14,6 +14,7 @@ import type {
   LandingSkillRow,
   LandingMcpRow,
 } from "@/lib/home-landing/landing-data";
+import { SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/navigation";
 import {
   formatTagLabel,
   getTagColorForCategory,
@@ -38,7 +39,7 @@ function normalizeStaticSkill(s: LandingSkillRow): NormalizedSkill {
   return {
     category: s.category,
     description: s.description,
-    href: s.href ?? "/sign-up",
+    href: s.href ?? SIGN_UP_PATH,
     iconUrl: s.iconUrl,
     ownerName: s.ownerName,
     relativeTime: s.updatedAt,
@@ -75,7 +76,7 @@ export function LandingShell({
 
         {/* Hero – centered stack */}
         <div className="relative z-10 mx-auto max-w-[1100px] px-6 pb-16 pt-[min(14vh,140px)] text-center lg:pt-[min(20vh,200px)]">
-          <div className="grid gap-7">
+          <div className="grid gap-7" data-motion="hero">
             <div className="grid gap-5">
               {/*
                 Headline lives in its own wider column than the body copy so
@@ -95,7 +96,7 @@ export function LandingShell({
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <LinkButton href="/sign-up" variant="primary">
+              <LinkButton href={SIGN_UP_PATH} variant="primary">
                 Get started free
               </LinkButton>
               <LinkButton href="#skills" variant="ghost">
@@ -123,7 +124,7 @@ export function LandingShell({
         </div>
 
         {/* 3D diff card field */}
-        <div className="relative z-10 px-6 pb-16">
+        <div className="relative z-10 px-6 pb-16" data-motion="hero-card">
           <DeferredHeroDiffField />
         </div>
 
@@ -133,7 +134,11 @@ export function LandingShell({
       </section>
 
       {/* ── LIVE SKILLS ── */}
-      <section className="relative z-10 scroll-mt-20" id="skills">
+      <section
+        className="relative z-10 scroll-mt-20"
+        data-motion="section"
+        id="skills"
+      >
         <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-14">
           <div className="mb-8 grid gap-2">
             <h2 className="font-serif text-[clamp(1.4rem,2.6vw,2rem)] font-medium leading-[1.12] tracking-[-0.03em]">
@@ -190,7 +195,7 @@ export function LandingShell({
           </div>
 
           <div className="mt-6">
-            <LinkButton href="/sign-up" variant="ghost">
+            <LinkButton href={SIGN_UP_PATH} variant="ghost">
               See all skills
             </LinkButton>
           </div>
@@ -202,7 +207,11 @@ export function LandingShell({
       </section>
 
       {/* ── AUTOMATION CALENDAR + MCP GRID ── */}
-      <section className="relative z-10 scroll-mt-20" id="mcps">
+      <section
+        className="relative z-10 scroll-mt-20"
+        data-motion="section"
+        id="mcps"
+      >
         <div className="mx-auto max-w-[1100px] px-6 pb-16 pt-14">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-0">
             {/* Left: Calendar */}
@@ -275,7 +284,7 @@ export function LandingShell({
       </section>
 
       {/* ── CTA STRIP ── */}
-      <section className="relative z-10">
+      <section className="relative z-10" data-motion="section">
         <div className="mx-auto grid max-w-[680px] place-items-center gap-6 px-6 pb-20 pt-16 text-center">
           <div className="grid gap-4">
             <LoopLogo className="mx-auto h-10 w-10 text-accent" />
@@ -288,10 +297,10 @@ export function LandingShell({
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <LinkButton href="/sign-up" variant="primary">
+            <LinkButton href={SIGN_UP_PATH} variant="primary">
               Get started free
             </LinkButton>
-            <LinkButton href="/sign-in" variant="ghost">
+            <LinkButton href={SIGN_IN_PATH} variant="ghost">
               Sign in
             </LinkButton>
           </div>
@@ -310,7 +319,7 @@ export function LandingShell({
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.62rem] max-sm:justify-center">
             <Link
               className="text-ink-faint transition-colors hover:text-ink"
-              href="/sign-up"
+              href={SIGN_UP_PATH}
             >
               Get started
             </Link>
@@ -346,7 +355,7 @@ export function LandingShell({
             </Link>
             <Link
               className="text-ink-faint transition-colors hover:text-ink"
-              href="/sign-in"
+              href={SIGN_IN_PATH}
             >
               Sign in
             </Link>

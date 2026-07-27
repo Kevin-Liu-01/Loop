@@ -56,7 +56,7 @@ export default function NotFound() {
             role="group"
             aria-label="Suggested next steps"
           >
-            <LinkButton href="/">Back to home</LinkButton>
+            <LinkButton href="/">Back to library</LinkButton>
             <LinkButton href="/sandbox" variant="soft">
               Open sandbox
             </LinkButton>

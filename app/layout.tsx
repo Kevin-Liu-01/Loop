@@ -7,13 +7,16 @@ import { ThemeProvider } from "next-themes";
 
 import { ActiveOperationsProvider } from "@/components/active-operations-provider";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { MotionProvider } from "@/components/motion-provider";
 import { OperatorProvider } from "@/components/operator-provider";
 import { SeoJsonLd } from "@/components/seo-json-ld";
 import { TimezoneProvider } from "@/components/timezone-provider";
 import { TooltipProvider } from "@/components/ui/shadcn/tooltip";
 
 import "@/app/globals.css";
+import "lenis/dist/lenis.css";
 import { clerkAppearance } from "@/lib/clerk-theme";
+import { LIBRARY_PATH, PUBLIC_HOME_PATH } from "@/lib/navigation";
 import {
   buildDefaultOpenGraphImages,
   buildDefaultTwitterImages,
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SEO_DEFAULT_TITLE,
     type: "website",
-    url: buildSiteUrl("/").toString(),
+    url: buildSiteUrl(PUBLIC_HOME_PATH).toString(),
   },
   title: {
     default: SEO_DEFAULT_TITLE,
@@ -73,7 +76,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider afterSignOutUrl="/" appearance={clerkAppearance} ui={ui}>
+    <ClerkProvider
+      afterSignOutUrl={PUBLIC_HOME_PATH}
+      appearance={clerkAppearance}
+      signInFallbackRedirectUrl={LIBRARY_PATH}
+      signUpFallbackRedirectUrl={LIBRARY_PATH}
+      ui={ui}
+    >
       <html lang="en" suppressHydrationWarning>
         <body suppressHydrationWarning>
           <SeoJsonLd data={buildOrganizationJsonLd()} />
@@ -87,7 +96,7 @@ export default function RootLayout({
               <TimezoneProvider serverTimeZone="UTC">
                 <TooltipProvider delayDuration={300}>
                   <ActiveOperationsProvider>
-                    {children}
+                    <MotionProvider>{children}</MotionProvider>
                     <FeedbackWidget />
                   </ActiveOperationsProvider>
                 </TooltipProvider>
