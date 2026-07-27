@@ -499,17 +499,7 @@ export function HeroDiffField() {
     CATEGORY_ACCENT[activeScene.category] ?? "oklch(0.70 0.12 55)";
 
   return (
-    <motion.div
-      className="relative mx-auto grid h-[340px] w-full max-w-[1000px] place-items-center sm:h-[380px] lg:[perspective:1600px]"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ amount: 0.15, once: true }}
-      transition={{
-        delay: 0.35,
-        duration: 0.8,
-        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-      }}
-    >
+    <div className="relative mx-auto grid h-[340px] w-full max-w-[1000px] place-items-center sm:h-[380px] lg:[perspective:1600px]">
       {/* Left card – desktop only, click to switch */}
       <FloatingCard
         placement={CARD_PLACEMENTS[0]!}
@@ -572,6 +562,6 @@ export function HeroDiffField() {
           </DiffCardBody>
         </DiffCardChrome>
       </FloatingCard>
-    </motion.div>
+    </div>
   );
 }

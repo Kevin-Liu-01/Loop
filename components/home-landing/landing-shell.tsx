@@ -2,8 +2,8 @@ import Link from "next/link";
 
 import { AutomationCalendar } from "@/components/automation-calendar";
 import { GITHUB_REPO_URL, GitHubIcon } from "@/components/frontier-icons";
-import { DeferredHeroDiffField } from "@/components/home-landing/deferred-hero-diff-field";
 import { GrainShader } from "@/components/home-landing/grain-shader";
+import { HeroDiffField } from "@/components/home-landing/hero-diff-field";
 import { LoopLogo } from "@/components/loop-logo";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
@@ -125,7 +125,7 @@ export function LandingShell({
 
         {/* 3D diff card field */}
         <div className="relative z-10 px-6 pb-16" data-motion="hero-card">
-          <DeferredHeroDiffField />
+          <HeroDiffField />
         </div>
 
         <div className="relative z-10 mx-auto max-w-[1100px] px-6">

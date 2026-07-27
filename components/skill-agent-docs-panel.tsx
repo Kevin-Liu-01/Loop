@@ -11,6 +11,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { cn } from "@/lib/cn";
 import { getPlatformDocIcon } from "@/lib/skill-icons";
 import type { AgentDocs } from "@/lib/types";
+import { pageInsetBleedX } from "@/lib/ui-layout";
 
 interface SkillAgentDocsPanelProps {
   agentDocs?: AgentDocs;
@@ -72,7 +73,12 @@ export function SkillAgentDocsPanel({
         countLabel="attached"
       />
 
-      <div className="overflow-hidden rounded-none border border-line bg-paper-3/92">
+      <div
+        className={cn(
+          "overflow-hidden rounded-none border border-line bg-paper-3/92",
+          pageInsetBleedX
+        )}
+      >
         <div className="flex items-center justify-between border-b border-line bg-paper-2/60 dark:bg-paper-2/30">
           <div className="flex min-w-0 overflow-x-auto">
             {entries.map(([key]) => (

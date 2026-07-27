@@ -3,6 +3,9 @@ import { cn } from "@/lib/cn";
 /** Horizontal padding for AppGridShell inset routes (home, skill detail, settings body, etc.). */
 export const pageInsetPadX = "px-4 sm:px-5 lg:px-6";
 
+/** Cancels pageInsetPadX when a bordered surface should meet its column edges. */
+export const pageInsetBleedX = "-mx-4 sm:-mx-5 lg:-mx-6";
+
 /** Primary column vertical padding for home-style scroll regions. */
 export const pageInsetPadY = "py-4 lg:py-5";
 

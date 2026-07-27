@@ -167,7 +167,7 @@ export function SiteHeader({
         "flex w-full items-center",
         isLanding
           ? "relative mx-auto max-w-[1100px] gap-4 px-6 py-3.5 max-sm:gap-3 max-sm:py-4"
-          : "min-h-[52px] gap-3 px-4 py-2.5 max-md:px-3"
+          : "relative min-h-[52px] gap-3 px-4 py-2.5 max-md:px-3"
       )}
     >
       <Link
@@ -205,19 +205,18 @@ export function SiteHeader({
 
       {!isLanding && (
         <Show when="signed-in">
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex">
             <AppNavigation />
-
-            {isOperator && (
-              <Link
-                href="/settings/subscription"
-                className="inline-flex items-center gap-1 border border-accent/20 bg-accent/8 px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-accent transition-colors hover:bg-accent/14 hover:border-accent/30"
-              >
-                <ZapIcon className="h-3 w-3" />
-                Operator
-              </Link>
-            )}
           </div>
+          {isOperator && (
+            <Link
+              href="/settings/subscription"
+              className="inline-flex items-center gap-1 border border-accent/20 bg-accent/8 px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-accent transition-colors hover:bg-accent/14 hover:border-accent/30 max-lg:hidden"
+            >
+              <ZapIcon className="h-3 w-3" />
+              Operator
+            </Link>
+          )}
         </Show>
       )}
 
@@ -240,20 +239,21 @@ export function SiteHeader({
         ) : (
           <>
             <Button
+              aria-label="Search"
               onClick={openPalette}
               size="sm"
               type="button"
               variant="soft"
             >
               <SearchIcon className="h-3.5 w-3.5" />
-              <span className="max-sm:hidden">Search</span>
-              <kbd className="ml-1 text-[0.7rem] text-ink-faint max-sm:hidden">
+              <span className="max-lg:hidden">Search</span>
+              <kbd className="ml-1 text-[0.7rem] text-ink-faint max-lg:hidden">
                 ⌘K
               </kbd>
             </Button>
 
             <Button
-              className="max-sm:hidden"
+              className="max-lg:hidden"
               onClick={handleNew}
               size="sm"
               type="button"
@@ -262,7 +262,7 @@ export function SiteHeader({
               New
             </Button>
 
-            <div className="flex items-center gap-2 max-sm:hidden">
+            <div className="flex items-center gap-2 max-lg:hidden">
               <GitHubStarLink />
               <ThemeToggle />
             </div>
@@ -275,7 +275,7 @@ export function SiteHeader({
 
         <Button
           aria-label="Open menu"
-          className="sm:hidden"
+          className="lg:hidden"
           onClick={handleMobileOpen}
           size="icon"
           type="button"

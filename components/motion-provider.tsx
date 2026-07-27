@@ -84,55 +84,65 @@ function MotionRuntime({ children, prefersReducedMotion }: MotionRuntimeProps) {
     const context = gsap.context(() => {
       gsap.fromTo(
         page,
-        { autoAlpha: 0, y: 10 },
+        { autoAlpha: 0 },
         {
           autoAlpha: 1,
-          clearProps: "opacity,transform,visibility",
-          duration: 0.45,
-          ease: "power3.out",
-          y: 0,
+          clearProps: "opacity,visibility",
+          duration: 0.32,
+          ease: "power2.out",
         }
       );
 
-      gsap.fromTo(
-        "[data-motion='hero'] > *",
-        { autoAlpha: 0, y: 28 },
-        {
-          autoAlpha: 1,
-          clearProps: "opacity,transform,visibility",
-          delay: 0.08,
-          duration: 0.8,
-          ease: "power3.out",
-          stagger: 0.1,
-          y: 0,
-        }
+      const heroItems = page.querySelectorAll<HTMLElement>(
+        "[data-motion='hero'] > *"
       );
+      if (heroItems.length > 0) {
+        gsap.fromTo(
+          heroItems,
+          { autoAlpha: 0, y: 22 },
+          {
+            autoAlpha: 1,
+            clearProps: "opacity,transform,visibility",
+            delay: 0.04,
+            duration: 0.72,
+            ease: "power4.out",
+            stagger: 0.08,
+            y: 0,
+          }
+        );
+      }
 
-      gsap.fromTo(
-        "[data-motion='hero-card']",
-        { autoAlpha: 0, scale: 0.97, y: 36 },
-        {
-          autoAlpha: 1,
-          clearProps: "opacity,transform,visibility",
-          delay: 0.28,
-          duration: 1,
-          ease: "power3.out",
-          scale: 1,
-          y: 0,
-        }
+      const heroCard = page.querySelector<HTMLElement>(
+        "[data-motion='hero-card']"
       );
+      if (heroCard) {
+        gsap.fromTo(
+          heroCard,
+          { autoAlpha: 0, rotateX: 2, scale: 0.985, y: 28 },
+          {
+            autoAlpha: 1,
+            clearProps: "opacity,transform,visibility",
+            delay: 0.18,
+            duration: 0.9,
+            ease: "power4.out",
+            rotateX: 0,
+            scale: 1,
+            y: 0,
+          }
+        );
+      }
 
       for (const section of gsap.utils.toArray<HTMLElement>(
         "[data-motion='section']"
       )) {
         gsap.fromTo(
           section,
-          { autoAlpha: 0, y: 42 },
+          { autoAlpha: 0, y: 30 },
           {
             autoAlpha: 1,
             clearProps: "opacity,transform,visibility",
-            duration: 0.75,
-            ease: "power3.out",
+            duration: 0.68,
+            ease: "power4.out",
             scrollTrigger: {
               once: true,
               start: "top 86%",
@@ -143,9 +153,6 @@ function MotionRuntime({ children, prefersReducedMotion }: MotionRuntimeProps) {
         );
       }
 
-      const heroCard = page.querySelector<HTMLElement>(
-        "[data-motion='hero-card']"
-      );
       if (heroCard) {
         gsap.to(heroCard, {
           ease: "none",
@@ -155,7 +162,7 @@ function MotionRuntime({ children, prefersReducedMotion }: MotionRuntimeProps) {
             start: "top 70%",
             trigger: heroCard,
           },
-          yPercent: -7,
+          yPercent: -4,
         });
       }
     }, page);
