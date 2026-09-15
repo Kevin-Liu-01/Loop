@@ -22,7 +22,12 @@ interface VersionedSkillPageProps {
   }>;
 }
 
-export const revalidate = 300;
+// A pinned version's content never changes, and ~80% of this route's traffic is crawlers walking
+// every version of every skill. At 300 s each bot visit re-rendered the page and its data-cache
+// entries (~86k ISR write units a day, roughly $10/month). A day keeps the activity/usage stats
+// fresh enough for an archival page; the unversioned /skills/[slug] page renders dynamically and
+// is unaffected.
+export const revalidate = 86_400;
 export const dynamicParams = true;
 
 export function generateStaticParams() {
