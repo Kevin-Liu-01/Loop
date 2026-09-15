@@ -97,21 +97,23 @@ export async function POST(request: Request) {
         const href = buildSkillVersionHref(newSlug, 1);
         recordSkillCreate(session.userId);
 
-        invalidateSkillData({
-          categorySlugs: [created.category],
-          href,
-          slug: newSlug,
-        });
-
-        await logUsageEvent({
-          categorySlug: source.category,
-          details: `Forked from ${sourceSlug}`,
-          kind: "skill_create",
-          label: "Copied skill",
-          path: href,
-          skillSlug: newSlug,
-          source: "api",
-        });
+        try {
+          await logUsageEvent({
+            categorySlug: source.category,
+            details: `Forked from ${sourceSlug}`,
+            kind: "skill_create",
+            label: "Copied skill",
+            path: href,
+            skillSlug: newSlug,
+            source: "api",
+          });
+        } finally {
+          invalidateSkillData({
+            categorySlugs: [created.category],
+            href,
+            slug: newSlug,
+          });
+        }
 
         return Response.json({
           forkedFrom: sourceSlug,

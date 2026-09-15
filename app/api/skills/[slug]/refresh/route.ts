@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
+import { invalidateSkillData } from "@/lib/cache-invalidation";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
@@ -16,7 +17,6 @@ import type { LoopUpdateStreamEvent } from "@/lib/types";
 import { logUsageEvent, withApiUsage } from "@/lib/usage-server";
 import {
   applyUserEditsToSkill,
-  buildUserSkillRecord,
   saveUserSkillDocuments,
   skillRecordToUserDoc,
   updateUserSkillInputSchema,
@@ -124,8 +124,11 @@ export async function POST(
           const startedAt = new Date().toISOString();
           try {
             if (automationWarning.imminent) {
+              const automationDueLabel = automationWarning.nextRunAt
+                ? `at ${new Date(automationWarning.nextRunAt).toLocaleString()}`
+                : "soon";
               sendEvent(controller, encoder, {
-                message: `Heads up: a scheduled automation is due ${automationWarning.nextRunAt ? "at " + new Date(automationWarning.nextRunAt).toLocaleString() : "soon"}. This manual run will take its place.`,
+                message: `Heads up: a scheduled automation is due ${automationDueLabel}. This manual run will take its place.`,
                 type: "analysis",
               });
             }
@@ -163,7 +166,14 @@ export async function POST(
               sources: cycle.nextSkill.sources,
               title: cycle.nextSkill.title,
             });
-            await updateSkill(slug, { researchProfile }).catch(() => {});
+            try {
+              await updateSkill(slug, { researchProfile });
+            } catch (profileError) {
+              console.error(
+                `[skills/refresh] Failed to update research profile for "${slug}":`,
+                profileError
+              );
+            }
 
             try {
               await recordLoopRun(cycle.loopRun);
@@ -192,6 +202,12 @@ export async function POST(
                 usageError
               );
             }
+
+            invalidateSkillData({
+              categorySlugs: [cycle.nextSkill.category],
+              href: cycle.result.href,
+              slug,
+            });
 
             sendEvent(controller, encoder, {
               result: cycle.result,
@@ -225,6 +241,11 @@ export async function POST(
                 recordError
               );
             }
+            invalidateSkillData({
+              categorySlugs: [skillRecord.category],
+              href: skillRecord.href,
+              slug,
+            });
             sendEvent(controller, encoder, { message, type: "error" });
           } finally {
             controller.close();

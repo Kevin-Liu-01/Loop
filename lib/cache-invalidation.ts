@@ -31,8 +31,6 @@ export function invalidateSkillData({
   categorySlugs = [],
 }: InvalidateSkillDataOptions): void {
   expireTag(skillCacheTag(slug));
-  expireTag(CACHE_TAGS.skillActivity);
-  expireTag(CACHE_TAGS.skillUpstreams);
   invalidatePublicCatalogue();
   revalidatePath(`/skills/${slug}`);
   if (href) {

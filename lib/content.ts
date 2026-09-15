@@ -8,7 +8,11 @@ import YAML from "yaml";
 
 import { parseAgentDocs } from "@/lib/agent-docs";
 import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
-import { CACHE_TAGS, skillCacheTag } from "@/lib/cache-tags";
+import {
+  CACHE_TAGS,
+  LONG_LIVED_CACHE_REVALIDATE_SECONDS,
+  skillCacheTag,
+} from "@/lib/cache-tags";
 import { listBriefs as dbListBriefs } from "@/lib/db/briefs";
 import { listCategories as dbListCategories } from "@/lib/db/categories";
 import {
@@ -404,8 +408,11 @@ export async function getCachedPublicSkillRecordBySlug(
       const record = await getSkillRecordBySlug(slug, requestedVersion);
       return record?.visibility === "public" ? record : null;
     },
-    ["public-skill-record-v1", slug, versionKey],
-    { revalidate: 300, tags: [skillCacheTag(slug)] }
+    ["public-skill-record-v2", slug, versionKey],
+    {
+      revalidate: LONG_LIVED_CACHE_REVALIDATE_SECONDS,
+      tags: [skillCacheTag(slug)],
+    }
   );
   return loadRecord();
 }

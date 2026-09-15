@@ -87,21 +87,23 @@ export async function POST(request: Request) {
           );
         }
 
-        invalidateSkillData({
-          categorySlugs: [tracked.category],
-          href: record.href,
-          slug: tracked.slug,
-        });
-
-        await logUsageEvent({
-          categorySlug: tracked.category,
-          details: tracked.title,
-          kind: "skill_track",
-          label: "Tracked skill",
-          path: record.href,
-          skillSlug: tracked.slug,
-          source: "api",
-        });
+        try {
+          await logUsageEvent({
+            categorySlug: tracked.category,
+            details: tracked.title,
+            kind: "skill_track",
+            label: "Tracked skill",
+            path: record.href,
+            skillSlug: tracked.slug,
+            source: "api",
+          });
+        } finally {
+          invalidateSkillData({
+            categorySlugs: [tracked.category],
+            href: record.href,
+            slug: tracked.slug,
+          });
+        }
 
         return Response.json({
           created: true,
