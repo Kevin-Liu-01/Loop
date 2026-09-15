@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { buildMcpVersionHref } from "@/lib/format";
+import { buildMcpVersionHref, buildSkillVersionHref } from "@/lib/format";
 import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import type { ImportedMcpDocument, SkillRecord } from "@/lib/types";
@@ -177,15 +177,26 @@ function stripUndefined<T extends Record<string, unknown>>(value: T): T {
   ) as T;
 }
 
-export function buildSkillMetadata(skill: SkillRecord): Metadata {
-  const canonical = buildSiteUrl(skill.href).toString();
+interface SkillMetadataOptions {
+  canonicalPath?: string;
+  indexable?: boolean;
+}
+
+export function buildSkillMetadata(
+  skill: SkillRecord,
+  options: SkillMetadataOptions = {}
+): Metadata {
+  const canonical = buildSiteUrl(
+    options.canonicalPath ?? skill.href
+  ).toString();
   const title = `${skill.title} · ${SITE_NAME}`;
   const description = (
     skill.excerpt?.trim() ||
     skill.description?.trim() ||
     SEO_DEFAULT_DESCRIPTION
   ).slice(0, 320);
-  const indexable = skill.visibility === "public";
+  const isPublic = skill.visibility === "public";
+  const indexable = isPublic && (options.indexable ?? true);
 
   const ogImageUrl = buildOgImageUrl({
     category: skill.category,
@@ -214,7 +225,7 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
       type: "article",
       url: canonical,
     },
-    robots: indexable ? undefined : { follow: false, index: false },
+    robots: indexable ? undefined : { follow: isPublic, index: false },
     title,
     twitter: {
       card: "summary_large_image",
@@ -233,6 +244,18 @@ export function buildSkillMetadata(skill: SkillRecord): Metadata {
       title,
     },
   };
+}
+
+export function buildVersionedSkillMetadata(skill: SkillRecord): Metadata {
+  let latestVersion = skill.version;
+  for (const candidate of skill.availableVersions) {
+    latestVersion = Math.max(latestVersion, candidate.version);
+  }
+
+  return buildSkillMetadata(skill, {
+    canonicalPath: buildSkillVersionHref(skill.slug, latestVersion),
+    indexable: skill.version === latestVersion,
+  });
 }
 
 export function buildMcpMetadata(mcp: ImportedMcpDocument): Metadata {

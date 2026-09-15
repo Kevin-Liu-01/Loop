@@ -7,7 +7,7 @@ import { SkillDetailFallback } from "@/components/skill-detail-fallback";
 import { SkillDetailPage } from "@/components/skill-detail-page";
 import { getCachedPublicSkillRecordBySlug } from "@/lib/content";
 import { parseVersionSegment } from "@/lib/format";
-import { buildSkillJsonLd, buildSkillMetadata } from "@/lib/seo";
+import { buildSkillJsonLd, buildVersionedSkillMetadata } from "@/lib/seo";
 import {
   getCachedSkillActivity,
   getCachedSkillBrief,
@@ -43,7 +43,7 @@ export async function generateMetadata({
     return {};
   }
   const skill = await getCachedPublicSkillRecordBySlug(slug, versionNumber);
-  return skill ? buildSkillMetadata(skill) : {};
+  return skill ? buildVersionedSkillMetadata(skill) : {};
 }
 
 export default async function VersionedSkillPage({

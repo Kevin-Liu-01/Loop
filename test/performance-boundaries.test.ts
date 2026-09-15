@@ -8,6 +8,7 @@ import {
   parseRefreshScope,
 } from "@/lib/refresh-scope";
 import { hasValidBearerToken } from "@/lib/request-auth";
+import { buildVersionedSkillMetadata } from "@/lib/seo";
 import type { ImportedMcpDocument, SkillRecord } from "@/lib/types";
 
 const skillFixture: SkillRecord = {
@@ -134,4 +135,30 @@ test("home MCP projection removes raw and historical configuration", () => {
 test("skill cache tags are isolated by slug", () => {
   assert.equal(skillCacheTag("frontend-frontier"), "skill:frontend-frontier");
   assert.notEqual(skillCacheTag("a"), skillCacheTag("b"));
+});
+
+test("archival skill versions canonicalize to latest and remain crawlable", () => {
+  const archivedSkill: SkillRecord = {
+    ...skillFixture,
+    href: "/skills/test-skill/v1",
+    version: 1,
+    versionLabel: "v1",
+  };
+  const metadata = buildVersionedSkillMetadata(archivedSkill);
+
+  assert.equal(
+    new URL(String(metadata.alternates?.canonical)).pathname,
+    "/skills/test-skill/v2"
+  );
+  assert.deepEqual(metadata.robots, { follow: true, index: false });
+});
+
+test("latest public skill versions remain indexable", () => {
+  const metadata = buildVersionedSkillMetadata(skillFixture);
+
+  assert.equal(
+    new URL(String(metadata.alternates?.canonical)).pathname,
+    "/skills/test-skill/v2"
+  );
+  assert.equal(metadata.robots, undefined);
 });
