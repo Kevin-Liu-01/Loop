@@ -12,7 +12,7 @@ import { fetchLandingData } from "@/lib/home-landing/landing-queries";
 import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { buildPageMetadata, SEO_DEFAULT_TITLE } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 const LANDING_DESCRIPTION =
   "Loop monitors, evaluates, and updates your agent playbooks. Every skill stays optimal, every parameter stays current.";
