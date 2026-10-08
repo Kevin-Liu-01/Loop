@@ -150,7 +150,7 @@ async function loadLandingData(): Promise<LandingData> {
 const getCachedLandingData = unstable_cache(
   loadLandingData,
   ["public-landing-data-v1"],
-  { revalidate: 300, tags: [CACHE_TAGS.publicLanding] }
+  { revalidate: 3600, tags: [CACHE_TAGS.publicLanding] }
 );
 
 export async function fetchLandingData(): Promise<LandingData> {

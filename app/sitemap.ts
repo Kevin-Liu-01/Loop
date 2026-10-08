@@ -35,12 +35,10 @@ async function loadSitemapRows() {
 const getCachedSitemapRows = unstable_cache(
   loadSitemapRows,
   ["public-sitemap-rows-v1"],
-  { revalidate: 300, tags: [CACHE_TAGS.publicSitemap] }
+  { revalidate: 3600, tags: [CACHE_TAGS.publicSitemap] }
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-
   let skillEntries: MetadataRoute.Sitemap = [];
   let mcpEntries: MetadataRoute.Sitemap = [];
 
@@ -69,7 +67,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((path) => ({
     changeFrequency:
       path === PUBLIC_HOME_PATH ? ("daily" as const) : ("monthly" as const),
-    lastModified: now,
     priority: path === PUBLIC_HOME_PATH ? 1 : 0.5,
     url: buildSiteUrl(path).toString(),
   }));
