@@ -105,6 +105,17 @@ export default function PrivacyPage() {
             understand aggregate usage. You can control cookie preferences
             through your browser settings.
           </p>
+          <p className={`${prose} mt-3`}>
+            <strong>Analytics.</strong> On our public pages, Google Analytics 4
+            measures visits (pages, device, approximate location) so we can see
+            what people use. It is not used for ads or ad personalisation.
+            Visitors in the EEA, UK and Switzerland are measured without
+            analytics cookies (Consent Mode). You can opt out with{" "}
+            <a href="https://tools.google.com/dlpage/gaoptout">
+              Google&rsquo;s opt-out add-on
+            </a>
+            .
+          </p>
 
           <h2 className={sectionHeading}>7. Your Rights</h2>
           <p className={prose}>

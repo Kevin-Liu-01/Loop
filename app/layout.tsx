@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 
 import { ActiveOperationsProvider } from "@/components/active-operations-provider";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { MotionProvider } from "@/components/motion-provider";
 import { OperatorProvider } from "@/components/operator-provider";
 import { SeoJsonLd } from "@/components/seo-json-ld";
@@ -105,6 +106,7 @@ export default function RootLayout({
           </ThemeProvider>
           <Analytics />
           <SpeedInsights />
+          {process.env.VERCEL_ENV === "production" ? <GoogleAnalytics /> : null}
         </body>
       </html>
     </ClerkProvider>
