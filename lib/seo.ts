@@ -16,7 +16,8 @@ export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
 export const DEFAULT_OG_IMAGE_PATH = "/og-v3.png";
-export const LOGO_ICON_PATH = "/icon.svg";
+// Organization JSON-LD logo: Google wants a raster image of at least 112x112.
+export const LOGO_ICON_PATH = "/icon-512.png";
 
 export const TWITTER_SITE_HANDLE = "@kevskgs";
 export const TWITTER_CREATOR_HANDLE = "@kevskgs";

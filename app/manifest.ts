@@ -13,6 +13,16 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icon.svg",
         type: "image/svg+xml",
       },
+      {
+        sizes: "192x192",
+        src: "/icon-192.png",
+        type: "image/png",
+      },
+      {
+        sizes: "512x512",
+        src: "/icon-512.png",
+        type: "image/png",
+      },
     ],
     name: `${SITE_NAME} – Operator Desk`,
     short_name: SITE_NAME,
