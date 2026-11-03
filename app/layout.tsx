@@ -105,7 +105,8 @@ export default function RootLayout({
             </OperatorProvider>
           </ThemeProvider>
           <Analytics />
-          <SpeedInsights />
+          {/* ~2,300 visitors a month would spend the team's free 10k events per 30 days on their own; sample 10%. */}
+          <SpeedInsights sampleRate={0.1} />
           {process.env.VERCEL_ENV === "production" ? <GoogleAnalytics /> : null}
         </body>
       </html>
