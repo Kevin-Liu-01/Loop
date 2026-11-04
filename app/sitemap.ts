@@ -7,6 +7,11 @@ import { buildMcpVersionHref, buildSkillVersionHref } from "@/lib/format";
 import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { buildSiteUrl } from "@/lib/seo";
 
+// Without a route-level revalidate, the sitemap is built once per deploy and served as a static
+// file, so neither the data cache's TTL nor revalidatePath("/sitemap.xml") refreshed it, and it
+// listed superseded versions until the next deploy.
+export const revalidate = 3600;
+
 // Only public, indexable pages belong in the sitemap. Auth pages
 // (sign-in/sign-up) and the authenticated dashboard (settings/*) are
 // intentionally excluded — they should not be crawl targets.
