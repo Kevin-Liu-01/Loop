@@ -14,18 +14,25 @@ import {
   listLoopRunSummaries,
   listUsageEventsForSkill,
 } from "@/lib/system-state";
+import type { SkillOrigin } from "@/lib/types";
 
-export async function getCachedSkillActivity(slug: string) {
+export async function getCachedSkillActivity(
+  slug: string,
+  origin: SkillOrigin
+) {
+  const runOrigin = origin === "remote" ? "remote" : "user";
   const loadActivity = unstable_cache(
     async () => {
-      const [loopRuns, recentRuns, usageEvents] = await Promise.all([
+      // The page shows only the latest run, and a full run row carries its whole transcript,
+      // diff and sources, so fetch that one run instead of several to pick it from.
+      const [loopRuns, latestRuns, usageEvents] = await Promise.all([
         listLoopRunSummaries({ limit: 20, skillSlug: slug }),
-        listLoopRuns({ limit: 3, skillSlug: slug }),
+        listLoopRuns({ limit: 1, origin: runOrigin, skillSlug: slug }),
         listUsageEventsForSkill(slug, 100),
       ]);
-      return { loopRuns, recentRuns, usageEvents };
+      return { latestRun: latestRuns[0] ?? null, loopRuns, usageEvents };
     },
-    ["skill-detail-activity-v3", slug],
+    ["skill-detail-activity-v4", slug, runOrigin],
     {
       revalidate: SKILL_ACTIVITY_REVALIDATE_SECONDS,
       tags: [

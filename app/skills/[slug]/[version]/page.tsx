@@ -102,15 +102,9 @@ async function PublicSkillDetailData({
   }
 
   const [activity, upstreams] = await Promise.all([
-    getCachedSkillActivity(skill.slug),
+    getCachedSkillActivity(skill.slug, skill.origin),
     getCachedSkillUpstreams(skill.slug),
   ]);
-  const latestRun =
-    activity.recentRuns.find(
-      (run) =>
-        run.slug === skill.slug &&
-        run.origin === (skill.origin === "remote" ? "remote" : "user")
-    ) ?? null;
   const usage = buildSkillUsageSummary(
     skill.slug,
     activity.usageEvents,
@@ -123,7 +117,7 @@ async function PublicSkillDetailData({
       <SkillDetailPage
         canEdit={false}
         isSignedIn={false}
-        latestRun={latestRun}
+        latestRun={activity.latestRun}
         previousSkill={previousSkill}
         purchased={false}
         skill={{ ...skill, upstreams }}

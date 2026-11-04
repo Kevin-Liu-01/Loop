@@ -78,7 +78,7 @@ async function SignedInSkillDetailData({
       : null);
   const [sessionAuthor, activity, upstreams, purchased] = await Promise.all([
     session ? findSkillAuthorForSession(session) : Promise.resolve(null),
-    getCachedSkillActivity(skill.slug),
+    getCachedSkillActivity(skill.slug, skill.origin),
     getCachedSkillUpstreams(skill.slug),
     session?.userId
       ? hasUserPurchasedSkill(session.userId, slug)
@@ -90,12 +90,6 @@ async function SignedInSkillDetailData({
   }
 
   const canEdit = canSessionEditSkill(skill, session, sessionAuthor);
-  const latestRun =
-    activity.recentRuns.find(
-      (run) =>
-        run.slug === skill.slug &&
-        run.origin === (skill.origin === "remote" ? "remote" : "user")
-    ) ?? null;
   const usage = buildSkillUsageSummary(
     skill.slug,
     activity.usageEvents,
@@ -106,7 +100,7 @@ async function SignedInSkillDetailData({
     <SkillDetailPage
       canEdit={canEdit}
       isSignedIn={!!session}
-      latestRun={latestRun}
+      latestRun={activity.latestRun}
       previousSkill={previousSkill}
       purchased={purchased || canEdit}
       skill={{ ...skill, upstreams }}
