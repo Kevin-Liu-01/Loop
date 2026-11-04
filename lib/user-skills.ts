@@ -4,7 +4,7 @@ import {
   DEFAULT_PREFERRED_DAY,
   DEFAULT_PREFERRED_HOUR,
 } from "@/lib/automation-constants";
-import { invalidateSkillData } from "@/lib/cache-invalidation";
+import { invalidateLatestSkillVersion } from "@/lib/cache-invalidation";
 import {
   createSkillVersion as dbCreateSkillVersion,
   getSkillVersions as dbGetSkillVersions,
@@ -883,6 +883,9 @@ export async function saveUserSkillDocuments(
         visibility: skill.visibility,
       });
 
+      // When this save adds a version, the previous latest becomes an archived snapshot and its
+      // page has to re-render too.
+      let replacedVersion: number | undefined;
       const skillId = await getSkillIdBySlug(skill.slug);
       if (skillId) {
         const existingVersions = await dbGetSkillVersions(skillId);
@@ -893,6 +896,9 @@ export async function saveUserSkillDocuments(
         const newVersions = skill.versions.filter(
           (v) => !existingVersionNumbers.has(v.version)
         );
+        if (newVersions.length > 0 && existingVersionNumbers.size > 0) {
+          replacedVersion = Math.max(...existingVersionNumbers);
+        }
         await Promise.all(
           newVersions.map((v) =>
             dbCreateSkillVersion({
@@ -914,10 +920,15 @@ export async function saveUserSkillDocuments(
         );
       }
 
-      invalidateSkillData({
+      // Edits that change what archived versions show call invalidateSkillData themselves.
+      invalidateLatestSkillVersion({
         categorySlugs: [skill.category],
         href: buildUserSkillRecord(skill).href,
         slug: skill.slug,
+        versions:
+          replacedVersion === undefined
+            ? [skill.version]
+            : [skill.version, replacedVersion],
       });
     })
   );

@@ -4,9 +4,10 @@ import { unstable_cache } from "next/cache";
 import {
   CACHE_TAGS,
   LONG_LIVED_CACHE_REVALIDATE_SECONDS,
+  SKILL_ACTIVITY_REVALIDATE_SECONDS,
   skillCacheTag,
+  skillLiveDataCacheTag,
 } from "@/lib/cache-tags";
-import { getBriefByCategory } from "@/lib/db/briefs";
 import { listSkillUpstreams } from "@/lib/db/skill-intelligence";
 import {
   listLoopRuns,
@@ -24,32 +25,31 @@ export async function getCachedSkillActivity(slug: string) {
       ]);
       return { loopRuns, recentRuns, usageEvents };
     },
-    ["skill-detail-activity-v2", slug],
+    ["skill-detail-activity-v3", slug],
     {
-      revalidate: LONG_LIVED_CACHE_REVALIDATE_SECONDS,
-      tags: [CACHE_TAGS.skillActivity, skillCacheTag(slug)],
+      revalidate: SKILL_ACTIVITY_REVALIDATE_SECONDS,
+      tags: [
+        CACHE_TAGS.skillActivity,
+        skillCacheTag(slug),
+        skillLiveDataCacheTag(slug),
+      ],
     }
   );
 
   return loadActivity();
 }
 
-export const getCachedSkillBrief = unstable_cache(
-  getBriefByCategory,
-  ["skill-detail-brief-v2"],
-  {
-    revalidate: LONG_LIVED_CACHE_REVALIDATE_SECONDS,
-    tags: [CACHE_TAGS.briefs],
-  }
-);
-
 export async function getCachedSkillUpstreams(slug: string) {
   const loadUpstreams = unstable_cache(
     async () => listSkillUpstreams(slug),
-    ["skill-detail-upstreams-v2", slug],
+    ["skill-detail-upstreams-v3", slug],
     {
       revalidate: LONG_LIVED_CACHE_REVALIDATE_SECONDS,
-      tags: [CACHE_TAGS.skillUpstreams, skillCacheTag(slug)],
+      tags: [
+        CACHE_TAGS.skillUpstreams,
+        skillCacheTag(slug),
+        skillLiveDataCacheTag(slug),
+      ],
     }
   );
 

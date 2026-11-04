@@ -12,6 +12,8 @@ import {
   CACHE_TAGS,
   LONG_LIVED_CACHE_REVALIDATE_SECONDS,
   skillCacheTag,
+  skillLiveDataCacheTag,
+  skillVersionCacheTag,
 } from "@/lib/cache-tags";
 import { listBriefs as dbListBriefs } from "@/lib/db/briefs";
 import { listCategories as dbListCategories } from "@/lib/db/categories";
@@ -408,10 +410,15 @@ export async function getCachedPublicSkillRecordBySlug(
       const record = await getSkillRecordBySlug(slug, requestedVersion);
       return record?.visibility === "public" ? record : null;
     },
-    ["public-skill-record-v2", slug, versionKey],
+    ["public-skill-record-v3", slug, versionKey],
     {
       revalidate: LONG_LIVED_CACHE_REVALIDATE_SECONDS,
-      tags: [skillCacheTag(slug)],
+      tags: [
+        skillCacheTag(slug),
+        requestedVersion
+          ? skillVersionCacheTag(slug, requestedVersion)
+          : skillLiveDataCacheTag(slug),
+      ],
     }
   );
   return loadRecord();

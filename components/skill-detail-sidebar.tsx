@@ -65,7 +65,7 @@ interface SkillDetailSidebarProps {
   rawDiffLength: number;
   updates?: SkillUpdateEntry[];
   automations: AutomationSummary[];
-  usage: SkillUsageSummary;
+  usage?: SkillUsageSummary;
   skills?: SkillRecord[];
   timeZone?: string;
   canEdit?: boolean;
@@ -290,7 +290,9 @@ export function SkillDetailSidebar({
       )}
 
       {/* ── Usage ── */}
-      <SkillObservabilityPanel timeZone={timeZone} usage={usage} />
+      {usage ? (
+        <SkillObservabilityPanel timeZone={timeZone} usage={usage} />
+      ) : null}
     </aside>
   );
 }

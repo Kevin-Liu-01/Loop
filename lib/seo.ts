@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
-import { buildMcpVersionHref, buildSkillVersionHref } from "@/lib/format";
+import {
+  buildMcpVersionHref,
+  buildSkillVersionHref,
+  getLatestSkillVersion,
+} from "@/lib/format";
 import { PUBLIC_HOME_PATH } from "@/lib/navigation";
 import { CATEGORY_REGISTRY } from "@/lib/registry";
 import type { ImportedMcpDocument, SkillRecord } from "@/lib/types";
@@ -247,10 +251,7 @@ export function buildSkillMetadata(
 }
 
 export function buildVersionedSkillMetadata(skill: SkillRecord): Metadata {
-  let latestVersion = skill.version;
-  for (const candidate of skill.availableVersions) {
-    latestVersion = Math.max(latestVersion, candidate.version);
-  }
+  const latestVersion = getLatestSkillVersion(skill);
 
   return buildSkillMetadata(skill, {
     canonicalPath: buildSkillVersionHref(skill.slug, latestVersion),

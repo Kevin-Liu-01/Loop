@@ -10,6 +10,7 @@ import { DownloadSkillButton } from "@/components/download-skill-button";
 import { ExpandableContent } from "@/components/expandable-content";
 import { ForkSkillButton } from "@/components/fork-skill-button";
 import { FileCodeIcon, GlobeIcon, PlayIcon } from "@/components/frontier-icons";
+import { RelativeTime } from "@/components/relative-time";
 import { ShareButton } from "@/components/share-button";
 import { SiteHeader } from "@/components/site-header";
 import { SkillActivitySection } from "@/components/skill-activity-section";
@@ -32,7 +33,6 @@ import { SkillIcon } from "@/components/ui/skill-icon";
 import { UsageBeacon } from "@/components/usage-beacon";
 import { VersionSwitcher } from "@/components/version-switcher";
 import { cn } from "@/lib/cn";
-import { formatRelativeDate } from "@/lib/format";
 import { getSiteUrlString } from "@/lib/seo";
 import { buildSkillAutomationSummaries } from "@/lib/skill-automations";
 import {
@@ -41,7 +41,7 @@ import {
   getTagColorForOrigin,
 } from "@/lib/tag-utils";
 import { diffMultilineText } from "@/lib/text-diff";
-import type { CategoryBrief, LoopRunRecord, SkillRecord } from "@/lib/types";
+import type { LoopRunRecord, SkillRecord } from "@/lib/types";
 import { pageInsetPadX } from "@/lib/ui-layout";
 import { buildUpdateDigest } from "@/lib/update-digest";
 import type { SkillUsageSummary } from "@/lib/usage";
@@ -50,14 +50,20 @@ const SITE_URL = getSiteUrlString();
 
 interface SkillDetailPageProps {
   skill: SkillRecord;
-  brief?: CategoryBrief;
   previousSkill?: SkillRecord | null;
   latestRun?: LoopRunRecord | null;
-  usage: SkillUsageSummary;
+  /** Omitted on archived versions, which don't show live usage. */
+  usage?: SkillUsageSummary;
   purchased?: boolean;
   canEdit?: boolean;
   isSignedIn?: boolean;
   timeZone?: string;
+  /**
+   * A superseded version. Its page stays cached until a deploy, a skill edit or the record's
+   * 30-day TTL, so it shows the version's own content only and links to the latest instead of
+   * carrying live activity and usage.
+   */
+  archived?: boolean;
 }
 
 function formatPrice(amount: number, currency: string): string {
@@ -68,7 +74,6 @@ function formatPrice(amount: number, currency: string): string {
 
 export function SkillDetailPage({
   skill,
-  brief,
   previousSkill,
   latestRun,
   usage,
@@ -76,6 +81,7 @@ export function SkillDetailPage({
   canEdit = false,
   isSignedIn = false,
   timeZone,
+  archived = false,
 }: SkillDetailPageProps) {
   const isPaid = skill.price && skill.price.amount > 0;
   const priceLabel = isPaid
@@ -128,8 +134,12 @@ export function SkillDetailPage({
     ...(canEdit ? [{ id: "author-studio", label: "Studio" }] : []),
     { id: "content", label: "Content" },
     ...(hasAgentDocs ? [{ id: "agent-docs", label: "Agent docs" }] : []),
-    { id: "activity", label: "Activity" },
-    { id: "automations", label: "Automations" },
+    ...(archived
+      ? []
+      : [
+          { id: "activity", label: "Activity" },
+          { id: "automations", label: "Automations" },
+        ]),
     ...(hasResearch ? [{ id: "research", label: "Research" }] : []),
     ...(trackedSources.length > 0 ? [{ id: "sources", label: "Sources" }] : []),
   ];
@@ -200,6 +210,18 @@ export function SkillDetailPage({
                 />
               )}
             </div>
+            {archived ? (
+              <p className="m-0 text-xs text-ink-muted">
+                Archived version.{" "}
+                <Link
+                  className="font-medium text-ink underline-offset-2 hover:underline"
+                  href={`/skills/${skill.slug}`}
+                  prefetch={false}
+                >
+                  View the latest &rarr;
+                </Link>
+              </p>
+            ) : null}
             <p className="m-0 max-w-[min(100%,52ch)] text-pretty text-sm leading-relaxed text-ink-muted wrap-break-word">
               {skill.description}
             </p>
@@ -211,7 +233,7 @@ export function SkillDetailPage({
               />
               <span className="text-xs tabular-nums text-ink-faint">
                 {trackedSources.length} sources · Updated{" "}
-                {formatRelativeDate(skill.updatedAt, timeZone)}
+                <RelativeTime date={skill.updatedAt} />
               </span>
             </div>
 
@@ -286,17 +308,19 @@ export function SkillDetailPage({
           </header>
         </div>
 
-        <SkillAutomationStrip
-          automation={primaryAutomation}
-          canEdit={canEdit}
-          category={skill.category}
-          iconUrl={skill.iconUrl}
-          latestRun={latestRun}
-          skillTitle={skill.title}
-          slug={skill.slug}
-          sourceCount={sourceCount}
-          sources={skill.sources}
-        />
+        {archived ? null : (
+          <SkillAutomationStrip
+            automation={primaryAutomation}
+            canEdit={canEdit}
+            category={skill.category}
+            iconUrl={skill.iconUrl}
+            latestRun={latestRun}
+            skillTitle={skill.title}
+            slug={skill.slug}
+            sourceCount={sourceCount}
+            sources={skill.sources}
+          />
+        )}
 
         {/* ── Two-column layout ── */}
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
@@ -338,31 +362,35 @@ export function SkillDetailPage({
                 skillSlug={skill.slug}
               />
 
-              <SkillActivitySection
-                automation={primaryAutomation}
-                canManage={canEdit}
-                category={skill.category}
-                iconUrl={skill.iconUrl}
-                latestRun={latestRun}
-                origin={skill.origin}
-                skillTitle={skill.title}
-                slug={skill.slug}
-                sourceCount={sourceCount}
-                sources={skill.sources}
-              />
+              {archived ? null : (
+                <>
+                  <SkillActivitySection
+                    automation={primaryAutomation}
+                    canManage={canEdit}
+                    category={skill.category}
+                    iconUrl={skill.iconUrl}
+                    latestRun={latestRun}
+                    origin={skill.origin}
+                    skillTitle={skill.title}
+                    slug={skill.slug}
+                    sourceCount={sourceCount}
+                    sources={skill.sources}
+                  />
 
-              <SkillAutomationSection
-                automation={primaryAutomation}
-                canEdit={canEdit}
-                category={skill.category}
-                iconUrl={skill.iconUrl}
-                latestRun={latestRun}
-                origin={skill.origin}
-                skillTitle={skill.title}
-                slug={skill.slug}
-                sourceCount={sourceCount}
-                sources={skill.sources}
-              />
+                  <SkillAutomationSection
+                    automation={primaryAutomation}
+                    canEdit={canEdit}
+                    category={skill.category}
+                    iconUrl={skill.iconUrl}
+                    latestRun={latestRun}
+                    origin={skill.origin}
+                    skillTitle={skill.title}
+                    slug={skill.slug}
+                    sourceCount={sourceCount}
+                    sources={skill.sources}
+                  />
+                </>
+              )}
 
               <SkillResearchPanel skill={skill} />
 

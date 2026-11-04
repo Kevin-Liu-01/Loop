@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { skillCacheTag } from "@/lib/cache-tags";
+import {
+  latestSkillVersionCacheTags,
+  skillCacheTag,
+  skillLiveDataCacheTag,
+  skillVersionCacheTag,
+} from "@/lib/cache-tags";
+import { fetchWithTimeout } from "@/lib/db/client";
+import { getLatestSkillVersion } from "@/lib/format";
 import { toHomeMcpDocument, toHomeSkillRecord } from "@/lib/home-catalogue";
 import {
   buildRefreshExecutionPlan,
@@ -135,6 +142,68 @@ test("home MCP projection removes raw and historical configuration", () => {
 test("skill cache tags are isolated by slug", () => {
   assert.equal(skillCacheTag("frontend-frontier"), "skill:frontend-frontier");
   assert.notEqual(skillCacheTag("a"), skillCacheTag("b"));
+});
+
+test("version and live-data tags are isolated by slug and version", () => {
+  assert.equal(
+    skillVersionCacheTag("frontend-frontier", 115),
+    "skill:frontend-frontier:v115"
+  );
+  assert.notEqual(skillVersionCacheTag("a", 1), skillVersionCacheTag("a", 11));
+  assert.notEqual(skillVersionCacheTag("a", 1), skillVersionCacheTag("b", 1));
+  assert.notEqual(skillLiveDataCacheTag("a"), skillLiveDataCacheTag("b"));
+  assert.notEqual(skillLiveDataCacheTag("a"), skillCacheTag("a"));
+});
+
+test("routine skill saves expire the latest versions but never every archived one", () => {
+  const tags = latestSkillVersionCacheTags(
+    "frontend-frontier",
+    [116, 115, 116]
+  );
+
+  assert.deepEqual(tags, [
+    "skill:frontend-frontier:live",
+    "skill:frontend-frontier:v116",
+    "skill:frontend-frontier:v115",
+  ]);
+  assert.equal(tags.includes(skillCacheTag("frontend-frontier")), false);
+  assert.deepEqual(latestSkillVersionCacheTags("solo", []), [
+    "skill:solo:live",
+  ]);
+});
+
+test("the latest skill version is the newest version the record knows about", () => {
+  assert.equal(getLatestSkillVersion(skillFixture), 2);
+  assert.equal(getLatestSkillVersion({ ...skillFixture, version: 1 }), 2);
+  assert.equal(
+    getLatestSkillVersion({ ...skillFixture, availableVersions: [] }),
+    2
+  );
+});
+
+test("Supabase requests get a timeout signal that also honors the caller's abort", async () => {
+  const originalFetch = globalThis.fetch;
+  const signals: (AbortSignal | null | undefined)[] = [];
+  globalThis.fetch = (_input, init) => {
+    signals.push(init?.signal);
+    return Promise.resolve(new Response(null));
+  };
+
+  try {
+    await fetchWithTimeout("https://db.loop.test/rest/v1/skills");
+    const caller = new AbortController();
+    caller.abort();
+    await fetchWithTimeout("https://db.loop.test/rest/v1/skills", {
+      signal: caller.signal,
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(signals.length, 2);
+  assert.ok(signals[0] instanceof AbortSignal);
+  assert.equal(signals[0].aborted, false);
+  assert.equal(signals[1]?.aborted, true);
 });
 
 test("archival skill versions canonicalize to latest and remain crawlable", () => {

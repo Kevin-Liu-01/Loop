@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { authErrorResponse, requireAuth } from "@/lib/auth";
-import { invalidateSkillData } from "@/lib/cache-invalidation";
+import { invalidateLatestSkillVersion } from "@/lib/cache-invalidation";
 import { getSkillRecordBySlug } from "@/lib/content";
 import { findSkillAuthorForSession } from "@/lib/db/skill-authors";
 import { updateSkill } from "@/lib/db/skills";
@@ -203,10 +203,11 @@ export async function POST(
               );
             }
 
-            invalidateSkillData({
+            invalidateLatestSkillVersion({
               categorySlugs: [cycle.nextSkill.category],
               href: cycle.result.href,
               slug,
+              versions: [cycle.nextSkill.version],
             });
 
             sendEvent(controller, encoder, {
@@ -241,10 +242,11 @@ export async function POST(
                 recordError
               );
             }
-            invalidateSkillData({
+            invalidateLatestSkillVersion({
               categorySlugs: [skillRecord.category],
               href: skillRecord.href,
               slug,
+              versions: [skillRecord.version],
             });
             sendEvent(controller, encoder, { message, type: "error" });
           } finally {

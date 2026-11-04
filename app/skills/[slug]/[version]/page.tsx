@@ -6,11 +6,10 @@ import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SkillDetailFallback } from "@/components/skill-detail-fallback";
 import { SkillDetailPage } from "@/components/skill-detail-page";
 import { getCachedPublicSkillRecordBySlug } from "@/lib/content";
-import { parseVersionSegment } from "@/lib/format";
+import { getLatestSkillVersion, parseVersionSegment } from "@/lib/format";
 import { buildSkillJsonLd, buildVersionedSkillMetadata } from "@/lib/seo";
 import {
   getCachedSkillActivity,
-  getCachedSkillBrief,
   getCachedSkillUpstreams,
 } from "@/lib/skill-detail-data";
 import { buildSkillUsageSummary } from "@/lib/usage";
@@ -22,13 +21,18 @@ interface VersionedSkillPageProps {
   }>;
 }
 
-// A pinned version's content never changes, and ~80% of this route's traffic is crawlers walking
-// every version of every skill. At 300 s each bot visit re-rendered the page and its data-cache
-// entries (~86k ISR write units a day, roughly $10/month). A day keeps the activity/usage stats
-// fresh enough for an archival page; the unversioned /skills/[slug] page renders dynamically and
-// is unaffected.
-export const revalidate = 86_400;
+// Most of this route's traffic is crawlers walking every version of every skill, and each
+// re-render rewrites the page's HTML and RSC (~1 MB uncompressed) to the ISR cache. Pinned
+// versions never change, so a page renders once and stays cached:
+// - archived versions read only their own record, so nothing but a visibility, deletion or
+//   metadata edit (invalidateSkillData) expires them;
+// - the latest version also reads activity, whose 1-day TTL caps how stale its usage stats get,
+//   and is re-rendered by tag whenever the skill is saved (invalidateLatestSkillVersion).
+export const revalidate = false;
 export const dynamicParams = true;
+// Supabase requests time out after 20 s (lib/db/client.ts). Cap the render well below the
+// 300 s platform default so a stalled database can't hold an instance for five minutes.
+export const maxDuration = 60;
 
 export function generateStaticParams() {
   return [];
@@ -80,10 +84,26 @@ async function PublicSkillDetailData({
     notFound();
   }
 
-  const [activity, upstreams, brief] = await Promise.all([
+  if (getLatestSkillVersion(skill) > skill.version) {
+    return (
+      <>
+        <SeoJsonLd data={buildSkillJsonLd(skill)} />
+        <SkillDetailPage
+          archived
+          canEdit={false}
+          isSignedIn={false}
+          previousSkill={previousSkill}
+          purchased={false}
+          skill={skill}
+          timeZone="UTC"
+        />
+      </>
+    );
+  }
+
+  const [activity, upstreams] = await Promise.all([
     getCachedSkillActivity(skill.slug),
     getCachedSkillUpstreams(skill.slug),
-    getCachedSkillBrief(skill.category),
   ]);
   const latestRun =
     activity.recentRuns.find(
@@ -101,7 +121,6 @@ async function PublicSkillDetailData({
     <>
       <SeoJsonLd data={buildSkillJsonLd(skill)} />
       <SkillDetailPage
-        brief={brief ?? undefined}
         canEdit={false}
         isSignedIn={false}
         latestRun={latestRun}

@@ -22,6 +22,17 @@ export function buildSkillVersionHref(slug: string, version: number): string {
   return `/skills/${slug}/${buildVersionLabel(version)}`;
 }
 
+/** The newest version the record knows about, which may be newer than the record itself. */
+export function getLatestSkillVersion(
+  skill: Pick<SkillRecord, "availableVersions" | "version">
+): number {
+  let latestVersion = skill.version;
+  for (const candidate of skill.availableVersions) {
+    latestVersion = Math.max(latestVersion, candidate.version);
+  }
+  return latestVersion;
+}
+
 export function buildMcpVersionHref(name: string, version: number): string {
   return `/mcps/${name}/${buildVersionLabel(version)}`;
 }

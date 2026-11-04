@@ -19,7 +19,6 @@ import {
 } from "@/lib/skill-authoring";
 import {
   getCachedSkillActivity,
-  getCachedSkillBrief,
   getCachedSkillUpstreams,
 } from "@/lib/skill-detail-data";
 import { buildSkillUsageSummary } from "@/lib/usage";
@@ -77,16 +76,14 @@ async function SignedInSkillDetailData({
     (versionNumber > 1 && skill.visibility !== "public"
       ? await getSkillRecordBySlug(slug, versionNumber - 1)
       : null);
-  const [sessionAuthor, activity, upstreams, purchased, brief] =
-    await Promise.all([
-      session ? findSkillAuthorForSession(session) : Promise.resolve(null),
-      getCachedSkillActivity(skill.slug),
-      getCachedSkillUpstreams(skill.slug),
-      session?.userId
-        ? hasUserPurchasedSkill(session.userId, slug)
-        : Promise.resolve(false),
-      getCachedSkillBrief(skill.category),
-    ]);
+  const [sessionAuthor, activity, upstreams, purchased] = await Promise.all([
+    session ? findSkillAuthorForSession(session) : Promise.resolve(null),
+    getCachedSkillActivity(skill.slug),
+    getCachedSkillUpstreams(skill.slug),
+    session?.userId
+      ? hasUserPurchasedSkill(session.userId, slug)
+      : Promise.resolve(false),
+  ]);
 
   if (!canViewPrivateSkill(skill, session, sessionAuthor)) {
     notFound();
@@ -107,7 +104,6 @@ async function SignedInSkillDetailData({
 
   return (
     <SkillDetailPage
-      brief={brief ?? undefined}
       canEdit={canEdit}
       isSignedIn={!!session}
       latestRun={latestRun}
