@@ -11,6 +11,7 @@ import { DEFAULT_PREFERRED_HOUR } from "@/lib/automation-constants";
 import {
   CACHE_TAGS,
   LONG_LIVED_CACHE_REVALIDATE_SECONDS,
+  PUBLIC_CATALOGUE_REVALIDATE_SECONDS,
   skillCacheTag,
   skillLiveDataCacheTag,
   skillVersionCacheTag,
@@ -380,11 +381,14 @@ export async function getSkillCatalogue(options?: {
 const getCachedPublicSkillCatalogue = unstable_cache(
   () => getSkillCatalogue({ includePrivate: false }),
   ["public-skill-catalogue-v1"],
-  { revalidate: 300, tags: [CACHE_TAGS.publicCatalogue] }
+  {
+    revalidate: PUBLIC_CATALOGUE_REVALIDATE_SECONDS,
+    tags: [CACHE_TAGS.publicCatalogue],
+  }
 );
 
 const getCachedBriefs = unstable_cache(() => dbListBriefs(), ["briefs-v1"], {
-  revalidate: 300,
+  revalidate: PUBLIC_CATALOGUE_REVALIDATE_SECONDS,
   tags: [CACHE_TAGS.briefs],
 });
 

@@ -25,7 +25,7 @@ import {
   OPERATOR_SANDBOX_CONVERSATION_LIMIT,
   SKILL_CREATE_COOLDOWN_MS,
 } from "@/lib/skill-limit-constants";
-import { listLoopRuns } from "@/lib/system-state";
+import { listLoopRunSummaries } from "@/lib/system-state";
 import type {
   ConversationChannel,
   SkillAutomationState,
@@ -238,7 +238,7 @@ export async function getManualUpdateCooldown(
     ? OPERATOR_MANUAL_UPDATE_COOLDOWN_MS
     : FREE_MANUAL_UPDATE_COOLDOWN_MS;
 
-  const runs = await listLoopRuns({
+  const runs = await listLoopRunSummaries({
     skillSlug: slug,
     trigger: "manual",
     limit: 1,

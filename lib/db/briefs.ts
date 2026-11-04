@@ -24,12 +24,17 @@ function rowToBrief(row: BriefRow): CategoryBrief {
   };
 }
 
+// Every category gets a brief each day, so two weeks always holds each one's latest. Unbounded,
+// this read every brief ever written (831 rows, 1.8 MB by Nov 2026) to keep eight.
+const BRIEF_LOOKBACK_MS = 14 * 24 * 60 * 60 * 1000;
+
 export async function listBriefs(): Promise<CategoryBrief[]> {
   const db = getServerSupabase();
 
   const { data, error } = await db
     .from("daily_briefs")
     .select("*")
+    .gte("generated_at", new Date(Date.now() - BRIEF_LOOKBACK_MS).toISOString())
     .order("generated_at", { ascending: false });
 
   if (error) {

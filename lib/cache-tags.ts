@@ -13,6 +13,10 @@ export const LONG_LIVED_CACHE_REVALIDATE_SECONDS = 2_592_000;
 // usage stats get between saves. Archived version pages never read it and stay cached.
 export const SKILL_ACTIVITY_REVALIDATE_SECONDS = 86_400;
 
+// Every write that changes the public catalogue or the briefs expires them by tag, so this TTL
+// only bounds edits that skip invalidation, such as an author's verified badge.
+export const PUBLIC_CATALOGUE_REVALIDATE_SECONDS = 86_400;
+
 /** Every cached page and data entry for the skill, archived versions included. */
 export function skillCacheTag(slug: string): string {
   return `skill:${slug}`;

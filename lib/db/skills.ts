@@ -22,6 +22,11 @@ import type {
   VersionReference,
 } from "@/lib/types";
 
+// Every column except search_vector, the full-text index that only the search_skills_fts
+// function reads. It is about a third of each row's bytes, so `*` paid for it on every read.
+const SKILL_COLUMNS =
+  "id,slug,title,description,category,body,accent,featured,visibility,origin,path,relative_dir,tags,headings,owner_name,sources,automation,updates,agent_docs,references_data,agents_data,source_url,canonical_url,sync_enabled,last_synced_at,version,created_at,updated_at,price,creator_clerk_user_id,icon_url,featured_rank,quality_score,research_profile,author_id,forked_from_slug";
+
 interface SkillRow {
   id: string;
   slug: string;
@@ -224,7 +229,7 @@ export async function listSkills(filter?: {
   visibility?: SkillVisibility;
 }): Promise<SkillRecord[]> {
   const db = getServerSupabase();
-  let query = db.from("skills").select("*");
+  let query = db.from("skills").select(SKILL_COLUMNS);
 
   if (filter?.origin) {
     query = query.eq("origin", filter.origin);
@@ -257,7 +262,7 @@ export async function getSkillBySlug(
   const db = getServerSupabase();
   const { data, error } = await db
     .from("skills")
-    .select("*")
+    .select(SKILL_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
 
@@ -316,7 +321,7 @@ export async function getSkillAtVersion(
 
   const { data: skillData } = await db
     .from("skills")
-    .select("*")
+    .select(SKILL_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
 
@@ -385,7 +390,7 @@ export async function createSkill(
   const { data, error } = await db
     .from("skills")
     .insert(row as never)
-    .select("*")
+    .select(SKILL_COLUMNS)
     .single();
 
   if (error) {
@@ -508,7 +513,7 @@ export async function updateSkill(
     .from("skills")
     .update(mapped as never)
     .eq("slug", slug)
-    .select("*")
+    .select(SKILL_COLUMNS)
     .single();
 
   if (error) {
@@ -540,7 +545,7 @@ export async function upsertSkillFromFilesystem(
   const { data, error } = await db
     .from("skills")
     .upsert(row as never, { onConflict: "slug" })
-    .select("*")
+    .select(SKILL_COLUMNS)
     .single();
 
   if (error) {
@@ -630,7 +635,7 @@ export async function listSkillsByCreator(
   const db = getServerSupabase();
   const { data, error } = await db
     .from("skills")
-    .select("*")
+    .select(SKILL_COLUMNS)
     .eq("creator_clerk_user_id", clerkUserId)
     .order("updated_at", { ascending: false });
   if (error) {
