@@ -271,7 +271,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 ```bash
 AI_GATEWAY_API_KEY=
 BRAVE_API_KEY=
-# LOOP_MODEL=openai/gpt-5-mini
+# LOOP_MODEL=openai/gpt-6-luna
 # FIRECRAWL_API_KEY=
 ```
 

@@ -177,7 +177,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Yes. Operator subscribers can select a preferred model (GPT-4o, GPT-4o Mini, Claude Sonnet 4, Claude Haiku 3.5) for each automation. Free accounts use the default model. The model dropdown is in the automation edit modal.",
+          "Yes. Operator subscribers can select a preferred model (GPT-6.1 Sol, GPT-6 Luna, Claude Sonnet 5.5, Claude Haiku 5.5) for each automation. Free accounts use the default model. The model dropdown is in the automation edit modal.",
         question: "Can Operator subscribers choose the AI model?",
       },
       {
@@ -435,7 +435,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         answer:
-          "Automations route through Vercel AI Gateway. The default model is openai/gpt-5-mini (configurable via the LOOP_MODEL environment variable). Operator subscribers can choose a preferred model per automation from the dropdown: GPT-4o, GPT-4o Mini, Claude Sonnet 4, or Claude Haiku 3.5. The Sandbox supports additional providers (OpenAI direct, OpenRouter, Groq, Together AI, Ollama) but automations always use the gateway.",
+          "Automations route through Vercel AI Gateway. The default model is openai/gpt-6-luna (configurable via the LOOP_MODEL environment variable). Operator subscribers can choose a preferred model per automation from the dropdown: GPT-6.1 Sol, GPT-6 Luna, Claude Sonnet 5.5, or Claude Haiku 5.5. The Sandbox supports additional providers (OpenAI direct, OpenRouter, Groq, Together AI, Ollama) but automations always use the gateway.",
         question: "What AI models power automations?",
       },
       {

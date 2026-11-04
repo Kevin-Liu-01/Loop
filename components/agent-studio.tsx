@@ -77,7 +77,7 @@ function createInitialConfig(presets: AgentProviderPreset[]): StudioConfig {
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
     compatibleBaseUrl: preset?.baseURL ?? "",
     headersJson: "{}",
-    model: preset?.defaultModel ?? "openai/gpt-5-mini",
+    model: preset?.defaultModel ?? "openai/gpt-6-luna",
     providerId: preset?.id ?? "gateway",
     selectedMcpIds: [],
     selectedSkillSlugs: [],

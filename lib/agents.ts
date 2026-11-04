@@ -13,7 +13,7 @@ import type {
 export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
   {
     apiKeyEnvVar: "AI_GATEWAY_API_KEY",
-    defaultModel: "openai/gpt-5-mini",
+    defaultModel: "openai/gpt-6-luna",
     docsUrl: "https://vercel.com/docs/ai-gateway",
     id: "gateway",
     kind: "gateway",
@@ -23,7 +23,7 @@ export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
   {
     apiKeyEnvVar: "OPENAI_API_KEY",
     baseURL: "https://api.openai.com/v1",
-    defaultModel: "gpt-5-mini",
+    defaultModel: "gpt-6-luna",
     docsUrl: "https://platform.openai.com/docs/models",
     id: "openai",
     kind: "openai",
@@ -32,7 +32,7 @@ export const AGENT_PROVIDER_PRESETS: AgentProviderPreset[] = [
   {
     apiKeyEnvVar: "OPENROUTER_API_KEY",
     baseURL: "https://openrouter.ai/api/v1",
-    defaultModel: "openai/gpt-5",
+    defaultModel: "openai/gpt-6.1-sol",
     docsUrl: "https://openrouter.ai/models",
     id: "openrouter",
     kind: "compatible",
@@ -235,7 +235,7 @@ export function buildAgentContext(
   ].join("\n");
 }
 
-const GATEWAY_EDITOR_MODEL = process.env.LOOP_MODEL ?? "openai/gpt-5-mini";
+const GATEWAY_EDITOR_MODEL = process.env.LOOP_MODEL ?? "openai/gpt-6-luna";
 
 let _gatewayKeyWarnedOnce = false;
 

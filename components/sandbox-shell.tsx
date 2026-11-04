@@ -75,7 +75,7 @@ function defaultConfig(
   const preset = presets[0];
   return {
     apiKeyEnvVar: preset?.apiKeyEnvVar ?? "",
-    model: preset?.defaultModel ?? "openai/gpt-5-mini",
+    model: preset?.defaultModel ?? "openai/gpt-6-luna",
     providerId: preset?.id ?? "gateway",
     runtime: "node24",
     selectedMcpIds: initialMcpId ? [initialMcpId] : [],

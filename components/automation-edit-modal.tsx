@@ -53,10 +53,10 @@ import type { CategorySlug } from "@/lib/types";
 
 const MODEL_OPTIONS = [
   { label: "Default (auto)", value: "" },
-  { label: "GPT-4o", value: "gpt-4o" },
-  { label: "GPT-4o Mini", value: "gpt-4o-mini" },
-  { label: "Claude Sonnet 4", value: "claude-sonnet-4-20250514" },
-  { label: "Claude Haiku 3.5", value: "claude-haiku-3.5" },
+  { label: "GPT-6.1 Sol", value: "openai/gpt-6.1-sol" },
+  { label: "GPT-6 Luna", value: "openai/gpt-6-luna" },
+  { label: "Claude Sonnet 5.5", value: "anthropic/claude-sonnet-5.5" },
+  { label: "Claude Haiku 5.5", value: "anthropic/claude-haiku-5.5" },
 ] as const;
 
 const fieldLabel =
