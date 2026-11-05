@@ -18,8 +18,8 @@
     "fix": "ultracite fix"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.0",
-    "@ai-sdk/react": "^2.0.0",
+    "@ai-sdk/openai": "^4.0.109",
+    "@ai-sdk/react": "^4.0.167",
     "@chenglou/pretext": "^0.0.2",
     "@clerk/nextjs": "^7.2.7",
     "@clerk/ui": "^1.6.7",
@@ -37,7 +37,7 @@
     "@vercel/queue": "^0.1.4",
     "@vercel/sandbox": "^1.9.0",
     "@vercel/speed-insights": "^1.2.0",
-    "ai": "^5.0.0",
+    "ai": "^7.0.163",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

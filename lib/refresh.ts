@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import { resolveSearchProvider } from "@/lib/agent-tools/search-providers";
@@ -324,20 +324,20 @@ async function synthesizeBrief(
       ),
     ].join("\n");
 
-    const result = await generateObject({
+    const { output } = await generateText({
       model: briefModel,
+      output: Output.object({ schema: SIGNAL_SCHEMA }),
       prompt,
-      schema: SIGNAL_SCHEMA,
     });
 
     return {
-      experiments: result.object.experiments,
+      experiments: output.experiments,
       generatedAt: new Date().toISOString(),
       items: items.slice(0, 4),
       slug,
-      summary: result.object.summary,
+      summary: output.summary,
       title,
-      whatChanged: result.object.whatChanged,
+      whatChanged: output.whatChanged,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown AI error";

@@ -1,4 +1,4 @@
-import { generateText, stepCountIs, tool } from "ai";
+import { generateText, isStepCount, tool } from "ai";
 import type { LanguageModel } from "ai";
 import { z } from "zod";
 
@@ -429,6 +429,12 @@ export async function runSkillEditorAgent(
 
   try {
     response = await generateText({
+      instructions: buildSystemPrompt(
+        skill,
+        sourceLogs,
+        searchBudgetMax,
+        maxSteps
+      ),
       model,
       prompt: [
         `${sourceLogs.length} tracked sources delivered ${signals.length} signal(s).`,
@@ -438,8 +444,7 @@ export async function runSkillEditorAgent(
         `Start by calling analyze_signals for each source, then read_current_skill, then begin your research phase with at least ${MIN_SEARCH_REQUIRED} web searches before deciding any edits.`,
         `CRITICAL: You MUST call revise_skill and finalize before running out of steps. Reserve at least ${REVISION_RESERVE_STEPS} steps for this.`,
       ].join("\n"),
-      stopWhen: stepCountIs(maxSteps),
-      system: buildSystemPrompt(skill, sourceLogs, searchBudgetMax, maxSteps),
+      stopWhen: isStepCount(maxSteps),
       tools,
     });
   } catch (error) {
