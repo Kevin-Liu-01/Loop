@@ -1,4 +1,10 @@
-import { convertToModelMessages, stepCountIs, streamText } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStreamResponse,
+  isStepCount,
+  streamText,
+  toUIMessageStream,
+} from "ai";
 import { z } from "zod";
 
 import { resolveLanguageModel } from "@/lib/agents";
@@ -149,17 +155,19 @@ export async function POST(request: Request) {
         recordAgentRun(session.userId);
 
         const result = streamText({
-          messages: convertToModelMessages(payload.messages),
+          instructions: `${agentConfig.system}${mcpToolContext}${mcpWarnings}`,
+          messages: await convertToModelMessages(payload.messages),
           model,
-          onFinish: async () => {
+          onEnd: async () => {
             await mcpRuntime.close();
           },
-          stopWhen: stepCountIs(maxSteps),
-          system: `${agentConfig.system}${mcpToolContext}${mcpWarnings}`,
+          stopWhen: isStepCount(maxSteps),
           tools,
         });
 
-        return result.toUIMessageStreamResponse();
+        return createUIMessageStreamResponse({
+          stream: toUIMessageStream({ stream: result.stream, tools }),
+        });
       } catch (error) {
         const authResponse = authErrorResponse(error);
         if (authResponse) {

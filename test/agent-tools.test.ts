@@ -42,6 +42,7 @@ const stubCategory: CategorySlug = "frontend";
 function execCtx() {
   return {
     abortSignal: undefined as any,
+    context: {},
     messages: [] as any[],
     toolCallId: "test",
   };

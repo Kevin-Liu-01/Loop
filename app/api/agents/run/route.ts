@@ -1,4 +1,9 @@
-import { stepCountIs, streamText } from "ai";
+import {
+  createUIMessageStreamResponse,
+  isStepCount,
+  streamText,
+  toUIMessageStream,
+} from "ai";
 import { z } from "zod";
 
 import { buildAgentContext, resolveLanguageModel } from "@/lib/agents";
@@ -81,17 +86,22 @@ export async function POST(request: Request) {
         recordAgentRun(session.userId);
 
         const result = streamText({
+          instructions: system,
           messages: payload.messages,
           model,
-          onFinish: async () => {
+          onEnd: async () => {
             await mcpRuntime.close();
           },
-          stopWhen: stepCountIs(mcpRuntime.catalog.length > 0 ? 5 : 1),
-          system,
+          stopWhen: isStepCount(mcpRuntime.catalog.length > 0 ? 5 : 1),
           tools: mcpRuntime.tools,
         });
 
-        return result.toUIMessageStreamResponse();
+        return createUIMessageStreamResponse({
+          stream: toUIMessageStream({
+            stream: result.stream,
+            tools: mcpRuntime.tools,
+          }),
+        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unable to run agent.";
