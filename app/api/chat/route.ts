@@ -1,4 +1,8 @@
-import { streamText } from "ai";
+import {
+  createUIMessageStreamResponse,
+  streamText,
+  toUIMessageStream,
+} from "ai";
 
 import { getGatewayModelForSkill, getGatewayEditorModelId } from "@/lib/agents";
 import { getSessionUser } from "@/lib/auth";
@@ -71,9 +75,7 @@ export async function POST(request: Request) {
       recordAgentRun(session.userId);
 
       const result = streamText({
-        messages,
-        model,
-        system: [
+        instructions: [
           "You are Loop's desk copilot — a concise, knowledgeable assistant for navigating and understanding the user's skill catalogue.",
           "",
           "Guidelines:",
@@ -85,9 +87,13 @@ export async function POST(request: Request) {
           "",
           context,
         ].join("\n"),
+        messages,
+        model,
       });
 
-      return result.toUIMessageStreamResponse();
+      return createUIMessageStreamResponse({
+        stream: toUIMessageStream({ stream: result.stream }),
+      });
     }
   );
 }

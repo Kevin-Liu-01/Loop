@@ -30,10 +30,10 @@ export async function generateConversationTitle(
 
   try {
     const { text } = await generateText({
+      instructions: TITLE_SYSTEM_PROMPT,
       maxOutputTokens: 30,
       model,
       prompt: transcript,
-      system: TITLE_SYSTEM_PROMPT,
       temperature: 0.3,
     });
 
